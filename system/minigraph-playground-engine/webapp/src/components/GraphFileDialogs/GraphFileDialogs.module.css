@@ -1,0 +1,116 @@
+/* Modal dialogs for the graph file transfer: download (graph id) and import confirmation. */
+.dialog {
+  /* centered in the top layer: the global reset zeroes margins, so say so here */
+  margin: auto;
+  align-self: center;
+  justify-self: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  max-width: 440px;
+  box-shadow: var(--shadow-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.dialog::backdrop {
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.body {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono-terminal);
+  font-size: 0.875rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.input:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
+.inputInvalid {
+  border-color: #ef4444;
+}
+
+.extension {
+  font-family: var(--font-mono-terminal);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.hintError {
+  color: #fca5a5;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.cancelBtn {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.primaryBtn {
+  background: var(--primary-color);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  color: #fff;
+}
+
+.primaryBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

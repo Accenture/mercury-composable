@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,6 +52,7 @@ class SessionManagementTest {
     private static final EventEmitter po = EventEmitter.getInstance();
     private static String httpTarget;
     private static final String MOCK_DATA_LOADED = "Mock data loaded into 'input.body' namespace";
+    private static final String GRAPH_IMPORTED = "Graph model imported as draft";
 
     @BeforeAll
     static void setup() {
@@ -518,6 +520,80 @@ class SessionManagementTest {
             // an unknown session or one without an instance is refused at the REST edge
             assertFalse(GraphCommandService.uploadContent("ws-000000-0", Map.of("x", 1)));
         }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void graphImportLoadsEveryMemberDraftTest() throws InterruptedException, ExecutionException {
+        SessionFixture fx = createFixture();
+        if (fx == null) {
+            return;
+        }
+        try (fx) {
+            // B subscribes to A, so the two sessions share one draft
+            po.send(fx.txPathB(), "session subscribe " + fx.sessionA());
+            assertNotNull(waitForMessage(fx.messagesB(), "Subscribed to " + fx.sessionA(), 5));
+            fx.messagesA().clear();
+            fx.messagesB().clear();
+            // the subscriber imports a model from a file (POST /api/graph/import/{id}): it is forwarded to
+            // the primary, imported there and replayed into every subscriber's draft, each member's
+            // console confirming it
+            var model = graphModel("imported-graph");
+            var imported = postGraphImport(fx.sessionB(), model);
+            assertEquals(200, imported.getStatus(), String.valueOf(imported.getBody()));
+            assertNotNull(waitForMessage(fx.messagesA(), GRAPH_IMPORTED, 5));
+            assertNotNull(waitForMessage(fx.messagesB(), GRAPH_IMPORTED, 5));
+            for (var sessionId : List.of(fx.sessionA(), fx.sessionB())) {
+                var live = getLiveGraph(sessionId);
+                assertEquals(200, live.getStatus());
+                var graph = (Map<String, Object>) live.getBody();
+                var nodes = (List<Map<String, Object>>) graph.get("nodes");
+                var aliases = nodes.stream().map(n -> String.valueOf(n.get("alias"))).toList();
+                assertEquals(List.of("end", "root"), aliases, sessionId + " holds the imported draft");
+                assertEquals(1, ((List<?>) graph.get("connections")).size());
+            }
+            // a model with a section the format does not know is refused before anything is imported
+            var extra = new HashMap<>(model);
+            extra.put("metadata", Map.of("author", "x"));
+            var refused = postGraphImport(fx.sessionA(), extra);
+            assertEquals(400, refused.getStatus());
+            assertTrue(String.valueOf(refused.getBody()).contains("metadata"), String.valueOf(refused.getBody()));
+            // nodes must be a list, and a node needs its alias and types
+            assertEquals(400, postGraphImport(fx.sessionA(), Map.of("nodes", "root")).getStatus());
+            var noAlias = postGraphImport(fx.sessionA(), Map.of("nodes", List.of(Map.of("types", List.of("Root")))));
+            assertEquals(400, noAlias.getStatus());
+            assertTrue(String.valueOf(noAlias.getBody()).contains("missing alias"), String.valueOf(noAlias.getBody()));
+            // connections are optional: a work in progress imports, and reaches the subscriber too
+            fx.messagesB().clear();
+            var wip = postGraphImport(fx.sessionA(), Map.of("nodes", model.get("nodes")));
+            assertEquals(200, wip.getStatus(), String.valueOf(wip.getBody()));
+            assertNotNull(waitForMessage(fx.messagesB(), GRAPH_IMPORTED, 5));
+            var liveB = (Map<String, Object>) getLiveGraph(fx.sessionB()).getBody();
+            assertEquals(0, ((List<?>) liveB.get("connections")).size());
+            // an unknown session is refused
+            assertEquals(404, postGraphImport("ws-000000-0", model).getStatus());
+        }
+    }
+
+    private Map<String, Object> graphModel(String name) {
+        return Map.of(
+                "nodes", List.of(
+                        Map.of("alias", "root", "types", List.of("Root"), "properties", Map.of("name", name)),
+                        Map.of("alias", "end", "types", List.of("End"), "properties", Map.of())),
+                "connections", List.of(
+                        Map.of("source", "root", "target", "end",
+                                "relations", List.of(Map.of("type", "finish", "properties", Map.of())))));
+    }
+
+    private EventEnvelope postGraphImport(String sessionId, Object model)
+            throws ExecutionException, InterruptedException {
+        var req = new AsyncHttpRequest().setMethod("POST").setTargetHost(httpTarget)
+                .setUrl("/api/graph/import/{id}").setPathParameter("id", sessionId)
+                .setHeader("Content-Type", "application/json")
+                .setHeader("Accept", "application/json")
+                .setBody(model);
+        var envelope = new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(req);
+        return po.request(envelope, 10000).get();
     }
 
     private SessionFixture createFixture() throws InterruptedException {

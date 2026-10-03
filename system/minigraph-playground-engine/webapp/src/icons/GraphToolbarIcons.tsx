@@ -48,3 +48,21 @@ export function UploadIcon(props: ToolbarIconProps) {
     </svg>
   );
 }
+
+export function DownloadIcon(props: ToolbarIconProps) {
+  return (
+    <svg {...sharedProps} {...props}>
+      <path d="M8 2.75v7.75M4.75 7.25 8 10.5l3.25-3.25" />
+      <path d="M2.75 10.75v1.5a1 1 0 0 0 1 1h8.5a1 1 0 0 0 1-1v-1.5" />
+    </svg>
+  );
+}
+
+export function ImportIcon(props: ToolbarIconProps) {
+  return (
+    <svg {...sharedProps} {...props}>
+      <path d="M2.75 8h7M7 5.25 9.75 8 7 10.75" />
+      <path d="M8.75 2.75h3.5a1 1 0 0 1 1 1v8.5a1 1 0 0 1-1 1h-3.5" />
+    </svg>
+  );
+}

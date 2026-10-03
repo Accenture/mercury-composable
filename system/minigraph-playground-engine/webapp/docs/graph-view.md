@@ -92,7 +92,9 @@ shell style draws clipboard previews and colours the node editor.
 
 Props: `graphData`, `graphName?`, `onCopySuccess?`/`onCopyError?` (toolbar copy),
 `graphRunControls?`, `onRenderError?`, `isRefreshing?`, `onClipNode?`, `onClipNodes?`,
-`onClipboardDrop?`, `isActive` (the Graph tab is visible — enables the minimap hotkey),
+`onClipboardDrop?`, `onImportFiles?(files)` (a `.json` graph file dropped on the canvas),
+`onImportGraph?` (the Import Graph button → file picker), `onDownload?` (the toolbar's Download
+button), `isActive` (the Graph tab is visible — enables the minimap hotkey),
 `isConnected`, `supportsAuthoring?`, `onCreateNode?(source)`, `onCreateConnection?(source,
 target, anchor?)`, `onEditNode?`, `onDeleteNode?`, `onDeleteNodes?`, `onDeleteConnections?
 (requests)`, `panelLayoutKey?`. Authoring actions need `supportsAuthoring && callback &&
@@ -100,8 +102,9 @@ isConnected`; clip actions need only their callback; a clipboard drop needs `isC
 
 What it renders:
 
-- `GraphToolbar` (name, counts, copy) with `GraphRunControls` in its actions slot, only when the
-  graph has nodes.
+- `GraphToolbar` (name, counts, import, download, copy) with `GraphRunControls` in its actions
+  slot, only when the graph has nodes. Import is disabled while offline ("Connect first to import a
+  graph").
 - `<ReactFlow>` with controlled nodes/edges (every new transform replaces both, clears the
   selection and closes the menus), `fitView` padding 0.1, zoom 0.2–4, zoom on scroll / pinch /
   double-click, `panOnScroll` off (spelled out so an upgrade cannot change them),
@@ -113,9 +116,17 @@ What it renders:
   `localStorage` `graph-minimap-position`); its open flag is plain state and survives a keyed
   remount. **Ctrl+M** toggles it while the Graph tab is active (Control, not Cmd, on macOS; not
   while typing in a field).
-- The empty state ("No graph data yet." + a **Create Node** button when authoring is supported;
-  disabled with "Connect WebSocket to create a node." while offline), the
-  click-to-connect banner, the refresh spinner and the "Drop to paste workspace node" overlay.
+- The empty state ("No graph data yet." + a **Create Node** button when authoring is supported and
+  an **Import Graph** button when `onImportGraph` is wired; both disabled with "Connect WebSocket
+  to create or import a graph." while offline; the text also invites a file drop when
+  `onImportFiles` is wired), the click-to-connect banner, the refresh spinner, the green "Drop to
+  paste workspace node" overlay and the blue "Drop to import the graph file as the draft" overlay.
+- **File drop.** The graph surface takes both workspace-clipboard drags and OS file drags; the
+  `dataTransfer.types` tell them apart (a file drag carries `Files`). A file drag is claimed
+  whenever `onImportFiles` is wired, connected or not — otherwise the browser would open the
+  dropped file in the tab — and the overlay says "Connect first to import a graph file" while
+  offline (the importer refuses with the same message). On drop the `FileList` goes to
+  `onImportFiles` (`useGraphFileImport.importFiles`: one file at a time).
 - The three context menus (below) and a keyed `GraphViewErrorBoundary`: a transform error shows
   "Graph could not be rendered." and reports to `onRenderError` from an effect, never from inside
   `useMemo`; the boundary is keyed by the alias list so a corrected graph remounts cleanly.

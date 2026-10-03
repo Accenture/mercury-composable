@@ -4,6 +4,7 @@ import { tryParseJSON } from '../../utils/messageParser';
 import { formatJSON } from '../../utils/validators';
 import { useMockUpload } from '../../hooks/useMockUpload';
 import CloseIcon from '../../icons/CloseIcon.svg?react';
+import { readFileAsText, validateJsonFileType } from '../../utils/jsonFile';
 
 interface MockUploadPanelProps {
   /** The POST path extracted from the server message, e.g. "/api/mock/ws-417669-24" */
@@ -32,30 +33,6 @@ const isMac =
     ?? navigator.platform)
     .toLowerCase()
     .includes('mac');
-
-/** Read a File as text, resolving with the string or rejecting with an Error. */
-function readFileAsText(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error(`Could not read file "${file.name}"`));
-    reader.readAsText(file, 'utf-8');
-  });
-}
-
-/**
- * Validate that a dropped / selected file is acceptable:
- *  - Must have a `.json` extension OR a `application/json` MIME type.
- * Returns null on success, or a human-readable error string on failure.
- */
-function validateFileType(file: File): string | null {
-  const hasJsonExt  = file.name.toLowerCase().endsWith('.json');
-  const hasJsonMime = file.type === 'application/json' || file.type === 'text/plain';
-  if (!hasJsonExt && !hasJsonMime) {
-    return `"${file.name}" does not appear to be a JSON file. Only .json files are accepted.`;
-  }
-  return null;
-}
 
 /**
  * Mock-data upload form rendered in the left panel slot (the console's
@@ -152,7 +129,7 @@ export default function MockUploadPanel({
     setFileError(null);
     setUploadError(null);
 
-    const typeError = validateFileType(file);
+    const typeError = validateJsonFileType(file);
     if (typeError) {
       setFileError(typeError);
       return;

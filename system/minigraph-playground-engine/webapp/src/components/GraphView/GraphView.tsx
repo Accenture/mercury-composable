@@ -56,6 +56,12 @@ interface GraphViewProps {
   onClipNode?:     (node: MinigraphNode, connections: MinigraphConnection[]) => void;
   onClipNodes?:    (items: GraphClipItem[]) => void;
   onClipboardDrop?: (itemId: string) => void;
+  /** Import a graph model from a `.json` file dropped on the canvas (one file at a time). */
+  onImportFiles?:  (files: FileList) => void;
+  /** The "Import Graph" button: opens the file picker. */
+  onImportGraph?:  () => void;
+  /** The toolbar's Download button: saves the graph as `<graph-id>.json`. */
+  onDownload?:     () => void;
   /** Whether the Graph tab is currently visible and may handle graph-only hotkeys. */
   isActive:        boolean;
   isConnected:     boolean;
@@ -102,6 +108,9 @@ export default function GraphView({
   onClipNode,
   onClipNodes,
   onClipboardDrop,
+  onImportFiles,
+  onImportGraph,
+  onDownload,
   isActive,
   isConnected,
   supportsAuthoring = false,
@@ -130,8 +139,10 @@ export default function GraphView({
   } | null>(null);
   const [selectedNodeAliases, setSelectedNodeAliases] = useState<string[]>([]);
   const [clipboardDragActive, setClipboardDragActive] = useState(false);
+  const [fileDragActive, setFileDragActive] = useState(false);
   const [minimapOpen, setMinimapOpen] = useState(false);
   const clipboardDragDepthRef = useRef(0);
+  const fileDragDepthRef = useRef(0);
   const canCreateNode = Boolean(supportsAuthoring && onCreateNode && isConnected);
   const canCreateConnection = Boolean(supportsAuthoring && onCreateConnection && isConnected);
   const canClipNode = Boolean(onClipNode);
@@ -143,10 +154,15 @@ export default function GraphView({
   const canOpenMultiNodeContextMenu = canClipNodes || canDeleteNodes;
   const canOpenNodeContextMenu = canOpenSingleNodeContextMenu || canOpenMultiNodeContextMenu;
   const canAcceptClipboardDrop = Boolean(onClipboardDrop && isConnected);
+  // A file drag is claimed whenever an importer is wired, connected or not: otherwise the
+  // browser would open the dropped file in the tab. The importer says "connect first".
+  const canAcceptFileDrop = Boolean(onImportFiles);
 
   const resetClipboardDragState = useCallback(() => {
     clipboardDragDepthRef.current = 0;
     setClipboardDragActive(false);
+    fileDragDepthRef.current = 0;
+    setFileDragActive(false);
   }, []);
 
   useEffect(() => {
@@ -345,6 +361,58 @@ export default function GraphView({
     }
   };
 
+  // ── File drop (a graph model from the user's computer) ──────────────────
+  // The same surface takes workspace-clipboard drags and OS file drags; the
+  // dataTransfer types tell them apart (a file drag carries 'Files').
+  const isFileDrag = (dataTransfer: DataTransfer) => Array.from(dataTransfer.types).includes('Files');
+
+  const handleSurfaceDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(event.dataTransfer)) {
+      handleClipboardDragEnter(event);
+      return;
+    }
+    if (!canAcceptFileDrop) return;
+    event.preventDefault();
+    fileDragDepthRef.current += 1;
+    setFileDragActive(true);
+  };
+
+  const handleSurfaceDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(event.dataTransfer)) {
+      handleClipboardDragOver(event);
+      return;
+    }
+    if (!canAcceptFileDrop) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    setFileDragActive(true);
+  };
+
+  const handleSurfaceDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(event.dataTransfer)) {
+      handleClipboardDragLeave(event);
+      return;
+    }
+    fileDragDepthRef.current = Math.max(0, fileDragDepthRef.current - 1);
+    if (fileDragDepthRef.current === 0) {
+      setFileDragActive(false);
+    }
+  };
+
+  const handleSurfaceDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(event.dataTransfer)) {
+      handleClipboardDrop(event);
+      return;
+    }
+    if (!canAcceptFileDrop) return;
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    resetClipboardDragState();
+    if (files.length > 0) {
+      onImportFiles?.(files);
+    }
+  };
+
   const graphNodeAliases = useMemo(
     () => new Set(graphData?.nodes.map((node) => node.alias) ?? []),
     [graphData],
@@ -496,16 +564,19 @@ export default function GraphView({
             onCopySuccess={onCopySuccess}
             onCopyError={onCopyError}
             extraActions={graphRunControls ? <GraphRunControls {...graphRunControls} /> : undefined}
+            onImport={onImportGraph}
+            importDisabledReason={isConnected ? null : 'Connect first to import a graph'}
+            onDownload={onDownload}
           />
         )}
 
         <div
           className={styles.graphSurface}
           data-connect-picking={connectFromAlias !== null || undefined}
-          onDragEnter={handleClipboardDragEnter}
-          onDragOver={handleClipboardDragOver}
-          onDragLeave={handleClipboardDragLeave}
-          onDrop={handleClipboardDrop}
+          onDragEnter={handleSurfaceDragEnter}
+          onDragOver={handleSurfaceDragOver}
+          onDragLeave={handleSurfaceDragLeave}
+          onDrop={handleSurfaceDrop}
         >
           {hasGraphData ? (
             <ReactFlow
@@ -634,19 +705,36 @@ export default function GraphView({
             <div className={styles.empty}>
               <span className={styles.emptyIcon}>🕸️</span>
               <span>No graph data yet.</span>
-              <span>Run <strong>create node</strong> or <strong>import graph from</strong> in the playground — the view follows the live session graph.</span>
-              {supportsAuthoring && onCreateNode && (
+              <span>
+                Run <strong>create node</strong> or <strong>import graph from</strong> in the playground
+                {onImportFiles ? ', or drop a graph JSON file here' : ''} — the view follows the live session graph.
+              </span>
+              {((supportsAuthoring && onCreateNode) || onImportGraph) && (
                 <>
-                  <button
-                    type="button"
-                    className={styles.emptyCreateButton}
-                    disabled={!isConnected}
-                    onClick={() => onCreateNode('empty-graph')}
-                  >
-                    Create Node
-                  </button>
+                  <div className={styles.emptyActions}>
+                    {supportsAuthoring && onCreateNode && (
+                      <button
+                        type="button"
+                        className={styles.emptyCreateButton}
+                        disabled={!isConnected}
+                        onClick={() => onCreateNode('empty-graph')}
+                      >
+                        Create Node
+                      </button>
+                    )}
+                    {onImportGraph && (
+                      <button
+                        type="button"
+                        className={styles.emptySecondaryButton}
+                        disabled={!isConnected}
+                        onClick={onImportGraph}
+                      >
+                        Import Graph
+                      </button>
+                    )}
+                  </div>
                   {!isConnected && (
-                    <span className={styles.emptyHint}>Connect WebSocket to create a node.</span>
+                    <span className={styles.emptyHint}>Connect WebSocket to create or import a graph.</span>
                   )}
                 </>
               )}
@@ -681,6 +769,14 @@ export default function GraphView({
           {clipboardDragActive && (
             <div className={styles.clipboardDropOverlay}>
               <div className={styles.clipboardDropMessage}>Drop to paste workspace node</div>
+            </div>
+          )}
+
+          {fileDragActive && (
+            <div className={styles.fileDropOverlay}>
+              <div className={styles.fileDropMessage}>
+                {isConnected ? 'Drop to import the graph file as the draft' : 'Connect first to import a graph file'}
+              </div>
             </div>
           )}
 

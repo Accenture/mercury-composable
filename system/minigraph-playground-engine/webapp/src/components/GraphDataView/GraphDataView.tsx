@@ -36,9 +36,11 @@ interface GraphDataViewProps {
   onCopySuccess?:  () => void;
   /** Called when the clipboard write fails. */
   onCopyError?:    () => void;
+  /** The toolbar's Download button: saves the graph as `<graph-id>.json`. */
+  onDownload?:     () => void;
 }
 
-export default function GraphDataView({ graphData, graphName, onCopySuccess, onCopyError }: GraphDataViewProps) {
+export default function GraphDataView({ graphData, graphName, onCopySuccess, onCopyError, onDownload }: GraphDataViewProps) {
   const [expandMode, setExpandMode] = useState<ExpandMode>('all');
 
   if (!graphData) {
@@ -48,7 +50,7 @@ export default function GraphDataView({ graphData, graphName, onCopySuccess, onC
           <span className={styles.emptyIcon}>🕸️</span>
           <span>No graph data yet.</span>
           <span>
-            Pin a graph-link message in the Console to load the raw data here.
+            The raw JSON follows the live session graph.
           </span>
         </div>
       </div>
@@ -62,6 +64,7 @@ export default function GraphDataView({ graphData, graphName, onCopySuccess, onC
         graphName={graphName}
         onCopySuccess={onCopySuccess}
         onCopyError={onCopyError}
+        onDownload={onDownload}
         extraActions={
           <>
             <button

@@ -49,6 +49,10 @@ import { useSessionCollaboration } from '../session/useSessionCollaboration';
 import ClipboardSidebar from './ClipboardSidebar/ClipboardSidebar';
 import HelpBrowser from './HelpBrowser/HelpBrowser';
 import { ClipboardDuplicateDialog } from './ClipboardSidebar/ClipboardDuplicateDialog';
+import { GraphDownloadDialog } from './GraphFileDialogs/GraphDownloadDialog';
+import { GraphImportConfirmDialog } from './GraphFileDialogs/GraphImportConfirmDialog';
+import { useGraphFileImport } from '../hooks/useGraphFileImport';
+import { buildGraphFileText, graphFileName, saveTextFile, suggestGraphId, supportsSaveFilePicker } from '../utils/graphFile';
 import { type PlaygroundConfig } from '../config/playgrounds';
 import { resolveBundledHelpTopic } from '../utils/localHelpCommand';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
@@ -204,6 +208,38 @@ export default function Playground({ config }: PlaygroundProps) {
     handleOpenUploadPanel, handleCloseUploadPanel,
     handleUploadSuccess, handleUploadError, resetSuccessfulPaths,
   } = useMockUploadPanel({ addToast });
+
+  // ── Graph file import / download ─────────────────────────────────────────
+  // A `.json` graph model from the user's computer becomes the session draft
+  // through `POST /api/graph/import/{sessionId}`; the engine replays it to every
+  // member, and the console line "Graph model imported as draft" is what
+  // refreshes the view (useAutoGraphRefresh). Download writes `<graph-id>.json`.
+  const graphFileImport = useGraphFileImport({
+    sessionId: sessionCollaboration.state.sessionId,
+    connected: ws.connected,
+    hasGraph:  graphData !== null,
+    addToast,
+  });
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+  const handleOpenDownloadDialog = useCallback(() => {
+    if (!graphData) {
+      addToast('No graph to download yet.', 'info');
+      return;
+    }
+    setDownloadDialogOpen(true);
+  }, [graphData, addToast]);
+  const handleConfirmDownload = useCallback(async (graphId: string) => {
+    setDownloadDialogOpen(false);
+    if (!graphData) return;
+    try {
+      const outcome = await saveTextFile(buildGraphFileText(graphData, graphId), graphFileName(graphId));
+      if (outcome.saved) {
+        addToast(`Graph saved as ${outcome.fileName}`, 'success');
+      }
+    } catch (err) {
+      addToast(`Download failed: ${err instanceof Error ? err.message : String(err)}`, 'error');
+    }
+  }, [graphData, addToast]);
 
   // ── Auto-refresh on mutation commands ────────────────────────────────────
   // Graph mutations re-fetch the live session graph directly — no
@@ -741,6 +777,22 @@ export default function Playground({ config }: PlaygroundProps) {
     <div className={styles.wrapper}>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
 
+      {downloadDialogOpen && graphData && (
+        <GraphDownloadDialog
+          defaultGraphId={suggestGraphId(graphDisplayName)}
+          supportsFolderPicker={supportsSaveFilePicker()}
+          onConfirm={handleConfirmDownload}
+          onCancel={() => setDownloadDialogOpen(false)}
+        />
+      )}
+      {graphFileImport.pending && (
+        <GraphImportConfirmDialog
+          pending={graphFileImport.pending}
+          onReplace={graphFileImport.confirmPending}
+          onCancel={graphFileImport.cancelPending}
+        />
+      )}
+
       {connectionSession !== null && (
         <ConnectionPopover
           formState={connectionSession.formState}
@@ -970,6 +1022,9 @@ export default function Playground({ config }: PlaygroundProps) {
             onClipNode={supportsClipboard ? handleClipNode : undefined}
             onClipNodes={supportsClipboard ? handleClipNodes : undefined}
             onClipboardDrop={supportsClipboard ? handleClipboardDrop : undefined}
+            onImportFiles={supportsAuthoring ? graphFileImport.importFiles : undefined}
+            onImportGraph={supportsAuthoring ? graphFileImport.openFilePicker : undefined}
+            onDownloadGraph={tabs.includes('graph') ? handleOpenDownloadDialog : undefined}
             isConnected={ws.connected}
             supportsAuthoring={supportsAuthoring}
             onCreateNode={supportsAuthoring ? graphAuthoring.openCreateNode : undefined}

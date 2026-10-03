@@ -39,7 +39,7 @@ The essentials:
 | Inspect state | `inspect <key>` (e.g. `inspect output`, `inspect model.sum`) |
 | Describe | `describe graph` · `describe node <name>` · `describe skill <route>` |
 | List | `list nodes` · `list connections` · `seen` |
-| Persist | `export graph as <name>` · `import graph from <name>` |
+| Persist | `export graph as <name>` · `import graph from <name>` · in the UI: **Download** (`<graph-id>.json` to your computer) and **Import Graph** or a `.json` file dropped on the canvas (`POST /api/graph/import/{id}`) |
 | Help | `help` · `help <topic>` |
 
 A typical loop — build, seed, dry-run, inspect:
@@ -82,7 +82,9 @@ When you subscribe to a primary session, commands mirror **both ways** — every
 `session` topology commands propagates to the primary and all subscribers alike, so all parties
 (human or AI) are equal co-authors of one shared model. A mock-data upload (`POST /api/mock/{id}`)
 propagates the same way, into every member's graph instance, so a dry-run started by any member runs
-with the same `input.body`. (You can't subscribe to yourself or to a
+with the same `input.body`; a graph model imported from a file (`POST /api/graph/import/{id}`, the
+Graph view's Import Graph button or a dropped `.json` file) replaces every member's draft the same
+way. (You can't subscribe to yourself or to a
 non-primary session; a primary session has nothing to unsubscribe.)
 
 **An AI agent asked to host a session** should run the shipped session broker

@@ -38,6 +38,12 @@ interface RightPanelProps {
   /** Callback for "Clip selected nodes to Workspace" from a multi-node context menu. */
   onClipNodes?:            (items: GraphClipItem[]) => void;
   onClipboardDrop?:        (itemId: string) => void;
+  /** A graph model from a `.json` file dropped on the canvas (one file at a time). */
+  onImportFiles?:          (files: FileList) => void;
+  /** The "Import Graph" button: opens the file picker. */
+  onImportGraph?:          () => void;
+  /** The Download button on the Graph and Raw toolbars: saves the graph as `<graph-id>.json`. */
+  onDownloadGraph?:        () => void;
   isConnected:             boolean;
   supportsAuthoring?:      boolean;
   onCreateNode?:           (source: 'empty-graph' | 'pane-context-menu') => void;
@@ -83,6 +89,9 @@ export default function RightPanel({
   onClipNode,
   onClipNodes,
   onClipboardDrop,
+  onImportFiles,
+  onImportGraph,
+  onDownloadGraph,
   isConnected,
   supportsAuthoring,
   onCreateNode,
@@ -149,7 +158,7 @@ export default function RightPanel({
             className={`${styles.tab}${activeTab === 'graph-data' ? ` ${styles.tabActive}` : ''}`}
             onClick={() => onTabChange('graph-data')}
           >
-            Graph Data (Raw)
+            Raw
           </button>
         )}
       </div>
@@ -193,6 +202,9 @@ export default function RightPanel({
               onClipNode={onClipNode}
               onClipNodes={onClipNodes}
               onClipboardDrop={onClipboardDrop}
+              onImportFiles={onImportFiles}
+              onImportGraph={onImportGraph}
+              onDownload={onDownloadGraph}
               isActive={activeTab === 'graph'}
               isConnected={isConnected}
               supportsAuthoring={supportsAuthoring}
@@ -208,7 +220,7 @@ export default function RightPanel({
         </div>
       )}
 
-      {/* Graph Data tab body — always mounted when enabled; shows pretty-printed raw JSON */}
+      {/* Raw tab body — always mounted when enabled; shows pretty-printed raw JSON */}
       {tabs.includes('graph-data') && (
         <div
           role="tabpanel"
@@ -221,6 +233,7 @@ export default function RightPanel({
             graphName={graphName}
             onCopySuccess={onGraphDataCopySuccess}
             onCopyError={onGraphDataCopyError}
+            onDownload={onDownloadGraph}
           />
         </div>
       )}

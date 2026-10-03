@@ -12,9 +12,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Each change merged to `main` after v4.12.20 is listed here; it moves under its release heading when the version is cut.
 
+### Added
+
+1. **The MiniGraph Playground imports a graph model from a file on your computer.** The Graph view gains an **Import Graph**
+   button (in the toolbar and on the empty canvas), and a `.json` graph file dragged from the desktop or Finder onto the canvas
+   imports the same way: the model becomes the session's draft for review and editing. Both go through the new dev-mode endpoint
+   `POST /api/graph/import/{id}` (service `import.graph.content`), which the starter template and the examples now list in
+   `rest.yaml` beside `upload.mock.content`. The file is validated by the UI and again by the engine: a JSON object whose only
+   top-level sections are `nodes` (mandatory) and `connections` (optional, a work in progress may have none); any other section is
+   refused by name, and the engine's own importer refuses a node without alias or types. CompileGraph remains the quality gate at
+   deployment. In a shared session the import travels like a command - every member's draft is replaced and every console prints
+   `Graph model imported as draft` - and the UI asks before replacing a loaded graph, because an import cannot be undone.
+   Upgrade note: a Layer 3 application that wants the Playground's Import Graph button adds the `import.graph.content` route to its
+   `rest.yaml` (see the guide's rest.yaml excerpt); nothing else changes.
+
+2. **The MiniGraph Playground downloads the graph as `<graph-id>.json`.** A **Download** button beside Copy (Graph and Raw views)
+   asks for the graph id and saves the model to your computer; the extension is always `.json`, and the root node's name in the
+   file becomes the graph id, as `export graph as` does, so the file and the model inside it agree. Chromium browsers open their
+   "save as" dialog for the folder; other browsers save to the download folder. The downloaded file imports again through Import
+   Graph or a drop on the canvas.
+
 ### Changed
 
-1. **The MiniGraph Playground's AI nodes point at the LLM helper app.** `llm.chat` (the `support-triage` graph) and `llm.stream`
+3. **The MiniGraph Playground's AI nodes point at the LLM helper app.** `llm.chat` (the `support-triage` graph) and `llm.stream`
    (the `/api/llm/stream` relay) are functions in the new LLM helper of the Python and Node.js packs (`examples/llm-helper`,
    on the Anthropic SDK), not in their demo apps; the ports and the route map are unchanged, so nothing to reconfigure. The
    relay's "not configured" 503 now names the helper and its credential. The engine is unchanged and holds no credential:
@@ -22,7 +42,7 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    model, Opus 5.5, thinks before it answers and its thinking tokens count against `max_tokens`, so a tight budget can end
    with no text.
 
-2. **The MiniGraph Playground webapp is single-sourced for both engines, and its help pages are consolidated.** The Rust repo's
+4. **The MiniGraph Playground webapp is single-sourced for both engines, and its help pages are consolidated.** The Rust repo's
    verbatim copy of the webapp is retired: `npm run release:rust` in `system/minigraph-playground-engine/webapp` (or
    `release:all`, both engines from one build) deploys the bundle and the help pages into the `mercury` repo checked out beside
    this one (`MERCURY_RUST_REPO` overrides the location). The help pages are one set now, merged from both repos' versions: the
@@ -33,7 +53,7 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    runs once (`run` repeats on one instance, model values persist across runs, `instantiate` is the reset). Tutorial 12's title
    read "Tutorial 10". The bundle is regenerated with the merged help.
 
-3. **The MiniGraph Playground's run controls are three explicit steps: Instantiate, Upload (optional) and Run.** Instantiate used
+5. **The MiniGraph Playground's run controls are three explicit steps: Instantiate, Upload (optional) and Run.** Instantiate used
    to request the mock-input form as soon as the instance existed, and in a shared session the engine replays that request to
    every member, so one member's click opened the "Upload Mock Data" form on everyone's screen. Now Instantiate only creates the
    instance (and, while an instance exists, creates a fresh one), the new Upload button opens the JSON form for your own session
@@ -43,50 +63,55 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    common convention and need no reminder, and the console's connection rows show the local time as `HH:MM:SS` (the `session`
    command still shows the full start time). The bundle is regenerated for both engines.
 
+6. **The MiniGraph Playground's "Graph Data (Raw)" tab is named "Raw", and a corrupt graph model reports why it was not
+   imported.** The shorter label leaves room on the tab strip. `import graph from` (and the new file import) used to fail silently on
+   a model the importer rejects, leaving an empty draft; the console now prints `Graph model not imported - <reason>`, on both
+   engines.
+
 ### Documentation
 
-4. **The LLM helper certification report** (`docs/test-reports/llm-helper-certification.md`): Java and Rust, each in front of the
+7. **The LLM helper certification report** (`docs/test-reports/llm-helper-certification.md`): Java and Rust, each in front of the
    Python and the Node.js helper, driven through a streaming service, an Event Script flow and two graphs with real Claude
    calls. It shows that every token batch the helper forwards reaches the engine edge as its own frame, that the cadence of
    progressive rendering is the API's and differs by model (Haiku streams continuously, Opus in bursts about every 600 ms),
    and that the error contract holds on the real SDKs.
-5. The AI agent guide's boilerplate manifest no longer calls `flows/flow-11.yml` a support-triage flow: it is Tutorial 11's echo
+8. The AI agent guide's boilerplate manifest no longer calls `flows/flow-11.yml` a support-triage flow: it is Tutorial 11's echo
    flow, the `graph.extension` target (`flow://flow-11`), and a flow's `flows.yaml` entry goes with its file.
 
-6. **The Playground webapp's technical documentation is regenerated from the code** in
+9. **The Playground webapp's technical documentation is regenerated from the code** in
    `system/minigraph-playground-engine/webapp/docs/`: architecture, the backend protocol, components, hooks and state,
    build/test/deploy and extension recipes, replacing the pre-graduation specs. The webapp's scoped memory bank is retired; its
    session memory and open threads live at the repository root.
 
 ### Fixed
 
-7. **The MiniGraph Playground example deploys tutorial 13.** The example's manifest (`graphs.yaml`) listed tutorials 1 to 12 and 14.
+10. **The MiniGraph Playground example deploys tutorial 13.** The example's manifest (`graphs.yaml`) listed tutorials 1 to 12 and 14.
    Tutorial 13 was left out while it needed a test fixture function, and stayed out after it became an `async.http.request` client
    of the app's own dev mock endpoint (Java PR #267). All fourteen tutorials and `support-triage` now compile (15 graphs) and answer
    at `POST /api/graph/{graph_id}`; `GraphTests` runs tutorial 13 and its unknown-profile error. The README's "model answers for
    tutorials 1 to 11" now says 1 to 14.
-8. **The MiniGraph Playground's help describes `CONDITION` and `DECIMAL`.** The help pages are compiled into the committed webapp
+11. **The MiniGraph Playground's help describes `CONDITION` and `DECIMAL`.** The help pages are compiled into the committed webapp
    bundle, which was last regenerated on 2026-09-23, so `help graph-math` still listed five statement types and said nothing of
    `CONDITION` (#462), the closed expression dialect (#467), `DECIMAL` (#471) or the money guidance (#480). The bundle is regenerated
    with `npm run release` in the webapp: the help now lists seven statement types, shows `DECIMAL` and `CONDITION` in its property
    list and gives the syntax of both. Nothing else in the bundle changed: a rebuild of the unchanged sources reproduces every other
    asset, source maps included, byte for byte.
-9. **The MiniGraph Playground opens with the console at one third of the width.** The graph view and help take the other two
+12. **The MiniGraph Playground opens with the console at one third of the width.** The graph view and help take the other two
    thirds; the console opened at 40%. The split is no longer restored from an earlier session: a drag saved in the browser won at
    the next page load, so an old drag looked like a wrong default, while toggling the console reset it. A drag still holds while
    you work, until the console is toggled or a form takes its place. The node editor and the mock-input panel keep their 30%.
-10. **`describe skill` for a built-in skill opens the skill's page in the Playground's help panel.** The engine answers
+13. **`describe skill` for a built-in skill opens the skill's page in the Playground's help panel.** The engine answers
    `describe skill graph.math` with the `graph-math` help page, and the console cannot render its markdown. The Playground now shows
    that page in the help panel, as it does for `help graph-math`, and the console keeps only the command. `describe graph`,
    `describe node` and `describe connection` still answer in the console, and so does a skill without a bundled page. The engine
    and the companion API are unchanged: `describe skill` still returns the page as text.
-11. **A subscribed MiniGraph Playground session can instantiate and run the graph.** Subscribed sessions are equal partners, and the
+14. **A subscribed MiniGraph Playground session can instantiate and run the graph.** Subscribed sessions are equal partners, and the
    engine already runs a subscriber's command through the primary in every member's session, but the Playground disabled
    **Instantiate** and **Run** in a subscribed session ("Run the graph from the host session"), so a subscriber could not start a
    graph instance or upload its mock input. Both buttons now work in every session. Subscribing or unsubscribing still resets the run controls. (The per-member
    mock input and the prompt every member received were reworked the same day: the run controls became three steps and an upload now
    loads every member's instance; see the items below.)
-12. **Pasting a workspace-clipboard node into the MiniGraph Playground keeps scalar properties scalar.** The paste rebuilt the
+15. **Pasting a workspace-clipboard node into the MiniGraph Playground keeps scalar properties scalar.** The paste rebuilt the
    node with `key[]=value` for every property, and the engine appends on the `[]` signature, so a pasted node's `skill`,
    `description` and every other scalar arrived as a one-element list (`"skill": ["graph.math"]`), which the graph traveler
    reads as the route `[graph.math]`. The paste now writes the node the way the engine's own `edit node` prints it: `key=value`
@@ -94,7 +119,7 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    value, through the same conversion and command builder as the node editor and undo. A node the grammar cannot carry (an
    empty list or map, a value containing `'''`, more than one type) is reported as "Paste failed" instead of being sent. The
    webapp bundle is regenerated for both engines.
-13. **A mock-data upload reaches every member of a collaborative MiniGraph Playground session.** `POST /api/mock/{id}` loaded the
+16. **A mock-data upload reaches every member of a collaborative MiniGraph Playground session.** `POST /api/mock/{id}` loaded the
    payload into the uploader's instance only, so another member's replayed `run` executed without it and aborted. The upload now
    travels like a command: the primary loads it and replays it into every subscriber's instance, a subscriber's upload goes through
    the primary, and every member's console prints `Mock data loaded into 'input.body' namespace`. A session without a graph
