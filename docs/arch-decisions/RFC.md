@@ -47,15 +47,15 @@
 the sprint plan are in `draft-design-specs/graph-set-packaging-and-deployment.md`. (1) A command-line packager — `pack`,
 `unpack`, `inspect` — that is a thin front over the engine's own packager in each repo (Java `helpers/graph-packager`, Rust
 `tools/graph-packager`), never injects a timestamp, and runs the gate's static checks at pack time; signing and verification
-stay a separate utility, with a detached `<set>.mpk.sig` as the shared convention. (2) A Playground panel that assembles a set
-from dropped or imported graph JSON files with manifest key-values and (3) downloads `<set>.mpk`, packing on the engine through a
+stay a separate utility, with a detached `<set>.pack.sig` as the shared convention. (2) A Playground panel that assembles a set
+from dropped or imported graph JSON files with manifest key-values and (3) downloads `<set>.pack`, packing on the engine through a
 dev-mode `POST /api/graph/pack` (and inspecting through `/unpack`) rather than in the browser. (4) The deployment manifest
 gains `sets` (packed files read from the manifest's `location`) and `unpack` (a `file:/` folder with read and write access —
 `classpath:` is rejected, Eric's ruling): before the gate, each set is unpacked into readable JSON files and a **generated
 manifest** in that folder, which compiles as the next manifest in sequence — so the automation list stays a list of manifests
 (the allowlist of ADR-0011) and the later-wins rule of 2026-09-25 applies unchanged; a set registers all of its graphs or none; a
 duplicate involving a set logs an ERROR; names are validated before any path is built. A decision would commit the project to the
-`.mpk` artifact and its entry convention (`<graph-id>.json`, root name = id, optional `graph_id` entry point), to the `sets` +
+`.pack` artifact and its entry convention (`<graph-id>.json`, root name = id, optional `graph_id` entry point), to the `sets` +
 `unpack` manifest schema, to all-or-none registration per set, and to the generated-manifest mechanism, on both engines.
 
 **Options.** *(a) Generated manifest in the unpack folder, compiled in sequence* — reuses every manifest mechanism, leaves
@@ -66,7 +66,17 @@ browser* — a third implementation of the wire contract to keep byte-identical.
 gate, all-or-none, log levels, `graph_id`, name agreement, where packing happens, module homes, inspect in the Playground) are
 tabled in the spec with recommendations.
 
-**Resolution.** Open.
+**Settled (Eric, 2026-10-03).** The artifact is `<set>.pack` (D1, simplicity); D2 to D9 as recommended: the gate's static checks
+run at pack time, a set registers all of its graphs or none, a duplicate involving a set logs an ERROR while the loose-manifest
+override keeps its WARN, `graph_id` is an optional entry point verified against the entries, the root node's name must equal
+the entry's id at pack and at unpack, the panel packs on the engine through `POST /api/graph/pack`, the module homes are
+`helpers/graph-packager` (Java) and `tools/graph-packager` (Rust), and inspecting a dropped `.pack` in the Playground is in
+scope. The open questions: `pack --from-manifest <graphs.yaml>` is in; the generated manifest is documented in the open as the
+implicit next entry of the automation list; a set's `version` shows in `list graphs` and in the deploy `INFO` line. `unpack`
+is a `file:/` folder with read and write access, `classpath:` rejected. Promotion to an ADR follows the implementation
+(the RFC-0001/RFC-0002 method: implement on a branch, promote after review and green CI).
+
+**Resolution.** Open — implementation in the next sprint (thread `graph-set-packaging`).
 
 ---
 
