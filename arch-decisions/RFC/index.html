@@ -2187,6 +2187,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rfc-0005-graph-sets-a-packunpack-cli-a-playground-packaging-panel-and-sets-unpack-in-the-deployment-manifest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0005 — Graph sets: a pack/unpack CLI, a Playground packaging panel, and sets + unpack in the deployment manifest
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rfc-0004-a-bracket-lookup-plugin-for-tariff-tables-fdecimalbracket" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2911,6 +2922,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rfc-0005-graph-sets-a-packunpack-cli-a-playground-packaging-panel-and-sets-unpack-in-the-deployment-manifest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0005 — Graph sets: a pack/unpack CLI, a Playground packaging panel, and sets + unpack in the deployment manifest
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rfc-0004-a-bracket-lookup-plugin-for-tariff-tables-fdecimalbracket" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3010,6 +3032,42 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>**Options.** The alternatives on the table, with their trade-offs.
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>**Resolution.** Empty while open; `Promoted → ADR-NNNN (date)` or `Withdrawn (date): &lt;reason&gt;`.
 </code></pre></div>
+<hr />
+<h2 id="rfc-0005-graph-sets-a-packunpack-cli-a-playground-packaging-panel-and-sets-unpack-in-the-deployment-manifest">RFC-0005 — Graph sets: a pack/unpack CLI, a Playground packaging panel, and <code>sets</code> + <code>unpack</code> in the deployment manifest<a class="headerlink" href="#rfc-0005-graph-sets-a-packunpack-cli-a-playground-packaging-panel-and-sets-unpack-in-the-deployment-manifest" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-10-03 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>graph-set-packaging</code></p>
+<!-- id: rfc-0005 | status: open | thread: graph-set-packaging -->
+
+<p><strong>Proposal.</strong> The first consumer of the canonical packager (ADR-0026), from Eric's design notes of 2026-10-03; the review and
+the sprint plan are in <code>draft-design-specs/graph-set-packaging-and-deployment.md</code>. (1) A command-line packager — <code>pack</code>,
+<code>unpack</code>, <code>inspect</code> — that is a thin front over the engine's own packager in each repo (Java <code>helpers/graph-packager</code>, Rust
+<code>tools/graph-packager</code>), never injects a timestamp, and runs the gate's static checks at pack time; signing and verification
+stay a separate utility, with a detached <code>&lt;set&gt;.pack.sig</code> as the shared convention. (2) A Playground panel that assembles a set
+from dropped or imported graph JSON files with manifest key-values and (3) downloads <code>&lt;set&gt;.pack</code>, packing on the engine through a
+dev-mode <code>POST /api/graph/pack</code> (and inspecting through <code>/unpack</code>) rather than in the browser. (4) The deployment manifest
+gains <code>sets</code> (packed files read from the manifest's <code>location</code>) and <code>unpack</code> (a <code>file:/</code> folder with read and write access —
+<code>classpath:</code> is rejected, Eric's ruling): before the gate, each set is unpacked into readable JSON files and a <strong>generated
+manifest</strong> in that folder, which compiles as the next manifest in sequence — so the automation list stays a list of manifests
+(the allowlist of ADR-0011) and the later-wins rule of 2026-09-25 applies unchanged; a set registers all of its graphs or none; a
+duplicate involving a set logs an ERROR; names are validated before any path is built. A decision would commit the project to the
+<code>.pack</code> artifact and its entry convention (<code>&lt;graph-id&gt;.json</code>, root name = id, optional <code>graph_id</code> entry point), to the <code>sets</code> +
+<code>unpack</code> manifest schema, to all-or-none registration per set, and to the generated-manifest mechanism, on both engines.</p>
+<p><strong>Options.</strong> <em>(a) Generated manifest in the unpack folder, compiled in sequence</em> — reuses every manifest mechanism, leaves
+readable files for operators and for <code>import graph from</code>. <strong>Recommended.</strong> <em>(b) Compile the unpacked maps from memory, no files</em>
+— simpler, but the operator cannot read what was deployed and the import fallback cannot find it; Eric's concept asks for
+files. <em>(c) Treat the unpack folder as a bare deployed location</em> — breaks the manifest-as-allowlist rule. <em>(d) Pack in the
+browser</em> — a third implementation of the wire contract to keep byte-identical. The nine open choices (extension, pack-time
+gate, all-or-none, log levels, <code>graph_id</code>, name agreement, where packing happens, module homes, inspect in the Playground) are
+tabled in the spec with recommendations.</p>
+<p><strong>Settled (Eric, 2026-10-03).</strong> The artifact is <code>&lt;set&gt;.pack</code> (D1, simplicity); D2 to D9 as recommended: the gate's static checks
+run at pack time, a set registers all of its graphs or none, a duplicate involving a set logs an ERROR while the loose-manifest
+override keeps its WARN, <code>graph_id</code> is an optional entry point verified against the entries, the root node's name must equal
+the entry's id at pack and at unpack, the panel packs on the engine through <code>POST /api/graph/pack</code>, the module homes are
+<code>helpers/graph-packager</code> (Java) and <code>tools/graph-packager</code> (Rust), and inspecting a dropped <code>.pack</code> in the Playground is in
+scope. The open questions: <code>pack --from-manifest &lt;graphs.yaml&gt;</code> is in; the generated manifest is documented in the open as the
+implicit next entry of the automation list; a set's <code>version</code> shows in <code>list graphs</code> and in the deploy <code>INFO</code> line. <code>unpack</code>
+is a <code>file:/</code> folder with read and write access, <code>classpath:</code> rejected. Promotion to an ADR follows the implementation
+(the RFC-0001/RFC-0002 method: implement on a branch, promote after review and green CI).</p>
+<p><strong>Resolution.</strong> Open — implementation in the next sprint (thread <code>graph-set-packaging</code>).</p>
 <hr />
 <h2 id="rfc-0004-a-bracket-lookup-plugin-for-tariff-tables-fdecimalbracket">RFC-0004 — A bracket-lookup plugin for tariff tables (<code>f:decimalBracket</code>)<a class="headerlink" href="#rfc-0004-a-bracket-lookup-plugin-for-tariff-tables-fdecimalbracket" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Withdrawn · <strong>Raised:</strong> 2026-10-01 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> none</p>
