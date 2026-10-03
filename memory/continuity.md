@@ -464,7 +464,7 @@
   <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-02 | uses: 2 | tier: active | origin: 2026-10-02-175751 -->
 
 - **The Playground's dry-run lifecycle is three explicit steps - Instantiate, Upload (optional), Run - and a mock-data upload loads every member's instance (Eric's design, 2026-10-02;
-  PR #498, the Rust twin mercury #349, Increment 154).** In a shared session one member's Instantiate used to open the "Upload Mock Data" form on every member's screen: the UI sent
+  PR #498 squash `ce0e7155` and the Rust twin mercury #349 merge `278bb023`, Increment 154; both MERGED 2026-10-03 06:00Z).** In a shared session one member's Instantiate used to open the "Upload Mock Data" form on every member's screen: the UI sent
   `upload mock data` as soon as the instance existed, the engine replays every command to every member, and each member's own invitation line opened its panel. Now Instantiate only
   creates the instance (and a fresh one while one exists), the toolbar's Upload opens the form for the clicking session's own `/api/mock/{sessionId}` with no console command (an
   `upload.invitation` line never opens a panel by itself; `useAutoMockUpload` is gone), and Run runs with whatever input the instance holds - tutorial 1 needs none. **Engine rule:**
