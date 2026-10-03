@@ -213,10 +213,13 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     return msgIdRefs.current[path];
   };
 
+  // The lifecycle rows (connected, disconnected, errors) show the local
+  // wall-clock time only, HH:MM:SS: the full start time is one `session`
+  // command away, and a date on every row only made the console busier.
   const getTimestamp = () => {
-    const s = new Date().toString();
-    const gmt = s.indexOf("GMT");
-    return gmt > 0 ? s.substring(0, gmt).trim() : s;
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
   };
 
   const eventWithTimestamp = (type: string, message: string) =>

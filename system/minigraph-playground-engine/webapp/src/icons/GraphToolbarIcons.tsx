@@ -39,3 +39,12 @@ export function CopyIcon(props: ToolbarIconProps) {
     </svg>
   );
 }
+
+export function UploadIcon(props: ToolbarIconProps) {
+  return (
+    <svg {...sharedProps} {...props}>
+      <path d="M8 10.5V2.75M4.75 6 8 2.75 11.25 6" />
+      <path d="M2.75 10.75v1.5a1 1 0 0 0 1 1h8.5a1 1 0 0 0 1-1v-1.5" />
+    </svg>
+  );
+}

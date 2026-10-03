@@ -202,8 +202,8 @@ export default function Playground({ config }: PlaygroundProps) {
   const {
     uploadPanelPath, successfulUploadPaths,
     handleOpenUploadPanel, handleCloseUploadPanel,
-    handleCloseUploadPath, handleUploadSuccess, handleUploadError, resetSuccessfulPaths,
-  } = useMockUploadPanel({ bus, addToast });
+    handleUploadSuccess, handleUploadError, resetSuccessfulPaths,
+  } = useMockUploadPanel({ addToast });
 
   // ── Auto-refresh on mutation commands ────────────────────────────────────
   // Graph mutations re-fetch the live session graph directly — no
@@ -636,7 +636,6 @@ export default function Playground({ config }: PlaygroundProps) {
     isPrimary: sessionCollaboration.isPrimary,
     sendRawText: ws.sendRawText,
     addToast,
-    onWorkflowInputInvalidated: handleCloseUploadPath,
   });
 
   // ── Saved graph workflow ──────────────────────────────────────────────────
@@ -725,19 +724,18 @@ export default function Playground({ config }: PlaygroundProps) {
     resetSaveName();
   }, [ws.clearMessages, setGraphData, resetSuccessfulPaths, resetSaveName]);
 
-  const handleUploadPanelSuccess = useCallback((responseBody: string, uploadPath: string) => {
-    handleUploadSuccess(responseBody);
-    graphRun.handleInputUploadSuccess(uploadPath);
-  }, [graphRun.handleInputUploadSuccess, handleUploadSuccess]);
-
-  const handleUploadPanelClose = useCallback((uploadPath: string) => {
-    handleCloseUploadPanel();
-    graphRun.handleInputCancelled(uploadPath);
-  }, [graphRun.handleInputCancelled, handleCloseUploadPanel]);
-
-  const isGraphRunInputPanel = uploadPanelPath !== null
-    && graphRun.isWorkflowInputPanel
-    && graphRun.workflowUploadPath === uploadPanelPath;
+  // The toolbar's Upload step opens the mock-input form for THIS session only:
+  // the path is this session's own mock endpoint and no console command is
+  // sent, so the other members of a collaborative session see nothing until
+  // the engine confirms the upload in every member's console.
+  const handleOpenMockUpload = useCallback(() => {
+    const sessionId = sessionCollaboration.state.sessionId;
+    if (sessionId === null) {
+      addToast('Could not open the upload form because the session id is not known yet.', 'error');
+      return;
+    }
+    handleOpenUploadPanel(`/api/mock/${sessionId}`);
+  }, [sessionCollaboration.state.sessionId, handleOpenUploadPanel, addToast]);
 
   return (
     <div className={styles.wrapper}>
@@ -799,7 +797,7 @@ export default function Playground({ config }: PlaygroundProps) {
                 return;
               }
               if (uploadPanelPath !== null) {
-                handleUploadPanelClose(uploadPanelPath);
+                handleCloseUploadPanel();
                 setConsoleOpen(true);
                 return;
               }
@@ -911,17 +909,11 @@ export default function Playground({ config }: PlaygroundProps) {
                 <MockUploadPanel
                   key={uploadPanelPath}
                   uploadPath={uploadPanelPath}
-                  onSuccess={handleUploadPanelSuccess}
-                  onClose={handleUploadPanelClose}
+                  onSuccess={handleUploadSuccess}
+                  onClose={handleCloseUploadPanel}
                   onError={handleUploadError}
-                  title={isGraphRunInputPanel ? '▶ Mock Graph Input' : undefined}
-                  description={
-                    isGraphRunInputPanel
-                      ? 'Add the JSON body and keep this graph instantiated for a later run.'
-                      : undefined
-                  }
-                  inputPathHints={isGraphRunInputPanel ? graphRun.inputBodyPaths : undefined}
-                  submitLabel={isGraphRunInputPanel ? 'Upload & Instantiate' : undefined}
+                  description="The JSON becomes the instance's input.body. In a shared session every member's instance receives it."
+                  inputPathHints={graphRun.inputBodyPaths}
                 />
               ) : (
                 <LeftPanel
@@ -966,9 +958,12 @@ export default function Playground({ config }: PlaygroundProps) {
             graphRunControls={supportsGraphRun ? {
               phase: graphRun.phase,
               canInstantiate: graphRun.canInstantiate,
+              canUpload: graphRun.canUpload,
               canRun: graphRun.canRun,
               disabledReason: graphRun.disabledReason,
+              inputBodyPaths: graphRun.inputBodyPaths,
               onInstantiate: graphRun.instantiateGraph,
+              onUpload: handleOpenMockUpload,
               onRun: graphRun.runGraph,
             } : undefined}
             isGraphRefreshing={isRefreshing}

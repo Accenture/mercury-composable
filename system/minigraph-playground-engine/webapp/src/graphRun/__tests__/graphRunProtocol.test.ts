@@ -46,7 +46,6 @@ describe('graph run protocol classification', () => {
   it('centralizes the canonical commands sent by the UI', () => {
     expect(GRAPH_RUN_COMMANDS).toEqual({
       instantiate: 'instantiate graph',
-      requestInputUpload: 'upload mock data',
       run: 'run',
     });
   });

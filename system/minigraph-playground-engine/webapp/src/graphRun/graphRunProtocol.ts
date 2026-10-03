@@ -1,6 +1,5 @@
 export const GRAPH_RUN_COMMANDS = {
   instantiate: 'instantiate graph',
-  requestInputUpload: 'upload mock data',
   run: 'run',
 } as const;
 

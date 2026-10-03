@@ -71,7 +71,7 @@ the order they run (`src/protocol/classifier.ts`):
 | 1 | `lifecycle` | is JSON with a string `type` (`info`, `error`, `ping`, `welcome` are the known ones); carries `message` and `time`. Returns early. | Console icon rows |
 | 2 | `json.response` | is any other JSON object or array (JSON-Path results, `inspect` output such as `{"output": …}`). Returns early. | Console JSON tree; ➡️ send to JSON-Path |
 | 3 | `payload.large` | matches `Large payload (<bytes>) -> GET /api/inspect/<session>/<key>` | `useLargePayloadDownload` fetches it and appends the JSON inline |
-| 4 | `upload.invitation` | matches `You may upload … -> POST /api/mock/<session>` (the reply to `upload mock data`) | `useMockUploadPanel` / `useAutoMockUpload` open the upload form; `useGraphRunWorkflow` claims it during Instantiate |
+| 4 | `upload.invitation` | matches `You may upload … -> POST /api/mock/<session>` (the reply to `upload mock data`) | The console row gets its "⬆ Upload JSON…" re-open button; nothing opens by itself — in a shared session the replayed invitation reaches every member |
 | 5 | `upload.contentPath` | contains `/api/json/content/<id>` (`Please upload XML/JSON text to …`) | `useWebSocket` POSTs the payload (JSON-Path) |
 | 6 | `graph.link` | is plain text containing `/api/graph/model/<id>` — `Graph with N nodes described in /api/graph/model/ws-…/n` after a mutation, or `Graph exported to …` ⏎ `Described in /api/graph/model/{name}/n` | The console row becomes a link: click re-fetches the live graph and opens the Graph tab |
 | 6a | `graph.exported` | is a graph link that also contains `Graph exported to ` (the name is the 5th path segment) | `useGraphSaveName`, `useSavedGraphWorkflow` |
@@ -113,7 +113,7 @@ and `/env` to port 8085).
 | Endpoint | Method | Used by | Notes |
 |---|---|---|---|
 | `/api/graph/session/{sessionId}` | GET | `useGraphData` | The live draft graph as JSON (`{nodes, connections}`, below). 404 for an unknown or closed session; zero nodes means "no graph yet" — both are quiet, the canvas shows its empty state. Re-fetched after every mutation. |
-| `/api/mock/{sessionId}` | POST, `application/json` | `MockUploadPanel` / `useMockUpload` | The mock `input.body` of the current graph instance; the engine confirms in the console with `Mock data loaded into 'input.body' namespace`. The path comes from the `upload.invitation` line and is bound to the session that asked. |
+| `/api/mock/{sessionId}` | POST, `application/json` | `MockUploadPanel` / `useMockUpload` | The mock `input.body` of the current graph instance; the engine confirms in the console with `Mock data loaded into 'input.body' namespace`. The toolbar's Upload step builds the path from this session's id; a console invitation row carries it too. The engine loads the payload into every member's instance of a collaborative session. |
 | `/api/json/content/{id}` | POST, `application/json` | `useWebSocket` (JSON-Path) | The payload for the JSON-Path session after an `upload` command; the path comes from the `upload.contentPath` line. The body is re-serialised through `JSON.parse` first, so invalid JSON is refused client-side. |
 | `/api/inspect/{sessionId}/{key}` | GET | `useLargePayloadDownload` | A namespace value too large for the console (the `Large payload (N) -> GET …` line); appended inline as a JSON row, and the JSON-Path playground can receive it. |
 | `/api/graph/model/{name}/{n}` | GET | humans | The described temp model behind a console graph link (`export graph`, `describe graph`). The UI never renders from it. |

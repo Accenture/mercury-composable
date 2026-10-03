@@ -80,7 +80,9 @@ session reset                 # clear the primary session; subscribers keep thei
 
 When you subscribe to a primary session, commands mirror **both ways** — every command except the
 `session` topology commands propagates to the primary and all subscribers alike, so all parties
-(human or AI) are equal co-authors of one shared model. (You can't subscribe to yourself or to a
+(human or AI) are equal co-authors of one shared model. A mock-data upload (`POST /api/mock/{id}`)
+propagates the same way, into every member's graph instance, so a dry-run started by any member runs
+with the same `input.body`. (You can't subscribe to yourself or to a
 non-primary session; a primary session has nothing to unsubscribe.)
 
 **An AI agent asked to host a session** should run the shipped session broker

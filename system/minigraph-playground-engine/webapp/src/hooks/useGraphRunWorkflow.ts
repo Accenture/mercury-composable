@@ -11,22 +11,34 @@ import {
 
 export const GRAPH_RUN_SETUP_TIMEOUT_MS = 10_000;
 
+/**
+ * The run lifecycle is three explicit steps — Instantiate, Upload (optional),
+ * Run — and this hook mirrors only the two the engine acknowledges:
+ * `instantiate graph` and `run`. Uploading mock input is a local action
+ * (the Playground opens the upload form for this session's own
+ * `/api/mock/{sessionId}` endpoint); the engine confirms the upload in the
+ * console of every member of a collaborative session, and nothing about the
+ * run phase changes, so a graph that needs no input (tutorial 1) runs right
+ * after Instantiate.
+ */
 export type GraphRunPhase =
   | 'idle'
   | 'instantiating'
-  | 'requesting-input'
-  | 'awaiting-input'
   | 'ready'
   | 'running'
   | 'outcome-uncertain';
 
-type GraphRunIntent = 'instantiate-only' | null;
-type PendingSignal = 'instance-created' | 'upload-invitation' | 'run-terminal' | null;
+type PendingSignal = 'instance-created' | 'run-terminal' | null;
 
 interface WorkflowState {
   phase: GraphRunPhase;
-  intent: GraphRunIntent;
   pendingSignal: PendingSignal;
+  /**
+   * True when this session's own button sent the outstanding command. A typed
+   * console command, or one replayed from another member of a collaborative
+   * session, is mirrored into the phase without a toast.
+   */
+  ownAction: boolean;
   /** The graph changed while an earlier backend command was still outstanding. */
   invalidated: boolean;
 }
@@ -47,8 +59,6 @@ export interface UseGraphRunWorkflowOptions {
   isPrimary: boolean;
   sendRawText: (text: string) => boolean;
   addToast: (message: string, type?: ToastType) => void;
-  /** Close the upload panel only when it still belongs to this workflow path. */
-  onWorkflowInputInvalidated?: (uploadPath: string) => void;
 }
 
 export interface UseGraphRunWorkflowReturn {
@@ -57,25 +67,20 @@ export interface UseGraphRunWorkflowReturn {
   busy: boolean;
   canInteract: boolean;
   canInstantiate: boolean;
+  /** Upload is enabled once an instance exists; it is optional. */
+  canUpload: boolean;
   canRun: boolean;
   disabledReason: string;
+  /** The `input.body.*` paths the graph references — UI hints only. */
   inputBodyPaths: string[];
-  inputIntent: GraphRunIntent;
-  isWorkflowInputPanel: boolean;
   runGraph: () => boolean;
   instantiateGraph: () => boolean;
-  /** Complete the workflow only when the submitted panel owns this exact path. */
-  handleInputUploadSuccess: (uploadPath: string) => boolean;
-  /** Cancel the workflow only when the dismissed panel owns this exact path. */
-  handleInputCancelled: (uploadPath: string) => boolean;
-  /** The invitation path claimed by this workflow, or null before/after input. */
-  workflowUploadPath: string | null;
 }
 
 const IDLE_STATE: WorkflowState = {
   phase: 'idle',
-  intent: null,
   pendingSignal: null,
+  ownAction: false,
   invalidated: false,
 };
 
@@ -89,22 +94,16 @@ export function useGraphRunWorkflow({
   isPrimary,
   sendRawText,
   addToast,
-  onWorkflowInputInvalidated,
 }: UseGraphRunWorkflowOptions): UseGraphRunWorkflowReturn {
   const [state, setState] = useState<WorkflowState>(IDLE_STATE);
   const stateRef = useRef<WorkflowState>(IDLE_STATE);
-  const workflowUploadPathRef = useRef<string | null>(null);
   const sendRawTextRef = useRef(sendRawText);
   const addToastRef = useRef(addToast);
-  const onWorkflowInputInvalidatedRef = useRef(onWorkflowInputInvalidated);
   const inputBodyPaths = useMemo(() => collectGraphInputBodyPaths(graphData), [graphData]);
   const inputBodyPathsRef = useRef(inputBodyPaths);
 
   useEffect(() => { sendRawTextRef.current = sendRawText; }, [sendRawText]);
   useEffect(() => { addToastRef.current = addToast; }, [addToast]);
-  useEffect(() => {
-    onWorkflowInputInvalidatedRef.current = onWorkflowInputInvalidated;
-  }, [onWorkflowInputInvalidated]);
   useEffect(() => { inputBodyPathsRef.current = inputBodyPaths; }, [inputBodyPaths]);
 
   const transition = useCallback((next: WorkflowState) => {
@@ -113,20 +112,8 @@ export function useGraphRunWorkflow({
   }, []);
 
   const reset = useCallback(() => {
-    workflowUploadPathRef.current = null;
     transition({ ...IDLE_STATE });
   }, [transition]);
-
-  const closeWorkflowInput = useCallback(() => {
-    const uploadPath = workflowUploadPathRef.current;
-    workflowUploadPathRef.current = null;
-    if (uploadPath) onWorkflowInputInvalidatedRef.current?.(uploadPath);
-  }, []);
-
-  const hardReset = useCallback(() => {
-    closeWorkflowInput();
-    reset();
-  }, [closeWorkflowInput, reset]);
 
   /**
    * Keep an outstanding backend response quarantined after a graph mutation.
@@ -135,7 +122,6 @@ export function useGraphRunWorkflow({
    */
   const invalidate = useCallback(() => {
     const current = stateRef.current;
-    closeWorkflowInput();
     if (current.pendingSignal !== null) {
       transition({
         ...current,
@@ -145,7 +131,7 @@ export function useGraphRunWorkflow({
       return;
     }
     reset();
-  }, [closeWorkflowInput, reset, transition]);
+  }, [reset, transition]);
 
   const sendWithState = useCallback((
     command: string,
@@ -160,10 +146,8 @@ export function useGraphRunWorkflow({
   }, [reset, transition]);
 
   const canInteract = enabled && connected && graphData !== null;
-  const canInstantiate = canInteract && (
-    state.phase === 'idle' ||
-    (state.phase === 'ready' && inputBodyPaths.length > 0)
-  );
+  const canInstantiate = canInteract && (state.phase === 'idle' || state.phase === 'ready');
+  const canUpload = canInteract && state.phase === 'ready';
   const canRun = canInteract && state.phase === 'ready';
   const disabledReason = !enabled
     ? 'Graph run controls are unavailable'
@@ -179,7 +163,7 @@ export function useGraphRunWorkflow({
     if (current.phase !== 'ready') return false;
     return sendWithState(
       GRAPH_RUN_COMMANDS.run,
-      { phase: 'running', intent: null, pendingSignal: 'run-terminal', invalidated: false },
+      { phase: 'running', pendingSignal: 'run-terminal', ownAction: true, invalidated: false },
       'Could not run graph because the WebSocket is not open.',
     );
   }, [canRun, sendWithState]);
@@ -190,44 +174,10 @@ export function useGraphRunWorkflow({
     if (current.phase !== 'idle' && current.phase !== 'ready') return false;
     return sendWithState(
       GRAPH_RUN_COMMANDS.instantiate,
-      {
-        phase: 'instantiating',
-        intent: 'instantiate-only',
-        pendingSignal: 'instance-created',
-        invalidated: false,
-      },
+      { phase: 'instantiating', pendingSignal: 'instance-created', ownAction: true, invalidated: false },
       'Could not instantiate graph because the WebSocket is not open.',
     );
   }, [canInstantiate, sendWithState]);
-
-  const handleInputUploadSuccess = useCallback((uploadPath: string): boolean => {
-    const current = stateRef.current;
-    if (
-      (current.phase !== 'awaiting-input' && current.phase !== 'requesting-input') ||
-      current.intent === null ||
-      workflowUploadPathRef.current !== uploadPath
-    ) {
-      return false;
-    }
-    workflowUploadPathRef.current = null;
-    transition({ phase: 'ready', intent: null, pendingSignal: null, invalidated: false });
-    addToastRef.current('Graph instantiated and ready to run.', 'success');
-    return true;
-  }, [transition]);
-
-  const handleInputCancelled = useCallback((uploadPath: string): boolean => {
-    const current = stateRef.current;
-    if (
-      (current.phase !== 'awaiting-input' && current.phase !== 'requesting-input') ||
-      current.intent === null ||
-      workflowUploadPathRef.current !== uploadPath
-    ) {
-      return false;
-    }
-    reset();
-    addToastRef.current('Graph instantiation cancelled.', 'info');
-    return true;
-  }, [reset]);
 
   useEffect(() => {
     const offCreated = bus.on('graph.instance.created', () => {
@@ -237,58 +187,23 @@ export function useGraphRunWorkflow({
         reset();
         return;
       }
-
-      // Manual console commands have no button intent to continue. Mirror the
-      // acknowledged instance as Ready without inventing an upload/run action.
-      if (current.intent === null) {
-        transition({ phase: 'ready', intent: null, pendingSignal: null, invalidated: false });
-        return;
-      }
-
-      if (inputBodyPathsRef.current.length > 0) {
-        sendWithState(
-          GRAPH_RUN_COMMANDS.requestInputUpload,
-          {
-            phase: 'requesting-input',
-            intent: current.intent,
-            pendingSignal: 'upload-invitation',
-            invalidated: false,
-          },
-          'Graph was instantiated, but the input upload could not be requested.',
-        );
-      } else {
-        transition({ phase: 'ready', intent: null, pendingSignal: null, invalidated: false });
-        addToastRef.current('Graph instantiated and ready to run.', 'success');
-      }
+      transition({ phase: 'ready', pendingSignal: null, ownAction: false, invalidated: false });
+      // A typed or replayed instantiate is mirrored as Ready without a toast.
+      if (!current.ownAction) return;
+      addToastRef.current(
+        inputBodyPathsRef.current.length > 0
+          ? 'Graph instantiated. Upload mock input if the run needs it, then run.'
+          : 'Graph instantiated and ready to run.',
+        'success',
+      );
     });
 
-    const offCleared = bus.on('graph.instance.cleared', hardReset);
+    const offCleared = bus.on('graph.instance.cleared', reset);
     const offMutation = bus.on('graph.mutation', invalidate);
     // A confirmed session restart is authoritative: the old session-bound
     // instance and its acknowledgements can no longer be actionable.
-    const offReset = bus.on('session.reset', hardReset);
+    const offReset = bus.on('session.reset', reset);
     const offExported = bus.on('graph.exported', invalidate);
-
-    const offInvitation = bus.on('upload.invitation', (event) => {
-      const current = stateRef.current;
-      if (current.pendingSignal !== 'upload-invitation') return;
-      if (current.invalidated) {
-        // useAutoMockUpload opens or queues synchronously earlier in
-        // Playground's hook order; remove only this exact workflow invitation.
-        onWorkflowInputInvalidatedRef.current?.(event.uploadPath);
-        reset();
-        return;
-      }
-      if (current.intent !== null) {
-        workflowUploadPathRef.current = event.uploadPath;
-        transition({
-          phase: 'awaiting-input',
-          intent: current.intent,
-          pendingSignal: null,
-          invalidated: false,
-        });
-      }
-    });
 
     const offTerminal = bus.on('graph.run.terminal', (event) => {
       const current = stateRef.current;
@@ -302,40 +217,29 @@ export function useGraphRunWorkflow({
 
     const offError = bus.on('command.error', (event) => {
       const current = stateRef.current;
-      if (current.pendingSignal === 'instance-created') {
-        const shouldReport = !current.invalidated;
-        reset();
-        if (shouldReport) {
-          addToastRef.current(`Could not instantiate graph: ${event.message}`, 'error');
-        }
-      } else if (current.pendingSignal === 'upload-invitation') {
-        const shouldReport = !current.invalidated;
-        reset();
-        if (shouldReport) {
-          addToastRef.current(`Could not request graph input: ${event.message}`, 'error');
-        }
+      if (current.pendingSignal !== 'instance-created') return;
+      const shouldReport = !current.invalidated;
+      reset();
+      if (shouldReport) {
+        addToastRef.current(`Could not instantiate graph: ${event.message}`, 'error');
       }
     });
 
     const offEcho = bus.on('command.echo', (event) => {
       const current = stateRef.current;
+      if (current.phase !== 'idle' && current.phase !== 'ready') return;
       if (isInstantiateCommandText(event.commandText)) {
-        if (current.phase === 'idle' || current.phase === 'ready') {
-          transition({
-            phase: 'instantiating',
-            intent: null,
-            pendingSignal: 'instance-created',
-            invalidated: false,
-          });
-        }
-      } else if (
-        isRunCommandText(event.commandText) &&
-        (current.phase === 'idle' || current.phase === 'ready')
-      ) {
+        transition({
+          phase: 'instantiating',
+          pendingSignal: 'instance-created',
+          ownAction: false,
+          invalidated: false,
+        });
+      } else if (isRunCommandText(event.commandText)) {
         transition({
           phase: 'running',
-          intent: null,
           pendingSignal: 'run-terminal',
+          ownAction: false,
           invalidated: false,
         });
       }
@@ -347,18 +251,17 @@ export function useGraphRunWorkflow({
       offMutation();
       offReset();
       offExported();
-      offInvitation();
       offTerminal();
       offError();
       offEcho();
     };
-  }, [bus, hardReset, invalidate, reset, sendWithState, transition]);
+  }, [bus, invalidate, reset, transition]);
 
   useEffect(() => {
-    if (state.phase !== 'instantiating' && state.phase !== 'requesting-input') return;
+    if (state.phase !== 'instantiating') return;
     const timer = setTimeout(() => {
       const current = stateRef.current;
-      if (current.phase === 'instantiating' || current.phase === 'requesting-input') {
+      if (current.phase === 'instantiating') {
         transition({ ...current, phase: 'outcome-uncertain' });
         addToastRef.current(
           'Graph setup is taking longer than expected. Waiting for the backend outcome…',
@@ -377,23 +280,23 @@ export function useGraphRunWorkflow({
 
   const previousEpochRef = useRef(connectionEpoch);
   useEffect(() => {
-    if (previousEpochRef.current !== connectionEpoch) hardReset();
+    if (previousEpochRef.current !== connectionEpoch) reset();
     previousEpochRef.current = connectionEpoch;
-  }, [connectionEpoch, hardReset]);
+  }, [connectionEpoch, reset]);
 
   const previousPrimaryRef = useRef(isPrimary);
   useEffect(() => {
-    if (previousPrimaryRef.current !== isPrimary) hardReset();
+    if (previousPrimaryRef.current !== isPrimary) reset();
     previousPrimaryRef.current = isPrimary;
-  }, [isPrimary, hardReset]);
+  }, [isPrimary, reset]);
 
   useEffect(() => {
     if (!enabled || !connected) {
-      hardReset();
+      reset();
     } else if (!graphData) {
       invalidate();
     }
-  }, [enabled, connected, graphData, hardReset, invalidate]);
+  }, [enabled, connected, graphData, reset, invalidate]);
 
   const busy = state.phase !== 'idle' && state.phase !== 'ready';
   return {
@@ -402,17 +305,11 @@ export function useGraphRunWorkflow({
     busy,
     canInteract,
     canInstantiate,
+    canUpload,
     canRun,
     disabledReason,
     inputBodyPaths,
-    inputIntent: state.intent,
-    workflowUploadPath: workflowUploadPathRef.current,
-    isWorkflowInputPanel:
-      state.intent !== null &&
-      (state.phase === 'requesting-input' || state.phase === 'awaiting-input'),
     runGraph,
     instantiateGraph,
-    handleInputUploadSuccess,
-    handleInputCancelled,
   };
 }

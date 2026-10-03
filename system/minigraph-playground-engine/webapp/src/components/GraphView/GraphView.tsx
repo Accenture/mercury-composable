@@ -32,7 +32,6 @@ import GraphContextMenu from './GraphContextMenu';
 import NodeContextMenu from './NodeContextMenu';
 import EdgeContextMenu from './EdgeContextMenu';
 import GraphMinimap from './GraphMinimap';
-import GraphMultiSelectTip from './GraphMultiSelectTip';
 import {
   filterAliasesToGraphNodes,
   resolveNodeContextTarget,
@@ -131,12 +130,8 @@ export default function GraphView({
   } | null>(null);
   const [selectedNodeAliases, setSelectedNodeAliases] = useState<string[]>([]);
   const [clipboardDragActive, setClipboardDragActive] = useState(false);
-  const [tipVisible, setTipVisible] = useState(false);
-  const [tipFading, setTipFading] = useState(false);
   const [minimapOpen, setMinimapOpen] = useState(false);
   const clipboardDragDepthRef = useRef(0);
-  const tipShownRef = useRef(false);
-  const tipFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const canCreateNode = Boolean(supportsAuthoring && onCreateNode && isConnected);
   const canCreateConnection = Boolean(supportsAuthoring && onCreateConnection && isConnected);
   const canClipNode = Boolean(onClipNode);
@@ -310,41 +305,6 @@ export default function GraphView({
       rfInstanceRef.current?.fitView({ padding: 0.1 });
     });
   }, [compactNodes, graphData, nodes, setNodes]);
-
-  const dismissMultiSelectTip = useCallback(() => {
-    if (!tipVisible || tipFading) return;
-    setTipFading(true);
-    if (tipFadeTimerRef.current !== null) {
-      clearTimeout(tipFadeTimerRef.current);
-    }
-    tipFadeTimerRef.current = setTimeout(() => {
-      setTipVisible(false);
-      tipFadeTimerRef.current = null;
-    }, 400);
-  }, [tipFading, tipVisible]);
-
-  // The shortcut is introduced only after the first useful graph reaches the
-  // canvas. Keeping the shown flag in memory makes ordinary refreshes quiet.
-  useEffect(() => {
-    if (!hasGraphData || transformError || tipShownRef.current) return;
-    tipShownRef.current = true;
-    setTipFading(false);
-    setTipVisible(true);
-  }, [hasGraphData, transformError]);
-
-  useEffect(() => {
-    if (!tipVisible || tipFading) return;
-    const timerId = setTimeout(dismissMultiSelectTip, 5000);
-    return () => clearTimeout(timerId);
-  }, [dismissMultiSelectTip, tipFading, tipVisible]);
-
-  useEffect(() => {
-    return () => {
-      if (tipFadeTimerRef.current !== null) {
-        clearTimeout(tipFadeTimerRef.current);
-      }
-    };
-  }, []);
 
   const handleClipboardDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
     if (!canAcceptClipboardDrop) return;
@@ -546,7 +506,6 @@ export default function GraphView({
           onDragOver={handleClipboardDragOver}
           onDragLeave={handleClipboardDragLeave}
           onDrop={handleClipboardDrop}
-          onWheelCapture={dismissMultiSelectTip}
         >
           {hasGraphData ? (
             <ReactFlow
@@ -588,7 +547,6 @@ export default function GraphView({
               onNodeContextMenu={(event, node) => {
                 event.preventDefault();
                 event.stopPropagation();
-                dismissMultiSelectTip();
                 setPaneMenu(null);
                 setEdgeMenu(null);
                 if (!canOpenNodeContextMenu) return;
@@ -605,7 +563,6 @@ export default function GraphView({
               onEdgeContextMenu={(event, edge) => {
                 event.preventDefault();
                 event.stopPropagation();
-                dismissMultiSelectTip();
                 setContextMenu(null);
                 setPaneMenu(null);
                 if (!canDeleteConnection) return;
@@ -619,21 +576,18 @@ export default function GraphView({
               }}
               onPaneContextMenu={(event) => {
                 event.preventDefault();
-                dismissMultiSelectTip();
                 setContextMenu(null);
                 setEdgeMenu(null);
                 if (!canCreateNode) return;
                 setPaneMenu({ x: event.clientX, y: event.clientY });
               }}
               onPaneClick={() => {
-                dismissMultiSelectTip();
                 setContextMenu(null);
                 setPaneMenu(null);
                 setEdgeMenu(null);
                 setConnectFromAlias(null);
               }}
               onNodeClick={(event, node) => {
-                dismissMultiSelectTip();
                 if (connectFromAlias === null) return;
                 event.preventDefault();
                 event.stopPropagation();
@@ -645,11 +599,6 @@ export default function GraphView({
                   });
                 }
                 setConnectFromAlias(null);
-              }}
-              onNodeDragStart={() => dismissMultiSelectTip()}
-              onSelectionStart={() => dismissMultiSelectTip()}
-              onMoveStart={(event) => {
-                if (event) dismissMultiSelectTip();
               }}
             >
               <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="rgba(255,255,255,0.07)" />
@@ -703,12 +652,6 @@ export default function GraphView({
               )}
             </div>
           )}
-
-          <GraphMultiSelectTip
-            visible={tipVisible}
-            fading={tipFading}
-            onDismiss={dismissMultiSelectTip}
-          />
 
           {connectFromAlias !== null && (
             <div className={styles.connectBanner} role="status">

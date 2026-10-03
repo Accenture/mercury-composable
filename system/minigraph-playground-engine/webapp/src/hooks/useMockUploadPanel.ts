@@ -1,10 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
-import { type ProtocolBus } from '../protocol/bus';
 import { type ToastType } from './useToast';
-import { useAutoMockUpload } from './useAutoMockUpload';
 
 export interface UseMockUploadPanelOptions {
-  bus:      ProtocolBus;
   addToast: (message: string, type?: ToastType) => void;
 }
 
@@ -29,14 +26,13 @@ export interface UseMockUploadPanelReturn {
 
 /**
  * Manages the mock-upload panel lifecycle: open/close state, focus
- * restoration, success/error handling, and the auto-open subscription
- * via the ProtocolBus.
- *
- * Composes `useAutoMockUpload` internally — callers do not need to
- * invoke that hook separately.
+ * restoration and success/error handling. The panel opens only on an
+ * explicit local action — the toolbar's Upload button or the re-open button
+ * on a console invitation row — never on an `upload.invitation` line by
+ * itself: in a collaborative session every member's console receives the
+ * replayed invitation, and only the member who asked should see the form.
  */
 export function useMockUploadPanel({
-  bus,
   addToast,
 }: UseMockUploadPanelOptions): UseMockUploadPanelReturn {
   // Path extracted from the server's upload invitation.
@@ -108,12 +104,6 @@ export function useMockUploadPanel({
   const resetSuccessfulPaths = useCallback(() => {
     setSuccessfulUploadPaths(new Set());
   }, []);
-
-  // Auto-open panel when server sends upload invitation.
-  useAutoMockUpload({
-    bus,
-    onOpenPanel: handleOpenUploadPanel,
-  });
 
   return {
     uploadPanelPath,

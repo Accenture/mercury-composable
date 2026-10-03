@@ -59,7 +59,7 @@ Looks up its events in `classificationMap.get(msgId)` and renders by kind:
 | graph link | the 🕸 icon; the row is a `role="button"` ("Click to load graph in Graph View") that calls `onGraphLink` |
 | mock-upload invitation | ⬆ icon; a "⬆ Upload JSON…" button re-opens the upload panel for that path; a ✅ "Upload succeeded" badge once the path is in `successfulUploadPaths` |
 | large payload | ⬇ icon (the content itself is appended as a separate JSON row by `useLargePayloadDownload`) |
-| lifecycle JSON | the type icon (ℹ️ info, ❌ error, 👋 welcome) and the timestamp |
+| lifecycle JSON | the type icon (ℹ️ info, ❌ error, 👋 welcome) and the local time as `HH:MM:SS` (the full start time is the `session` command's) |
 | anything else | plain text (markdown candidates are not rendered as markdown here; the help panel renders markdown) |
 
 Per-row hover buttons: copy (📄 → ✅ for two seconds, via `useCopyToClipboard`), ➡️ "send to
@@ -188,15 +188,18 @@ graph or no connection (`connected` defaults to `false`, so the parent must pass
 
 `GraphToolbar` shows the graph name (default "Untitled"), "N node(s) · M connection(s)", optional
 `extraActions`, and a copy button that writes the graph JSON (pretty-printed) to the clipboard.
-`GraphRunControls` (rendered inside the toolbar by `GraphView`) is a `role="group"` with
-**Instantiate** and **Run**:
+`GraphRunControls` (rendered inside the toolbar by `GraphView`) is a `role="group"` with the three
+steps **Instantiate**, **Upload** (optional) and **Run**:
 
-| Phase | Instantiate label | Run |
-|---|---|---|
-| idle | Instantiate | disabled ("Instantiate the graph first") |
-| instantiating / requesting-input / awaiting-input / outcome-uncertain | Instantiating… / Preparing… / Input required / Waiting… (`aria-busy`) | disabled |
-| ready | Instantiate (enabled again only when the graph reads `input.body`) | Run |
-| running | — | Running… |
+| Phase | Instantiate label | Upload | Run |
+|---|---|---|---|
+| idle | Instantiate | disabled ("Instantiate the graph first") | disabled ("Instantiate the graph first") |
+| instantiating / outcome-uncertain | Instantiating… / Waiting… (`aria-busy`) | disabled | disabled |
+| ready | Instantiate (enabled: a fresh instance) | Upload (the tooltip says how many `input.body` paths the graph reads, or that uploading is optional) | Run |
+| running | disabled | disabled | Running… |
+
+Upload opens this session's mock-input form locally (`Playground.handleOpenMockUpload`,
+`/api/mock/{sessionId}`); it sends no console command.
 
 Each button has a tooltip with its purpose and the current reason when disabled
 (`disabledReason`: "Load a graph first", "Connect first to run the graph", …); a disabled button's
@@ -219,8 +222,10 @@ click to dismiss, an optional action button (used for **Undo**). Auto-dismiss (3
 
 Props: `uploadPath` (e.g. `/api/mock/ws-417669-24`), `onSuccess(body, uploadPath)`,
 `onClose(uploadPath)`, `onError(message)`, and the optional `title`, `description`,
-`inputPathHints` and `submitLabel` the run workflow passes ("▶ Mock Graph Input", the
-`input.body.*` paths the graph references, "Upload & Instantiate").
+`inputPathHints` and `submitLabel`. `Playground` passes a description (the JSON becomes the
+instance's `input.body`; in a shared session every member's instance receives it) and the
+`input.body.*` paths the graph references as hints, for the toolbar's Upload step and the console
+row's re-open button alike.
 
 A ribbon with the path and a close button, the hints (first six as `<code>`), a drop zone with a
 hidden `.json` file input and "Browse file…", the textarea (focused on mount), the status line
@@ -229,7 +234,7 @@ object or array can be submitted (`tryParseJSON`, primitives refused on purpose:
 is JSON-only). `Ctrl/⌘+Enter` submits, `Escape` closes unless an upload is in flight. The POST is
 `useMockUpload` (raw textarea text, `Content-Type: application/json`); a non-2xx answer shows
 "❌ Upload failed: HTTP <status> — <body>" inline and reaches the parent's toast. One panel is open
-at a time; further invitations queue FIFO in `useMockUploadPanel`.
+at a time; a further open request queues FIFO in `useMockUploadPanel`.
 
 ### `NodeEditPanel` (`components/NodeEditPanel/NodeEditPanel.tsx`)
 

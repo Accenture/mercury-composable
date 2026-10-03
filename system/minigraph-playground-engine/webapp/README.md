@@ -264,11 +264,12 @@ While connected, `help {topic}` and `describe skill {route}` for a built-in skil
 `describe skill graph.math`) open that page in the Help panel, which renders its markdown;
 `describe graph`, `describe node` and `describe connection` answer in the console.
 
-After loading a graph, use the toolbar's separate **Instantiate** and **Run** actions. Run remains
-disabled until the backend confirms the instance; graphs that reference `input.body` prompt for JSON
-input before becoming ready. In collaborative sessions every member controls this lifecycle as an equal
-partner: the backend runs a subscriber's Instantiate and Run in every member's session, and each member
-uploads mock input for its own instance.
+After loading a graph, use the toolbar's three steps: **Instantiate**, **Upload** (optional) and
+**Run**. Upload and Run stay disabled until the backend confirms the instance; a graph that needs no
+input (tutorial 1) runs right after Instantiate, and Upload opens the JSON form for your own session
+only. In collaborative sessions every member controls this lifecycle as an equal partner: the backend
+runs a subscriber's Instantiate and Run in every member's session, and an uploaded payload loads into
+every member's instance (each member's console confirms it).
 
 ### JSON-Path quick start
 

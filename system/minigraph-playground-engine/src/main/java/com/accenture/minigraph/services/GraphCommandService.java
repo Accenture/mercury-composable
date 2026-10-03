@@ -65,6 +65,9 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String TOTAL = "Total ";
     private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
     private static final String SESSION_TAG = "Session ";
+    private static final String UPLOAD = "upload";
+    private static final String CONTENT = "content";
+    private static final String MOCK_DATA_LOADED = "Mock data loaded into 'input.body' namespace";
     private static final long EXPIRY = 20 * 1000L;
     private static final String[] MAPPING_PROPERTIES = {"mapping", "input", "output", "for_each"};
     private static final SimpleTypeMatchingConverter converter = SimpleTypeMatchingConverter.getInstance();
@@ -160,7 +163,60 @@ public class GraphCommandService extends GraphLambdaFunction {
             if (!command.isEmpty()) {
                 handleCommand(po, command, inRoute, outRoute, forwarded, direct);
             }
+        } else if (UPLOAD.equals(type) && in instanceof String inRoute && out instanceof String outRoute &&
+                input.get(CONTENT) != null) {
+            handleUpload(po, inRoute, outRoute, input.get(CONTENT), forwarded);
         }
+    }
+
+    /**
+     * Mock data for a dry-run travels like a command: when the uploader is the primary session, its
+     * instance loads the payload and the upload is replayed into every subscriber's instance; a
+     * subscriber forwards the payload to the primary, which does the same (the subscriber receives it
+     * back on the replay). Every member of a collaborative session then runs the graph with the same
+     * input.body, and every member's console confirms the load.
+     */
+    private void handleUpload(PostOffice po, String inRoute, String outRoute, Object content, boolean forwarded) {
+        if (forwarded) {
+            loadMockContent(po, inRoute, outRoute, content);
+            return;
+        }
+        var me = sessions.get(inRoute);
+        if (me == null) {
+            return;
+        }
+        if (me.isPrimary()) {
+            uploadAsPrimary(po, content, inRoute, outRoute, me);
+        } else {
+            forwardUploadToPrimary(po, content, me);
+        }
+    }
+
+    private void uploadAsPrimary(PostOffice po, Object content, String inRoute, String outRoute, GraphSession me) {
+        loadMockContent(po, inRoute, outRoute, content);
+        for (var subOutRoute : me.getSubscribers()) {
+            var subInRoute = GraphSession.getInRoute(subOutRoute);
+            var forwardBody = Map.of(TYPE, UPLOAD, IN, subInRoute, OUT, subOutRoute, CONTENT, content, FORWARDED, true);
+            po.send(new EventEnvelope().setTo(ROUTE).setBody(forwardBody));
+        }
+    }
+
+    private void forwardUploadToPrimary(PostOffice po, Object content, GraphSession me) {
+        var targetInRoute = GraphSession.getInRoute(me.getTargetId());
+        var targetOutRoute = GraphSession.getOutRoute(me.getTargetId());
+        var forwardBody = Map.of(TYPE, UPLOAD, IN, targetInRoute, OUT, targetOutRoute, CONTENT, content);
+        po.send(new EventEnvelope().setTo(ROUTE).setBody(forwardBody));
+    }
+
+    private void loadMockContent(PostOffice po, String inRoute, String outRoute, Object content) {
+        var instance = graphInstances.get(inRoute);
+        if (instance == null) {
+            po.send(new EventEnvelope().setTo(outRoute).setBody(
+                    "Mock data not loaded - this session has no graph instance (instantiate first)"));
+            return;
+        }
+        instance.stateMachine.setElement(INPUT_BODY, content);
+        po.send(new EventEnvelope().setTo(outRoute).setBody(MOCK_DATA_LOADED));
     }
 
     private void handleCommand(PostOffice po, String command, String inRoute, String outRoute,
@@ -280,19 +336,24 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
     }
 
+    /**
+     * Load mock data (the REST endpoint POST /api/mock/{id}) into the session's graph instance.
+     * The payload is routed through the command service so that it propagates to every member
+     * of a collaborative session like a command (see handleUpload).
+     *
+     * @param id session id
+     * @param content a map or a list
+     * @return false when the session has no graph instance
+     */
     public static boolean uploadContent(String id, Object content) {
         var inRoute = GraphSession.getInRoute(id);
         var outRoute = GraphSession.getOutRoute(id);
-        var instance = graphInstances.get(inRoute);
-        if (instance == null) {
+        if (!sessions.containsKey(inRoute) || !graphInstances.containsKey(inRoute)) {
             return false;
-        } else {
-            var stateMachine = instance.stateMachine;
-            stateMachine.setElement(INPUT_BODY, content);
-            var po = EventEmitter.getInstance();
-            po.send(outRoute, "Mock data loaded into 'input.body' namespace");
-            return true;
         }
+        var po = EventEmitter.getInstance();
+        po.send(new EventEnvelope().setTo(ROUTE).setBody(Map.of(TYPE, UPLOAD, IN, inRoute, OUT, outRoute, CONTENT, content)));
+        return true;
     }
 
     public static Object downloadContent(String id, String key) {

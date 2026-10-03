@@ -7,7 +7,6 @@ import { ProtocolBus } from '../../protocol/bus';
 import { classifyMessage } from '../../protocol/classifier';
 import { GRAPH_RUN_COMMANDS } from '../../graphRun/graphRunProtocol';
 import { GRAPH_RUN_SETUP_TIMEOUT_MS, useGraphRunWorkflow } from '../useGraphRunWorkflow';
-import { useMockUploadPanel } from '../useMockUploadPanel';
 
 const graphWithoutInput: MinigraphGraphData = {
   nodes: [{ alias: 'root', types: ['Root'], properties: { name: 'hello' } }],
@@ -23,6 +22,8 @@ const graphWithInput: MinigraphGraphData = {
   connections: [],
 };
 
+const INSTANCE_CREATED = 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms';
+
 function emitRaw(bus: ProtocolBus, msgId: number, raw: string) {
   for (const event of classifyMessage(msgId, raw)) bus.emit(event);
 }
@@ -31,7 +32,6 @@ function setup(graphData: MinigraphGraphData = graphWithoutInput) {
   const bus = new ProtocolBus();
   const sendRawText = vi.fn(() => true);
   const addToast = vi.fn();
-  const onWorkflowInputInvalidated = vi.fn();
   const initialProps = {
     connected: true,
     connectionEpoch: 1 as number | null,
@@ -45,12 +45,11 @@ function setup(graphData: MinigraphGraphData = graphWithoutInput) {
       bus,
       sendRawText,
       addToast,
-      onWorkflowInputInvalidated,
       ...props,
     }),
     { initialProps },
   );
-  return { ...rendered, bus, sendRawText, addToast, onWorkflowInputInvalidated, initialProps };
+  return { ...rendered, bus, sendRawText, addToast, initialProps };
 }
 
 afterEach(() => {
@@ -58,101 +57,123 @@ afterEach(() => {
 });
 
 describe('useGraphRunWorkflow', () => {
-  it('rejects Run until a no-input graph is acknowledged Ready', () => {
+  it('rejects Run and Upload until the instance is acknowledged Ready', () => {
     const { result, bus, sendRawText } = setup();
 
-    expect(result.current.canRun).toBe(false);
+    expect(result.current.canUpload).toBe(false);
     act(() => expect(result.current.runGraph()).toBe(false));
     expect(sendRawText).not.toHaveBeenCalled();
 
     act(() => expect(result.current.instantiateGraph()).toBe(true));
-    expect(result.current.phase).toBe('instantiating');
-    expect(sendRawText).toHaveBeenCalledTimes(1);
     expect(sendRawText).toHaveBeenNthCalledWith(1, GRAPH_RUN_COMMANDS.instantiate);
+    expect(result.current.phase).toBe('instantiating');
+    expect(result.current.canInstantiate).toBe(false);
+    expect(result.current.canUpload).toBe(false);
+    expect(result.current.canRun).toBe(false);
 
-    act(() => emitRaw(bus, 1, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    act(() => emitRaw(bus, 1, INSTANCE_CREATED));
     expect(result.current.phase).toBe('ready');
+    expect(result.current.canUpload).toBe(true);
     expect(result.current.canRun).toBe(true);
-    expect(sendRawText).toHaveBeenCalledTimes(1);
 
     act(() => expect(result.current.runGraph()).toBe(true));
     expect(sendRawText).toHaveBeenNthCalledWith(2, GRAPH_RUN_COMMANDS.run);
     expect(result.current.phase).toBe('running');
+    expect(result.current.canUpload).toBe(false);
 
-    act(() => emitRaw(bus, 2, 'Graph traversal completed in 8 ms'));
+    act(() => emitRaw(bus, 2, 'Graph traversal completed in 12 ms'));
     expect(result.current.phase).toBe('idle');
   });
 
-  it('waits for JSON upload success before enabling Run for a graph with body references', () => {
-    const { result, bus, sendRawText } = setup(graphWithInput);
+  it('makes a graph that reads input.body Ready right after Instantiate: uploading is optional', () => {
+    const { result, bus, sendRawText, addToast } = setup(graphWithInput);
 
-    act(() => expect(result.current.runGraph()).toBe(false));
     act(() => result.current.instantiateGraph());
-    act(() => emitRaw(bus, 1, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    act(() => emitRaw(bus, 1, INSTANCE_CREATED));
 
-    expect(sendRawText).toHaveBeenNthCalledWith(2, GRAPH_RUN_COMMANDS.requestInputUpload);
-    expect(sendRawText).not.toHaveBeenCalledWith(GRAPH_RUN_COMMANDS.run);
-    expect(result.current.phase).toBe('requesting-input');
-
-    act(() => emitRaw(bus, 2, 'You may upload JSON payload -> POST /api/mock/ws-123-1'));
-    expect(result.current.phase).toBe('awaiting-input');
-    expect(result.current.isWorkflowInputPanel).toBe(true);
-    expect(result.current.inputBodyPaths).toEqual(['input.body.user.id']);
-
-    act(() => expect(result.current.handleInputUploadSuccess('/api/mock/ws-123-1')).toBe(true));
     expect(result.current.phase).toBe('ready');
+    expect(result.current.inputBodyPaths).toEqual(['input.body.user.id']);
+    expect(result.current.canUpload).toBe(true);
     expect(result.current.canRun).toBe(true);
-    expect(sendRawText).toHaveBeenCalledTimes(2);
+    expect(sendRawText).toHaveBeenCalledTimes(1);
+    expect(sendRawText).not.toHaveBeenCalledWith('upload mock data');
+    expect(addToast).toHaveBeenCalledWith(
+      'Graph instantiated. Upload mock input if the run needs it, then run.',
+      'success',
+    );
 
     act(() => expect(result.current.runGraph()).toBe(true));
-    expect(sendRawText).toHaveBeenNthCalledWith(3, GRAPH_RUN_COMMANDS.run);
-    expect(result.current.phase).toBe('running');
+    expect(sendRawText).toHaveBeenNthCalledWith(2, GRAPH_RUN_COMMANDS.run);
   });
 
-  it('instantiates only, becomes Ready, and then runs without re-instantiating', () => {
-    const { result, bus, sendRawText } = setup(graphWithInput);
+  it('toasts the plain ready message for a graph without input.body', () => {
+    const { result, bus, addToast } = setup();
 
     act(() => result.current.instantiateGraph());
-    act(() => emitRaw(bus, 1, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
-    act(() => emitRaw(bus, 2, 'You may upload JSON payload -> POST /api/mock/ws-123-1'));
-    act(() => result.current.handleInputUploadSuccess('/api/mock/ws-123-1'));
-
-    expect(result.current.phase).toBe('ready');
-    expect(result.current.ready).toBe(true);
-    expect(sendRawText).toHaveBeenCalledTimes(2);
-
-    act(() => result.current.runGraph());
-    expect(sendRawText).toHaveBeenNthCalledWith(3, GRAPH_RUN_COMMANDS.run);
-    expect(result.current.phase).toBe('running');
+    act(() => emitRaw(bus, 1, INSTANCE_CREATED));
+    expect(addToast).toHaveBeenCalledWith('Graph instantiated and ready to run.', 'success');
   });
 
-  it('mirrors manual console instantiate/run events', () => {
+  it('allows Instantiate again while Ready, starting a fresh instance', () => {
     const { result, bus, sendRawText } = setup();
 
-    act(() => emitRaw(bus, 1, '> instantiate graph'));
-    act(() => emitRaw(bus, 2, 'Graph instance created. Loaded 1 mock entry, model.ttl = 30000 ms'));
-    expect(result.current.phase).toBe('ready');
+    act(() => result.current.instantiateGraph());
+    act(() => emitRaw(bus, 1, INSTANCE_CREATED));
+    expect(result.current.canInstantiate).toBe(true);
 
-    act(() => result.current.runGraph());
-    expect(sendRawText).toHaveBeenCalledWith(GRAPH_RUN_COMMANDS.run);
+    act(() => expect(result.current.instantiateGraph()).toBe(true));
+    expect(sendRawText).toHaveBeenCalledTimes(2);
+    expect(result.current.phase).toBe('instantiating');
+    act(() => emitRaw(bus, 2, INSTANCE_CREATED));
+    expect(result.current.phase).toBe('ready');
   });
 
-  it('invalidates stale Ready and pending intent on graph/session lifecycle changes', () => {
+  it('mirrors typed or replayed console instantiate/run events without a toast', () => {
+    const { result, bus, sendRawText, addToast } = setup();
+
+    act(() => emitRaw(bus, 1, '> instantiate graph'));
+    expect(result.current.phase).toBe('instantiating');
+    act(() => emitRaw(bus, 2, 'Graph instance created. Loaded 1 mock entry, model.ttl = 30000 ms'));
+    expect(result.current.phase).toBe('ready');
+    expect(addToast).not.toHaveBeenCalled();
+
+    act(() => emitRaw(bus, 3, '> run'));
+    expect(result.current.phase).toBe('running');
+    expect(sendRawText).not.toHaveBeenCalled();
+    act(() => emitRaw(bus, 4, 'Graph traversal completed in 5 ms'));
+    expect(result.current.phase).toBe('idle');
+  });
+
+  it('ignores a replayed upload invitation: the phase and the controls do not change', () => {
+    const { result, bus } = setup(graphWithInput);
+
+    act(() => emitRaw(bus, 1, '> instantiate graph'));
+    act(() => emitRaw(bus, 2, INSTANCE_CREATED));
+    act(() => emitRaw(bus, 3, '> upload mock data'));
+    act(() => emitRaw(bus, 4, 'You may upload JSON payload -> POST /api/mock/ws-123-1'));
+    act(() => emitRaw(bus, 5, "Mock data loaded into 'input.body' namespace"));
+
+    expect(result.current.phase).toBe('ready');
+    expect(result.current.canRun).toBe(true);
+    expect(result.current.canUpload).toBe(true);
+  });
+
+  it('invalidates stale Ready on graph/session lifecycle changes', () => {
     const { result, bus, rerender, initialProps } = setup();
 
     act(() => emitRaw(bus, 1, '> instantiate graph'));
-    act(() => emitRaw(bus, 2, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    act(() => emitRaw(bus, 2, INSTANCE_CREATED));
     expect(result.current.ready).toBe(true);
     act(() => emitRaw(bus, 3, 'node root updated'));
     expect(result.current.phase).toBe('idle');
 
     act(() => emitRaw(bus, 4, '> instantiate graph'));
-    act(() => emitRaw(bus, 5, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    act(() => emitRaw(bus, 5, INSTANCE_CREATED));
     act(() => rerender({ ...initialProps, graphIdentity: '/api/graph/model/other/2' }));
     expect(result.current.phase).toBe('idle');
 
     act(() => emitRaw(bus, 6, '> instantiate graph'));
-    act(() => emitRaw(bus, 7, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    act(() => emitRaw(bus, 7, INSTANCE_CREATED));
     act(() => rerender({ ...initialProps, connected: false }));
     expect(result.current.phase).toBe('idle');
   });
@@ -165,12 +186,12 @@ describe('useGraphRunWorkflow', () => {
     act(() => emitRaw(bus, 2, 'node root updated'));
     expect(result.current.phase).toBe('outcome-uncertain');
 
-    act(() => emitRaw(bus, 3, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    act(() => emitRaw(bus, 3, INSTANCE_CREATED));
     expect(result.current.phase).toBe('idle');
     expect(sendRawText).not.toHaveBeenCalledWith(GRAPH_RUN_COMMANDS.run);
 
     act(() => emitRaw(bus, 4, '> instantiate graph'));
-    act(() => emitRaw(bus, 5, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    act(() => emitRaw(bus, 5, INSTANCE_CREATED));
     expect(result.current.phase).toBe('ready');
   });
 
@@ -190,84 +211,11 @@ describe('useGraphRunWorkflow', () => {
     expect(result.current.phase).toBe('idle');
   });
 
-  it('closes only workflow-owned input when lifecycle invalidation occurs', () => {
-    const { result, bus, onWorkflowInputInvalidated } = setup(graphWithInput);
-
-    act(() => result.current.instantiateGraph());
-    act(() => emitRaw(bus, 1, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
-    act(() => emitRaw(bus, 2, 'You may upload JSON payload -> POST /api/mock/ws-123-1'));
-    act(() => emitRaw(bus, 3, 'node root updated'));
-
-    expect(onWorkflowInputInvalidated).toHaveBeenCalledWith('/api/mock/ws-123-1');
-    expect(result.current.phase).toBe('idle');
-  });
-
-  it('does not let an unrelated upload panel complete or cancel graph input', () => {
-    const { result, bus } = setup(graphWithInput);
-
-    act(() => result.current.instantiateGraph());
-    act(() => emitRaw(bus, 1, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
-    act(() => emitRaw(bus, 2, 'You may upload JSON payload -> POST /api/mock/workflow'));
-
-    expect(result.current.workflowUploadPath).toBe('/api/mock/workflow');
-    act(() => expect(result.current.handleInputUploadSuccess('/api/mock/manual')).toBe(false));
-    act(() => expect(result.current.handleInputCancelled('/api/mock/manual')).toBe(false));
-    expect(result.current.phase).toBe('awaiting-input');
-    expect(result.current.canRun).toBe(false);
-
-    act(() => expect(result.current.handleInputUploadSuccess('/api/mock/workflow')).toBe(true));
-    expect(result.current.phase).toBe('ready');
-    expect(result.current.canRun).toBe(true);
-  });
-
-  it('queues workflow input behind an open manual upload panel and resumes it after close', () => {
-    const bus = new ProtocolBus();
-    const sendRawText = vi.fn(() => true);
-    const addToast = vi.fn();
-    const { result } = renderHook(() => {
-      const uploadPanel = useMockUploadPanel({ bus, addToast });
-      const graphRun = useGraphRunWorkflow({
-        enabled: true,
-        bus,
-        connected: true,
-        connectionEpoch: 1,
-        graphData: graphWithInput,
-        graphIdentity: '/api/graph/model/current/1',
-        isPrimary: true,
-        sendRawText,
-        addToast,
-        onWorkflowInputInvalidated: uploadPanel.handleCloseUploadPath,
-      });
-      return { uploadPanel, graphRun };
-    });
-
-    act(() => result.current.uploadPanel.handleOpenUploadPanel('/api/mock/manual'));
-    act(() => result.current.graphRun.instantiateGraph());
-    act(() => emitRaw(bus, 1, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
-    act(() => emitRaw(bus, 2, 'You may upload JSON payload -> POST /api/mock/workflow'));
-
-    expect(result.current.uploadPanel.uploadPanelPath).toBe('/api/mock/manual');
-    expect(result.current.graphRun.phase).toBe('awaiting-input');
-    act(() => {
-      result.current.uploadPanel.handleCloseUploadPanel();
-      expect(result.current.graphRun.handleInputCancelled('/api/mock/manual')).toBe(false);
-    });
-    expect(result.current.uploadPanel.uploadPanelPath).toBe('/api/mock/workflow');
-
-    act(() => {
-      result.current.uploadPanel.handleUploadSuccess('ok');
-      expect(result.current.graphRun.handleInputUploadSuccess('/api/mock/workflow')).toBe(true);
-    });
-    expect(result.current.uploadPanel.uploadPanelPath).toBeNull();
-    expect(result.current.graphRun.phase).toBe('ready');
-    expect(result.current.graphRun.canRun).toBe(true);
-  });
-
   it('invalidates Ready when Save Graph confirms an export', () => {
     const { result, bus } = setup();
 
     act(() => emitRaw(bus, 1, '> instantiate graph'));
-    act(() => emitRaw(bus, 2, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    act(() => emitRaw(bus, 2, INSTANCE_CREATED));
     expect(result.current.ready).toBe(true);
 
     act(() => bus.emit({
@@ -280,28 +228,16 @@ describe('useGraphRunWorkflow', () => {
     expect(result.current.phase).toBe('idle');
   });
 
-  it('does not repeat a no-input instantiate command while the graph is already Ready', () => {
-    const { result, bus, sendRawText } = setup();
-
-    act(() => result.current.instantiateGraph());
-    act(() => emitRaw(bus, 1, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
-    expect(result.current.canInstantiate).toBe(false);
-
-    act(() => expect(result.current.instantiateGraph()).toBe(false));
-    expect(sendRawText).toHaveBeenCalledTimes(1);
-    expect(result.current.phase).toBe('ready');
-  });
-
-  it('cancels workflow input without running, handles setup errors, and times out missing acknowledgements', () => {
+  it('reports an aborted run, a setup error, and times out a missing acknowledgement', () => {
     vi.useFakeTimers();
-    const { result, bus, sendRawText, addToast } = setup(graphWithInput);
+    const { result, bus, addToast } = setup();
 
     act(() => result.current.instantiateGraph());
-    act(() => emitRaw(bus, 1, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
-    act(() => emitRaw(bus, 2, 'You may upload JSON payload -> POST /api/mock/ws-123-1'));
-    act(() => expect(result.current.handleInputCancelled('/api/mock/ws-123-1')).toBe(true));
+    act(() => emitRaw(bus, 1, INSTANCE_CREATED));
+    act(() => result.current.runGraph());
+    act(() => emitRaw(bus, 2, 'Graph traversal aborted: Profile 100 not found (node fetcher)'));
     expect(result.current.phase).toBe('idle');
-    expect(sendRawText).not.toHaveBeenCalledWith(GRAPH_RUN_COMMANDS.run);
+    expect(addToast).toHaveBeenCalledWith('Graph run aborted. See the console for details.', 'error');
 
     act(() => result.current.instantiateGraph());
     act(() => emitRaw(bus, 3, 'ERROR: Root node does not exist'));
@@ -318,11 +254,11 @@ describe('useGraphRunWorkflow', () => {
       'info',
     );
 
-    act(() => emitRaw(bus, 4, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
-    expect(result.current.phase).toBe('requesting-input');
+    act(() => emitRaw(bus, 4, INSTANCE_CREATED));
+    expect(result.current.phase).toBe('ready');
   });
 
-  it('lets a subscribed session instantiate, upload its mock input and run, as an equal partner', () => {
+  it('lets a subscribed session instantiate and run as an equal partner', () => {
     const { result, rerender, initialProps, bus, sendRawText } = setup(graphWithInput);
 
     act(() => rerender({ ...initialProps, isPrimary: false }));
@@ -333,21 +269,16 @@ describe('useGraphRunWorkflow', () => {
     act(() => expect(result.current.instantiateGraph()).toBe(true));
     expect(sendRawText).toHaveBeenNthCalledWith(1, GRAPH_RUN_COMMANDS.instantiate);
     act(() => emitRaw(bus, 1, '> instantiate graph'));
-    act(() => emitRaw(bus, 2, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
-    expect(sendRawText).toHaveBeenNthCalledWith(2, GRAPH_RUN_COMMANDS.requestInputUpload);
-
-    act(() => emitRaw(bus, 3, 'You may upload JSON payload -> POST /api/mock/ws-200-2'));
-    expect(result.current.phase).toBe('awaiting-input');
-    expect(result.current.isWorkflowInputPanel).toBe(true);
-    act(() => expect(result.current.handleInputUploadSuccess('/api/mock/ws-200-2')).toBe(true));
+    act(() => emitRaw(bus, 2, INSTANCE_CREATED));
     expect(result.current.phase).toBe('ready');
+    expect(result.current.canUpload).toBe(true);
 
     // A graph refetch while subscribed keeps the run (only a topology change resets it).
     act(() => rerender({ ...initialProps, isPrimary: false, graphData: { ...graphWithInput } }));
     expect(result.current.phase).toBe('ready');
 
     act(() => expect(result.current.runGraph()).toBe(true));
-    expect(sendRawText).toHaveBeenNthCalledWith(3, GRAPH_RUN_COMMANDS.run);
+    expect(sendRawText).toHaveBeenNthCalledWith(2, GRAPH_RUN_COMMANDS.run);
     expect(result.current.phase).toBe('running');
   });
 
@@ -355,14 +286,14 @@ describe('useGraphRunWorkflow', () => {
     const { result, rerender, initialProps, bus } = setup();
 
     act(() => result.current.instantiateGraph());
-    act(() => emitRaw(bus, 1, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    act(() => emitRaw(bus, 1, INSTANCE_CREATED));
     expect(result.current.phase).toBe('ready');
 
     act(() => rerender({ ...initialProps, isPrimary: false }));
     expect(result.current.phase).toBe('idle');
 
     act(() => result.current.instantiateGraph());
-    act(() => emitRaw(bus, 2, 'Graph instance created. Loaded 0 mock entries, model.ttl = 30000 ms'));
+    act(() => emitRaw(bus, 2, INSTANCE_CREATED));
     expect(result.current.phase).toBe('ready');
 
     act(() => rerender({ ...initialProps, isPrimary: true }));
