@@ -450,7 +450,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     private void handleCommandPartThree(PostOffice po, String inRoute, String outRoute, List<String> words) {
-        if (words.size() == 3 && words.getFirst().equalsIgnoreCase("upload") &&
+        if (words.size() == 3 && words.getFirst().equalsIgnoreCase(UPLOAD) &&
                 words.get(1).equalsIgnoreCase("mock") &&
                 words.get(2).equalsIgnoreCase("data")) {
             handleUploadMockCommand(po, inRoute, outRoute);
