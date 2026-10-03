@@ -477,7 +477,7 @@
   <!-- id: playground-three-step-run-controls | created: 2026-10-02 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-232248 -->
 
 - **A graph file becomes the session draft through `POST /api/graph/import/{id}`, which travels like a command, and the Playground downloads the model as `<graph-id>.json` with the root
-  node named after the id (Eric's usability sprint, 2026-10-03; PR #500, the Rust twin mercury #350, Increment 155).** The Graph view's Import Graph button (toolbar and empty canvas) and a
+  node named after the id (Eric's usability sprint, 2026-10-03; PR #500 squash `856e084b`, the Rust twin mercury #350 merge `dae6377d`, Increment 155; both MERGED 2026-10-03 16:03Z).** The Graph view's Import Graph button (toolbar and empty canvas) and a
   `.json` file dropped on the canvas validate the file in the browser (`utils/graphFile.ts`: a JSON object whose only top-level sections are `nodes`, mandatory, and `connections`, optional;
   anything else refused by name) and post it; the engine validates again with its own importer on a scratch `MiniGraph` (`GraphCommandService.validateGraphModel`) and routes an `import`
   event through the command service exactly like the mock upload (`handleImport`: the primary imports and replays, a subscriber forwards), so every member's draft is replaced and every
