@@ -3089,6 +3089,11 @@
 <td><code>GET /api/graph/session/{session-id}</code></td>
 <td>Returns the current graph as JSON.</td>
 </tr>
+<tr>
+<td><strong>Import a model from a file</strong></td>
+<td><code>POST /api/graph/import/{session-id}</code></td>
+<td>The body is a graph model (<code>nodes</code> mandatory, <code>connections</code> optional, no other section); it becomes the session's draft and reaches every member of a shared session. The Playground's Import Graph button and a dropped <code>.json</code> file use it.</td>
+</tr>
 </tbody>
 </table>
 <p>This guide is about the <strong>companion</strong> flow — co-authoring a graph with a human watching the
@@ -3504,14 +3509,24 @@ blocks verbatim (every entry references them):</p>
 <a id="__codelineno-6-73" name="__codelineno-6-73" href="#__codelineno-6-73"></a><span class="w">    </span><span class="nt">headers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">header_1</span>
 <a id="__codelineno-6-74" name="__codelineno-6-74" href="#__codelineno-6-74"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <a id="__codelineno-6-75" name="__codelineno-6-75" href="#__codelineno-6-75"></a>
-<a id="__codelineno-6-76" name="__codelineno-6-76" href="#__codelineno-6-76"></a><span class="w">  </span><span class="c1"># The UI's state-machine inspector</span>
-<a id="__codelineno-6-77" name="__codelineno-6-77" href="#__codelineno-6-77"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">'inspect.state.machine'</span>
-<a id="__codelineno-6-78" name="__codelineno-6-78" href="#__codelineno-6-78"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'GET'</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-6-79" name="__codelineno-6-79" href="#__codelineno-6-79"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'/api/inspect/{id}/{key}'</span>
-<a id="__codelineno-6-80" name="__codelineno-6-80" href="#__codelineno-6-80"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30s</span>
-<a id="__codelineno-6-81" name="__codelineno-6-81" href="#__codelineno-6-81"></a><span class="w">    </span><span class="nt">cors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cors_1</span>
-<a id="__codelineno-6-82" name="__codelineno-6-82" href="#__codelineno-6-82"></a><span class="w">    </span><span class="nt">headers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">header_1</span>
-<a id="__codelineno-6-83" name="__codelineno-6-83" href="#__codelineno-6-83"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-6-76" name="__codelineno-6-76" href="#__codelineno-6-76"></a><span class="w">  </span><span class="c1"># Backs the Playground's "Import Graph" button and a graph file dropped on the</span>
+<a id="__codelineno-6-77" name="__codelineno-6-77" href="#__codelineno-6-77"></a><span class="w">  </span><span class="c1"># graph view: a model from the user's computer becomes the session's draft</span>
+<a id="__codelineno-6-78" name="__codelineno-6-78" href="#__codelineno-6-78"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">'import.graph.content'</span>
+<a id="__codelineno-6-79" name="__codelineno-6-79" href="#__codelineno-6-79"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'POST'</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-6-80" name="__codelineno-6-80" href="#__codelineno-6-80"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'/api/graph/import/{id}'</span>
+<a id="__codelineno-6-81" name="__codelineno-6-81" href="#__codelineno-6-81"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30s</span>
+<a id="__codelineno-6-82" name="__codelineno-6-82" href="#__codelineno-6-82"></a><span class="w">    </span><span class="nt">cors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cors_1</span>
+<a id="__codelineno-6-83" name="__codelineno-6-83" href="#__codelineno-6-83"></a><span class="w">    </span><span class="nt">headers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">header_1</span>
+<a id="__codelineno-6-84" name="__codelineno-6-84" href="#__codelineno-6-84"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-6-85" name="__codelineno-6-85" href="#__codelineno-6-85"></a>
+<a id="__codelineno-6-86" name="__codelineno-6-86" href="#__codelineno-6-86"></a><span class="w">  </span><span class="c1"># The UI's state-machine inspector</span>
+<a id="__codelineno-6-87" name="__codelineno-6-87" href="#__codelineno-6-87"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">'inspect.state.machine'</span>
+<a id="__codelineno-6-88" name="__codelineno-6-88" href="#__codelineno-6-88"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'GET'</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-6-89" name="__codelineno-6-89" href="#__codelineno-6-89"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'/api/inspect/{id}/{key}'</span>
+<a id="__codelineno-6-90" name="__codelineno-6-90" href="#__codelineno-6-90"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30s</span>
+<a id="__codelineno-6-91" name="__codelineno-6-91" href="#__codelineno-6-91"></a><span class="w">    </span><span class="nt">cors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cors_1</span>
+<a id="__codelineno-6-92" name="__codelineno-6-92" href="#__codelineno-6-92"></a><span class="w">    </span><span class="nt">headers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">header_1</span>
+<a id="__codelineno-6-93" name="__codelineno-6-93" href="#__codelineno-6-93"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 <p>When in doubt, diff your <code>rest.yaml</code> against <code>templates/starter-graph/src/main/resources/rest.yaml</code>.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>

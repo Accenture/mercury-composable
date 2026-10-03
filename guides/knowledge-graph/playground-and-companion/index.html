@@ -3036,7 +3036,7 @@ The essentials:</p>
 </tr>
 <tr>
 <td>Persist</td>
-<td><code>export graph as &lt;name&gt;</code> · <code>import graph from &lt;name&gt;</code></td>
+<td><code>export graph as &lt;name&gt;</code> · <code>import graph from &lt;name&gt;</code> · in the UI: <strong>Download</strong> (<code>&lt;graph-id&gt;.json</code> to your computer) and <strong>Import Graph</strong> or a <code>.json</code> file dropped on the canvas (<code>POST /api/graph/import/{id}</code>)</td>
 </tr>
 <tr>
 <td>Help</td>
@@ -3076,7 +3076,9 @@ be shared so several people model the same graph together:</p>
 <code>session</code> topology commands propagates to the primary and all subscribers alike, so all parties
 (human or AI) are equal co-authors of one shared model. A mock-data upload (<code>POST /api/mock/{id}</code>)
 propagates the same way, into every member's graph instance, so a dry-run started by any member runs
-with the same <code>input.body</code>. (You can't subscribe to yourself or to a
+with the same <code>input.body</code>; a graph model imported from a file (<code>POST /api/graph/import/{id}</code>, the
+Graph view's Import Graph button or a dropped <code>.json</code> file) replaces every member's draft the same
+way. (You can't subscribe to yourself or to a
 non-primary session; a primary session has nothing to unsubscribe.)</p>
 <p><strong>An AI agent asked to host a session</strong> should run the shipped session broker
 (<code>scripts/playground-session-broker.mjs</code>, in the <code>starter-graph</code> template and the
