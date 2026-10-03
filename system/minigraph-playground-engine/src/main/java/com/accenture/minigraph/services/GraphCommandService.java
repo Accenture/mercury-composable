@@ -68,6 +68,9 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String UPLOAD = "upload";
     private static final String CONTENT = "content";
     private static final String MOCK_DATA_LOADED = "Mock data loaded into 'input.body' namespace";
+    private static final String IMPORT = "import";
+    private static final String CONNECTIONS = "connections";
+    private static final String GRAPH_IMPORTED = "Graph model imported as draft";
     private static final long EXPIRY = 20 * 1000L;
     private static final String[] MAPPING_PROPERTIES = {"mapping", "input", "output", "for_each"};
     private static final SimpleTypeMatchingConverter converter = SimpleTypeMatchingConverter.getInstance();
@@ -166,6 +169,9 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (UPLOAD.equals(type) && in instanceof String inRoute && out instanceof String outRoute &&
                 input.get(CONTENT) != null) {
             handleUpload(po, inRoute, outRoute, input.get(CONTENT), forwarded);
+        } else if (IMPORT.equals(type) && in instanceof String inRoute && out instanceof String outRoute &&
+                input.get(CONTENT) instanceof Map<?, ?> content) {
+            handleImport(po, inRoute, outRoute, content, forwarded);
         }
     }
 
@@ -206,6 +212,41 @@ public class GraphCommandService extends GraphLambdaFunction {
         var targetOutRoute = GraphSession.getOutRoute(me.getTargetId());
         var forwardBody = Map.of(TYPE, UPLOAD, IN, targetInRoute, OUT, targetOutRoute, CONTENT, content);
         po.send(new EventEnvelope().setTo(ROUTE).setBody(forwardBody));
+    }
+
+    /**
+     * A graph model imported from a file travels like a command: when the importer is the primary session,
+     * its draft is replaced and the model is replayed into every subscriber's draft; a subscriber forwards
+     * the model to the primary, which does the same (the subscriber receives it back on the replay). Every
+     * member of a collaborative session then holds the same draft, and every member's console confirms it.
+     */
+    private void handleImport(PostOffice po, String inRoute, String outRoute, Map<?, ?> content, boolean forwarded) {
+        if (forwarded) {
+            importGraphAsDraft(po, inRoute, outRoute, asGraphMap(content));
+            return;
+        }
+        var me = sessions.get(inRoute);
+        if (me == null) {
+            return;
+        }
+        if (me.isPrimary()) {
+            importGraphAsDraft(po, inRoute, outRoute, asGraphMap(content));
+            for (var subOutRoute : me.getSubscribers()) {
+                var subInRoute = GraphSession.getInRoute(subOutRoute);
+                var forwardBody = Map.of(TYPE, IMPORT, IN, subInRoute, OUT, subOutRoute, CONTENT, content, FORWARDED, true);
+                po.send(new EventEnvelope().setTo(ROUTE).setBody(forwardBody));
+            }
+        } else {
+            var targetInRoute = GraphSession.getInRoute(me.getTargetId());
+            var targetOutRoute = GraphSession.getOutRoute(me.getTargetId());
+            var forwardBody = Map.of(TYPE, IMPORT, IN, targetInRoute, OUT, targetOutRoute, CONTENT, content);
+            po.send(new EventEnvelope().setTo(ROUTE).setBody(forwardBody));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> asGraphMap(Map<?, ?> content) {
+        return (Map<String, Object>) content;
     }
 
     private void loadMockContent(PostOffice po, String inRoute, String outRoute, Object content) {
@@ -353,6 +394,66 @@ public class GraphCommandService extends GraphLambdaFunction {
         }
         var po = EventEmitter.getInstance();
         po.send(new EventEnvelope().setTo(ROUTE).setBody(Map.of(TYPE, UPLOAD, IN, inRoute, OUT, outRoute, CONTENT, content)));
+        return true;
+    }
+
+    /**
+     * Validate a graph model uploaded from a file (the REST endpoint POST /api/graph/import/{id}) before it
+     * is imported: a JSON object whose only top-level sections are "nodes" (a list, mandatory) and
+     * "connections" (a list, optional - a work in progress may have none). The model is then parsed by
+     * the same importer the session uses, so a node without alias or types is refused here instead of
+     * failing later in the session. CompileGraph remains the quality gate for everything else.
+     *
+     * @param content the parsed request body
+     * @return null when the model is acceptable, otherwise the reason it is refused
+     */
+    public static String validateGraphModel(Object content) {
+        if (!(content instanceof Map<?, ?> map)) {
+            return "A graph model is a JSON object with a 'nodes' section";
+        }
+        var unexpected = new ArrayList<String>();
+        for (var key : map.keySet()) {
+            var k = String.valueOf(key);
+            if (!NODES.equals(k) && !CONNECTIONS.equals(k)) {
+                unexpected.add(k);
+            }
+        }
+        if (!unexpected.isEmpty()) {
+            Collections.sort(unexpected);
+            return "Unexpected top-level section(s): " + String.join(", ", unexpected) +
+                    " - a graph model has only 'nodes' and 'connections'";
+        }
+        if (!(map.get(NODES) instanceof List<?>)) {
+            return "The 'nodes' section is mandatory and must be a list";
+        }
+        if (map.containsKey(CONNECTIONS) && !(map.get(CONNECTIONS) instanceof List<?>)) {
+            return "The 'connections' section must be a list";
+        }
+        try {
+            new MiniGraph().importGraph(asGraphMap(map));
+        } catch (IllegalArgumentException e) {
+            return "Invalid graph model - " + e.getMessage();
+        }
+        return null;
+    }
+
+    /**
+     * Import a graph model (the REST endpoint POST /api/graph/import/{id}) as the session's draft.
+     * The model is routed through the command service so that it propagates to every member of a
+     * collaborative session like a command (see handleImport). Validate with validateGraphModel first.
+     *
+     * @param id session id
+     * @param content the graph model (nodes and optional connections)
+     * @return false when the session does not exist
+     */
+    public static boolean importContent(String id, Map<String, Object> content) {
+        var inRoute = GraphSession.getInRoute(id);
+        var outRoute = GraphSession.getOutRoute(id);
+        if (!sessions.containsKey(inRoute) || !graphModels.containsKey(inRoute)) {
+            return false;
+        }
+        var po = EventEmitter.getInstance();
+        po.send(new EventEnvelope().setTo(ROUTE).setBody(Map.of(TYPE, IMPORT, IN, inRoute, OUT, outRoute, CONTENT, content)));
         return true;
     }
 
@@ -1314,16 +1415,28 @@ public class GraphCommandService extends GraphLambdaFunction {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     private void importGraphAsDraft(PostOffice po, String inRoute, String outRoute, String json) {
-        var graph = graphModels.get(inRoute);
         var map = SimpleMapper.getInstance().getMapper().readValue(json, Map.class);
-        graph.importGraph(map);
+        importGraphAsDraft(po, inRoute, outRoute, asGraphMap(map));
+    }
+
+    private void importGraphAsDraft(PostOffice po, String inRoute, String outRoute, Map<String, Object> map) {
+        var graph = graphModels.get(inRoute);
+        if (graph == null) {
+            return;
+        }
+        try {
+            graph.importGraph(map);
+        } catch (IllegalArgumentException e) {
+            // the importer resets the draft before it rejects, so the console must say why
+            po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model not imported - " + e.getMessage()));
+            return;
+        }
         if (graphInstances.containsKey(inRoute)) {
             po.send(new EventEnvelope().setTo(outRoute).setBody("Graph instance cleared"));
             graphInstances.remove(inRoute);
         }
-        po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model imported as draft"));
+        po.send(new EventEnvelope().setTo(outRoute).setBody(GRAPH_IMPORTED));
     }
 
     private void handleExportCommand(PostOffice po, String inRoute, String outRoute, String filename) {

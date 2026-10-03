@@ -72,6 +72,40 @@
   font-size: 0.78rem;
 }
 
+.emptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.emptyActions .emptyCreateButton {
+  margin-top: 0;
+}
+
+.emptySecondaryButton {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  min-height: 2.25rem;
+  padding: 0.45rem 0.85rem;
+}
+
+.emptySecondaryButton:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.emptySecondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 
 :global(.react-flow__node-default) {
   text-align: initial;
@@ -155,6 +189,31 @@
   pointer-events: none;
   z-index: 20;
   padding: 1rem;
+}
+
+/* A graph file from the desktop: blue, so it reads apart from the green workspace-clipboard drop. */
+.fileDropOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 99, 235, 0.14);
+  border: 2px dashed rgba(147, 197, 253, 0.8);
+  pointer-events: none;
+  z-index: 20;
+  padding: 1rem;
+}
+
+.fileDropMessage {
+  background: rgba(15, 23, 42, 0.86);
+  border: 1px solid rgba(147, 197, 253, 0.6);
+  border-radius: var(--radius-sm);
+  color: #dbeafe;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.7rem 0.95rem;
 }
 
 .clipboardDropMessage {

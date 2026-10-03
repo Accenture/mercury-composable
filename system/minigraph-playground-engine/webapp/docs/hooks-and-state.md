@@ -121,6 +121,28 @@ the canvas in [graph-view.md](graph-view.md) (state machine, matching, pacing, r
   row ("Fetching large payload (X.XX MB)…"); one fetch at a time (events during a fetch are
   dropped); aborted on disconnect or unmount.
 
+## Graph file import and download (`hooks/useGraphFileImport.ts`, `utils/graphFile.ts`)
+
+- **`useGraphFileImport({ sessionId, connected, hasGraph, addToast })`** — a graph model from a
+  file on the user's computer becomes the session's draft. `importFiles(files)` (the canvas drop
+  and the file picker both land here) takes one file at a time, checks the type (`.json` or a JSON
+  MIME type, `utils/jsonFile.ts`), parses it, validates the model (`validateGraphModel`: a JSON
+  object whose only top-level sections are `nodes` — mandatory, non-empty, every node with an alias
+  and types — and `connections` — optional; anything else is refused by name) and posts it to
+  `POST /api/graph/import/{sessionId}`. The engine validates again, replaces the draft and tells
+  every member's console "Graph model imported as draft" — the `import-graph` mutation that
+  `useAutoGraphRefresh` already re-fetches on — so the hook toasts errors only (the type, the JSON,
+  the model, the engine's refusal with its message). While a graph is loaded the file is parked in
+  `pending` for `GraphImportConfirmDialog` (`confirmPending` / `cancelPending`): an import replaces
+  every member's draft and cannot be undone. `openFilePicker()` creates a hidden `<input type="file"
+  accept=".json,application/json">` and clicks it.
+- **Download** is not a hook: `Playground` opens `GraphDownloadDialog`, then `saveTextFile(
+  buildGraphFileText(graphData, graphId), graphFileName(graphId))`. `buildGraphFileText` deep-copies
+  the graph and sets the root node's `name` to the graph id (what `export graph as` does on the
+  engine, so the file and the model agree; the live graph is untouched); `saveTextFile` uses
+  `showSaveFilePicker` where the browser has it (the user picks the folder; a cancel resolves
+  `{saved: false}`) and otherwise a Blob + `<a download>` into the download folder.
+
 ## Saved graphs and naming
 
 - **`useSavedGraphs(storageKey)`** — a `localStorage` map `name → { name, savedAt }` (only the

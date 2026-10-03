@@ -81,7 +81,7 @@ describe('RightPanel tab strip', () => {
 
     expect(screen.getByRole('tablist', { name: 'Right panel tabs' })).toBeTruthy();
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent))
-      .toEqual(['Graph🕸️', 'Graph Data (Raw)']);
+      .toEqual(['Graph🕸️', 'Raw']);
   });
 
   it('forwards graph-local run controls to GraphView', () => {

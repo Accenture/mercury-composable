@@ -112,8 +112,11 @@ props (`graphData`, `graphName`, `graphRunControls?`, `isGraphRefreshing?`, the 
 authoring callbacks, `isConnected`, `supportsAuthoring`), `panelLayoutKey` and `helpPanel`.
 
 - The tab strip renders only with more than one tab: "Payload Editor", "Graph" (with a 🕸 badge
-  while a graph is loaded), "Graph Data (Raw)". **Every enabled tab stays mounted** and is hidden
-  by CSS, so the canvas keeps its zoom and pan.
+  while a graph is loaded), "Raw" (the `graph-data` tab; its label was "Graph Data (Raw)" until
+  2026-10-03). **Every enabled tab stays mounted** and is hidden by CSS, so the canvas keeps its
+  zoom and pan.
+- The graph file callbacks pass through: `onImportFiles?` and `onImportGraph?` to `GraphView`,
+  `onDownloadGraph?` to both `GraphView` and `GraphDataView` (their toolbars' Download button).
 - With `helpPanel` set, the panel becomes a vertical split: the tab content above (`minSize` 0%),
   the help below (`minSize` 15%, default 45%). `helpPanel` may be a render function receiving
   `(toggleMaximize, isMaximized)`; maximize resizes to 0/100 and restore returns to the saved
@@ -187,7 +190,11 @@ graph or no connection (`connected` defaults to `false`, so the parent must pass
 ### `GraphToolbar` and `GraphRunControls` (`components/GraphToolbar/`)
 
 `GraphToolbar` shows the graph name (default "Untitled"), "N node(s) · M connection(s)", optional
-`extraActions`, and a copy button that writes the graph JSON (pretty-printed) to the clipboard.
+`extraActions`, then up to three icon buttons: **Import** (`onImport?`, disabled with
+`importDisabledReason` as its tooltip — "Connect first to import a graph"), **Download**
+(`onDownload?`, disabled without a graph; the tooltip names the file, `<graph-id>.json` from
+`suggestGraphId(graphName)`) and **Copy**, which writes the graph JSON (pretty-printed) to the
+clipboard. `GraphView` wires Import and Download; `GraphDataView` wires Download only.
 `GraphRunControls` (rendered inside the toolbar by `GraphView`) is a `role="group"` with the three
 steps **Instantiate**, **Upload** (optional) and **Run**:
 
@@ -207,8 +214,27 @@ wrapper is focusable so keyboard users can read it. The phase machine is `useGra
 
 ### `GraphDataView`
 
-The raw graph JSON with the toolbar's "Expand all" / "Collapse all" actions and a `JsonView`;
-"No graph data yet." when nothing is loaded.
+The raw graph JSON (the "Raw" tab) with the toolbar's "Expand all" / "Collapse all" actions, the
+Download button (`onDownload?`) and a `JsonView`; "No graph data yet." when nothing is loaded.
+
+### `GraphDownloadDialog` and `GraphImportConfirmDialog` (`components/GraphFileDialogs/`)
+
+Native `<dialog>`s opened with `showModal()` (the `ClipboardDuplicateDialog` pattern), rendered by
+`Playground` next to the toasts.
+
+- **`GraphDownloadDialog`** (`defaultGraphId`, `supportsFolderPicker`, `onConfirm(graphId)`,
+  `onCancel`): asks for the graph id the file is saved under. The id follows the engine's file-name
+  rule (`GRAPH_ID_RE`: letters, digits, hyphen, underscore; the hint turns into an error and
+  Download disables otherwise), the extension is always `.json`, and the hint says that the root
+  node's name in the file becomes the graph id (as `export graph as` does) and where the file goes:
+  the browser's "save as" dialog when `supportsSaveFilePicker()` (Chromium), else the download
+  folder. `Playground.handleConfirmDownload` then calls `saveTextFile(buildGraphFileText(graph,
+  id), graphFileName(id))` (`utils/graphFile.ts`) and toasts "Graph saved as …"; a cancelled
+  native dialog toasts nothing.
+- **`GraphImportConfirmDialog`** (`pending`, `onReplace`, `onCancel`): shown by `Playground` when
+  `useGraphFileImport` parks a validated file because a graph is already loaded — "Replace the
+  current graph?" with the file name, the node and connection counts and the root name, and the
+  consequence (every member's draft is replaced, a graph instance is cleared, no undo).
 
 ## Toasts
 

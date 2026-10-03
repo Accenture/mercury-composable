@@ -30,6 +30,7 @@ related:
 | **Execute a deployed graph** | `POST /api/graph/{graph-id}` | Send the request body; get the response. No session. |
 | **Build/edit a graph** | `POST /api/companion/{session-id}/sync` | **Synchronous** — returns the command outcome **in-band** `{ok, output, error, result}`; output is *also* teed to the human's WS console. |
 | **Read the live model** | `GET /api/graph/session/{session-id}` | Returns the current graph as JSON. |
+| **Import a model from a file** | `POST /api/graph/import/{session-id}` | The body is a graph model (`nodes` mandatory, `connections` optional, no other section); it becomes the session's draft and reaches every member of a shared session. The Playground's Import Graph button and a dropped `.json` file use it. |
 
 This guide is about the **companion** flow — co-authoring a graph with a human watching the
 Playground.
@@ -430,6 +431,16 @@ rest:
   - service: 'upload.mock.content'
     methods: ['POST']
     url: '/api/mock/{id}'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  # Backs the Playground's "Import Graph" button and a graph file dropped on the
+  # graph view: a model from the user's computer becomes the session's draft
+  - service: 'import.graph.content'
+    methods: ['POST']
+    url: '/api/graph/import/{id}'
     timeout: 30s
     cors: cors_1
     headers: header_1
