@@ -524,13 +524,7 @@ class SessionManagementTest {
         final AppConfigReader config = AppConfigReader.getInstance();
         final int port = util.str2int(config.getProperty("rest.server.port",
                 config.getProperty("server.port", "8085")));
-        for (int i = 0; i < 3; i++) {
-            if (util.portReady("127.0.0.1", port, 3000)) {
-                break;
-            }
-            log.info("Waiting for GRAPH websocket server at port-{} to get ready", port);
-            util.sleep(1000);
-        }
+        awaitWebSocketServer(port);
         final BlockingQueue<String> messagesA = new LinkedBlockingQueue<>();
         final BlockingQueue<String> messagesB = new LinkedBlockingQueue<>();
         final AtomicReference<String> txPathA = new AtomicReference<>();
@@ -589,13 +583,7 @@ class SessionManagementTest {
         final AppConfigReader config = AppConfigReader.getInstance();
         final int port = util.str2int(config.getProperty("rest.server.port",
                 config.getProperty("server.port", "8085")));
-        for (int i = 0; i < 3; i++) {
-            if (util.portReady("127.0.0.1", port, 3000)) {
-                break;
-            }
-            log.info("Waiting for GRAPH websocket server at port-{} to get ready", port);
-            util.sleep(1000);
-        }
+        awaitWebSocketServer(port);
         final BlockingQueue<String> messagesA = new LinkedBlockingQueue<>();
         final BlockingQueue<String> messagesB = new LinkedBlockingQueue<>();
         final BlockingQueue<String> messagesC = new LinkedBlockingQueue<>();
@@ -656,6 +644,21 @@ class SessionManagementTest {
         log.info("Session A = {}, Session B = {}, Session C = {}", sessionA, sessionB, sessionC);
         return new ThreeSessionFixture(clientA, clientB, clientC, txPathB.get(), txPathC.get(),
                 messagesA, messagesB, messagesC, sessionA, sessionB, sessionC);
+    }
+
+    /**
+     * Wait for the GRAPH websocket server to accept connections (three attempts)
+     *
+     * @param port the websocket server port
+     */
+    private static void awaitWebSocketServer(int port) {
+        for (int i = 0; i < 3; i++) {
+            if (util.portReady("127.0.0.1", port, 3000)) {
+                break;
+            }
+            log.info("Waiting for GRAPH websocket server at port-{} to get ready", port);
+            util.sleep(1000);
+        }
     }
 
     private static void closeQuietly(PersistentWsClient... clients) {
