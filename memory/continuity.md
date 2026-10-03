@@ -476,6 +476,20 @@
   [[playground-webapp-single-source]] (one bundle, deployed to both engines).
   <!-- id: playground-three-step-run-controls | created: 2026-10-02 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-232248 -->
 
+- **A graph file becomes the session draft through `POST /api/graph/import/{id}`, which travels like a command, and the Playground downloads the model as `<graph-id>.json` with the root
+  node named after the id (Eric's usability sprint, 2026-10-03; PR #500, the Rust twin mercury #350, Increment 155).** The Graph view's Import Graph button (toolbar and empty canvas) and a
+  `.json` file dropped on the canvas validate the file in the browser (`utils/graphFile.ts`: a JSON object whose only top-level sections are `nodes`, mandatory, and `connections`, optional;
+  anything else refused by name) and post it; the engine validates again with its own importer on a scratch `MiniGraph` (`GraphCommandService.validateGraphModel`) and routes an `import`
+  event through the command service exactly like the mock upload (`handleImport`: the primary imports and replays, a subscriber forwards), so every member's draft is replaced and every
+  console prints `Graph model imported as draft` - the line the UI already refreshes on, which is why `useGraphFileImport` toasts errors only. **Rulings:** simple validation, CompileGraph
+  stays the quality gate (Eric); the UI asks before replacing a loaded graph (no undo for an import); a file drag is claimed even while disconnected so the browser never opens the file in
+  the tab; Download mirrors `export graph as` (the id follows the engine's file-name rule and becomes the root node's `name` in the file, the live graph untouched; Chromium's save picker,
+  else the download folder); the "Graph Data (Raw)" tab is "Raw"; a rejected model reports `Graph model not imported - <reason>` on the console (both engines, also for `import graph
+  from`). A dev-route addition touches five Java `rest.yaml` copies, three Rust ones and the guide excerpt ([[minigraph-dev-mode-app-shape]]). Extends
+  [[playground-three-step-run-controls]] (the broadcast shape); applies [[playground-webapp-single-source]] and [[help-edit-needs-bundle-release]] (bundle `index-Cv2pdvxg`) and
+  [[clean-knowledge-design-over-engine-coverage]]. Pinned by `SessionManagementTest.graphImportLoadsEveryMemberDraftTest` and the Rust `graph_import_loads_every_member_draft`.
+  <!-- id: playground-file-import-download | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-03-153654 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
