@@ -290,6 +290,43 @@ class GraphTaskTest {
     }
 
     @Test
+    void mappingSourceResolvesDynamicVariablesVerbatim() throws TimeoutException {
+        // unit-test-mapping-1: a {namespace.key} reference inside a mapping source resolves before the
+        // source is read - a key segment of a keyed table, a list index, text in a constant and a plugin
+        // argument - and the value goes in verbatim. A '!', '>', '&&' or '==' in a text constant does not
+        // make the source a boolean expression, so nothing is quoted; a JSONPath filter is the one place
+        // a text value is quoted, so that it reads as a string literal in the query
+        var people = List.of(Map.of("name", "Peter", "team", "blue"), Map.of("name", "Paul", "team", "red"),
+                Map.of("name", "Mary", "team", "blue"));
+        var response = runGraph("unit-test-mapping-1", Map.of("state", "CA", "name", "Peter", "rival", "Paul",
+                "index", 2, "items", List.of("a", "b", "c"), "people", people, "team", "blue"), Map.of());
+        assertEquals(200, response.getStatus());
+        var mm = bodyMap(response);
+        assertEquals("39538223", mm.getElement("population"));
+        assertEquals("c", mm.getElement("item"));
+        assertEquals("population=39538223", mm.getElement("label"));
+        assertEquals("Hello Peter!", mm.getElement("greeting"));
+        assertEquals("Peter > Paul", mm.getElement("versus"));
+        assertEquals("Peter && Paul == friends", mm.getElement("pair"));
+        // the same rendering in a graph.math MAPPING statement, beside a CONDITION that keeps its quoting rules
+        assertEquals("Hi Peter!", mm.getElement("statement"));
+        assertEquals(true, mm.getElement("in_range"));
+        // an unresolved reference renders the text null: in a constant it reads as null, and a composed key
+        // misses, so the null-source rule leaves the output target untouched
+        assertEquals("miss=null", mm.getElement("miss"));
+        assertEquals("kept", mm.getElement("kept"));
+        assertEquals(List.of("Peter", "Mary"), mm.getElement("team"));
+        // a composed key is a plain key path, so it is case-sensitive (f:lookup compares case-insensitively)
+        response = runGraph("unit-test-mapping-1", Map.of("state", "ca", "name", "Peter", "rival", "Paul",
+                "index", 0, "items", List.of("a"), "people", people, "team", "blue"), Map.of());
+        assertEquals(200, response.getStatus());
+        mm = bodyMap(response);
+        assertFalse(mm.exists("population"));
+        assertEquals("a", mm.getElement("item"));
+        log.info("a mapping source resolves its dynamic variables verbatim");
+    }
+
+    @Test
     void mathExpressionNamesTheUnresolvedVariable() throws TimeoutException {
         // unit-test-math-1 (issue #453): the seed's overlay 'input.body.threshold -> model.threshold'
         // clears the model variable when the input is absent and 'model.factor' is never set, so the

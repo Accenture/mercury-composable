@@ -124,6 +124,17 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    travels like a command: the primary loads it and replays it into every subscriber's instance, a subscriber's upload goes through
    the primary, and every member's console prints `Mock data loaded into 'input.body' namespace`. A session without a graph
    instance is still refused (HTTP 400). The Rust engine carries the same change.
+17. **A knowledge-graph mapping source inserts its `{namespace.key}` values verbatim.** A mapping source may embed a reference
+   that resolves before the source is read: a key segment (`census-2020.{model.state}`, the read of a keyed table), a list index
+   (`input.body.items[{model.i}]`), or text in a constant or a plugin argument. When the source text contained `!`, `<`, `>`, `==`,
+   `&&` or `||`, every text value was quoted as if the source were a boolean expression: `text(Hello {input.body.name}!)` gave
+   `Hello 'Peter'!`. Now nothing is quoted, in `mapping[]` entries, `MAPPING:` statements, `for_each[]` entries, the `input[]` and
+   `output[]` entries of `graph.task`, `graph.extension` and `graph.api.fetcher`, and a Dictionary's `output[]`. A JSONPath filter
+   still quotes a text value, because it must read as a string literal in the query. The guides now document the dynamic key
+   (the grammar's new "Dynamic keys and values in a source" section, the skills reference's keyed table, the data-mapper help),
+   and the Event Script plugin table states that the numeric conversions `int`, `long`, `float` and `double` give `-1` for a
+   null or non-numeric value. The Rust engine carries the same change. READ: a mapping that relied on the quotes, a text
+   constant with one of those characters around a reference, now gets the bare value.
 
 ---
 ## Version 4.12.20, 10/1/2026

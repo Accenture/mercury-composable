@@ -108,7 +108,7 @@ public class GraphTask extends GraphLambdaFunction {
             if (sep <= 0) {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '" + entry + "'");
             }
-            var lhs = substituteVarIfAny(entry.substring(0, sep).trim(), stateMachine);
+            var lhs = substituteMappingSource(entry.substring(0, sep).trim(), stateMachine);
             var rhs = entry.substring(sep + MAP_TO.length()).trim();
             var value = helper.getLhsOrConstant(lhs, stateMachine);
             if (rhs.startsWith(MODEL_NAMESPACE)) {
