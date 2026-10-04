@@ -491,16 +491,18 @@
   <!-- id: playground-file-import-download | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-03-153654 -->
 
 - **A mapping source inserts its `{namespace.key}` values verbatim, never quoted; a JSONPath filter is the one place a text value is quoted (Eric's ruling, 2026-10-03;
-  PR #503, the Rust twin mercury #351, Increment 156; both open at this writing).** A graph mapping source may embed a reference that resolves before the source is read: a
+  PR #503 squash `8db2a46f` and the Rust twin mercury #351 merge `5c408037`, Increment 156; both MERGED 2026-10-04 06:01Z).** A graph mapping source may embed a reference that resolves before the source is read: a
   key segment (`census-2020.{model.state}`, the keyed-table read beside `f:lookup`), a list index (`items[{model.i}]`, never Event Script's bare `[model.i]`), or text in a
   constant or a plugin argument, in `mapping[]`, `MAPPING:`, `for_each[]`, the task/extension/fetcher `input[]`/`output[]` and a Dictionary's `output[]`
   (`GraphLambdaFunction.substituteMappingSource`, `common::substitute_mapping_source`). Those six call sites had used the expression renderer, whose boolean-operator
-  heuristic quoted every text value when the source held `!`, `<`, `>`, `==`, `&&` or `||` (`Hello 'Peter'!`). Kept and documented as the rule: an unresolved reference
-  renders `null` (Event Script keeps a non-model brace pair verbatim; Eric left the question unruled, the "keep" recommendation stands), any namespace may be read (Event
-  Script: `model.*` only), a target is literal, a composed key is case-sensitive, and a fixed prefix should precede a request value. Found documenting the keyed census
+  heuristic quoted every text value when the source held `!`, `<`, `>`, `==`, `&&` or `||` (`Hello 'Peter'!`). **By design (Eric, 2026-10-03):** an unresolved reference
+  renders `null` (Event Script keeps a non-model brace pair verbatim) and a mapping target is never resolved (literal); also documented: any namespace may be read (Event
+  Script: `model.*` only), a composed key is case-sensitive, and a fixed prefix should precede a request value. Found documenting the keyed census
   table of a live team demo; pinned by the byte-identical fixture `unit-test-mapping-1` and the claim `mapping-source-dynamic-variables`; the plugin table now states the
-  `-1` of `int`/`long`/`float`/`double` for a null or non-numeric value (Eric agreed). Extends [[static-decision-table-is-graph-data]]; applies
-  [[help-edit-needs-bundle-release]] (bundle `index-Bz9k-ffR`).
+  `-1` of `int`/`long`/`float`/`double` for a null or non-numeric value (Eric agreed). Follow-up: the JSONPath result shape (Jayway's rule: a definite path yields the
+  value or null, an indefinite one always a list, null when a member name before its first indefinite step is missing) is documented and pinned by the shared fixture
+  `unit-test-jsonpath-1` and the claim `json-path-result-shape` in #504 (no change here; open), the Rust fix being mercury #352 (Increment 157). Extends
+  [[static-decision-table-is-graph-data]]; applies [[help-edit-needs-bundle-release]] (bundle `index-Bz9k-ffR`).
   <!-- id: mapping-source-verbatim-substitution | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-04-054327 -->
 
 ## Conventions
