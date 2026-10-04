@@ -5673,7 +5673,8 @@ prevent execution loops.</p>
 <p><strong>Null arguments are plugin-specific, by design.</strong> A plugin receives an unresolved argument as <code>null</code> and
 each plugin decides what that means: <code>f:defaultValue</code> and <code>f:isNull</code> exist for it, the arithmetic family
 (<code>f:add</code>, <code>f:round</code>, ...) throws — which fails the task, and in a knowledge graph the node and therefore the
-traversal — and other plugins return null or absorb a malformed argument silently. A plain mapping of the
+traversal — and other plugins return null or absorb a malformed argument silently (the numeric
+conversions <code>int</code>, <code>long</code>, <code>float</code> and <code>double</code> give <code>-1</code>). A plain mapping of the
 same absent source is skipped, so wrapping a working mapping in a plugin can change whether it runs. Guard
 an optional source in a preceding entry, because plugin calls do not nest:
 <code>f:defaultValue(model.figure, double(0)) -&gt; model.figure</code> and then <code>f:round(model.figure, int(2)) -&gt; output.body.figure</code>.</p>
@@ -5914,22 +5915,22 @@ double enters, precision follows IEEE-754 (integers exact to 2^53).</p>
 <tr>
 <td style="text-align: left;"><strong>Type Conversion</strong></td>
 <td style="text-align: left;">double</td>
-<td style="text-align: left;">A list of variables that can evaluate to a double</td>
+<td style="text-align: left;">A list of variables that can evaluate to a double; a null or non-numeric value gives -1</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Type Conversion</strong></td>
 <td style="text-align: left;">float</td>
-<td style="text-align: left;">A list of variables that can evaluate to a float</td>
+<td style="text-align: left;">A list of variables that can evaluate to a float; a null or non-numeric value gives -1</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Type Conversion</strong></td>
 <td style="text-align: left;">int</td>
-<td style="text-align: left;">A list of variables that can evaluate to an integer</td>
+<td style="text-align: left;">A list of variables that can evaluate to an integer; a null or non-numeric value gives -1</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Type Conversion</strong></td>
 <td style="text-align: left;">long</td>
-<td style="text-align: left;">A list of variables that can evaluate to a long integer</td>
+<td style="text-align: left;">A list of variables that can evaluate to a long integer; a null or non-numeric value gives -1</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Type Conversion</strong></td>

@@ -1486,6 +1486,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Namespaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dynamic-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic keys and values in a source
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3124,6 +3141,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Namespaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dynamic-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic keys and values in a source
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3475,8 +3509,8 @@
 </tr>
 <tr>
 <td><strong>Variable substitution</strong></td>
-<td><code>{namespace.key}</code> inside <code>COMPUTE</code>/<code>IF</code> expressions</td>
-<td><code>{book.price}</code>, <code>{input.body.discount}</code></td>
+<td><code>{namespace.key}</code> inside <code>COMPUTE</code>/<code>IF</code> expressions, statement commands and mapping sources (<a href="#dynamic-keys">dynamic keys</a>)</td>
+<td><code>{book.price}</code>, <code>census-2020.{model.state}</code></td>
 </tr>
 </tbody>
 </table>
@@ -3574,6 +3608,40 @@ model variable therefore comes from the <strong>source</strong> side: <code>f:de
 boolean(false)) -&gt; model.flag</code>, or a plugin's own default such as <code>f:lookup(table, value,
 text(unknown))</code>. Do not write a default into <code>model.*</code> first and overlay it with a possibly-null
 source — the overlay removes the default.</p>
+<h3 id="dynamic-keys">Dynamic keys and values in a source<a class="headerlink" href="#dynamic-keys" title="Permanent link">&para;</a></h3>
+<p>A <code>{namespace.key}</code> reference inside a mapping source resolves before the source is read, and its
+value is inserted verbatim, never quoted. It composes three things without a plugin or a function:</p>
+<ul>
+<li><strong>A key segment</strong> — <code>census-2020.{model.state}</code> reads the property that <code>model.state</code> names, so a
+  skill-less table node answers a value per key (the <a href="../skills-reference/#keyed-table">keyed table</a>
+  beside the <code>f:lookup</code> decision table).</li>
+<li><strong>A list index</strong> — <code>model.items[{model.i}]</code> reads the element that <code>model.i</code> points at. Write the
+  index with braces: Event Script's bare <code>model.items[model.i]</code> form is not a graph mapping.</li>
+<li><strong>Text in a constant or a plugin argument</strong> — <code>text(Hello {model.name}!)</code>,
+  <code>f:concat(text(population=), census-2020.{model.state})</code>.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mapping[]=census-2020.{model.state} -&gt; model.population
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>mapping[]=input.body.items[{model.i}] -&gt; output.body.item
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>mapping[]=text(Hello {input.body.name}!) -&gt; output.body.greeting
+</code></pre></div>
+<p>It holds in <code>mapping[]</code> entries, <code>MAPPING:</code> statements, <code>for_each[]</code> entries, the <code>input[]</code> and
+<code>output[]</code> entries of <code>graph.task</code>, <code>graph.extension</code> and <code>graph.api.fetcher</code>, and a Dictionary's
+<code>output[]</code>. The rules:</p>
+<ul>
+<li><strong>Any namespace, source side only.</strong> The reference reads <code>input.*</code>, <code>model.*</code>, <code>output.*</code> or a node
+  (Event Script accepts <code>model.*</code> only). A <strong>target</strong> is a literal path; braces there are not resolved.</li>
+<li><strong>Rendering.</strong> Text and numbers go in as written, a boolean as <code>true</code> or <code>false</code>, a map or a list as
+  compact JSON. A <code>!</code>, <code>&lt;</code>, <code>&gt;</code> or <code>==</code> inside a text constant does not make the source an expression,
+  so nothing is quoted. The one place a text value is quoted is a JSONPath filter, where it must read
+  as a string literal in the query: <code>$.input.body.people[?(@.team == {model.team})].name</code>.</li>
+<li><strong>An unresolved reference renders the text <code>null</code>.</strong> A composed key then misses
+  (<code>census-2020.null</code>), so the null-source rule above applies, and a constant reads <code>null</code>
+  (<code>text(state={model.x})</code> is <code>state=null</code>). A brace pair whose content holds a colon, a tab or a
+  newline is not a reference and is kept as written, which is how JSON text in a constant survives.</li>
+<li><strong>A composed key is a plain key path</strong>: case-sensitive, unlike <code>f:lookup</code>, and a value that contains
+  a dot descends a level. Keep a fixed prefix before a request value (<code>census-2020.{input.body.state}</code>):
+  the request then chooses only within that table, never the namespace.</li>
+</ul>
 <h2 id="constants">Constants<a class="headerlink" href="#constants" title="Permanent link">&para;</a></h2>
 <p>A constant is valid wherever a mapping <strong>source</strong> is (a <code>mapping[]</code>/<code>input[]</code>/<code>output[]</code> source, an
 <code>instantiate graph</code> seed line). This is the <strong>closed set</strong> — no other constant or coercion form
@@ -3611,11 +3679,11 @@ skills share Event Script's mapping engine):</p>
 block); one-line commands are self-contained.</p>
 <h3 id="create">create node / update node<a class="headerlink" href="#create" title="Permanent link">&para;</a></h3>
 <p>Multi-line. <code>update node</code> has the identical shape and replaces a node's definition.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>create node {name}
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>with type {type}
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>with properties
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>{key}={value}
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>{key}={value}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>create node {name}
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>with type {type}
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>with properties
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>{key}={value}
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>{key}={value}
 </code></pre></div>
 <ul>
 <li><code>with properties</code> and the key lines are <strong>optional</strong> (properties act as defaults).</li>
@@ -3625,7 +3693,7 @@ block); one-line commands are self-contained.</p>
 </ul>
 <h3 id="connect">connect<a class="headerlink" href="#connect" title="Permanent link">&para;</a></h3>
 <p>One-line. <strong>Directional</strong> — <code>connect a to b</code> differs from <code>connect b to a</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>connect {node-a} to {node-b} with {relation}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>connect {node-a} to {node-b} with {relation}
 </code></pre></div>
 <p>The <code>{relation}</code> is a <strong>descriptive label</strong> (e.g. <code>done</code>, <code>fetch</code>, <code>provider</code>) — free-form, not
 interpreted for skill routing. For data-entity nodes, meaningful relationship names capture
@@ -3639,25 +3707,25 @@ per-branch <code>model.*</code> variables), or <strong>append to a shared list w
 (element order then follows completion order — see
 <a href="#namespaces">Composite keys &amp; arrays</a>).</p>
 <h3 id="delete">delete<a class="headerlink" href="#delete" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>delete node {name}
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>delete connection {node-a} and {node-b}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>delete node {name}
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>delete connection {node-a} and {node-b}
 </code></pre></div>
 <h3 id="instantiate">instantiate graph<a class="headerlink" href="#instantiate" title="Permanent link">&para;</a></h3>
 <p>Multi-line. Creates a runnable instance with optional seeded mock input. <strong>Required before</strong>
 <code>run</code>, <code>execute</code>, or <code>inspect</code>. Alias: <code>start</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>instantiate graph
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>{constant} -&gt; input.body.{key}
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>{constant} -&gt; input.header.{key}
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>{constant} -&gt; model.{key}
-</code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>instantiate graph
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>int(100) -&gt; input.body.profile_id
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>text(application/json) -&gt; input.header.content-type
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>{constant} -&gt; input.body.{key}
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>{constant} -&gt; input.header.{key}
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>{constant} -&gt; model.{key}
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>instantiate graph
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>int(100) -&gt; input.body.profile_id
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>text(application/json) -&gt; input.header.content-type
 </code></pre></div>
 <p>Seed keys may be <strong>composite</strong> (dot-bracket), so nested mock payloads seed directly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>instantiate graph
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>text(Peter) -&gt; input.body.profile.name
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>text(100 World Blvd) -&gt; input.body.profile.address1
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>instantiate graph
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>text(Peter) -&gt; input.body.profile.name
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>text(100 World Blvd) -&gt; input.body.profile.address1
 </code></pre></div>
 <p>Issuing <code>instantiate graph</code> again <strong>replaces</strong> the current instance — a fresh state machine and
 cleared run marks — which is the standard idiom for a second dry-run with different input. A
@@ -3667,13 +3735,13 @@ time, and the run-once marks are what <code>RESET:</code> governs — so a secon
 is preceded by <code>instantiate graph</code> (alias <code>start</code>). A deployed graph never sees this: every request
 gets a fresh instance.</p>
 <h3 id="run">run / execute / inspect<a class="headerlink" href="#run" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>run                        # traverse from root to end
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>execute {node}             # run a single node (after instantiate)
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>inspect {namespace.key}    # read a value from the state machine (a leaf value or a whole subtree)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>run                        # traverse from root to end
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>execute {node}             # run a single node (after instantiate)
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>inspect {namespace.key}    # read a value from the state machine (a leaf value or a whole subtree)
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>inspect output               # a whole namespace: input | output | model | error
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>inspect output.body.name     # a specific composite key
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>inspect error                # the exception context after a failed node routed to its handler
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>inspect output               # a whole namespace: input | output | model | error
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>inspect output.body.name     # a specific composite key
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>inspect error                # the exception context after a failed node routed to its handler
 </code></pre></div>
 <blockquote>
 <p><strong>Placeholder convention:</strong> <code>{…}</code> in the syntax lines above (e.g. <code>{node}</code>,
@@ -3692,16 +3760,16 @@ aborted: timed out after N ms</code> (every abort names its reason — a node's 
 rule, the deadline — and the console and the synchronous companion endpoint always receive an
 end-of-transmission line). Seed a different budget at the instantiate edge: <code>long(60000) -&gt; model.ttl</code>.</p>
 <h3 id="describe">describe / list / seen<a class="headerlink" href="#describe" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>describe graph
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>describe graph {graph-id}        # DISCOVERY: a deployed model's contract view
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>describe node {name}
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>describe connection {node-a} and {node-b}
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>describe skill {skill.route}     # prints the shipped help for a skill
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>list nodes
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>list connections
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>list graphs                      # DISCOVERY: deployable graph models (extension= targets)
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>list flows                       # DISCOVERY: Event Script flows (extension=flow:// targets)
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>seen                             # nodes visited in the last run
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>describe graph
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>describe graph {graph-id}        # DISCOVERY: a deployed model's contract view
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>describe node {name}
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>describe connection {node-a} and {node-b}
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>describe skill {skill.route}     # prints the shipped help for a skill
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>list nodes
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>list connections
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>list graphs                      # DISCOVERY: deployable graph models (extension= targets)
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>list flows                       # DISCOVERY: Event Script flows (extension=flow:// targets)
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>seen                             # nodes visited in the last run
 </code></pre></div>
 <p><strong>Discovery (read-only).</strong> <code>list graphs</code> enumerates the graph models a
 <a href="../skills-reference/#extension"><code>graph.extension</code></a> node can delegate to — the compiled registry
@@ -3712,9 +3780,9 @@ reads as living documentation. <code>list flows</code> enumerates the Event Scri
 from the model's own mappings — so an agent can wire the delegation's <code>input[]</code>/<code>output[]</code>
 without out-of-band knowledge or trial execution.</p>
 <h3 id="export">export / import<a class="headerlink" href="#export" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>export graph as {name}
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>import graph from {name}
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>import node {node} from {name}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>export graph as {name}
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>import graph from {name}
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>import node {node} from {name}
 </code></pre></div>
 <ul>
 <li><code>export</code> is <strong>idempotent</strong>: when the file already holds byte-identical content the physical
@@ -3735,10 +3803,10 @@ without out-of-band knowledge or trial execution.</p>
   view of the exported model.</li>
 </ul>
 <h3 id="session">session<a class="headerlink" href="#session" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>session                    # show this session id + subscribers
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>session subscribe {id}     # mirror another (primary) session's commands into yours
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>session unsubscribe
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>session reset
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>session                    # show this session id + subscribers
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>session subscribe {id}     # mirror another (primary) session's commands into yours
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>session unsubscribe
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>session reset
 </code></pre></div>
 <p>The topology subcommands (<code>subscribe</code>/<code>unsubscribe</code>/<code>reset</code>) work only from a
 <strong>WebSocket-connected session</strong>. The companion REST endpoints reject them (a companion is an
@@ -3749,10 +3817,10 @@ available there.</p>
 content <code>describe skill {route}</code> returns for a skill. Useful for in-band self-service when a
 detail is not in this grammar (and file an issue when that happens — this page is meant to be
 sufficient).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>help                       # overview
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>help {command}             # e.g. help connect, help instantiate
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>help {topic}               # e.g. help data-dictionary, help session
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>help {skill-topic}         # hyphenated skill form: help graph-api-fetcher, help graph-math
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>help                       # overview
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>help {command}             # e.g. help connect, help instantiate
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>help {topic}               # e.g. help data-dictionary, help session
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>help {skill-topic}         # hyphenated skill form: help graph-api-fetcher, help graph-math
 </code></pre></div>
 <ul>
 <li>Aliases: <code>help start</code> → <code>help instantiate</code>; <code>help clear</code> → <code>help delete</code>.</li>
@@ -3885,14 +3953,14 @@ Both are <strong>config nodes</strong>: they never execute and are referenced <s
 (see <a href="#island">Island — the knowledge layer</a>): the island subgraph is the graph's
 entity-relationship diagram, and <strong>no node is left unconnected</strong>.</p>
 <p><strong>Provider</strong> — defines the HTTP call:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>create node {name}
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>with type Provider
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>with properties
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>purpose={description}
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>url={target url}
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>method={GET | POST | PUT | PATCH | DELETE | HEAD}
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>feature[]={feature flag}
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>input[]={source} -&gt; {target}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>create node {name}
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>with type Provider
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>with properties
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>purpose={description}
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>url={target url}
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>method={GET | POST | PUT | PATCH | DELETE | HEAD}
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>feature[]={feature flag}
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>input[]={source} -&gt; {target}
 </code></pre></div>
 <ul>
 <li>The <code>url</code> may embed <strong><code>{name}</code> path placeholders</strong> — each one is filled by an <code>input[]</code> line
@@ -3908,14 +3976,14 @@ entity-relationship diagram, and <strong>no node is left unconnected</strong>.</
   warning from <code>graph.api.fetcher</code> (a custom fetcher may enforce it).</li>
 </ul>
 <p><strong>Dictionary</strong> — defines one data attribute retrievable through a Provider:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>create node {name}
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>with type Dictionary
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>with properties
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>purpose={description}
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>provider={provider-node-name}
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>input[]={parameter}
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>input[]={parameter}:{default}
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>output[]=response.{path} -&gt; result.{key}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>create node {name}
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>with type Dictionary
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>with properties
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>purpose={description}
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>provider={provider-node-name}
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>input[]={parameter}
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>input[]={parameter}:{default}
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>output[]=response.{path} -&gt; result.{key}
 </code></pre></div>
 <ul>
 <li><code>input[]</code> entries are <strong>bare parameter names</strong>, <em>not</em> <code>source -&gt; target</code> mappings (the one
@@ -3946,59 +4014,59 @@ entity-relationship diagram, and <strong>no node is left unconnected</strong>.</
 </ul>
 <p>Worked example — fetch a person's profile by id (path parameter + JSON accept header), then expose
 name and address:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>create node mdm-profile
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>with type Provider
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>with properties
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>purpose=MDM profile endpoint
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>url=http://127.0.0.1:${rest.server.port:8080}/api/mdm/profile/{id}
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>method=GET
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>input[]=text(application/json) -&gt; header.accept
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>input[]=person_id -&gt; path_parameter.id
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>create node person-profile
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>with type Dictionary
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>create node mdm-profile
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>with type Provider
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>with properties
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>purpose=full profile record of a person
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>provider=mdm-profile
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>input[]=person_id
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>output[]=response.profile.name -&gt; result.name
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>output[]=response.profile.address -&gt; result.address
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>purpose=MDM profile endpoint
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>url=http://127.0.0.1:${rest.server.port:8080}/api/mdm/profile/{id}
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>method=GET
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>input[]=text(application/json) -&gt; header.accept
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>input[]=person_id -&gt; path_parameter.id
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>create node fetcher
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>with type Fetcher
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>create node person-profile
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>with type Dictionary
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>with properties
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>skill=graph.api.fetcher
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>dictionary[]=person-profile
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>input[]=input.body.person_id -&gt; person_id
-<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>output[]=result.name -&gt; output.body.name
-<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>output[]=result.address -&gt; output.body.address
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>purpose=full profile record of a person
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>provider=mdm-profile
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>input[]=person_id
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>output[]=response.profile.name -&gt; result.name
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>output[]=response.profile.address -&gt; result.address
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>create node fetcher
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>with type Fetcher
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>with properties
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>skill=graph.api.fetcher
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>dictionary[]=person-profile
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>input[]=input.body.person_id -&gt; person_id
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>output[]=result.name -&gt; output.body.name
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>output[]=result.address -&gt; output.body.address
 </code></pre></div>
 <p>Second worked example — a <strong>POST</strong> Provider: <code>body.{key}</code> targets build the JSON request body
 (set <code>content-type</code>; there is no URL placeholder — the parameters travel in the body):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>create node account-api
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>with type Provider
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>with properties
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>purpose=account management endpoint
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>url=http://127.0.0.1:${rest.server.port:8080}/api/account/details
-<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>method=POST
-<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>input[]=text(application/json) -&gt; header.accept
-<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>input[]=text(application/json) -&gt; header.content-type
-<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>input[]=person_id -&gt; body.person_id
-<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>input[]=account_id -&gt; body.account_id
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>create node account-api
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>with type Provider
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>with properties
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>purpose=account management endpoint
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>url=http://127.0.0.1:${rest.server.port:8080}/api/account/details
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>method=POST
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>input[]=text(application/json) -&gt; header.accept
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>input[]=text(application/json) -&gt; header.content-type
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>input[]=person_id -&gt; body.person_id
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>input[]=account_id -&gt; body.account_id
 </code></pre></div>
 <h2 id="for-each">Iterative fetching — <code>for_each</code><a class="headerlink" href="#for-each" title="Permanent link">&para;</a></h2>
 <p>A <code>graph.api.fetcher</code> node can execute <strong>once per element of a runtime array</strong> — the mechanism for
 "fetch details for each item in a list obtained from a previous call":</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>create node accounts-fetcher
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>with type Fetcher
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>with properties
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>skill=graph.api.fetcher
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>dictionary[]=account-detail
-<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>for_each[]=profile-fetcher.result.accounts -&gt; model.account_id
-<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>concurrency=3
-<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>input[]=input.body.person_id -&gt; person_id
-<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>input[]=model.account_id -&gt; account_id
-<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>output[]=result.detail -&gt; model.account_details
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>create node accounts-fetcher
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>with type Fetcher
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>with properties
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>skill=graph.api.fetcher
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>dictionary[]=account-detail
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>for_each[]=profile-fetcher.result.accounts -&gt; model.account_id
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>concurrency=3
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>input[]=input.body.person_id -&gt; person_id
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>input[]=model.account_id -&gt; account_id
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>output[]=result.detail -&gt; model.account_details
 </code></pre></div>
 <ul>
 <li><code>for_each[]={array-source} -&gt; model.{var}</code> — the source <strong>must resolve to a list</strong>; it is
@@ -4075,20 +4143,20 @@ node left unconnected. The canonical <strong>bounded-retry</strong> pattern comb
 <a href="#math-statements">statement grammar</a>) — and because <strong>every statement command resolves
 <code>{dynamic variables}</code></strong>, the handler is fully generic: it retries <em>whichever node routed here</em>
 via <code>{error.source}</code>, never naming a node:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>create node error-handler
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>with type Decision
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>with properties
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>skill=graph.math
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>statement[]=RESET: {error.source}, error-handler
-<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>statement[]=MAPPING: f:defaultValue(model.attempts, int(0)) -&gt; model.attempts
-<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>statement[]=MAPPING: f:add(model.attempts, int(1)) -&gt; model.attempts
-<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>statement[]='''
-<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>IF: {model.attempts} &gt;= 3
-<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>THEN: recovery-node
-<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>ELSE: next
-<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>'''
-<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>statement[]=NEXT: {error.source}
-<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a>statement[]=DELAY: 50
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>create node error-handler
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>with type Decision
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>with properties
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>skill=graph.math
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>statement[]=RESET: {error.source}, error-handler
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>statement[]=MAPPING: f:defaultValue(model.attempts, int(0)) -&gt; model.attempts
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>statement[]=MAPPING: f:add(model.attempts, int(1)) -&gt; model.attempts
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>statement[]='''
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>IF: {model.attempts} &gt;= 3
+<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>THEN: recovery-node
+<a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a>ELSE: next
+<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a>'''
+<a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a>statement[]=NEXT: {error.source}
+<a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a>statement[]=DELAY: 50
 </code></pre></div>
 <p>The handler <strong>resets the failing node and itself first</strong> (the placement rule above — it then runs
 on every path, including the recovery jump), counts attempts (<code>f:defaultValue</code> + <code>f:add</code> on the
@@ -4112,16 +4180,16 @@ off-path nodes — config (Dictionary, Provider), data-entity, or reusable
 graph with none (e.g. a pure transformation), an island is <strong>encouraged</strong>: adding data-entity
 nodes that document the domain model (entities, fields, which fields are internal-only) turns
 even a small graph into discoverable enterprise knowledge.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>create node dictionary
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>with type Island
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>with properties
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>skill=graph.island
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>create node dictionary
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>with type Island
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>with properties
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>skill=graph.island
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>connect root to dictionary with contains
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>connect dictionary to person-profile with data
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>connect dictionary to account-detail with data
-<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>connect person-profile to mdm-profile with provider
-<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>connect account-detail to account-api with provider
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>connect root to dictionary with contains
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>connect dictionary to person-profile with data
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>connect dictionary to account-detail with data
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>connect person-profile to mdm-profile with provider
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>connect account-detail to account-api with provider
 </code></pre></div>
 <p>The relation labels are descriptive (free-form) — choose names that capture the real-world
 relationship; <code>contains</code> / <code>data</code> / <code>provider</code> are the shipped conventions. Traversal is
@@ -4163,29 +4231,29 @@ with <strong>only</strong> <code>MAPPING</code> statements is rejected — use <
 formula once, reading neutral <code>model.*</code> operands, keep the node <strong>off the execution path</strong>, and
 let any traversal node borrow it with <code>EXECUTE</code>. The caller marshals inputs into the module's
 expected <code>model.*</code> keys, executes, then maps <strong>its own</strong> result out:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>create node addition             # the library — authored once, not traversed
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>with type Module
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>with properties
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>skill=graph.math
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>statement[]=COMPUTE: sum -&gt; {model.a} + {model.b}
-</code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>create node compute              # the execution-path caller
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>with type Compute
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>create node addition             # the library — authored once, not traversed
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>with type Module
 <a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>with properties
 <a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>skill=graph.math
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>statement[]=MAPPING: input.body.a -&gt; model.a
-<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>statement[]=MAPPING: input.body.b -&gt; model.b
-<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>statement[]=EXECUTE: addition
-<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>statement[]=MAPPING: compute.result.sum -&gt; output.body.sum
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>statement[]=COMPUTE: sum -&gt; {model.a} + {model.b}
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>create node compute              # the execution-path caller
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>with type Compute
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>with properties
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>skill=graph.math
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>statement[]=MAPPING: input.body.a -&gt; model.a
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>statement[]=MAPPING: input.body.b -&gt; model.b
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>statement[]=EXECUTE: addition
+<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>statement[]=MAPPING: compute.result.sum -&gt; output.body.sum
 </code></pre></div>
 <p>Note <code>compute.result.sum</code> — <strong>not</strong> <code>addition.result.sum</code>: the caller borrows the logic, so the
 result belongs to the caller. Hang the module under the <a href="#island">Island knowledge layer</a>
 (<code>island -[module]-&gt; addition</code>) so it is documented and no node is left unconnected.</p>
 <p><strong><code>IF</code> is a multi-line statement — this is the decision construct.</strong> An <code>IF</code> <strong>must</strong> be paired with
 <code>THEN:</code> and <code>ELSE:</code>, or the engine aborts the run (<code>node {name} does not have if:, then: or else:</code>):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>IF: &lt;boolean expression&gt;
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>THEN: &lt;node-name&gt; | next
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>ELSE: &lt;node-name&gt; | next
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>IF: &lt;boolean expression&gt;
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>THEN: &lt;node-name&gt; | next
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>ELSE: &lt;node-name&gt; | next
 </code></pre></div>
 <ul>
 <li><code>THEN:</code> / <code>ELSE:</code> each name the <strong>node to jump to</strong>, or the keyword <strong><code>next</code></strong> (fall through to the
@@ -4196,13 +4264,13 @@ result belongs to the caller. Hang the module under the <a href="#island">Island
 <li>Append the whole triad as one multi-line value with <code>'''</code> … <code>'''</code> (see <a href="#lexical">lexical</a>).</li>
 </ul>
 <p>Worked example — compute the sum, then branch on a comparison so each branch fills the response:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>skill=graph.math
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>statement[]=COMPUTE: sum -&gt; {input.body.a} + {input.body.b}
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>statement[]='''
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>IF: {input.body.a} &gt;= {input.body.b}
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>THEN: ge-path
-<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>ELSE: lt-path
-<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a>'''
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>skill=graph.math
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>statement[]=COMPUTE: sum -&gt; {input.body.a} + {input.body.b}
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>statement[]='''
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>IF: {input.body.a} &gt;= {input.body.b}
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>THEN: ge-path
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>ELSE: lt-path
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>'''
 </code></pre></div>
 <p><strong>Traversal-control keywords</strong> — these are ordinary <code>statement[]</code> lines (e.g.
 <code>statement[]=NEXT: fetcher</code>, <code>statement[]=DELAY: 500</code>), conventionally placed last:</p>
@@ -4252,11 +4320,11 @@ entry has the mapping form <code>source -&gt; model.{var}</code> — the RHS <st
 <li>an <strong>unresolvable</strong> source <strong>removes</strong> the <code>model.{var}</code> key (not left stale, not nulled).</li>
 </ul>
 <p><code>BEGIN</code> / <code>END</code> lines split <code>statement[]</code> into three blocks:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>statement[]=…      ← pre-block: runs ONCE, before the loop
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>statement[]=BEGIN
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>statement[]=…      ← each-block: runs once PER ELEMENT
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>statement[]=END
-<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>statement[]=…      ← post-block: runs ONCE, after the loop
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>statement[]=…      ← pre-block: runs ONCE, before the loop
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>statement[]=BEGIN
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>statement[]=…      ← each-block: runs once PER ELEMENT
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>statement[]=END
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>statement[]=…      ← post-block: runs ONCE, after the loop
 </code></pre></div>
 <p>Rules (engine-verified):</p>
 <ul>
@@ -4289,18 +4357,18 @@ entry has the mapping form <code>source -&gt; model.{var}</code> — the RHS <st
 <li>Without <code>for_each[]</code>, <code>BEGIN</code>/<code>END</code> lines are accepted and ignored.</li>
 </ul>
 <p>Worked example (engine-verified) — line totals with a running sum:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>create node totaler
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>with type Loop
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>with properties
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>skill=graph.math
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>for_each[]=input.body.prices -&gt; model.price
-<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>for_each[]=input.body.quantities -&gt; model.qty
-<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>statement[]=MAPPING: int(0) -&gt; model.total
-<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>statement[]=BEGIN
-<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>statement[]=COMPUTE: total -&gt; {model.total} + {model.price} * {model.qty}
-<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a>statement[]=MAPPING: totaler.result.total -&gt; model.total
-<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a>statement[]=END
-<a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a>statement[]=MAPPING: model.total -&gt; output.body.total
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>create node totaler
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>with type Loop
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>with properties
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>skill=graph.math
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>for_each[]=input.body.prices -&gt; model.price
+<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a>for_each[]=input.body.quantities -&gt; model.qty
+<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>statement[]=MAPPING: int(0) -&gt; model.total
+<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a>statement[]=BEGIN
+<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a>statement[]=COMPUTE: total -&gt; {model.total} + {model.price} * {model.qty}
+<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a>statement[]=MAPPING: totaler.result.total -&gt; model.total
+<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a>statement[]=END
+<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a>statement[]=MAPPING: model.total -&gt; output.body.total
 </code></pre></div>
 <p>With <code>prices=[10,20,30]</code> and <code>quantities=[7,8,9]</code> the run yields <code>total: 500.0</code>: the pre-block
 seeds the accumulator once, each pass computes <code>total + price*qty</code> and writes it back to
@@ -4311,20 +4379,20 @@ the <code>COMPUTE</code> doubles through <code>f:add</code> (both forms are engi
 <h4 id="worked-example-decimal-loop">Worked example (engine-verified) — the money loop, <code>DECIMAL</code><a class="headerlink" href="#worked-example-decimal-loop" title="Permanent link">&para;</a></h4>
 <p>The <code>COMPUTE</code> example above accumulates in IEEE double (<code>500.0</code>). <strong>Money uses this twin</strong>, which keeps every
 amount an exact canonical string:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>create node totaler
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>with type Loop
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>with properties
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>skill=graph.math
-<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>for_each[]=input.body.prices -&gt; model.price
-<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a>for_each[]=input.body.quantities -&gt; model.qty
-<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>statement[]=MAPPING: text(0) -&gt; model.total
-<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a>statement[]=BEGIN
-<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a>statement[]=DECIMAL: line -&gt; {model.price} * {model.qty}
-<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a>statement[]=DECIMAL: total -&gt; {model.total} + {totaler.result.line}
-<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a>statement[]=MAPPING: totaler.result.total -&gt; model.total
-<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a>statement[]=END
-<a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a>statement[]=DECIMAL: rounded -&gt; round({model.total}, 2, HALF_UP)
-<a id="__codelineno-30-14" name="__codelineno-30-14" href="#__codelineno-30-14"></a>statement[]=MAPPING: totaler.result.rounded -&gt; output.body.total
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>create node totaler
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>with type Loop
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>with properties
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>skill=graph.math
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>for_each[]=input.body.prices -&gt; model.price
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>for_each[]=input.body.quantities -&gt; model.qty
+<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a>statement[]=MAPPING: text(0) -&gt; model.total
+<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a>statement[]=BEGIN
+<a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a>statement[]=DECIMAL: line -&gt; {model.price} * {model.qty}
+<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a>statement[]=DECIMAL: total -&gt; {model.total} + {totaler.result.line}
+<a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a>statement[]=MAPPING: totaler.result.total -&gt; model.total
+<a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a>statement[]=END
+<a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a>statement[]=DECIMAL: rounded -&gt; round({model.total}, 2, HALF_UP)
+<a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a>statement[]=MAPPING: totaler.result.rounded -&gt; output.body.total
 </code></pre></div>
 <p>With <code>prices=["10.50","20.25","30"]</code> and <code>quantities=[7,8,9]</code> the run yields <code>total: "505.50"</code>
 (<code>73.50 + 162.00 + 270</code>): the pre-block seeds the accumulator once as the string <code>0</code>, each pass adds the exact

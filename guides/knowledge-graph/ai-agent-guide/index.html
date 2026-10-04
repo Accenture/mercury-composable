@@ -3207,7 +3207,9 @@ engines):</p>
 - [ ] <strong>Static reference data is a node, not code.</strong> A decision table (a rule by state, a rate by
       band) is a skill-less node; a <code>graph.data.mapper</code> decision node resolves it with
       <code>f:lookup({table-node}, {value}, text({default}))</code> (the common case), or a <code>graph.task</code> hands the whole table to
-      a generic function (<code>input[]={table-node} -&gt; table</code>). Never hard-code it as a ladder of
+      a generic function (<code>input[]={table-node} -&gt; table</code>). A value per key (a population by state)
+      is a <a href="../skills-reference/#keyed-table">keyed table</a> read with a dynamic key,
+      <code>{table-node}.{model.key}</code>. Never hard-code it as a ladder of
       IF-THEN-ELSE in <code>graph.math</code> or inside a composable function: the table is more readable, and
       the product owner certifies it on the graph (<a href="../skills-reference/#task">static decision table</a>).
 - [ ] Multi-line commands (<code>create</code>/<code>update</code>/<code>instantiate</code>) are sent as one block; multi-line
