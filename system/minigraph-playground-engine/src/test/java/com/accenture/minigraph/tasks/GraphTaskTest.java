@@ -327,6 +327,31 @@ class GraphTaskTest {
     }
 
     @Test
+    void jsonPathSourceTakesTheJaywayShape() throws TimeoutException {
+        // unit-test-jsonpath-1 (shared with the Rust engine, which shapes its JSONPath results the same way):
+        // Jayway shapes a $. result by the kind of path, not the number of matches. A definite path yields the
+        // value, or null when it is absent; an indefinite path always yields a list - one match is a one-element
+        // list and none an empty list - unless a member name before its first indefinite step is missing, which
+        // yields null, so the null-source rule leaves an output target untouched
+        var people = List.of(Map.of("name", "Peter", "team", "blue"), Map.of("name", "Paul", "team", "red"),
+                Map.of("name", "Mary", "team", "blue"));
+        var response = runGraph("unit-test-jsonpath-1", Map.of("people", people), Map.of());
+        assertEquals(200, response.getStatus());
+        var mm = bodyMap(response);
+        assertEquals("Paul", mm.getElement("definite"));
+        assertEquals(List.of("Paul"), mm.getElement("one_match"));
+        assertEquals(List.of(), mm.getElement("no_match"));
+        assertEquals(List.of("Peter", "Paul", "Mary"), mm.getElement("wildcard"));
+        assertEquals(List.of("Peter"), mm.getElement("slice"));
+        assertEquals(List.of("blue", "red", "blue"), mm.getElement("deep_scan"));
+        assertEquals(List.of(), mm.getElement("missing_leaf"));
+        assertEquals(List.of(), mm.getElement("missing_index"));
+        assertEquals("kept", mm.getElement("missing_name"));
+        assertEquals("kept", mm.getElement("definite_missing"));
+        log.info("a JSONPath mapping source takes the Jayway shape");
+    }
+
+    @Test
     void mathExpressionNamesTheUnresolvedVariable() throws TimeoutException {
         // unit-test-math-1 (issue #453): the seed's overlay 'input.body.threshold -> model.threshold'
         // clears the model variable when the input is absent and 'model.factor' is never set, so the
