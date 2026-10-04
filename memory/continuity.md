@@ -578,14 +578,14 @@
   <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-25 | uses: 20 | tier: archive-candidate | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- **Declare a Memory Reference when a fact is CONSULTED to make a decision — not only when it is
-  edited (Eric agreed, 2026-09-04).** A session log's `## Memory References` is the sole input to
-  `refresh-metadata`, so an undeclared consultation reads as non-use and decays the fact. This is
-  not hypothetical: `2026-09-04-011530.md` declared `(none)` while reasoning explicitly from
-  `conv-telemetry-presentation-parity` to conclude the Kafka opt-out was Java-only, and the very
-  next refresh demoted a 42-use fact to `archive-candidate`. Past logs are immutable, so the guard
-  is forward-looking. Rule of thumb: if you would have decided differently without the fact, it is
-  a reference. Surfaced by the 2026-09-04 smoke test; the two facts it endangered are now `core`.
+- **Declare a Memory Reference when a fact is CONSULTED to make a decision, not only when it is edited (Eric agreed,
+  2026-09-04) — since agent-memory v4.42.1 the protocol states the rule, and this fact keeps the local history.** The rule:
+  `memory/PROTOCOL.md` (*Maintain memory while working*: a fact is relied on when it shaped a decision) and `DECAY.md` §2; its
+  review-time half is `REVIEW.md` step 6, *declaration gaps* (the window's commits first, v4.42.2). Raised upstream from this
+  repo and the Rust port on 2026-10-04 and adopted the same day (upgraded here by #505 and #506), the path the RFC rule took
+  ([[conv-proposals-not-in-adr-ledger]]). Local origin: `2026-09-04-011530.md` declared `(none)` while reasoning from
+  `conv-telemetry-presentation-parity`, and the next refresh demoted that 42-use fact to `archive-candidate` (found by the
+  2026-09-04 smoke test; both endangered facts are now `core`). Follow-up: [[step6-release-sweep-gaps]].
   <!-- id: conv-declare-consulted-references | created: 2026-09-04 | last_used: 2026-09-04 | uses: 1 | tier: core -->
 
 - **A proposal is not a decision: raise it in `docs/arch-decisions/RFC.md` as `RFC-NNNN`, never
