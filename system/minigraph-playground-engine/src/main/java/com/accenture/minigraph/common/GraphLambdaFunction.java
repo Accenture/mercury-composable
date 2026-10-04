@@ -411,6 +411,20 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     }
 
     /**
+     * Render {selectors} into the source of a data mapping - a key path, a constant or a plugin call.
+     * The value is inserted verbatim: a mapping source is never a boolean expression, so a '!', '<',
+     * '>' or '==' inside a text constant does not make it one. A JSONPath filter is the exception: a
+     * text value is quoted there so that it reads as a string literal in the query.
+     *
+     * @param text the mapping source before substitution
+     * @param stateMachine the graph state machine
+     * @return the rendered source
+     */
+    protected String substituteMappingSource(String text, MultiLevelMap stateMachine) {
+        return substituteVarIfAny(text, stateMachine, text.startsWith("$.") && text.contains("@"));
+    }
+
+    /**
      * Render {selectors} into an expression. In a logical (boolean) context a text value is quoted so
      * it reads as a string literal; CONDITION forces that context because its result is a boolean by
      * declaration, whether the expression carries a comparison operator or not.
@@ -495,7 +509,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         int sep = command.lastIndexOf(MAP_TO);
         if (sep > 0) {
             var stateMachine = graphInstance.stateMachine;
-            var lhs = substituteVarIfAny(command.substring(0, sep).trim(), stateMachine);
+            var lhs = substituteMappingSource(command.substring(0, sep).trim(), stateMachine);
             var rhs = command.substring(sep + MAP_TO.length()).trim();
             var value = helper.getLhsOrConstant(lhs, stateMachine);
             validateRhs(nodeName, rhs, graphInstance.graph);
@@ -665,7 +679,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         int sep = command.lastIndexOf(MAP_TO);
         if (sep > 0) {
             var stateMachine = graphInstance.stateMachine;
-            var lhs = substituteVarIfAny(command.substring(0, sep).trim(), stateMachine);
+            var lhs = substituteMappingSource(command.substring(0, sep).trim(), stateMachine);
             var rhs = command.substring(sep + MAP_TO.length()).trim();
             assertMutableModelTarget(nodeName, rhs);
             var target = rhs.startsWith(MODEL_NAMESPACE)? rhs : getFetcherTarget(nodeName, rhs, isArray);
@@ -723,7 +737,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         Map<String, List<Object>> mappings = new HashMap<>();
         for (var entry : forEach) {
             var sep = entry.lastIndexOf(MAP_TO);
-            var lhs = substituteVarIfAny(entry.substring(0, sep).trim(), stateMachine);
+            var lhs = substituteMappingSource(entry.substring(0, sep).trim(), stateMachine);
             var rhs = entry.substring(sep+MAP_TO.length()).trim();
             assertMutableModelTarget(nodeName, rhs);
             var parts = util.split(rhs, ".");
@@ -797,7 +811,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             var text = String.valueOf(output).trim();
             int sep = text.lastIndexOf(MAP_TO);
             if (sep != -1) {
-                var lhs = substituteVarIfAny(text.substring(0, sep).trim(), stateMachine);
+                var lhs = substituteMappingSource(text.substring(0, sep).trim(), stateMachine);
                 var rhs = text.substring(sep + MAP_TO.length()).trim();
                 setOutputMappingEntry(nodeName, lhs, rhs, stateMachine);
             } else {
