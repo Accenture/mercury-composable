@@ -501,7 +501,8 @@
   table of a live team demo; pinned by the byte-identical fixture `unit-test-mapping-1` and the claim `mapping-source-dynamic-variables`; the plugin table now states the
   `-1` of `int`/`long`/`float`/`double` for a null or non-numeric value (Eric agreed). Follow-up: the JSONPath result shape (Jayway's rule: a definite path yields the
   value or null, an indefinite one always a list, null when a member name before its first indefinite step is missing) is documented and pinned by the shared fixture
-  `unit-test-jsonpath-1` and the claim `json-path-result-shape` in #504 (no change here; open), the Rust fix being mercury #352 (Increment 157). Extends
+  `unit-test-jsonpath-1` and the claim `json-path-result-shape` in #504 (squash `74720116`; no change here), the Rust fix being mercury #352 (merge `bdc7b5be`,
+  Increment 157); both MERGED 2026-10-04 06:13Z. Extends
   [[static-decision-table-is-graph-data]]; applies [[help-edit-needs-bundle-release]] (bundle `index-Bz9k-ffR`).
   <!-- id: mapping-source-verbatim-substitution | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-04-054327 -->
 
