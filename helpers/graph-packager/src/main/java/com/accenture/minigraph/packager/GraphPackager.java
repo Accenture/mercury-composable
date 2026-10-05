@@ -208,14 +208,15 @@ public class GraphPackager {
         var contents = GraphSet.read(bytes);
         var sha = sha256(bytes);
         if (a.has(JSON)) {
-            Map<String, Object> report = new LinkedHashMap<>();
+            // keys in sorted order, so both engines' packagers print the same report
+            Map<String, Object> report = new TreeMap<>();
             report.put("file", file.toString());
             report.put("size", bytes.length);
             report.put("sha256", sha);
             report.put("manifest", contents.manifest());
             List<Map<String, Object>> graphs = new ArrayList<>();
             contents.graphs().forEach((id, model) -> {
-                Map<String, Object> graph = new LinkedHashMap<>();
+                Map<String, Object> graph = new TreeMap<>();
                 graph.put("id", id);
                 graph.put(NODES, size(model, NODES));
                 graph.put(CONNECTIONS, size(model, CONNECTIONS));
