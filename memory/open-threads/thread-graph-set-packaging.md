@@ -7,6 +7,15 @@
   the module homes, inspect in scope; `pack --from-manifest`, the generated manifest documented, `version` in `list graphs`. Next: the sprint (WP1-WP6); the ADR
   (RFC-0005 → ADR-0027) is written when the implementation lands. Relates [[canonical-packager-wire-contract]],
   [[graph-manifest-list-later-wins]], [[playground-file-import-download]].
+  **WP1 + WP2 implemented 2026-10-05 (Eric: "start with the command-line packager"; PRs open, merges gated):** Java #508 - `GraphModelGate`
+  (CompileGraph's checks as one shared method, no change in behavior), `GraphSet` (the set rules, shared with WP3-WP5 later) and
+  `helpers/graph-packager` (an executable jar, GraalVM left out) - and the Rust twin mercury #356 (`model_gate`, `graph_set`,
+  `tools/graph-packager` with `publish = false`, Increment 158). Both pack the 14 tutorials to identical bytes (`4715598820261ca6…`),
+  print identical `inspect` reports and read each other's files; on the 52 shared fixtures both gates refuse the same 18 graphs (the
+  interop report's addendum). Settled in the code: `${...}` references are packed unresolved while the gate checks a resolved copy, and
+  `inspect --json` sorts its keys. **Open before WP3:** a graph with a null property deploys on Java and is refused on Rust (the config
+  readers differ on null keys; a separate task investigates), and publishing the Rust tool to crates.io is a release decision. Next: WP3,
+  the loader.
   → proposal: RFC-0005
   → serves: vision-mercury-composable
   <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-03-171402 -->
