@@ -43,6 +43,7 @@
         <module>helpers/kafka-standalone</module>
         <module>helpers/redis-standalone</module>
         <module>helpers/schema-registry-standalone</module>
+        <module>helpers/graph-packager</module>
 
         <!-- Executables for application examples (rejoined the reactor in 4.8.x once they
              gained unit tests; pg-example stays standalone because its tests download an

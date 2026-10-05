@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A command line keeps standard output for its results (pipelines read the JSON report of inspect),
+     so the engine's log goes to standard error, warnings and errors only. LOG_LEVEL overrides. -->
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_ERR">
+            <PatternLayout pattern="%-5level %msg%n" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="${env:LOG_LEVEL:-WARN}" additivity="false">
+            <AppenderRef ref="Console" />
+        </Root>
+    </Loggers>
+</Configuration>
