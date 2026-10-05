@@ -4,4 +4,4 @@
   ([[playground-file-import-download]]). Lesson: a dev-route addition touches every pre-wired `rest.yaml` (five Java copies, three Rust) plus the guide excerpt, and a
   `<dialog>` under the webapp's global margin reset needs `margin: auto` to center. origin: 2026-10-03-153654; close 2026-10-03-153654.
   → serves: vision-mercury-composable
-  <!-- id: playground-usability-sprint | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-03-153654 -->
+  <!-- id: playground-usability-sprint | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: active | origin: 2026-10-03-153654 -->

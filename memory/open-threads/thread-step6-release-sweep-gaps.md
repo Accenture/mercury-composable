@@ -1,9 +1,7 @@
-- [ ] (review) **Next review: two release conventions look faded but were relied on - apply step 6 to the v4.12.20 session before
-  archiving them (2026-10-04).** `conv-template-version-sweep` and `snyk-retired-manifest-placeholders` read sslu 21 > `archive_window`
-  20, yet the v4.12.20 sweep (#485, squash `9e515825`) bumped both rules' files - the templates' builds and the two Boot 3 placeholder
-  poms - and its log `2026-09-30-221603.md` declared neither. Step 6 (v4.42.2) reaches the first through `templates/*`; it misses the
-  second, whose paths are written without backticks and, as a retired module's, exceed the all-time 5% hub cut (15%) though only #485
-  touches them in the window. At the review: hold `2026-09-30-221603.md` to the decision test for both, keep and re-affirm what passes,
-  and backtick the placeholder fact's two paths. Upstream: a second feedback file to agent-memory proposes a hub be busy both over all
-  history and in the window, a full timestamp for the window's start, and the next log-carrying commit for the mapping.
-  <!-- id: step6-release-sweep-gaps | created: 2026-10-04 | last_used: 2026-10-04 | uses: 1 | tier: working | origin: 2026-10-04-173516 -->
+- [x] (review) **CLOSED 2026-10-05 - the two release conventions were relied on, not faded; kept at the review.** The 2026-10-05 review ran
+  step 6 (v4.42.3) on `conv-template-version-sweep` and `snyk-retired-manifest-placeholders` (sslu 23): the v4.12.20 sweep (#485) bumped
+  the six template builds and the two placeholder poms, its session (`2026-09-30-221603.md`, the window's oldest log) passes the decision
+  test, so both were re-affirmed and the placeholder fact's paths backticked. Upstream: the hub cut, the window start and the log mapping
+  were adopted as agent-memory v4.42.3 (#507). Lesson: a declaration-gap rescue has a deadline - the relying log must still be in the
+  window. origin: 2026-10-04-173516; close 2026-10-05-230033.
+  <!-- id: step6-release-sweep-gaps | created: 2026-10-04 | last_used: 2026-10-05 | uses: 2 | tier: active | origin: 2026-10-04-173516 -->

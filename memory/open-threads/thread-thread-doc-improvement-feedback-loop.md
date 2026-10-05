@@ -64,4 +64,7 @@
   example needs its own copy of the flow files (`help tutorial 11`, the AI agent guide's manifest) — CLOSED the same day in PR #489
   (`playground-example-flows-are-sample-config`; the manifest label fixed, `flow-11-doc-label` closed). Still pending from the W2
   measurement: the re-measure with a fresh question set (not run at this review).
-  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-10-02 | uses: 7 | tier: working | origin: 2026-09-01-032130 -->
+  **Sweep at the 2026-10-05 review (9 logs since 2026-10-02-185029):** 5 carry `## Doc Gaps`, 2 record gaps - a dynamic key in a graph
+  mapping source and the `-1` of `f:long(null)` (closed by #503), the `$.` JSONPath result shape (closed by #504) - all closed in the
+  session that found them. Open queue: (none). Still pending: the re-measure with a fresh question set (not run at this review).
+  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-10-05 | uses: 8 | tier: working | origin: 2026-09-01-032130 -->

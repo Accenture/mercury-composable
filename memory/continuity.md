@@ -59,15 +59,16 @@
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-10-02 | through 2026-10-02-185029.md (CADENCE + SIZE, on Eric's command — 12 sessions since the 2026-09-28 review and 39
-  decay-eligible facts > 35; `refresh-metadata` refreshed 35 footers (30 before the review log, 5 after it — the review's own log is a session,
-  so refresh again after writing it): tier changes 25 (10 working → active, 3 archive-candidate → active, 8 active → archive-candidate,
-  4 working → archive-candidate), two hand-seeded `uses` counts corrected down to the ledger; archived 8 faded Key Decisions (the Redis/cache
-  round of 2026-09-14 to 09-21, the two Kafka defaults, the guarded async completion) and swept 4 completed threads to `2026-Q4.md`;
-  reactivated 0, superseded 0, archive-verify pass; invariants not due (21 of 40 since 2026-09-25-022841); no stalled thread; contradiction
-  scan: one stale statement corrected (`instructions.md` — the Node.js repo is a language pack in lock-step, not an out-of-sync port to avoid);
-  Doc Gaps sweep: 1 gap in the window, closed (#489). Facts 62 → 50 (memory-lint live count, continuity + threads); lines 867 → 683. Smoke test not run.)
-  Prior: 2026-09-28 | through 2026-09-28-230310.md (CADENCE — refreshed 6 footers, tier changes 3, archived 0, swept 0; two stale statements
+- **last_review:** 2026-10-05 | through 2026-10-05-230033.md (ON COMMAND, Eric — 9 sessions since the 2026-10-02 review; the first run of
+  step 6's declaration-gap check at v4.42.3: `refresh-metadata` refreshed 30 footers (24 before the review log, 6 after it), tier changes 23;
+  archived 0 — the two facts past the window, `conv-template-version-sweep` and `snyk-retired-manifest-placeholders` (sslu 23), were KEPT
+  because the v4.12.20 sweep (#485, in the window's oldest log 2026-09-30-221603) applied both undeclared, and the placeholder fact's paths are
+  now backticked; swept 0; reactivated 0, superseded 0, archive-verify pass; invariants not due (31 of 40 since 2026-09-25-022841); stalled
+  threads 1 → the human gate [[close-stalled-threads-20261005]] (`post-4-12-15-carry-overs`, 41); contradiction scan: one stale statement
+  corrected (`decimal-statement-exact-arithmetic`'s "open: the release"); Doc Gaps sweep: 3 gaps in the window, all closed (#503, #504);
+  [[step6-release-sweep-gaps]] closed. Facts 56 → 57 (the gate thread); lines 727 → 728. Smoke test not run.)
+  Prior: 2026-10-02 | through 2026-10-02-185029.md (CADENCE + SIZE — refreshed 35 footers, tier changes 25, archived 8 faded Key Decisions,
+  swept 4 threads; facts 62 → 50, lines 867 → 683) · 2026-09-28 | through 2026-09-28-230310.md (CADENCE — refreshed 6 footers, tier changes 3, archived 0, swept 0; two stale statements
   corrected; facts 46; smoke test 12/12, read set gained `vision.md`) · 2026-09-25 | through 2026-09-25-014100.md (ON COMMAND after the
   v4.12.17 cycle — archived 0, swept 0; the invariant re-verify thread raised and completed 2026-09-25-022841, `instant-serialization` demoted
   from core and archived; lines 851 → 802, facts 52) · earlier: 2026-09-24, 2026-09-23 (×2), 2026-09-22 (size sweeps; their summaries live in
@@ -179,7 +180,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-10-02 | uses: 14 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-10-02 | uses: 14 | tier: archive-candidate | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -209,7 +210,7 @@
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-09-30 | uses: 12 | tier: archive-candidate | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-10-04 | uses: 15 | tier: active | origin: 2026-09-18-174943 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode, and its home page is dev-mode wiring too (2026-09-15, Eric's
   polish round on the starter template + the cache example; P10 ruling 2026-09-22, SHIPPED in v4.12.15).** Three shape
@@ -232,7 +233,7 @@
   `/` in dev too — add the route; an app with no `app.env` gets the plain page. Documented in
   `playground-and-companion.md` (#enabling) and `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]];
   applies to [[ot-distributed-cache]]'s worked example.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-10-02 | uses: 16 | tier: active | origin: 2026-09-15-221451 -->
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-10-04 | uses: 19 | tier: active | origin: 2026-09-15-221451 -->
 
 - **Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's
   design, contributed from ai-enabled-repo-demo).**
@@ -245,7 +246,7 @@
   Rust repo — both engines share the WS handshake. Dev-only, like the Playground itself.
   Reactivated 2026-09-14: now ALSO shipped in `templates/starter-graph` (both repos), and the AI
   docs are broker-first with the keep-alive failure mode named (mercury-composable#383, mercury#276).
-  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-10-02 | uses: 13 | tier: active | origin: 2026-09-03-172753 -->
+  <!-- id: playground-session-broker | created: 2026-09-03 | last_used: 2026-10-04 | uses: 15 | tier: active | origin: 2026-09-03-172753 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -312,7 +313,7 @@
   code change, and the function stays generic by reading rule names from `table.keys`. In `skills-reference.md`
   (graph.task), the in-Playground help and the AI agent guide's checklist; pinned by `unit-test-task-9` on both engines.
   Applies [[event-script-over-code]] to DATA and [[clean-knowledge-design-over-engine-coverage]].
-  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-09-25 | uses: 4 | tier: archive-candidate | origin: 2026-09-20-152704 -->
+  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-10-04 | uses: 5 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
@@ -342,7 +343,7 @@
   [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]]. **Partly superseded 2026-09-30 by
   [[decimal-statement-exact-arithmetic]]:** the "exact-decimal money belongs in a `graph.task` function, `BigDecimal` is never
   added to the dialect" ruling no longer holds — `DECIMAL:` is that statement; the typed/finite `COMPUTE` rules stand.
-  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-10-02 | uses: 8 | tier: active | origin: 2026-09-25-183540 -->
+  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-10-02 | uses: 8 | tier: archive-candidate | origin: 2026-09-25-183540 -->
 
 - **`graph.model.automation` accepts a comma-separated list of manifests, and the later manifest wins (Eric, 2026-09-25;
   PR #465 squash `40ce30a7` MERGED 2026-09-25, Rust twin mercury #332 merge `d3d82a3f`, Increment 142; SHIPPED in
@@ -360,7 +361,7 @@
   serving from the jar. Docs: `ai-agent-guide.md#deploy-without-rebuild`, the config reference, the walkthrough; claim
   `graph-manifest-list-later-wins` on both engines; the Rust override is a `-D` program argument
   (`cargo run -p minigraph-playground -- -D…`). Extends ADR-0011 without changing its rule. Relates [[eric-code-changes-via-pr]].
-  <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-10-02 | uses: 6 | tier: archive-candidate | origin: 2026-09-25-223633 -->
+  <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-10-04 | uses: 8 | tier: active | origin: 2026-09-25-223633 -->
 
 - **Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math` — the high-precision `COMPUTE:`, strings at rest, no graph-level
   mode (Eric's rulings, 2026-09-30; RFC-0001 promoted to ADR-0025 in PR #473; implemented in PR #471, squash `3b4cad82`; SHIPPED in
@@ -375,8 +376,8 @@
   run in every engine. **Supersedes the decimal half of [[graph-math-typed-arithmetic]]** ("exact-decimal money belongs in a
   `graph.task` function; `BigDecimal` never enters the dialect"); the rest of that ruling stands. **Method note:** RFC first,
   implement on one branch, promote to ADR only after review and green CI — the ledger recorded a decision, never a proposal
-  ([[conv-proposals-not-in-adr-ledger]]). Delivered on both engines (Rust twin: mercury #335 + #336, one shared core); open: the release ([[decimal-ports-and-release]]; the python/node packs need no change — they are Event-over-HTTP function hosts; closes [[decimal-mode]]). (ADR-0025)
-  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: archive-candidate | origin: 2026-09-30-221603 -->
+  ([[conv-proposals-not-in-adr-ledger]]). Delivered on both engines (Rust twin: mercury #335 + #336, one shared core) and released in v4.12.20; the field-acceptance wait is [[decimal-ports-and-release]] (the python/node packs need no change — they are Event-over-HTTP function hosts; closes [[decimal-mode]]). (ADR-0025)
+  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-10-05 | uses: 2 | tier: active | origin: 2026-09-30-221603 -->
 
 - **A deterministic MsgPack packager: keys sorted by UTF-8 bytes at every depth, `{manifest, maps}`, one canonical profile, integrity left to the
   application (Eric's rulings, 2026-10-01; RFC-0002 promoted to ADR-0026 in PR #484; Java `CanonicalPackager` #481/#482/#483 and the Rust
@@ -392,7 +393,7 @@
   per nesting level (its 64 accepted 31), so a library-limit corner needs its own vector. Language packs do not carry it (Event-over-HTTP function
   hosts). Deferred: folder `pack`/`unpack` tooling, trusted timestamps, per-entry manifest records, the graph-set loader RFC. Relates
   [[graph-manifest-list-later-wins]] (the loader's precedence). (ADR-0026)
-  <!-- id: canonical-packager-wire-contract | created: 2026-10-01 | last_used: 2026-09-30 | uses: 1 | tier: archive-candidate | origin: 2026-09-30-221603 -->
+  <!-- id: canonical-packager-wire-contract | created: 2026-10-01 | last_used: 2026-10-03 | uses: 2 | tier: active | origin: 2026-09-30-221603 -->
 
 - **A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span; a streamed response is traced
   at its head and its tail, never per token (Eric's rulings on the Dynatrace review of the v4.12.15 certification traces,
@@ -424,7 +425,7 @@
   `graph.math` only, and `graph.js` rejects it as it rejects any tag it does not know. The reasons are in
   `docs/guides/knowledge-graph/skills-reference.md#js` (runtime JavaScript is an injection surface, and an equality comparison
   with a quoted string literal was measured silently evaluating `false`). Relates [[clean-knowledge-design-over-engine-coverage]].
-  <!-- id: graph-js-deprecated-removal | created: 2026-09-30 | last_used: 2026-10-02 | uses: 3 | tier: active | origin: 2026-09-30-170759 -->
+  <!-- id: graph-js-deprecated-removal | created: 2026-09-30 | last_used: 2026-10-02 | uses: 3 | tier: archive-candidate | origin: 2026-09-30-170759 -->
 
 - **The LLM helper is not engine code: it is a Claude-only function host in the Python and Node packs, and the Java engine only points at it (PR #488, squash `7c938ef1`; Eric's rulings,
   2026-10-01).** `examples/llm-helper` in mercury-python (#38) and mercury-nodejs (#106) serves `llm.chat`, `llm.stream` and `llm.health` on the Anthropic SDK; the engine stays LLM-free and holds no
@@ -437,7 +438,7 @@
   (Eric): it thinks before it answers and its thinking tokens count against `max_tokens`, so the triage graph now asks for 2000 tokens (512 before) and Haiku 4.5 is the documented choice for smooth
   rendering; a 48-call probe found no empty result at the old budgets either, so the change removes the question. AWS Bedrock through IAM is the helper's planned second backend (a thread in the
   packs). Rust twin: mercury #342.
-  <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-02 | uses: 1 | tier: archive-candidate | origin: 2026-10-02-001806 -->
+  <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-05 | uses: 2 | tier: active | origin: 2026-10-02-001806 -->
 
 - **The playground example's flows config is sample configuration that duplicates the engine's, kept on purpose, and tutorial 13 is deployed there (Eric, 2026-10-01; PR #489, squash `333f78ce`).**
   The engine module ships `flows.yaml`, `flows/graph-executor.yml` and `flows/flow-11.yml`; `examples/minigraph-playground` carries byte-identical copies in `src/main/resources` (and one more identical trio
@@ -446,7 +447,7 @@
   the reader to review `flows.yaml` and `flow-11.yml` in the resources folder), so the example keeps them; the test-resource trio is a harmless duplicate. **Tutorial 13** had been missing from the example's
   manifest since the CompileGraph gate (#240), when it needed a fixture function; it became an `async.http.request` client of the app's own dev mock in #267 and nobody revisited the list. It is listed now, and
   `GraphTests` runs it and its unknown-profile error (23 tests). The Rust example and template got the same flows config in mercury #343. Follow-up: [[flow-11-doc-label]]. Relates [[minigraph-dev-mode-app-shape]].
-  <!-- id: playground-example-flows-are-sample-config | created: 2026-10-01 | last_used: 2026-10-02 | uses: 2 | tier: active | origin: 2026-10-02-001806 -->
+  <!-- id: playground-example-flows-are-sample-config | created: 2026-10-01 | last_used: 2026-10-02 | uses: 2 | tier: archive-candidate | origin: 2026-10-02-001806 -->
 
 - **The Playground webapp has one source and two deploy targets, and the help pages are one consolidated set (Eric, 2026-10-02; PR #496 squash `a6dc9ce5`, the Rust twin mercury #347 merge `781fae43`, both MERGED 2026-10-02).** The webapp "graduated": its scoped
   memory bank, steering files and pre-graduation specs under `system/minigraph-playground-engine/webapp/` are retired, its technical documentation is regenerated from the code in `webapp/docs/` (README,
@@ -461,7 +462,7 @@
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-02 | uses: 2 | tier: active | origin: 2026-10-02-175751 -->
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-04 | uses: 5 | tier: active | origin: 2026-10-02-175751 -->
 
 - **The Playground's dry-run lifecycle is three explicit steps - Instantiate, Upload (optional), Run - and a mock-data upload loads every member's instance (Eric's design, 2026-10-02;
   PR #498 squash `ce0e7155` and the Rust twin mercury #349 merge `278bb023`, Increment 154; both MERGED 2026-10-03 06:00Z).** In a shared session one member's Instantiate used to open the "Upload Mock Data" form on every member's screen: the UI sent
@@ -474,7 +475,7 @@
   instance had aborted without the data. The multi-select hint left the canvas in the same PR. Pinned by `SessionManagementTest.mockUploadLoadsEveryMemberInstanceTest` and the Rust
   `mock_upload_loads_every_member_instance`. Extends [[playground-session-broker]] (equal partners); applies [[help-edit-needs-bundle-release]] and
   [[playground-webapp-single-source]] (one bundle, deployed to both engines).
-  <!-- id: playground-three-step-run-controls | created: 2026-10-02 | last_used: 2026-10-02 | uses: 1 | tier: working | origin: 2026-10-02-232248 -->
+  <!-- id: playground-three-step-run-controls | created: 2026-10-02 | last_used: 2026-10-03 | uses: 2 | tier: active | origin: 2026-10-02-232248 -->
 
 - **A graph file becomes the session draft through `POST /api/graph/import/{id}`, which travels like a command, and the Playground downloads the model as `<graph-id>.json` with the root
   node named after the id (Eric's usability sprint, 2026-10-03; PR #500 squash `856e084b`, the Rust twin mercury #350 merge `dae6377d`, Increment 155; both MERGED 2026-10-03 16:03Z).** The Graph view's Import Graph button (toolbar and empty canvas) and a
@@ -488,7 +489,7 @@
   from`). A dev-route addition touches five Java `rest.yaml` copies, three Rust ones and the guide excerpt ([[minigraph-dev-mode-app-shape]]). Extends
   [[playground-three-step-run-controls]] (the broadcast shape); applies [[playground-webapp-single-source]] and [[help-edit-needs-bundle-release]] (bundle `index-Cv2pdvxg`) and
   [[clean-knowledge-design-over-engine-coverage]]. Pinned by `SessionManagementTest.graphImportLoadsEveryMemberDraftTest` and the Rust `graph_import_loads_every_member_draft`.
-  <!-- id: playground-file-import-download | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-03-153654 -->
+  <!-- id: playground-file-import-download | created: 2026-10-03 | last_used: 2026-10-03 | uses: 2 | tier: active | origin: 2026-10-03-153654 -->
 
 - **A mapping source inserts its `{namespace.key}` values verbatim, never quoted; a JSONPath filter is the one place a text value is quoted (Eric's ruling, 2026-10-03;
   PR #503 squash `8db2a46f` and the Rust twin mercury #351 merge `5c408037`, Increment 156; both MERGED 2026-10-04 06:01Z).** A graph mapping source may embed a reference that resolves before the source is read: a
@@ -504,7 +505,7 @@
   `unit-test-jsonpath-1` and the claim `json-path-result-shape` in #504 (squash `74720116`; no change here), the Rust fix being mercury #352 (merge `bdc7b5be`,
   Increment 157); both MERGED 2026-10-04 06:13Z. Extends
   [[static-decision-table-is-graph-data]]; applies [[help-edit-needs-bundle-release]] (bundle `index-Bz9k-ffR`).
-  <!-- id: mapping-source-verbatim-substitution | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-04-054327 -->
+  <!-- id: mapping-source-verbatim-substitution | created: 2026-10-03 | last_used: 2026-10-04 | uses: 2 | tier: active | origin: 2026-10-04-054327 -->
 
 ## Conventions
 
@@ -519,7 +520,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-02 | uses: 65 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-04 | uses: 69 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -539,16 +540,16 @@
   PR). Both errors came from writing out of recollection of my own work instead of out of the
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-02 | uses: 21 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-02 | uses: 21 | tier: archive-candidate | origin: 2026-09-17-183008 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
   the security gate forever. A parentless dependency-free `packaging=pom` placeholder
-  re-tests to an empty graph (zero findings). Live at system/rest-spring-3 +
-  examples/rest-spring-3-example (PR #305) with relocation metadata to the Boot-4 twins;
+  re-tests to an empty graph (zero findings). Live at `system/rest-spring-3/` +
+  `examples/rest-spring-3-example/` (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-09-25 | uses: 24 | tier: archive-candidate | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-10-05 | uses: 25 | tier: active | origin: 2026-09-01-022524 -->
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
   identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
@@ -561,7 +562,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-10-02 | uses: 24 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-10-04 | uses: 27 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -575,7 +576,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-09-25 | uses: 20 | tier: archive-candidate | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-05 | uses: 21 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision, not only when it is edited (Eric agreed,
@@ -646,7 +647,7 @@
   ([[playground-webapp-single-source]]): `npm run release:rust` or `release:all` also deploys the bundle and a mirror of the help pages into the sibling Rust repo, so a help edit is done when BOTH repos
   carry the result. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout: only the entry
   page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-02 | uses: 6 | tier: active | origin: 2026-10-02-015208 -->
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-04 | uses: 9 | tier: active | origin: 2026-10-02-015208 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
