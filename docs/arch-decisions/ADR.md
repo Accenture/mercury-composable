@@ -33,6 +33,86 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0028 — The MessagePack codec is the engine's own: the zero-dependency `minimalist-msgpack` module replaces msgpack-core {#adr-0028}
+**Status:** Accepted · **Date:** 2026-10-06 · **Serves:** vision-mercury-composable · **Formalizes:** minimalist-msgpack-codec
+<!-- id: adr-0028 | status: accepted -->
+
+**Abstract.** The Java engine's MessagePack codec is a module of this repository, `system/minimalist-msgpack`
+(`org.platformlambda.mini.msgpack`), written from the published specification for the eight type families the engine uses -
+nil, bool, int, float, str, bin, array and map - and for no other: there are no extension types, and no dependency beyond
+`java.base`. platform-core's `MsgPack`, `CanonicalPackager` and HTTP relay write and read through it, and
+`org.msgpack:msgpack-core` left the reactor in PR #517 (squash `527ac5eb`). Proposed as RFC-0006 in [`RFC.md`](RFC.md) on
+2026-10-06 at Eric's investigation ask, built and verified the same day against his four criteria (at par or faster than
+msgpack-core; virtual-thread friendly; no deprecated libraries; no unsafe operations), and accepted on 2026-10-06 after review
+and green CI. The evidence is `docs/test-reports/minimalist-msgpack-benchmark.md`.
+
+**Context.** The field's scanners flag msgpack-core 0.9.12 for CVE-2026-90472 (stack exhaustion in `unpackValue()`) and
+CVE-2026-90473 (a `map 32` count overflow in `skipValue()`); the advisories name 0.9.13 as the fix, and it is not published.
+The engine reached neither method and had bounded its own reader at 64 levels (CHANGELOG items 9 and 25 of the release after
+4.12.20), but a flagged library at the serialization foundation of every event can block a field release regardless of
+reachability, and the wait had no date. The engine used a small part of MessagePack: a Map or List of scalars, strings and
+bytes, with the value layer (`_T`/`_D`, `serializer.null.transport`, `MsgPack.MAX_DEPTH`) already its own. The Rust engine
+uses `rmp`/`rmpv`, pure Rust and not affected, and the Python and Node.js language packs use their own MessagePack libraries
+over Event-over-HTTP; the shared canonical package vectors (ADR-0026) already pinned the byte-level contract across engines.
+
+**Decision.**
+
+- **Scope.** The module supports the nil, bool, int, float, str, bin, array and map families, every width of each, and
+  nothing else: no extension types and no timestamp. The writer has no method for an extension value; the reader decodes
+  none but knows the ext framing, so `skipValue()` steps over one and the value layer reads it as `null`, as it always did.
+  New MessagePack features need a new decision, not a quiet addition.
+- **The writer's bytes are a contract.** Every value is written in its smallest format, with the integer rule msgpack-core
+  and `rmp` share: a value from -32 to 127 is one byte, a larger non-negative value takes the smallest unsigned width, a
+  smaller negative value the smallest signed width; a `float` is a float32 and a `double` a float64, bit for bit; text is
+  UTF-8 under the shortest str header, bytes under the shortest bin header, and array and map headers take their shortest
+  form. These choices make the bytes identical to msgpack-core's and the Rust engine's, which the canonical vectors and the
+  20,000-document differential prove; changing any of them breaks that identity and the signatures made over canonical
+  packages (ADR-0027), so none changes without a decision here.
+- **The reader is built for bytes from outside the process.** Every read is bounded by the array window; the lengths of
+  str, bin and ext values and the counts of arrays and maps are 32-bit unsigned and checked against the remaining bytes
+  before anything is allocated or consumed (an array of N elements needs at least N bytes, a map of N entries 2N, so a
+  header that promises more than the input holds - the CVE-2026-90473 shape among them - is refused at the header);
+  `0xc1`, which the specification never uses, is refused; `skipValue()` is iterative, so nesting costs no stack; a failed
+  read leaves the position unchanged; and every failure is one checked `MsgPackException extends IOException` - nothing
+  unchecked leaves the codec for malformed input. As the specification allows, a str may hold invalid UTF-8 and is decoded
+  leniently (U+FFFD), and str and bin are accepted interchangeably on read, as msgpack-core did by default.
+- **Implementation constraints.** `java.base` only; big-endian fields through `VarHandle` byte-array views, the sanctioned
+  intrinsic, never `sun.misc.Unsafe`, reflection or a deprecated API; no `synchronized`, `ThreadLocal` or lock, and a reader
+  or writer is created per call, so a virtual thread never pins. The module compiles for the engine's Java 21 baseline.
+- **The value layer stays in platform-core, unchanged.** `MsgPack` (the event payload codec and the general purpose
+  `packMapOrList` pair) and `CanonicalPackager` keep their contracts, their null rule and the 64-level depth bound; the codec
+  below them is streaming only and policy-free, and the depth rule lives where the recursion is.
+- **Three behaviour changes, each pinned by a test.** `org.msgpack.*` classes no longer arrive transitively; every decoding
+  failure of `MsgPack.unpack` is an `IOException`, which `EventEnvelope` reports as `IllegalArgumentException` as its contract
+  always said (msgpack-core also threw its own unchecked exceptions); a `uint 64` above `Long.MAX_VALUE`, which another
+  encoder may send, reads as a `BigInteger` instead of failing, as `CanonicalPackager` and the Rust engine already did.
+- **The module lives in `system/`,** beside `minimalist-kafka`: platform-core depends on it, and `extensions/` depend on
+  platform-core, so an extension cannot be the home of a foundation (Eric, 2026-10-06).
+- **The evidence standard for a change to the codec.** The module's tests pin the specification's format table byte by
+  byte, every format boundary, every hostile-header shape and a random corpus whose every proper prefix is refused, under a
+  90% line-and-branch coverage gate; platform-core's canonical vectors and serializer tests must pass unchanged; and the
+  harness in `benchmark/msgpack-codec-harness/` (outside the reactor on purpose, so msgpack-core never enters a scanned
+  manifest) is the differential and benchmark method of record.
+
+**Alternatives.** (b) *Wait for msgpack-core 0.9.13:* no date, and the next finding against the library costs the same wait.
+(c) *Another MessagePack library:* `msgpack-jackson` depends on msgpack-core, and the rest are small or unmaintained; it swaps
+one supply-chain exposure for another and keeps an extension-type surface the engine never uses. (d) *Suppress the finding
+in the field's scanner:* not this repository's decision, and it recurs on every scan. (a), the in-house codec, was chosen:
+the dependency is gone for good, the codec is about nine hundred lines the team reads, the bytes are proven identical, and
+the measured cost is negative - the event envelope packs and unpacks in about 55% of msgpack-core's time, an 8 KB payload
+in 39% and 72%, and a list of 50 records at par.
+
+**Consequences.** The project owns a wire codec. The format table and the smallest-format rule are now a contract with the
+Rust engine and with every language pack's library; the canonical vectors are the guard, and a change to an encoding choice is
+a decision, not a refactor. An application that imported `org.msgpack.*` through the engine's transitive dependency declares
+`msgpack-core` itself or moves to the new reader and writer. The three behaviour changes above hold from the release that
+carries PR #517. The next version sweep covers one more pom (the module) and one more literal version (platform-core's
+dependency on it). The Rust engine, the language packs and the canonical package format are unchanged, and the
+`msgpack-core-cve-upgrade` thread closed as moot. Deferred, deliberately: extension types and the timestamp, a reusable
+writer pool, and a Java 21 runtime benchmark (the report's numbers come from a Java 27 runtime on one developer machine).
+
+---
+
 ## ADR-0027 — Graph sets: one or more graphs in a canonical `.pack`, gated when packed and deployed all or none {#adr-0027}
 **Status:** Accepted · **Date:** 2026-10-06 · **Serves:** vision-mercury-composable · **Formalizes:** graph-set-pack-and-deploy
 <!-- id: adr-0027 | status: accepted -->

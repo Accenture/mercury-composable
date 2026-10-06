@@ -40,8 +40,8 @@
 ---
 
 ## RFC-0006 — An in-house MessagePack codec: `system/minimalist-msgpack` replaces `org.msgpack:msgpack-core`
-**Status:** Open · **Raised:** 2026-10-06 · **Serves:** vision-mercury-composable · **Thread:** `minimalist-msgpack`
-<!-- id: rfc-0006 | status: open | thread: minimalist-msgpack -->
+**Status:** Promoted → ADR-0028 · **Raised:** 2026-10-06 · **Serves:** vision-mercury-composable · **Thread:** `minimalist-msgpack`
+<!-- id: rfc-0006 | status: promoted | thread: minimalist-msgpack -->
 
 **Proposal.** Replace the engine's one third-party MessagePack dependency with a module of this repository, written from
 the published specification ([spec.md](https://github.com/msgpack/msgpack/blob/master/spec.md), last modified 2017-08-09):
@@ -63,7 +63,7 @@ field release regardless of reachability, and the wait has no date. The engine u
 is written here. Eric's criteria for a replacement (2026-10-06): at par or faster than msgpack-core; virtual-thread friendly;
 no deprecated libraries; no unsafe operations.
 
-**What was built** (branch `feature/minimalist-msgpack`, not merged). The writer uses the smallest format for every value
+**What was built** (branch `feature/minimalist-msgpack`, merged as PR #517, squash `527ac5eb`). The writer uses the smallest format for every value
 with the integer rule msgpack-core and `rmp` share (`-32..127` one byte, larger non-negative values the smallest unsigned
 width, smaller negative values the smallest signed width), float32 and float64 bit for bit, UTF-8 under the shortest str
 header, the shortest bin, array and map headers; short ASCII text is written straight into the buffer. The reader is a
@@ -115,7 +115,11 @@ lenient UTF-8 and str/bin cross-acceptance on read (msgpack-core's defaults).
 no change (`rmp`/`rmpv` are pure Rust and not affected); the shared vectors stay the parity proof. (3) The `msgpack-core-cve-upgrade`
 thread becomes moot if this is accepted. Promotion to an ADR follows review and green CI (the RFC-0001/RFC-0002 method).
 
-**Resolution.** Open.
+**Resolution.** Promoted → ADR-0028 (2026-10-06, Eric): option (a), the in-house codec. Accepted after PR #517 (squash
+`527ac5eb`) merged with green CI: the module and the swap, 134 module tests under a 90% line-and-branch gate, three regression
+tests for the behaviour changes, the two-way differential and the benchmark (`docs/test-reports/minimalist-msgpack-benchmark.md`).
+The three behaviour changes are accepted as listed; the Rust engine needs no change; the `msgpack-core-cve-upgrade` thread
+closed as moot. The release vehicle is the next release (CHANGELOG Unreleased, Changed item 10).
 
 ---
 
