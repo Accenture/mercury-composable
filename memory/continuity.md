@@ -512,11 +512,17 @@
   the graph packager: Java's `ConfigReader` drops a null-valued key when it normalizes a deployed graph (`Utility.getFlatMap` skips nulls),
   Rust's reader kept it and both engines' graph import refuses one (`addProperty`: "value cannot be null"), so a graph deployed on Java only,
   and the Java packager packed the nil. Now one rule: a map entry whose value is null is filtered at every depth - on deploy (Java's
-  `ConfigReader`; Rust `compiler::load_raw_graph`, also `import graph from`) and when a set is packed or read (`GraphModelGate.withoutNullProperties`;
-  Rust `model_gate::without_null_properties` = `serializer::strip_nulls_always`) - while a list keeps its elements and an empty collection
-  stays. `serializer.null.transport` (default false; platform-core's `SimpleMapper` and `MsgPack`) governs what the event transport keeps,
-  never what a graph holds: the packagers write through the canonical packager, and both engines' tests pack the same bytes with the switch
-  on (Java in a second JVM, after a probe shows `SimpleMapper` keeping a null). Relates [[graph-set-packaging]], [[canonical-packager-wire-contract]].
+  `ConfigReader`; Rust `compiler::load_raw_graph`, also `instantiate graph`), when a set is packed or read (`GraphModelGate.withoutNullProperties`;
+  Rust `model_gate::without_null_properties` = `serializer::strip_nulls_always`), and in the Playground's draft import, the one place the REST
+  import, its replay and `import graph from` pass (`importGraphAsDraft` + `validateGraphModel`; Rust `import_graph_model` + `validate_graph_model`;
+  `import graph from` reads a file as text, so a deployed graph holding a null could not be imported before) - while a list keeps its elements.
+  `serializer.null.transport` (default false; platform-core's `SimpleMapper` and `MsgPack`) governs what the event transport keeps, never what a
+  graph holds: the packagers write through the canonical packager, and both engines' tests pack the same bytes with the switch on (Java in a
+  second JVM, after a probe shows `SimpleMapper` keeping a null). **The deploy read beyond nulls (Eric approved options A and E, 2026-10-05):**
+  Java's `ConfigReader` flatten-and-rebuild also drops an empty map or list (and one left empty), turns such an element inside a list into
+  null and drops it at the end; Rust's `model_gate::normalize_graph` reproduces that on deploy (a mapping list ending in null passed only on
+  Java; an empty `{}` property deployed only on Rust), pinned by the byte-identical `graph-read-normalization-vectors.json` in both engines'
+  test resources. A package keeps empty collections, as the files hold them. Relates [[graph-set-packaging]], [[canonical-packager-wire-contract]].
   <!-- id: graph-null-property-filtered | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-000717 -->
 
 ## Conventions
