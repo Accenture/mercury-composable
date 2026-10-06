@@ -181,6 +181,13 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
     deployed graph exactly as this engine's configuration reader does (nulls, empty maps and lists, and a null at the end of a list
     are dropped), pinned by the shared vector file `graph-read-normalization-vectors.json`. Upgrade note: none.
 
+23. **A MsgPack payload nested deeper than 64 maps and lists is refused.** platform-core's `MsgPack` reader recursed once
+   per level with no bound, so a crafted payload of about 100 KB, such as an Event API request, ended in `StackOverflowError`,
+   which no caller catches. It now refuses nesting deeper than 64 levels (`MsgPack.MAX_DEPTH`, the outermost container being
+   level 1, the canonical packager's bound too) with `IOException: Nesting deeper than 64 levels`, a decoding error:
+   `EventEnvelope` reports it as an `IllegalArgumentException`, and the Event API answers HTTP 400. The Rust engine applies the
+   same limit. Upgrade note: an event body may nest at most 63 levels inside its envelope; real payloads are far shallower.
+
 ---
 ## Version 4.12.20, 10/1/2026
 

@@ -211,6 +211,9 @@ portable diagnostics.
    (e.g. `2026-07-21T12:00:00.000Z`) — never as MsgPack extension types.
 7. **No byte-identical guarantee**: map ordering is unspecified. Conformance is semantic —
    decode, compare values.
+8. **Nesting**: a payload nested deeper than 64 maps and lists is refused as a decoding error, the envelope map
+   being level 1, so a `body` may nest 63 levels. Decoders MUST refuse deeper nesting instead of recursing into
+   it, and encoders SHOULD NOT produce it.
 
 ## Format detection
 

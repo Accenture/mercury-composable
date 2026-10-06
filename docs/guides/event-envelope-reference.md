@@ -43,6 +43,11 @@ directly for event transport. (For an application's *own* binary serialization, 
 value, `MsgPack.packMapOrList` / `unpackMapOrList` are available as a general purpose codec — see
 [API Overview → Binary serialization with MsgPack](api-overview.md#binary-serialization-with-msgpack).)
 
+A payload nested deeper than 64 maps and lists is refused as a decoding error, the envelope map being level 1, so a
+body may nest 63 levels (`MsgPack.MAX_DEPTH`; the Rust engine applies the same limit). The limit keeps a crafted payload
+from exhausting the decoder's stack: `MsgPack` throws `IOException: Nesting deeper than 64 levels`, `EventEnvelope`
+reports it as an `IllegalArgumentException`, and the Event API answers such a request with HTTP 400.
+
 ---
 
 ## Creating an EventEnvelope
