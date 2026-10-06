@@ -3821,6 +3821,9 @@ portable diagnostics.</p>
    <code>0xc1</code>, which the specification never uses. Decoders MUST do the same. The shared vector file
    <code>msgpack-hostile-header-vectors.json</code>, byte-identical in the Java and Rust repositories, pins the inputs both
    engines refuse and the controls both decode.</li>
+<li><strong>Empty input</strong>: an empty payload decodes as an empty map, so an empty byte array is an empty envelope and never a
+    decoding error; the canonical package decoder refuses it, because a package is never empty. The Java engine is
+    the reference implementation and the Rust engine follows it.</li>
 </ol>
 <h2 id="format-detection">Format detection<a class="headerlink" href="#format-detection" title="Permanent link">&para;</a></h2>
 <p>The compact format's keys are all exactly <strong>one character</strong>; standard keys are all
