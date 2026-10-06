@@ -83,61 +83,72 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    a model the importer rejects, leaving an empty draft; the console now prints `Graph model not imported - <reason>`, on both
    engines.
 
+8. **Dependencies updated: Tomcat 11.0.26, Vert.x 5.2.0, ASM 9.10.1 and Guava 33.7.2-jre.** Tests use JUnit 6.1.3: `junit-bom`, the
+   starter templates' Gradle builds, and `junit-jupiter.version` in every module whose Spring Boot parent would otherwise keep JUnit
+   at 6.0.3. The build uses maven-compiler-plugin 3.16.0, maven-source-plugin 3.4.0,
+   maven-resources-plugin 3.5.0, maven-jar-plugin 3.5.1, maven-install-plugin 3.2.0 and maven-surefire-plugin 3.6.0, with
+   maven-artifact and maven-repository-metadata 3.10.0. MsgPack stays at 0.9.12, still its latest release: CVE-2026-90472 (deeply
+   nested input exhausts the stack in `MessageUnpacker.unpackValue()`) and CVE-2026-90473 (an integer overflow in
+   `MessageUnpacker.skipValue()` on a MAP32 header) are fixed upstream in 0.9.13, which is not yet published. Neither method is
+   reached from the engine: platform-core's `MsgPack` walks maps and lists itself and calls `skipValue()` only on an extension
+   value, where no map header is read, and the canonical packager calls neither. Upgrade note: Vert.x moves to a new minor
+   version; nothing to change in an application.
+
 ### Documentation
 
-8. **The LLM helper certification report** (`docs/test-reports/llm-helper-certification.md`): Java and Rust, each in front of the
+9. **The LLM helper certification report** (`docs/test-reports/llm-helper-certification.md`): Java and Rust, each in front of the
    Python and the Node.js helper, driven through a streaming service, an Event Script flow and two graphs with real Claude
    calls. It shows that every token batch the helper forwards reaches the engine edge as its own frame, that the cadence of
    progressive rendering is the API's and differs by model (Haiku streams continuously, Opus in bursts about every 600 ms),
    and that the error contract holds on the real SDKs.
-9. The AI agent guide's boilerplate manifest no longer calls `flows/flow-11.yml` a support-triage flow: it is Tutorial 11's echo
+10. The AI agent guide's boilerplate manifest no longer calls `flows/flow-11.yml` a support-triage flow: it is Tutorial 11's echo
    flow, the `graph.extension` target (`flow://flow-11`), and a flow's `flows.yaml` entry goes with its file.
 
-10. **The Playground webapp's technical documentation is regenerated from the code** in
+11. **The Playground webapp's technical documentation is regenerated from the code** in
    `system/minigraph-playground-engine/webapp/docs/`: architecture, the backend protocol, components, hooks and state,
    build/test/deploy and extension recipes, replacing the pre-graduation specs. The webapp's scoped memory bank is retired; its
    session memory and open threads live at the repository root.
 
-11. **The JSONPath result shape is documented and pinned on both engines.** The Event Script syntax page states Jayway's rule:
+12. **The JSONPath result shape is documented and pinned on both engines.** The Event Script syntax page states Jayway's rule:
    a definite path (child member names and single indexes only) yields the value, or null when it is absent, and an indefinite
    path (a filter, a wildcard, a deep scan `..`, a slice or a union) always yields a list - one match is a one-element list and
    none an empty list - unless a member name before its first indefinite step is missing, which yields null. The knowledge-graph
    grammar's `$.…` entry points at it; the claim `json-path-result-shape` and the shared fixture `unit-test-jsonpath-1` pin it.
    Nothing changes in this engine. The Rust engine had shaped a result by the number of matches and now follows the same rule.
 
-12. **The graph-set decisions are recorded.** RFC-0005 (graph sets: the command-line packager, the Playground's packaging panel
+13. **The graph-set decisions are recorded.** RFC-0005 (graph sets: the command-line packager, the Playground's packaging panel
    and packaged sets in the deployment manifest) is promoted to ADR-0027, with Eric's rule that a set holds one graph or more so
    that one graph can be signed on its own. The canonical package guide points to it.
 
 ### Fixed
 
-13. **The MiniGraph Playground example deploys tutorial 13.** The example's manifest (`graphs.yaml`) listed tutorials 1 to 12 and 14.
+14. **The MiniGraph Playground example deploys tutorial 13.** The example's manifest (`graphs.yaml`) listed tutorials 1 to 12 and 14.
    Tutorial 13 was left out while it needed a test fixture function, and stayed out after it became an `async.http.request` client
    of the app's own dev mock endpoint (Java PR #267). All fourteen tutorials and `support-triage` now compile (15 graphs) and answer
    at `POST /api/graph/{graph_id}`; `GraphTests` runs tutorial 13 and its unknown-profile error. The README's "model answers for
    tutorials 1 to 11" now says 1 to 14.
-14. **The MiniGraph Playground's help describes `CONDITION` and `DECIMAL`.** The help pages are compiled into the committed webapp
+15. **The MiniGraph Playground's help describes `CONDITION` and `DECIMAL`.** The help pages are compiled into the committed webapp
    bundle, which was last regenerated on 2026-09-23, so `help graph-math` still listed five statement types and said nothing of
    `CONDITION` (#462), the closed expression dialect (#467), `DECIMAL` (#471) or the money guidance (#480). The bundle is regenerated
    with `npm run release` in the webapp: the help now lists seven statement types, shows `DECIMAL` and `CONDITION` in its property
    list and gives the syntax of both. Nothing else in the bundle changed: a rebuild of the unchanged sources reproduces every other
    asset, source maps included, byte for byte.
-15. **The MiniGraph Playground opens with the console at one third of the width.** The graph view and help take the other two
+16. **The MiniGraph Playground opens with the console at one third of the width.** The graph view and help take the other two
    thirds; the console opened at 40%. The split is no longer restored from an earlier session: a drag saved in the browser won at
    the next page load, so an old drag looked like a wrong default, while toggling the console reset it. A drag still holds while
    you work, until the console is toggled or a form takes its place. The node editor and the mock-input panel keep their 30%.
-16. **`describe skill` for a built-in skill opens the skill's page in the Playground's help panel.** The engine answers
+17. **`describe skill` for a built-in skill opens the skill's page in the Playground's help panel.** The engine answers
    `describe skill graph.math` with the `graph-math` help page, and the console cannot render its markdown. The Playground now shows
    that page in the help panel, as it does for `help graph-math`, and the console keeps only the command. `describe graph`,
    `describe node` and `describe connection` still answer in the console, and so does a skill without a bundled page. The engine
    and the companion API are unchanged: `describe skill` still returns the page as text.
-17. **A subscribed MiniGraph Playground session can instantiate and run the graph.** Subscribed sessions are equal partners, and the
+18. **A subscribed MiniGraph Playground session can instantiate and run the graph.** Subscribed sessions are equal partners, and the
    engine already runs a subscriber's command through the primary in every member's session, but the Playground disabled
    **Instantiate** and **Run** in a subscribed session ("Run the graph from the host session"), so a subscriber could not start a
    graph instance or upload its mock input. Both buttons now work in every session. Subscribing or unsubscribing still resets the run controls. (The per-member
    mock input and the prompt every member received were reworked the same day: the run controls became three steps and an upload now
    loads every member's instance; see the items below.)
-18. **Pasting a workspace-clipboard node into the MiniGraph Playground keeps scalar properties scalar.** The paste rebuilt the
+19. **Pasting a workspace-clipboard node into the MiniGraph Playground keeps scalar properties scalar.** The paste rebuilt the
    node with `key[]=value` for every property, and the engine appends on the `[]` signature, so a pasted node's `skill`,
    `description` and every other scalar arrived as a one-element list (`"skill": ["graph.math"]`), which the graph traveler
    reads as the route `[graph.math]`. The paste now writes the node the way the engine's own `edit node` prints it: `key=value`
@@ -145,12 +156,12 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    value, through the same conversion and command builder as the node editor and undo. A node the grammar cannot carry (an
    empty list or map, a value containing `'''`, more than one type) is reported as "Paste failed" instead of being sent. The
    webapp bundle is regenerated for both engines.
-19. **A mock-data upload reaches every member of a collaborative MiniGraph Playground session.** `POST /api/mock/{id}` loaded the
+20. **A mock-data upload reaches every member of a collaborative MiniGraph Playground session.** `POST /api/mock/{id}` loaded the
    payload into the uploader's instance only, so another member's replayed `run` executed without it and aborted. The upload now
    travels like a command: the primary loads it and replays it into every subscriber's instance, a subscriber's upload goes through
    the primary, and every member's console prints `Mock data loaded into 'input.body' namespace`. A session without a graph
    instance is still refused (HTTP 400). The Rust engine carries the same change.
-20. **A knowledge-graph mapping source inserts its `{namespace.key}` values verbatim.** A mapping source may embed a reference
+21. **A knowledge-graph mapping source inserts its `{namespace.key}` values verbatim.** A mapping source may embed a reference
    that resolves before the source is read: a key segment (`census-2020.{model.state}`, the read of a keyed table), a list index
    (`input.body.items[{model.i}]`), or text in a constant or a plugin argument. When the source text contained `!`, `<`, `>`, `==`,
    `&&` or `||`, every text value was quoted as if the source were a boolean expression: `text(Hello {input.body.name}!)` gave
@@ -162,7 +173,7 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    null or non-numeric value. The Rust engine carries the same change. READ: a mapping that relied on the quotes, a text
    constant with one of those characters around a reference, now gets the bare value.
 
-21. **A graph imported into the MiniGraph Playground drops its null properties.** The draft import - the Import Graph button and
+22. **A graph imported into the MiniGraph Playground drops its null properties.** The draft import - the Import Graph button and
     file drop (`POST /api/graph/import/{id}`), its replay to a shared session, and `import graph from` a file or a deployed model -
     filters a `"key": null` out before it imports the model, as an application does when it loads a deployed graph, instead of
     refusing it with `value cannot be null`. It no longer depends on `serializer.null.transport`, which decides only whether the
