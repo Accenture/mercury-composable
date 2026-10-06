@@ -248,6 +248,17 @@
       "quote": "A header that promises more than the input holds is refused at the header",
       "test": "system/platform-core::MsgPackHostileHeaderVectorsTest#everyHostileHeaderIsRefusedAtTheHeader",
       "since": "4.12.21+"
+    },
+    {
+      "id": "msgpack-empty-input",
+      "claim": "Empty MsgPack input decodes as an empty map at MsgPack.unpack, so an empty byte array is an empty envelope and never a decoding error, while CanonicalPackager.decode refuses empty input because a package is never empty; this engine is the reference implementation the Rust engine follows, and the shared vector file pins the case as the control the event codec accepts and the canonical decoder rejects.",
+      "pages": [
+        "docs/guides/event-envelope-wire-format.md",
+        "docs/guides/event-envelope-reference.md"
+      ],
+      "quote": "Empty input decodes as an empty map, so an empty byte array is an empty envelope and never a decoding error",
+      "test": "system/platform-core::MsgPackHostileHeaderVectorsTest#emptyInputIsAnEmptyMapAndAnEmptyEnvelope",
+      "since": "4.12.21+"
     }
   ]
 }

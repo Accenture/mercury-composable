@@ -30,9 +30,11 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -93,10 +95,28 @@ class MsgPackHostileHeaderVectorsTest {
             byte[] bytes = HEX.parseHex(v.get("hex").getAsString());
             JsonElement expected = v.get("value");
             assertEquals(expected, asJson(msgPack.unpackMapOrList(bytes)), id + " through MsgPack");
-            assertEquals(expected, asJson(CanonicalPackager.decode(bytes)), id + " through CanonicalPackager");
+            if (v.has("canonical") && "reject".equals(v.get("canonical").getAsString())) {
+                // the one control the canonical decoder must refuse: empty input, since a package is never empty
+                assertThrows(IOException.class, () -> CanonicalPackager.decode(bytes), id + " through CanonicalPackager");
+            } else {
+                assertEquals(expected, asJson(CanonicalPackager.decode(bytes)), id + " through CanonicalPackager");
+            }
             checked++;
         }
         assertTrue(checked >= 8, "controls checked: " + checked);
+    }
+
+    @Test
+    void emptyInputIsAnEmptyMapAndAnEmptyEnvelope() throws IOException {
+        // the rule the Rust engine follows, this engine being the reference: empty input is an empty map at the event
+        // payload codec, so an empty byte array is an empty envelope and never a decoding error; the canonical decoder
+        // refuses it, because a package is never empty
+        byte[] empty = new byte[0];
+        assertEquals(Map.of(), msgPack.unpack(empty));
+        assertEquals(Map.of(), msgPack.unpackMapOrList(empty));
+        var envelope = new EventEnvelope(empty);
+        assertNull(envelope.getTo());
+        assertThrows(IOException.class, () -> CanonicalPackager.decode(empty));
     }
 
     // the decoded Map/List, rendered as JSON and parsed back, compares with the vector's value structurally

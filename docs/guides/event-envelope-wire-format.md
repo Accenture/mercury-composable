@@ -220,6 +220,9 @@ portable diagnostics.
    `0xc1`, which the specification never uses. Decoders MUST do the same. The shared vector file
    `msgpack-hostile-header-vectors.json`, byte-identical in the Java and Rust repositories, pins the inputs both
    engines refuse and the controls both decode.
+10. **Empty input**: an empty payload decodes as an empty map, so an empty byte array is an empty envelope and never a
+    decoding error; the canonical package decoder refuses it, because a package is never empty. The Java engine is
+    the reference implementation and the Rust engine follows it.
 
 ## Format detection
 
