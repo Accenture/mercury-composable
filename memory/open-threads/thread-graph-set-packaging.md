@@ -23,7 +23,11 @@
   recorded (Eric: "proceed with the additional unit test ... promote RFC-0005 as ADR-0027"):** `aSingleGraphIsPackedAloneSoItCanBeSigned` and the
   Rust twin pin one 327-byte set (SHA-256 `c500281a…`) in both engines, and ADR-0027 states the reason - PR #510 squash `2ebcaea5` and
   mercury #357 merge `60e59aeb` (Increment 159), both MERGED 2026-10-06. **Open:** publishing the Rust tool to crates.io is a release
-  decision. Next: WP3, the loader, built under ADR-0027.
+  decision. **WP3, the loader, MERGED 2026-10-06 - Java #515 squash `eb6021a9`, mercury #359 merge `42f6cf81` (Increment 161):**
+  `GraphSetLoader` / `graph_set_loader` deploy a manifest's `sets` through a writable `unpack` folder, all or none, right after its
+  loose graphs; the generated manifest's `graphs` lists what deployed and `generated` every file written, which the next start removes
+  (a deliberate refinement of the design spec's §3.5 step 4, flagged in both PRs); `list graphs` shows a set graph's set and version.
+  Next: WP4 (the endpoints), then WP5 (the panel) and WP6 (the docs), each on Eric's word.
   → proposal: RFC-0005
   → serves: vision-mercury-composable
   <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-06 | uses: 5 | tier: working | origin: 2026-10-03-171402 -->

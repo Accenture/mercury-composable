@@ -508,7 +508,8 @@
   involving a set logs an ERROR (D4). The Playground packs on the engine (D7, D9), and signing stays outside (a detached `<set>.pack.sig`).
   **The one-graph rule (Eric, 2026-10-06):** only an empty set is refused; a graph packed alone gets bytes of its own to sign, and both
   engines' tests pin one such set (327 bytes, SHA-256 `c500281a…`), the guard for every signature - a change that alters the bytes of the
-  same graphs and fields breaks the signatures made over the old ones. Open work, WP3 to WP6: [[graph-set-packaging]]. Extends
+  same graphs and fields breaks the signatures made over the old ones. WP3, the loader, shipped in #515 (squash `eb6021a9`) and
+  mercury #359 (merge `42f6cf81`, Increment 161); open work, WP4 to WP6: [[graph-set-packaging]]. Extends
   [[canonical-packager-wire-contract]] and [[graph-manifest-list-later-wins]]. (ADR-0027)
   <!-- id: graph-set-pack-and-deploy | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-012206 -->
 
@@ -678,6 +679,15 @@
   example); the build log's `--- plugin:version` lines show which ran. Replace versions by artifact, never by bare string: 3.3.1 is both
   maven-source-plugin and maven-resources-plugin. Relates [[conv-template-version-sweep]] (the templates' Gradle builds pin `junit-bom` too).
   <!-- id: conv-boot-managed-version-overrides | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-025608 -->
+
+- **Unit tests remove the temporary files they write when they complete, and that is verified by measuring, not by reading the code
+  (Eric, 2026-10-06).** Prefer a folder the framework removes (JUnit's `@TempDir`, a Rust drop guard), and remove in `finally` whatever a
+  test writes elsewhere: a test that opens a Playground session closes it (the engine then removes its draft from `location.graph.temp`),
+  a test whose graph ends suspended removes its record, and an embedded server removes its data folder once it has stopped. Verify with a
+  marker file: run the suite, then list what in the temp folders (`$TMPDIR`, `/tmp/*`) is newer than the marker, module by module. A file
+  created and deleted during the run does not show, so whatever shows was left behind; an empty folder does not show in a files-only
+  listing, so look for folders too. Thread: [[test-temp-file-housekeeping]].
+  <!-- id: conv-tests-remove-temp-files | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-045656 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
