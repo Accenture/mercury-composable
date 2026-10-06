@@ -21,8 +21,9 @@
   Rust (SHA-256 `74c213b7…`), again on a second pack and on an unpack-then-repack; an Ed25519 signature over the Java pack verified the Rust
   pack and failed once a manifest field changed; only an empty set is refused (`a set needs at least one graph`, exit 1). **Then pinned and
   recorded (Eric: "proceed with the additional unit test ... promote RFC-0005 as ADR-0027"):** `aSingleGraphIsPackedAloneSoItCanBeSigned` and the
-  Rust twin pin one 327-byte set (SHA-256 `c500281a…`) in both engines, and ADR-0027 states the reason - PR #510 and mercury #357 (Increment 159),
-  open at writing. **Open:** publishing the Rust tool to crates.io is a release decision. Next: WP3, the loader.
+  Rust twin pin one 327-byte set (SHA-256 `c500281a…`) in both engines, and ADR-0027 states the reason - PR #510 squash `2ebcaea5` and
+  mercury #357 merge `60e59aeb` (Increment 159), both MERGED 2026-10-06. **Open:** publishing the Rust tool to crates.io is a release
+  decision. Next: WP3, the loader, built under ADR-0027.
   → proposal: RFC-0005
   → serves: vision-mercury-composable
   <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-06 | uses: 5 | tier: working | origin: 2026-10-03-171402 -->

@@ -498,7 +498,8 @@
 
 - **A graph set is one or more graphs in a canonical `<set>.pack`, checked by the gate when packed and deployed all or none through a
   generated manifest; a set of one graph is how one graph is signed (Eric: decided 2026-10-03, accepted as ADR-0027 on 2026-10-06; PR #510
-  and the Rust twin mercury #357, Increment 159, open at writing).** RFC-0005 was promoted after WP1 and WP2 shipped (#508 squash `5e9a0fab`,
+  squash `2ebcaea5` and the Rust twin mercury #357 merge `60e59aeb`, Increment 159, both MERGED 2026-10-06).** RFC-0005 was promoted after
+  WP1 and WP2 shipped (#508 squash `5e9a0fab`,
   mercury #356 merge `779cffe1`). The rules: the gate is one shared method (`GraphModelGate` / `model_gate`) that also runs at pack time (D2);
   the command lines are `helpers/graph-packager` and `tools/graph-packager` (D8); an entry is `<graph-id>.json`, the root name equals the id
   (D6), and `graph_id` is an optional entry point (D5); the bytes depend on the graphs and the manifest fields only (no clock, `${...}`
