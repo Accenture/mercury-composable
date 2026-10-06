@@ -30,12 +30,14 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
 import org.platformlambda.core.serializers.SimpleXmlWriter;
 import org.platformlambda.core.system.*;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -633,6 +635,15 @@ class RestEndpointTest extends TestBase {
         assert response != null;
         assertInstanceOf(byte[].class, response.getBody());
         assertArrayEquals(b, (byte[]) response.getBody());
+        // the client buffers the stream in a temporary file, deleted once the exchange has ended
+        String streamId = publisher.getStreamId();
+        int at = streamId.indexOf('@');
+        File temp = new File(AppConfigReader.getInstance().getProperty("async.http.temp", "/tmp/async-http-temp"),
+                at > 0? streamId.substring(0, at) : streamId);
+        for (int i = 0; i < 40 && temp.exists(); i++) {
+            util.sleep(50);
+        }
+        assertFalse(temp.exists(), "the upload's temporary file is deleted after the relay");
     }
 
     private static AsyncHttpRequest getHttpPutRequest(EventPublisher publisher, int ttl) {

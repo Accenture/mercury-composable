@@ -277,7 +277,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                     } else {
                         receiver = sender.send(ByteBufFlux.fromPath(files.getFirst().toPath()));
                     }
-                    var httpResponse = new HttpResponseHandler(input, request, receiver, mySpanId);
+                    var httpResponse = new HttpResponseHandler(input, request, receiver, mySpanId, files);
                     httpResponse.process();
                 })
                 .onFailure(e -> sendErrorResponse(input, e));
@@ -477,7 +477,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 BufferedOutputStream out = fileStreams.get(i);
                 FluxConsumer<Object> flux = new FluxConsumer<>(id, Math.max(5000L, timeoutSeconds * 1000L));
                 flux.consume(data -> saveFileBlock(data, out),
-                e -> closeFileStreams(promise, fileStreams, e),
+                e -> closeFileStreams(promise, fileStreams, files, e),
                 () -> {
                     if (received.incrementAndGet() == streams.size()) {
                         closeFileStreams(promise, fileStreams, files);
@@ -500,7 +500,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         }
     }
 
-    private void closeFileStreams(Promise<List<File>> promise, List<BufferedOutputStream> fileStreams, Throwable e) {
+    private void closeFileStreams(Promise<List<File>> promise, List<BufferedOutputStream> fileStreams,
+                                  List<File> files, Throwable e) {
         Throwable error = null;
         for (BufferedOutputStream out: fileStreams) {
             try {
@@ -509,7 +510,19 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 error = ex;
             }
         }
+        // the upload is abandoned, so its partly written files go now
+        deleteFiles(files);
         promise.fail(error == null? e : error);
+    }
+
+    private static void deleteFiles(List<File> files) {
+        for (File f: files) {
+            try {
+                Files.deleteIfExists(f.toPath());
+            } catch (IOException e) {
+                log.warn("Unable to delete {} - {}", f, e.getMessage());
+            }
+        }
     }
 
     private void closeFileStreams(Promise<List<File>> promise, List<BufferedOutputStream> fileStreams, List<File> files) {
@@ -586,13 +599,21 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
         private final boolean envelopeRelay;
         // the client execution's own span: the parent of the segments it synthesizes (null when untraced)
         private final String mySpanId;
+        // an upload's temporary files, deleted when the exchange ends, whatever its outcome
+        private final List<File> uploads;
 
         public HttpResponseHandler(EventEnvelope input, AsyncHttpRequest request, HttpClient.ResponseReceiver<?> http,
                                    String mySpanId) {
+            this(input, request, http, mySpanId, List.of());
+        }
+
+        public HttpResponseHandler(EventEnvelope input, AsyncHttpRequest request, HttpClient.ResponseReceiver<?> http,
+                                   String mySpanId, List<File> uploads) {
             this.input = input;
             this.request = request;
             this.http = http;
             this.mySpanId = mySpanId;
+            this.uploads = uploads;
             int timeout = request.getTimeoutSeconds();
             this.timeoutSeconds = timeout > 0? timeout : DEFAULT_TTL_SECONDS;
             this.envelopeRelay = STREAM_RELAY.equals(input.getHeader(X_EVENT_API));
@@ -609,7 +630,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 var httpHeaders = httpResponse.responseHeaders();
                 httpHeaders.forEach(kv -> response.setHeader(kv.getKey(), kv.getValue()));
                 return buffer.asInputStream();
-            }).subscribeOn(Schedulers.fromExecutor(executor)).subscribe(stream -> {
+            }).doFinally(signal -> deleteFiles(uploads))
+                    .subscribeOn(Schedulers.fromExecutor(executor)).subscribe(stream -> {
                 noContent.set(false);
                 if (input.getReplyTo() != null) {
                     String resContentType = resolver.getContentType(response.getHeader(CONTENT_TYPE));
@@ -653,7 +675,8 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                     relay.start();
                 }
                 return content.asByteArray();
-            }).subscribeOn(Schedulers.fromExecutor(executor)).subscribe(
+            }).doFinally(signal -> deleteFiles(uploads))
+                    .subscribeOn(Schedulers.fromExecutor(executor)).subscribe(
                 chunk -> {
                     if (streaming.get()) {
                         relay.onChunk(chunk);
