@@ -38,9 +38,9 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The graph-set endpoints of ADR-0027 (WP4), through the real router. POST /api/graph/pack answers the set
+ * The graph-set endpoints of ADR-0027 (WP4), through the real router. POST /api/graph-set/pack answers the set
  * as a download - the same bytes the graph packager writes for the same graphs and fields - and refuses a
- * graph that the import validation or the deployment gate refuses; POST /api/graph/unpack answers the
+ * graph that the import validation or the deployment gate refuses; POST /api/graph-set/unpack answers the
  * manifest and the graphs of a package, whether its bytes arrive with a content length or as a stream, and
  * refuses bytes that are not a canonical package or a set that breaks a rule.
  */
@@ -48,8 +48,8 @@ class GraphSetEndpointTest {
     private static final String ASYNC_HTTP_CLIENT = "async.http.request";
     private static final String JSON = "application/json";
     private static final String OCTET_STREAM = "application/octet-stream";
-    private static final String PACK = "/api/graph/pack";
-    private static final String UNPACK = "/api/graph/unpack";
+    private static final String PACK = "/api/graph-set/pack";
+    private static final String UNPACK = "/api/graph-set/unpack";
     private static final String SET = "unit-test-endpoint-set";
     private static final String GRAPH_A = "unit-test-endpoint-a";
     private static String target;
@@ -66,7 +66,7 @@ class GraphSetEndpointTest {
     void packAnswersTheSetAsADownload() throws Exception {
         var model = model(GRAPH_A);
         var fields = Map.of("version", "1.0.0", "author", "the endpoint test");
-        var response = post(PACK, JSON, Map.of("manifest", manifest(SET, fields), "graphs", Map.of(GRAPH_A, model)), true);
+        var response = post(PACK, JSON, Map.of("manifest", manifest(fields), "graphs", Map.of(GRAPH_A, model)), true);
         assertEquals(200, response.getStatus(), message(response));
         assertTrue(header(response, "content-type").startsWith(OCTET_STREAM), response.getHeaders().toString());
         assertEquals("attachment; filename=\"" + SET + GraphSet.EXTENSION + "\"", header(response, "content-disposition"));
@@ -85,7 +85,7 @@ class GraphSetEndpointTest {
         ((List<?>) noEnd.get("nodes")).remove(1);
         noEnd.remove("connections");
         var graphs = Map.of(GRAPH_A, model(GRAPH_A), "unit-test-endpoint-no-end", noEnd);
-        var response = post(PACK, JSON, Map.of("manifest", manifest(SET, Map.of()), "graphs", graphs), true);
+        var response = post(PACK, JSON, Map.of("manifest", manifest(Map.of()), "graphs", graphs), true);
         assertEquals(400, response.getStatus(), message(response));
         assertEquals("Set not packed - unit-test-endpoint-no-end: graph must have an 'end' node", message(response));
     }
@@ -94,7 +94,7 @@ class GraphSetEndpointTest {
     void packRefusesAModelWithAForeignSection() throws Exception {
         var foreign = model("unit-test-endpoint-b");
         foreign.put("manifest", Map.of());
-        var response = post(PACK, JSON, Map.of("manifest", manifest(SET, Map.of()), "graphs", Map.of("unit-test-endpoint-b", foreign)), true);
+        var response = post(PACK, JSON, Map.of("manifest", manifest(Map.of()), "graphs", Map.of("unit-test-endpoint-b", foreign)), true);
         assertEquals(400, response.getStatus(), message(response));
         assertEquals("Set not packed - unit-test-endpoint-b: Unexpected top-level section(s): manifest" +
                 " - a graph model has only 'nodes' and 'connections'", message(response));
@@ -105,7 +105,7 @@ class GraphSetEndpointTest {
         var response = post(PACK, JSON, Map.of("manifest", Map.of("version", "1"), "graphs", Map.of(GRAPH_A, model(GRAPH_A))), true);
         assertEquals(400, response.getStatus(), message(response));
         assertEquals("Set not packed - manifest field 'set' is required - it names the set and its file", message(response));
-        var noGraphs = post(PACK, JSON, Map.of("manifest", manifest(SET, Map.of())), true);
+        var noGraphs = post(PACK, JSON, Map.of("manifest", manifest(Map.of())), true);
         assertEquals(400, noGraphs.getStatus(), message(noGraphs));
         assertEquals("Set not packed - 'graphs' is a JSON object keyed by graph id, each value a graph model", message(noGraphs));
     }
@@ -148,9 +148,9 @@ class GraphSetEndpointTest {
         assertEquals("The request body is the graph set (.pack) to read, sent as application/octet-stream", message(json));
     }
 
-    private static Map<String, Object> manifest(String setName, Map<String, String> fields) {
+    private static Map<String, Object> manifest(Map<String, String> fields) {
         var manifest = new LinkedHashMap<String, Object>();
-        manifest.put(GraphSet.SET, setName);
+        manifest.put(GraphSet.SET, SET);
         manifest.putAll(fields);
         return manifest;
     }
@@ -182,7 +182,7 @@ class GraphSetEndpointTest {
     }
 
     private static String message(EventEnvelope response) {
-        return response.getBody() instanceof Map<?, ?> map && map.containsKey("message") ?
-                String.valueOf(map.get("message")) : String.valueOf(response.getBody());
+        return String.valueOf(response.getBody() instanceof Map<?, ?> map && map.containsKey("message") ?
+                map.get("message") : response.getBody());
     }
 }
