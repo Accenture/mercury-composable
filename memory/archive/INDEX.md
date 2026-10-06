@@ -217,3 +217,9 @@
 - v4-12-15-release-prep — v4.12.15 release preparation — CLOSED 2026-09-23: released on all four runtimes. The surve… — faded — 2026-Q4.md
 - v4-12-16-release-prep — v4.12.16 release prep — SHIPPED 2026-09-24 (Java #457 `df605533` → tag `dc0ee6fa`; Rust #3… — faded — 2026-Q4.md
 - minigraph-guarded-async-completion — MiniGraph async skill callbacks are guarded — a failure surfaces as the node's error, neve… — faded — 2026-Q4.md
+- connected-edge-spans — A traced HTTP request is ONE connected span tree whose root is the edge's round-trip span;… — faded — 2026-Q4.md
+- playground-example-flows-are-sample-config — The playground example's flows config is sample configuration that duplicates the engine's… — faded — 2026-Q4.md
+- canonical-msgpack-packager — Canonical MsgPack packager (RFC-0002, Promoted → ADR-0026; thread id `canonical-msgpack-pa… — faded — 2026-Q4.md
+- decimal-mode — Exact decimal arithmetic: a `DECIMAL:` statement for `graph.math` and an explicit plugin f… — faded — 2026-Q4.md
+- flow-11-doc-label — (drift) The AI agent guide mislabelled `flows/flow-11.yml`. CLOSED 2026-10-02. PR #490 (sq… — faded — 2026-Q4.md
+- playground-bundle-stale — (drift) The Java Playground's committed webapp bundle lacked the `CONDITION` and `DECIMAL`… — faded — 2026-Q4.md

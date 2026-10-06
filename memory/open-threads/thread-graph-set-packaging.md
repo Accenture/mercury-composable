@@ -25,4 +25,4 @@
   open at writing. **Open:** publishing the Rust tool to crates.io is a release decision. Next: WP3, the loader.
   → proposal: RFC-0005
   → serves: vision-mercury-composable
-  <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-03-171402 -->
+  <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-06 | uses: 5 | tier: working | origin: 2026-10-03-171402 -->
