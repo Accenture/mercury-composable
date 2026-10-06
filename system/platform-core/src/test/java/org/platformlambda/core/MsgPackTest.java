@@ -511,7 +511,6 @@ class MsgPackTest {
         assertThrows(IOException.class, () -> msgPack.unpack(new byte[]{(byte) 0x81, (byte) 0xa1, 0x61, (byte) 0xc1}));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void bytesAfterTheValueAreRefused() throws IOException {
         // the input holds exactly one value: a byte after the top-level container is a decoding error whatever it is,
@@ -530,6 +529,7 @@ class MsgPackTest {
         assertEquals(Map.of(), msgPack.unpack(new byte[]{(byte) 0x80}));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void aUint64AboveLongMaxReadsAsBigInteger() throws IOException {
         // this serializer never writes one, but another MessagePack encoder may: a map with one key "n" holding 2^64 - 1
