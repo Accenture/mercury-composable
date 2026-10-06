@@ -40,6 +40,8 @@ system/
   mini-scheduler           ← scheduled task support
   minigraph-playground-engine ← MiniGraph engine + the Playground webapp (webapp/: ONE source for both
                              engines, `npm run release:all`; docs in webapp/docs/; its memory is this root's)
+  minimalist-msgpack       ← zero-dependency MessagePack codec (reader/writer from the spec, no extension types);
+                             platform-core's serialization foundation, in place of org.msgpack:msgpack-core
   minimalist-kafka         ← opt-in Kafka library: flow adapter (inbound) + notification (outbound)
   twin-kafka               ← a SECOND Kafka cluster on top of minimalist-kafka (dual-cluster bridge)
   ai-contract-provider     ← serves the version-matched AI documentation contract

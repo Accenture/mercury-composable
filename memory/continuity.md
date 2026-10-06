@@ -529,6 +529,30 @@
   showed the Java tests failing on the old reader. Relates [[canonical-packager-wire-contract]], [[msgpack-core-cve-upgrade]].
   <!-- id: msgpack-nesting-limit-64 | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-025608 -->
 
+- **A zero-dependency MessagePack codec of this repository, `system/minimalist-msgpack`, replaces `org.msgpack:msgpack-core` under
+  platform-core (built 2026-10-06 at Eric's investigation ask; RFC-0006 Open; branch `feature/minimalist-msgpack` at `488c826e`,
+  the full reactor green with 1,767 tests, not merged).**
+  Eric's criteria - at par or faster, virtual-thread friendly, no deprecated libraries, no unsafe operations - and his
+  "minimalist" rule, no custom (extension) types. The module (`org.platformlambda.mini.msgpack`, `java.base` only) is a streaming
+  `MsgPackWriter`/`MsgPackReader` written from the published specification for nil, bool, int, float, str, bin, array and map;
+  big-endian fields through `VarHandle` byte-array views, no `Unsafe`, no `synchronized`/`ThreadLocal`/lock, one reader or
+  writer per call. The value layer stays in platform-core (`MsgPack`, `CanonicalPackager`; `_T`/`_D`, null transport and
+  [[msgpack-nesting-limit-64]] unchanged). **Reader rules:** every length and count is 32-bit unsigned and checked against the
+  remaining bytes before anything is allocated (N elements need N bytes, N entries 2N - the CVE-2026-90473 header is refused at
+  the header); `0xc1` refused; `skipValue()` iterative; a failed read leaves the position unchanged; one checked
+  `MsgPackException extends IOException`. **Evidence:** the canonical vectors ([[canonical-packager-wire-contract]]) pass
+  unchanged; a 20,000-document seeded corpus packs BYTE-IDENTICAL on both backends and cross-decodes with 0 mismatches
+  (`benchmark/msgpack-codec-harness/`, outside the reactor so msgpack-core never enters a manifest); benchmark best of 3
+  interleaved runs: the 395-byte envelope packs in 0.54 and unpacks in 0.55 of msgpack-core's time, the 8 KB payload 0.39/0.72,
+  the 7 KB record list at par (`docs/test-reports/minimalist-msgpack-benchmark.md`). **Three behaviour changes, each pinned:**
+  `org.msgpack.*` no longer transitive; every decoding failure is an IOException (EventEnvelope -> IllegalArgumentException,
+  where msgpack-core also threw unchecked exceptions); a uint64 above Long.MAX_VALUE reads as BigInteger (the Rust engine's
+  `rmpv` keeps a u64). Home ruling (Eric): `system/`, because platform-core must depend on it. **Method:** the differential's
+  first pass reported 9,124 mismatches from the harness's own expectation model - a comparison must be shown able to fail
+  ([[otel-optional-service-and-negative-control]]). Supersedes nothing yet; [[msgpack-core-cve-upgrade]] closes as moot if
+  accepted. Thread: [[minimalist-msgpack]].
+  <!-- id: minimalist-msgpack-codec | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-164045 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
