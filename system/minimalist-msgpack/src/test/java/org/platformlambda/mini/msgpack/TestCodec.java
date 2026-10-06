@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 /**
@@ -35,9 +36,9 @@ final class TestCodec {
             -1, -32, -33, -128, -129, -32768, -32769, Integer.MIN_VALUE, Integer.MIN_VALUE - 1L, Long.MIN_VALUE};
     private static final int[][] ALPHABETS = {
             "abcdefghijklmnopqrstuvwxyz0123456789 _-.,:;/{}[]\"'".codePoints().toArray(),   // ASCII
-            "caf\u00e9 na\u00efve \u00fcber \u00f1".codePoints().toArray(),                   // Latin-1 (two UTF-8 bytes)
-            "\u20ac\u4e2d\u6587\u65e5\u672c\u8a9e\u0e44\u0e17\u0e22".codePoints().toArray(),  // BMP (three UTF-8 bytes)
-            "\ud83d\ude00\ud83d\ude80\ud83c\udf0d".codePoints().toArray()};                   // supplementary (four bytes)
+            "café naïve über ñ".codePoints().toArray(),                                     // Latin-1 (two UTF-8 bytes)
+            "€中文日本語ไทย".codePoints().toArray(),                                             // BMP (three UTF-8 bytes)
+            "😀🚀🌍".codePoints().toArray()};                                               // supplementary (four bytes)
 
     private TestCodec() {
     }
@@ -168,7 +169,7 @@ final class TestCodec {
             }
             return true;
         }
-        return a == null ? b == null : a.equals(b);
+        return Objects.equals(a, b);
     }
 
     static Object randomDocument(Random random) {

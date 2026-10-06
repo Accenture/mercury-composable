@@ -44,8 +44,8 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * End-to-end tests of the graph.suspend and graph.resume skills through the real HTTP
- * stack, using the temp-file state store (/tmp/suspend-resume) - the engine needs no
+ * End-to-end tests of the {@code graph.suspend} and {@code graph.resume} skills through the real
+ * HTTP stack, using the temp-file state store ({@code /tmp/suspend-resume}) - the engine needs no
  * external store dependency to prove the whole suspend/resume loop.
  */
 class GraphSuspendResumeTest {

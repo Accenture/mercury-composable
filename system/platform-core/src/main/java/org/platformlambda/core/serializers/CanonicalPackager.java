@@ -73,8 +73,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * map may be of any kind (a Gson {@code LinkedTreeMap}, a {@code HashMap}, a {@code LinkedHashMap}); its own
  * order never reaches the bytes. The bytes are written through the minimalist-msgpack writer directly rather than
  * through {@link MsgPack}, because that serializer drops null values unless a configuration switch is set, packs a
- * {@code Float} as float32 and writes a {@code BigDecimal} zero as {@code "0.00"}. Moreover, the profile allows none
- * of the three.
+ * {@code Float} as float32 and writes a {@code BigDecimal} zero as {@code "0.00"}. The profile allows none of the
+ * three.
  * <p>
  * The packager is faithful to the type of each value, so the integer 1 and the float 1.0 are different content.
  * Strings are written as given: no Unicode normalization is applied.

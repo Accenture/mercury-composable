@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Random;
 
@@ -108,7 +109,7 @@ class MsgPackRoundTripTest {
         // an unpaired surrogate becomes '?', as String.getBytes(UTF_8) writes it (and as msgpack-java does)
         String unpaired = "a\ud800b";
         byte[] expected = unpaired.getBytes(StandardCharsets.UTF_8);
-        assertArrayEquals(expected, new byte[]{'a', '?', 'b'});
+        assertArrayEquals(new byte[]{'a', '?', 'b'}, expected);
         assertEquals("a3" + HEX.formatHex(expected), HEX.formatHex(TestCodec.encode(unpaired)));
         assertEquals("a?b", TestCodec.decode(TestCodec.encode(unpaired)));
         // a non-ASCII char at the end of a short string: the ASCII attempt gives way to the UTF-8 path
@@ -144,10 +145,8 @@ class MsgPackRoundTripTest {
         for (int n : counts) {
             int header = n < 16 ? 1 : n < 65536 ? 3 : 5;
             var writer = new MsgPackWriter();
-            writer.writeArrayHeader(n);
-            assertEquals(header, writer.size(), "array " + n);
-            writer.writeMapHeader(n);
-            assertEquals(2 * header, writer.size(), "map " + n);
+            assertEquals(header, writer.writeArrayHeader(n).size(), "array " + n);
+            assertEquals(2 * header, writer.writeMapHeader(n).size(), "map " + n);
         }
     }
 
@@ -171,27 +170,48 @@ class MsgPackRoundTripTest {
         // reset keeps the buffer and forgets the bytes
         writer.reset();
         assertEquals(0, writer.size());
-        writer.writeBoolean(true);
-        assertEquals("c3", HEX.formatHex(writer.toByteArray()));
+        assertEquals("c3", HEX.formatHex(writer.writeBoolean(true).toByteArray()));
     }
 
     @Test
     void writeBinaryTakesAWindow() throws MsgPackException {
         byte[] source = {9, 1, 2, 3, 9};
-        byte[] encoded = new MsgPackWriter().writeBinary(source, 1, 3).toByteArray();
+        var writer = new MsgPackWriter();
+        byte[] encoded = writer.writeBinary(source, 1, 3).toByteArray();
         assertEquals("c403010203", HEX.formatHex(encoded));
         assertArrayEquals(new byte[]{1, 2, 3}, new MsgPackReader(encoded).readBinary());
-        assertThrows(IndexOutOfBoundsException.class, () -> new MsgPackWriter().writeBinary(source, 3, 3));
+        // a window that does not fit the array is refused before anything is written
+        assertThrows(IndexOutOfBoundsException.class, () -> writer.writeBinary(source, 3, 3));
+        assertArrayEquals(encoded, writer.toByteArray());
+    }
+
+    @Test
+    void theWriteMethodsChain() throws MsgPackException {
+        // every write method returns the writer, so a document can be written in one expression
+        byte[] bytes = new MsgPackWriter()
+                .writeMapHeader(2)
+                .writeString("a").writeArrayHeader(4).writeNil().writeBoolean(true).writeLong(7).writeFloat(1.5f)
+                .writeString("b").writeArrayHeader(2).writeDouble(-2.0).writeBinary(new byte[]{1, 2})
+                .toByteArray();
+        assertEquals("82a16194c0c307ca3fc00000a16292cbc000000000000000c4020102", HEX.formatHex(bytes));
+        var document = new LinkedHashMap<String, Object>();
+        document.put("a", Arrays.asList(null, true, 7L, 1.5f));
+        document.put("b", List.of(-2.0d, new byte[]{1, 2}));
+        assertTrue(TestCodec.same(document, TestCodec.decode(bytes)));
     }
 
     @Test
     void invalidArgumentsAreRejected() {
+        var writer = new MsgPackWriter();
+        var unsupported = List.of(new Object());
         assertThrows(IllegalArgumentException.class, () -> new MsgPackWriter(-1));
-        assertThrows(IllegalArgumentException.class, () -> new MsgPackWriter().writeArrayHeader(-1));
-        assertThrows(IllegalArgumentException.class, () -> new MsgPackWriter().writeMapHeader(-1));
-        assertThrows(NullPointerException.class, () -> new MsgPackWriter().writeString(null));
-        assertThrows(NullPointerException.class, () -> new MsgPackWriter().writeBinary(null));
-        assertThrows(IllegalArgumentException.class, () -> TestCodec.encode(List.of(new Object())));
+        assertThrows(IllegalArgumentException.class, () -> writer.writeArrayHeader(-1));
+        assertThrows(IllegalArgumentException.class, () -> writer.writeMapHeader(-1));
+        assertThrows(NullPointerException.class, () -> writer.writeString(null));
+        assertThrows(NullPointerException.class, () -> writer.writeBinary(null));
+        assertThrows(IllegalArgumentException.class, () -> TestCodec.encode(unsupported));
+        // a refused argument writes nothing
+        assertEquals(0, writer.size());
     }
 
     @Test

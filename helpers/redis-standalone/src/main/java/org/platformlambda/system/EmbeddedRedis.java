@@ -114,6 +114,9 @@ public class EmbeddedRedis {
         log.info("Standalone Redis server started on 127.0.0.1:{} (data dir {})", port, DATA_DIR);
     }
 
+    /** Stop the embedded redis-server and remove its transient store, so nothing of the run outlives it. */
+    // S5443: the same fixed /tmp/soa-redis path as startServer(), removed here for the same reason
+    @SuppressWarnings("java:S5443")
     public void stop() {
         try {
             if (testMode) {

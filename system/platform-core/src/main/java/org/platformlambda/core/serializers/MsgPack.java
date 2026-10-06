@@ -262,7 +262,7 @@ public class MsgPack {
      *
      * @param obj - Map or List
      * @return packed byte array
-     *
+     * @throws IllegalArgumentException if the input is not a Map or a List
      */
     public byte[] packMapOrList(Object obj) {
         if (obj instanceof Map || obj instanceof List) {
