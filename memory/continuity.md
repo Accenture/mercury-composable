@@ -683,7 +683,9 @@
 - **Unit tests remove the temporary files they write when they complete, and that is verified by measuring, not by reading the code
   (Eric, 2026-10-06).** Prefer a folder the framework removes (JUnit's `@TempDir`, a Rust drop guard), and remove in `finally` whatever a
   test writes elsewhere: a test that opens a Playground session closes it (the engine then removes its draft from `location.graph.temp`),
-  a test whose graph ends suspended removes its record, and an embedded server removes its data folder once it has stopped. Verify with a
+  a test whose graph ends suspended removes its record, and an embedded server removes its data folder once it has stopped. A Rust test
+  binary has no after-all hook: it uses `mercury-test-support` (`temp_path` for per-process files, `run_at_exit` for a cleanup the code
+  under test owns, such as `elastic_queue::shutdown_cleanup`), and a starter template, which cannot depend on it, a drop guard. Verify with a
   marker file: run the suite, then list what in the temp folders (`$TMPDIR`, `/tmp/*`) is newer than the marker, module by module. A file
   created and deleted during the run does not show, so whatever shows was left behind; an empty folder does not show in a files-only
   listing, so look for folders too. Thread: [[test-temp-file-housekeeping]].
