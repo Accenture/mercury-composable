@@ -167,15 +167,20 @@ class GraphSuspendResumeTest {
     @Test
     void expiredRecordFallsBackToFreshRun() throws TimeoutException, IOException {
         var cid = Utility.getInstance().getUuid();
-        var r1 = runGraph("unit-test-suspend-5", cid);
-        assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r1.getBody()).getElement("type"));
-        assertEquals(1, CountingStepTask.getCount("expiry", cid));
-        expireStoredRecord("unit-test-suspend-5", cid);
-        // the record's expiry has passed: the resume falls back to a fresh run and suspends again
-        var r2 = runGraph("unit-test-suspend-5", cid);
-        assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r2.getBody()).getElement("type"));
-        assertEquals(2, CountingStepTask.getCount("expiry", cid), "an expired record means a fresh run");
-        log.info("ttl expiry fallback verified for cid {}", cid);
+        try {
+            var r1 = runGraph("unit-test-suspend-5", cid);
+            assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r1.getBody()).getElement("type"));
+            assertEquals(1, CountingStepTask.getCount("expiry", cid));
+            expireStoredRecord("unit-test-suspend-5", cid);
+            // the record's expiry has passed: the resume falls back to a fresh run and suspends again
+            var r2 = runGraph("unit-test-suspend-5", cid);
+            assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r2.getBody()).getElement("type"));
+            assertEquals(2, CountingStepTask.getCount("expiry", cid), "an expired record means a fresh run");
+            log.info("ttl expiry fallback verified for cid {}", cid);
+        } finally {
+            // the run ends suspended, so its record is removed from the store folder
+            Files.deleteIfExists(storedFile("unit-test-suspend-5", cid).toPath());
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -273,22 +278,28 @@ class GraphSuspendResumeTest {
         // each record is scoped by graph + cid, so a shared business correlation ID
         // never collides across domains or subgraphs
         var cid = Utility.getInstance().getUuid();
-        var r1 = runGraph("unit-test-suspend-1", cid);
-        assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r1.getBody()).getElement("type"));
-        var r2 = runGraph("unit-test-suspend-5", cid);
-        assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r2.getBody()).getElement("type"));
-        assertEquals("unit-test-suspend-1",
-                readStoredRecord("unit-test-suspend-1", cid).getElement("data.graph"));
-        assertEquals("unit-test-suspend-5",
-                readStoredRecord("unit-test-suspend-5", cid).getElement("data.graph"));
-        // resuming one graph consumes only its own record
-        var done = runGraph("unit-test-suspend-1", cid);
-        assertEquals(200, done.getStatus());
-        assertEquals("two", new MultiLevelMap((Map<String, Object>) done.getBody()).getElement("step"));
-        assertFalse(storedFile("unit-test-suspend-1", cid).exists());
-        assertTrue(storedFile("unit-test-suspend-5", cid).exists(),
-                "another graph's record for the same cid must survive");
-        log.info("per-graph record isolation verified for cid {}", cid);
+        try {
+            var r1 = runGraph("unit-test-suspend-1", cid);
+            assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r1.getBody()).getElement("type"));
+            var r2 = runGraph("unit-test-suspend-5", cid);
+            assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r2.getBody()).getElement("type"));
+            assertEquals("unit-test-suspend-1",
+                    readStoredRecord("unit-test-suspend-1", cid).getElement("data.graph"));
+            assertEquals("unit-test-suspend-5",
+                    readStoredRecord("unit-test-suspend-5", cid).getElement("data.graph"));
+            // resuming one graph consumes only its own record
+            var done = runGraph("unit-test-suspend-1", cid);
+            assertEquals(200, done.getStatus());
+            assertEquals("two", new MultiLevelMap((Map<String, Object>) done.getBody()).getElement("step"));
+            assertFalse(storedFile("unit-test-suspend-1", cid).exists());
+            assertTrue(storedFile("unit-test-suspend-5", cid).exists(),
+                    "another graph's record for the same cid must survive");
+            log.info("per-graph record isolation verified for cid {}", cid);
+        } finally {
+            // the second graph's run ends suspended, so the records are removed from the store folder
+            Files.deleteIfExists(storedFile("unit-test-suspend-1", cid).toPath());
+            Files.deleteIfExists(storedFile("unit-test-suspend-5", cid).toPath());
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -23,6 +23,7 @@ import com.accenture.minigraph.mock.CountingStepTask;
 import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.services.GraphCommandService;
 import com.accenture.minigraph.start.CompileGraph;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
@@ -42,6 +43,8 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,6 +58,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class CompanionSyncTest {
     private static final String ASYNC_HTTP_CLIENT = "async.http.request";
     private static String target;
+    // the inbound route of every session a test opens, closed after the class
+    private static final Set<String> OPENED = ConcurrentHashMap.newKeySet();
 
     @BeforeAll
     static void setup() {
@@ -73,8 +78,7 @@ class CompanionSyncTest {
         var outRoute = "ws.990001.2.out";
 
         // create the session (mimic the WebSocket "open" event)
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         boolean ready = false;
         for (int i = 0; i < 50 && !ready; i++) {
             if (GraphCommandService.hasSession(sid)) {
@@ -129,8 +133,7 @@ class CompanionSyncTest {
         var po = EventEmitter.getInstance();
         var sid = "ws-990007-2";
         var inRoute = "ws.990007.2.in";
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -185,8 +188,7 @@ class CompanionSyncTest {
         var po = EventEmitter.getInstance();
         var badIn = "ws.990009.2.in";
         var badId = "ws-990009-2";
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", badIn)));
+        openSession(po, badIn);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(badId); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -213,8 +215,7 @@ class CompanionSyncTest {
         var po = EventEmitter.getInstance();
         var inRoute = "ws.990011.3.in";
         var sid = "ws-990011-3";
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -252,8 +253,7 @@ class CompanionSyncTest {
         var inRoute = "ws.990002.2.in";
         var outRoute = "ws.990002.2.out";
 
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -315,8 +315,7 @@ class CompanionSyncTest {
         var sid = "ws-990003-2";
         var inRoute = "ws.990003.2.in";
 
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -364,8 +363,7 @@ class CompanionSyncTest {
         var sid = "ws-990005-2";
         var inRoute = "ws.990005.2.in";
 
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -405,8 +403,7 @@ class CompanionSyncTest {
         var sid = "ws-990012-1";
         var inRoute = "ws.990012.1.in";
 
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -454,8 +451,7 @@ class CompanionSyncTest {
         var sid = "ws-990013-1";
         var inRoute = "ws.990013.1.in";
 
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -501,8 +497,7 @@ class CompanionSyncTest {
         var sid = "ws-990004-2";
         var inRoute = "ws.990004.2.in";
 
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -546,8 +541,7 @@ class CompanionSyncTest {
         var sid = "ws-990005-2";
         var inRoute = "ws.990005.2.in";
 
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -577,8 +571,7 @@ class CompanionSyncTest {
         var sid2 = "ws-990006-2";
         var in2 = "ws.990006.2.in";
         var out2 = "ws.990006.2.out";
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", in2)));
+        openSession(po, in2);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid2); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -635,8 +628,7 @@ class CompanionSyncTest {
         var po = EventEmitter.getInstance();
         var sid = "ws-990014-2";
         var inRoute = "ws.990014.2.in";
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -695,8 +687,7 @@ class CompanionSyncTest {
         var po = EventEmitter.getInstance();
         var sid = "ws-990016-2";
         var inRoute = "ws.990016.2.in";
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -827,11 +818,30 @@ class CompanionSyncTest {
         }
     }
 
+    /**
+     * Close every session the tests opened, as a closing WebSocket does, so the engine removes each session's
+     * draft from the temporary folder. A request, not a send: the reply comes after the session is closed.
+     */
+    @AfterAll
+    static void closeSessions() throws Exception {
+        var po = EventEmitter.getInstance();
+        for (var inRoute : OPENED) {
+            po.request(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                    .setBody(Map.of("type", "close", "in", inRoute)), 5000).get();
+        }
+    }
+
+    // create a session, mimicking the WebSocket "open" event
+    private static void openSession(EventEmitter po, String inRoute) {
+        OPENED.add(inRoute);
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+    }
+
     private String openCompanionSession(String seq) {
         var po = EventEmitter.getInstance();
         var sid = "ws-" + seq + "-2";
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", "ws." + seq + ".2.in")));
+        openSession(po, "ws." + seq + ".2.in");
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }
@@ -858,8 +868,7 @@ class CompanionSyncTest {
         var po = EventEmitter.getInstance();
         var sid = "ws-990041-2";
         var inRoute = "ws.990041.2.in";
-        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
-                .setBody(Map.of("type", "open", "in", inRoute)));
+        openSession(po, inRoute);
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
             Utility.getInstance().sleep(20);
         }

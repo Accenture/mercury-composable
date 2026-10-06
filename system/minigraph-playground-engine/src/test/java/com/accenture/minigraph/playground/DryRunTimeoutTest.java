@@ -19,6 +19,7 @@
 package com.accenture.minigraph.playground;
 
 import com.accenture.minigraph.services.GraphCommandService;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
@@ -32,6 +33,8 @@ import org.platformlambda.core.util.Utility;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,6 +50,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class DryRunTimeoutTest {
     private static final String ASYNC_HTTP_CLIENT = "async.http.request";
     private static String target;
+    // the inbound route of every session a test opens, closed after the class
+    private static final Set<String> OPENED = ConcurrentHashMap.newKeySet();
 
     @BeforeAll
     static void setup() {
@@ -148,7 +153,21 @@ class DryRunTimeoutTest {
         }
     }
 
+    /**
+     * Close every session the tests opened, as a closing WebSocket does, so the engine removes each session's
+     * draft from the temporary folder. A request, not a send: the reply comes after the session is closed.
+     */
+    @AfterAll
+    static void closeSessions() throws Exception {
+        var po = EventEmitter.getInstance();
+        for (var inRoute : OPENED) {
+            po.request(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                    .setBody(Map.of("type", "close", "in", inRoute)), 5000).get();
+        }
+    }
+
     private void openSession(EventEmitter po, String sid, String inRoute) {
+        OPENED.add(inRoute);
         po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
                 .setBody(Map.of("type", "open", "in", inRoute)));
         for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {

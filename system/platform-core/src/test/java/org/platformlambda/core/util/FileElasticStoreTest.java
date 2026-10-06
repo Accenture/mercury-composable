@@ -20,6 +20,7 @@ package org.platformlambda.core.util;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.platformlambda.core.models.EventEnvelope;
 
 import java.io.File;
@@ -222,6 +223,33 @@ class FileElasticStoreTest {
         FileElasticStore.purgeLeftoverSegments(unrelated, null);
         Files.deleteIfExists(running.toPath());
         Files.deleteIfExists(unrelated.toPath());
+    }
+
+    @Test
+    void shutdownRemovesTheInstanceFolderItEmptied(@TempDir File root) throws IOException {
+        // the shutdown hook purges the segments and the RUNNING marker, then removes the emptied instance folder
+        File instance = new File(root, "app-instance");
+        assertTrue(instance.mkdirs(), "instance folder created");
+        Files.writeString(new File(instance, "RUNNING").toPath(), "now");
+        Files.write(new File(instance, "eq-route-1-0.dat").toPath(), new byte[] {1, 2, 3});
+        FileElasticStore.removeHoldingArea(instance, true);
+        assertFalse(instance.exists(), "the emptied instance folder is removed");
+        // a folder that holds a file of another kind stays, without its marker
+        File shared = new File(root, "shared");
+        assertTrue(shared.mkdirs(), "shared folder created");
+        Files.writeString(new File(shared, "RUNNING").toPath(), "now");
+        File other = new File(shared, "notes.txt");
+        Files.writeString(other.toPath(), "not a segment");
+        FileElasticStore.removeHoldingArea(shared, true);
+        assertTrue(other.exists(), "a file of another kind keeps its folder");
+        assertFalse(new File(shared, "RUNNING").exists(), "the marker is gone");
+        // with running.in.cloud the folder is the configured store itself, so it stays
+        File cloud = new File(root, "cloud");
+        assertTrue(cloud.mkdirs(), "cloud store created");
+        Files.writeString(new File(cloud, "RUNNING").toPath(), "now");
+        FileElasticStore.removeHoldingArea(cloud, false);
+        assertTrue(cloud.exists(), "the configured store stays");
+        assertFalse(new File(cloud, "RUNNING").exists(), "the marker is gone");
     }
 
     @Test
