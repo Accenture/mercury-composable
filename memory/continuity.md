@@ -509,7 +509,8 @@
   **The one-graph rule (Eric, 2026-10-06):** only an empty set is refused; a graph packed alone gets bytes of its own to sign, and both
   engines' tests pin one such set (327 bytes, SHA-256 `c500281a…`), the guard for every signature - a change that alters the bytes of the
   same graphs and fields breaks the signatures made over the old ones. WP3, the loader, shipped in #515 (squash `eb6021a9`) and
-  mercury #359 (merge `42f6cf81`, Increment 161); open work, WP4 to WP6: [[graph-set-packaging]]. Extends
+  mercury #359 (merge `42f6cf81`, Increment 161); WP4, the endpoints (`POST /api/graph/pack` and `/api/graph/unpack`, dev-mode, the
+  set name as `manifest.set`), is open as #524 and mercury #364 (Increment 166); open work, WP5 and WP6: [[graph-set-packaging]]. Extends
   [[canonical-packager-wire-contract]] and [[graph-manifest-list-later-wins]]. (ADR-0027)
   <!-- id: graph-set-pack-and-deploy | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-012206 -->
 
