@@ -510,7 +510,8 @@
   engines' tests pin one such set (327 bytes, SHA-256 `c500281a…`), the guard for every signature - a change that alters the bytes of the
   same graphs and fields breaks the signatures made over the old ones. WP3, the loader, shipped in #515 (squash `eb6021a9`) and
   mercury #359 (merge `42f6cf81`, Increment 161); WP4, the endpoints (`POST /api/graph-set/pack` and `/api/graph-set/unpack` - moved there from
-  `/api/graph/...` by #525 and mercury #365, because the first paths collided with the executor's `/api/graph/{graph_id}` - dev-mode,
+  `/api/graph/...` by #525 (squash `0411c398`) and mercury #365 (merge `b12931f5`, Increment 167), both MERGED 2026-10-06, because the
+  first paths collided with the executor's `/api/graph/{graph_id}` - dev-mode,
   the set name as `manifest.set`), shipped in #524 (squash `ca0e07a3`) and mercury #364 (merge `f89c0997`, Increment 166), both MERGED
   2026-10-06; open work, WP5 and WP6: [[graph-set-packaging]]. Extends
   [[canonical-packager-wire-contract]] and [[graph-manifest-list-later-wins]]. (ADR-0027)
