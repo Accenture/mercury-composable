@@ -149,7 +149,7 @@ public class GraphPackager {
         if (setName == null) {
             throw new UsageException("pack needs --set <name>");
         }
-        var fields = manifestFields(a.all(MANIFEST));
+        var fields = manifestFields(a.manifestValues());
         var fromManifest = a.single(FROM_MANIFEST);
         Map<String, Path> files;
         if (fromManifest != null) {
@@ -210,7 +210,7 @@ public class GraphPackager {
         var bytes = readPackage(file);
         var contents = GraphSet.read(bytes);
         var sha = sha256(bytes);
-        if (a.has(JSON)) {
+        if (a.jsonReport()) {
             // keys in sorted order, so both engines' packagers print the same report
             Map<String, Object> report = new TreeMap<>();
             report.put("file", file.toString());
@@ -421,12 +421,12 @@ public class GraphPackager {
             return values == null || values.isEmpty() ? null : values.getFirst();
         }
 
-        List<String> all(String name) {
-            return options.getOrDefault(name, List.of());
+        List<String> manifestValues() {
+            return options.getOrDefault(MANIFEST, List.of());
         }
 
-        boolean has(String name) {
-            return options.containsKey(name);
+        boolean jsonReport() {
+            return options.containsKey(JSON);
         }
     }
 

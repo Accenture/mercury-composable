@@ -20,20 +20,24 @@ package com.accenture.minigraph.packager;
 
 import org.platformlambda.core.serializers.SimpleMapper;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Prints how this JVM's SimpleMapper writes a map holding a null value: with serializer.null.transport=true the
- * null is kept, by default it is dropped. GraphPackagerTest runs it in a second JVM to prove the switch took effect
- * there before it compares that JVM's package with the default one.
+ * Writes how this JVM's SimpleMapper serializes a map holding a null value into the file its argument names: with
+ * serializer.null.transport=true the null is kept, by default it is dropped. GraphPackagerTest runs it in a second
+ * JVM to prove the switch took effect there before it compares that JVM's package with the default one. A probe that
+ * did not run leaves no file, so it cannot pass for one that dropped the null.
  */
 public class NullTransportProbe {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("a", null);
         map.put("b", "");
-        System.out.println(SimpleMapper.getInstance().getMapper().writeValueAsString(map));
+        Files.writeString(Path.of(args[0]), SimpleMapper.getInstance().getMapper().writeValueAsString(map));
     }
 }

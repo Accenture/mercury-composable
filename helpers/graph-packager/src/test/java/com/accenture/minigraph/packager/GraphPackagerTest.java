@@ -416,6 +416,16 @@ class GraphPackagerTest {
         return new Result(process.exitValue(), out, err);
     }
 
+    // runs NullTransportProbe in a second JVM and returns what it wrote into the result file
+    private static String probe(Path result, String... jvm) throws Exception {
+        List<String> args = new ArrayList<>(List.of(jvm));
+        args.add(NullTransportProbe.class.getName());
+        args.add(result.toString());
+        var forked = fork(args.toArray(String[]::new));
+        assertEquals(0, forked.code(), forked.err());
+        return Files.readString(result, UTF_8);
+    }
+
     @Test
     void theNullTransportSwitchDoesNotReachThePackage() throws Exception {
         // serializer.null.transport=true makes platform-core's SimpleMapper and MsgPack keep a null map value. The
@@ -432,10 +442,12 @@ class GraphPackagerTest {
         var classpath = System.getProperty("java.class.path");
         var on = "-Dserializer.null.transport=true";
         // positive control: in the second JVM the switch is on, so SimpleMapper keeps the null
-        var probe = fork(on, "-cp", classpath, NullTransportProbe.class.getName());
-        assertEquals(0, probe.code(), probe.err());
-        assertTrue(probe.out().contains("\"a\": null"), probe.out());
-        assertFalse(fork("-cp", classpath, NullTransportProbe.class.getName()).out().contains("\"a\""));
+        var kept = probe(tmp.resolve("probe-on.json"), on, "-cp", classpath);
+        assertTrue(kept.contains("\"a\": null"), kept);
+        // negative control: without the switch the null is dropped and the rest of the map is still written
+        var dropped = probe(tmp.resolve("probe-off.json"), "-cp", classpath);
+        assertFalse(dropped.contains("\"a\""), dropped);
+        assertTrue(dropped.contains("\"b\""), dropped);
         var packed = fork(on, "-cp", classpath, GraphPackager.class.getName(), "pack", "--set", "s",
                 "--out", tmp.resolve("switched").toString(), graphs.toString());
         assertEquals(0, packed.code(), packed.err());
