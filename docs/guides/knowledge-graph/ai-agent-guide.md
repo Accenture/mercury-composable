@@ -448,6 +448,25 @@ rest:
     headers: header_1
     tracing: true
 
+  # Backs the Playground's "Package graphs" panel: packs graph models into a
+  # graph set (<set>.pack) on the engine, after the deployment gate's checks
+  - service: 'pack.graph.set'
+    methods: ['POST']
+    url: '/api/graph/pack'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  # Reads a graph set back - its manifest and its graphs - for the panel's inspect mode
+  - service: 'unpack.graph.set'
+    methods: ['POST']
+    url: '/api/graph/unpack'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
   # The UI's state-machine inspector
   - service: 'inspect.state.machine'
     methods: ['GET']
