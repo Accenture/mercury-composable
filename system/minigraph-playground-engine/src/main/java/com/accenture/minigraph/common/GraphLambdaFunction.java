@@ -281,16 +281,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     }
 
     protected boolean validGraphFileName(String str) {
-        if (str == null || str.isEmpty()) return false;
-        for (int i=0; i < str.length(); i++) {
-            if (!((str.charAt(i) >= '0' && str.charAt(i) <= '9') ||
-                    (str.charAt(i) >= 'a' && str.charAt(i) <= 'z') ||
-                    (str.charAt(i) >= 'A' && str.charAt(i) <= 'Z') ||
-                    str.charAt(i) == '_' || str.charAt(i) == '-' )) {
-                return false;
-            }
-        }
-        return true;
+        return GraphModelGate.isValidGraphId(str);
     }
 
     protected String getTempGraphName(String inRoute) {

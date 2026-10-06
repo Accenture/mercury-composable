@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.LambdaFunction;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
@@ -830,6 +831,57 @@ class CompanionSyncTest {
         }
         assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
         return sid;
+    }
+
+    private static final String WITH_NULLS = """
+            {"nodes": [
+              {"alias": "root", "types": ["Root"],
+               "properties": {"purpose": "null properties", "name": "null-properties", "note": null, "empty": ""}},
+              {"alias": "end", "types": ["End"], "properties": {}}],
+             "connections": [{"source": "root", "target": "end",
+                              "relations": [{"type": "done", "properties": {"x": null}}]}]}""";
+
+    /**
+     * A graph holds no null property. "import graph from" reads its file as JSON text, so a "key": null reaches
+     * the draft import, which filters it out - whatever serializer.null.transport says - instead of refusing the
+     * model ("value cannot be null"). An empty string stays a value.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void importGraphFromFiltersANullProperty() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = "ws-990041-2";
+        var inRoute = "ws.990041.2.in";
+        po.send(new EventEnvelope().setTo(GraphCommandService.ROUTE)
+                .setBody(Map.of("type", "open", "in", inRoute)));
+        for (int i = 0; i < 50 && !GraphCommandService.hasSession(sid); i++) {
+            Utility.getInstance().sleep(20);
+        }
+        assertTrue(GraphCommandService.hasSession(sid), "session must exist before a companion command");
+        var file = new File("/tmp/graph", "null-properties.json");
+        assertTrue(Utility.getInstance().str2file(file, WITH_NULLS));
+        try {
+            var imported = syncCommand(po, sid, "import graph from null-properties");
+            assertFalse(String.valueOf(imported).contains("cannot be null"), "the null is filtered: " + imported);
+            var draft = (Map<String, Object>) GraphCommandService.downloadGraph(sid);
+            var root = ((List<Map<String, Object>>) draft.get("nodes")).stream()
+                    .filter(n -> "root".equals(n.get("alias"))).findFirst().orElseThrow();
+            var properties = (Map<String, Object>) root.get("properties");
+            assertEquals("null properties", properties.get("purpose"));
+            assertFalse(properties.containsKey("note"));
+            assertEquals("", properties.get("empty"));
+        } finally {
+            assertTrue(file.delete());
+        }
+    }
+
+    @Test
+    void theImportValidationFiltersANullProperty() {
+        var mapper = SimpleMapper.getInstance().getMapper();
+        assertNull(GraphCommandService.validateGraphModel(mapper.readValue(WITH_NULLS, Map.class)));
+        // a connections section given as null is absent, not "not a list"
+        assertNull(GraphCommandService.validateGraphModel(mapper.readValue(
+                "{\"nodes\": [{\"alias\": \"root\", \"types\": [\"Root\"]}], \"connections\": null}", Map.class)));
     }
 
     @SuppressWarnings("unchecked")
