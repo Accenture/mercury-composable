@@ -133,6 +133,10 @@ The `mercury-python` and `mercury-nodejs` language packs do not carry it: they s
 
 ## Not part of the packager
 
-Trusted timestamps, per-entry hashes in the manifest, hot reload, compression, the folder `pack` and `unpack` tooling, and a
-graph-set loader that would register all graphs or none, are deferred until field use asks for them. The decision and its
-alternatives are recorded in [ADR-0026](../arch-decisions/ADR.md#adr-0026).
+Trusted timestamps, per-entry hashes in the manifest, hot reload and compression are deferred until field use asks for them. The
+decision and its alternatives are recorded in [ADR-0026](../arch-decisions/ADR.md#adr-0026).
+
+Graph sets, the packager's first consumer, are decided in [ADR-0027](../arch-decisions/ADR.md#adr-0027): one or more graphs in a
+`<set>.pack` file, which the graph packager (`helpers/graph-packager`) packs, unpacks and inspects from the command line. A set may
+hold a single graph, so that one graph can be signed on its own. Deploying a set through the deployment manifest, all of its graphs
+or none, is the next step.

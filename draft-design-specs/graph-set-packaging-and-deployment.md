@@ -1,12 +1,14 @@
 # Graph sets — a pack/unpack CLI, a Playground packaging panel, and packaged sets in the deployment manifest
 
-**Status:** DECIDED 2026-10-03 — Eric: D1 `.pack`, D2 to D9 as recommended, the three open questions answered (§4, §6). Design
-review + implementation plan for the next sprint, Claude Code; the ADR (RFC-0005 → ADR-0027) is written when the implementation lands.
+**Status:** ACCEPTED 2026-10-06 as ADR-0027 (Eric), after WP1 and WP2 shipped (#508, mercury #356); WP3 to WP6 follow.
+Decided 2026-10-03 — Eric: D1 `.pack`, D2 to D9 as recommended, the three open questions answered (§4, §6). Design review +
+implementation plan for the sprint, Claude Code.
 **Concept:** Eric's design notes of 2026-10-03 (four concepts: a command-line packager for pipelines, a Playground panel that
 builds a canonically packaged set of graphs from dropped or imported JSON files with manifest key-values, download of the
 packed file, and direct deployment of packed sets through `graphs.yaml` — a `sets` list and an `unpack` location, with
 automatic unpacking before the CompileGraph quality gate and the later-wins rule for duplicate graph ids).
-**Proposal register:** RFC-0005 in `docs/arch-decisions/RFC.md`; the work item is the open thread `graph-set-packaging`.
+**Proposal register:** RFC-0005 in `docs/arch-decisions/RFC.md`, promoted to ADR-0027 in `docs/arch-decisions/ADR.md`; the
+work item is the open thread `graph-set-packaging`.
 **Grounding:** the live tree on 2026-10-03 (file:line anchors below). The packager is ADR-0026 (RFC-0002), shipped in
 v4.12.20 on both engines; this plan is the "first consumer" that RFC deliberately left out.
 
@@ -101,6 +103,8 @@ the Playground hosts in-place panels (`LeftPanelMode = 'console' | 'node-edit' |
 - **Entries:** one per graph, named `<graph-id>.json` (the RFC-0002 convention: entry names are file names). The graph id is
   the file name without `.json`; it follows the engine's file-name rule (`[A-Za-z0-9_-]+`, `validGraphFileName`) and, when the
   root node carries a `name`, must equal it (the `export graph as` rule; D6).
+- **One graph or more:** only an empty set is refused. A set of one graph is valid on purpose: packing a graph alone is how one
+  graph is signed (Eric, 2026-10-06); both engines' tests pin such a set to the same bytes.
 - **Manifest fields** (all text; the packager never interprets them, the loader reads a few):
   - written by the packager: `format`, `format_version`;
   - recommended for a set: `set` (equals the file name), `version`, `description`, `author`;
@@ -268,10 +272,11 @@ Lock-step on both engines, each step a PR Eric gates; the webapp lands once (one
 | **WP3 — the loader** (Java + Rust) | `sets` + `unpack` in `graphs.yaml`; the unpacker, generated manifest, all-or-none, precedence, logs, path safety; `CompiledGraphs` location order; `list graphs` shows a graph's set and version | CompileGraph tests with packages built in the test from JSON fixtures: a set deploys and `POST /api/graph/{id}` serves it; a set with one bad graph registers none; a duplicate across set and loose graph (ERROR, later wins); missing `unpack`; `unpack` on classpath refused; a removed graph is cleaned on the next start; `import graph from` finds an unpacked graph; a crafted entry name is refused |
 | **WP4 — the endpoints** (Java + Rust) | `POST /api/graph/pack` and `/unpack`, dev-mode; the five Java and three Rust `rest.yaml` copies and the guide excerpt | REST tests through the real router (200 bytes with the file name header, 400 naming the graph, strict-read 400 on unpack) |
 | **WP5 — the Playground panel** (webapp) | `'package'` left-slot mode, multi-file drop, Add current graph, entries, manifest editor, Pack and download, inspect mode; `saveBinaryFile` | vitest for the entry model and the manifest validation; a live drive on both engines (pack in the panel, unpack with the CLI, deploy the file through `sets`, curl the graph) |
-| **WP6 — docs and ledger** | `configuration-reference.md` (`sets`, `unpack`, the generated manifest as the implicit next entry), `ai-agent-guide.md` (deploy-without-rebuild gains the packaged path), `canonical-package-format.md` (the extension, the CLI, the set convention; the "Not part of the packager" paragraph shrinks), `build-your-first-graph.md`, the templates' `graphs.yaml` comments, a `help package` topic for the panel, CHANGELOG both repos, INCREMENTS; RFC-0005 → ADR-0027 on Eric's acceptance | `check-doc-canon`, the grammar specs, `check-doc-claims` (the new ERROR/INFO messages become pinned claims) |
+| **WP6 — docs and ledger** | `configuration-reference.md` (`sets`, `unpack`, the generated manifest as the implicit next entry), `ai-agent-guide.md` (deploy-without-rebuild gains the packaged path), `canonical-package-format.md` (the extension, the CLI, the set convention; the "Not part of the packager" paragraph shrinks), `build-your-first-graph.md`, the templates' `graphs.yaml` comments, a `help package` topic for the panel, CHANGELOG both repos, INCREMENTS; RFC-0005 → ADR-0027 (done 2026-10-06, after WP2) | `check-doc-canon`, the grammar specs, `check-doc-claims` (the new ERROR/INFO messages become pinned claims) |
 
-Suggested order: WP1 → WP2 (a `pack` that exists makes every later fixture real) → WP3 → WP4 + WP5 → WP6, with the ADR
-written when Eric accepts the whole. Roughly two to three engine PRs per repo and one webapp PR.
+Suggested order: WP1 → WP2 (a `pack` that exists makes every later fixture real) → WP3 → WP4 + WP5 → WP6. Eric accepted the
+ADR after WP2 (2026-10-06), so the remaining work packages are built under ADR-0027. Roughly two to three engine PRs per repo
+and one webapp PR.
 
 ---
 

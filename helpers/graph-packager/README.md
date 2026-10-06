@@ -5,8 +5,8 @@ sign, store and deploy as one certified unit. It is a thin front over the engine
 MsgPack package of [ADR-0026](../../docs/arch-decisions/ADR.md) — and over the deployment gate's own checks, so a set
 the packager accepts holds only graphs that `CompileGraph` would accept at startup. It never starts the platform.
 
-The design is [RFC-0005](../../docs/arch-decisions/RFC.md); the package format is described in the guide
-[Canonical package format](../../docs/guides/canonical-package-format.md).
+The design is [ADR-0027](../../docs/arch-decisions/ADR.md#adr-0027) (proposed as RFC-0005); the package format is
+described in the guide [Canonical package format](../../docs/guides/canonical-package-format.md).
 
 ## Build and run
 
@@ -43,6 +43,7 @@ graph-packager inspect <file.pack> [--json]
 
 `pack` checks every rule before it writes anything and refuses the set with every reason it finds:
 
+- the set holds at least one graph (one is enough: see [Signing](#signing));
 - the set name and every graph id use letters, digits, `_` and `-` only (the engine's file-name rule);
 - when a graph's root node declares a `name`, it equals the graph id (the rule of `export graph as`);
 - every graph passes the deployment gate's checks: the structure, the root node's `purpose`, an `end` node, the data
@@ -78,4 +79,6 @@ resolved, as an application does at startup.
 
 A package carries no hash or signature: integrity is the application's choice (ADR-0026). The convention for a
 separate signing tool is a detached `<set>.pack.sig` beside the package; the SHA-256 that `pack` and `inspect` print
-is the digest of the exact bytes such a tool protects.
+is the digest of the exact bytes such a tool protects. To sign one graph by itself, pack it alone: a set holds one graph
+or more (ADR-0027), and a repack of the same graph and fields gives the same bytes in either engine, so the signature
+still verifies.
