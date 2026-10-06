@@ -237,6 +237,17 @@
       "quote": "A payload nested deeper than 64 maps and lists is refused as a decoding error, the envelope map being level 1",
       "test": "system/platform-core::EventEnvelopeTest#anEnvelopeNestedTooDeepIsADecodingError",
       "since": "4.12.21+"
+    },
+    {
+      "id": "msgpack-hostile-header",
+      "claim": "A MsgPack decoder of the engine - MsgPack.unpack, the path the Event API feeds, the envelope and CanonicalPackager.decode - checks a declared str, bin or ext length and a declared array or map count against the bytes that remain before anything is allocated or consumed, so a header that promises more than the input holds is refused at the header as a decoding error, never as an unchecked exception or an allocation sized by the header, and the format byte 0xc1, which the specification never uses, is refused; the shared vector file msgpack-hostile-header-vectors.json pins the same inputs in both engines.",
+      "pages": [
+        "docs/guides/event-envelope-wire-format.md",
+        "docs/guides/event-envelope-reference.md"
+      ],
+      "quote": "A header that promises more than the input holds is refused at the header",
+      "test": "system/platform-core::MsgPackHostileHeaderVectorsTest#everyHostileHeaderIsRefusedAtTheHeader",
+      "since": "4.12.21+"
     }
   ]
 }

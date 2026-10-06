@@ -5137,7 +5137,10 @@ value, <code>MsgPack.packMapOrList</code> / <code>unpackMapOrList</code> are ava
 <p>A payload nested deeper than 64 maps and lists is refused as a decoding error, the envelope map being level 1, so a
 body may nest 63 levels (<code>MsgPack.MAX_DEPTH</code>; the Rust engine applies the same limit). The limit keeps a crafted payload
 from exhausting the decoder's stack: <code>MsgPack</code> throws <code>IOException: Nesting deeper than 64 levels</code>, <code>EventEnvelope</code>
-reports it as an <code>IllegalArgumentException</code>, and the Event API answers such a request with HTTP 400.</p>
+reports it as an <code>IllegalArgumentException</code>, and the Event API answers such a request with HTTP 400.
+A header that promises more than the input holds is refused at the header, before anything is allocated for its
+declared length or count, and so is the format byte <code>0xc1</code>, which the specification never uses; the shared vector file
+<code>msgpack-hostile-header-vectors.json</code> pins the same inputs in both engines.</p>
 <hr />
 <h2 id="creating-an-eventenvelope">Creating an EventEnvelope<a class="headerlink" href="#creating-an-eventenvelope" title="Permanent link">&para;</a></h2>
 <h3 id="constructors">Constructors<a class="headerlink" href="#constructors" title="Permanent link">&para;</a></h3>
