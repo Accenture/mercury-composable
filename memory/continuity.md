@@ -509,8 +509,9 @@
   **The one-graph rule (Eric, 2026-10-06):** only an empty set is refused; a graph packed alone gets bytes of its own to sign, and both
   engines' tests pin one such set (327 bytes, SHA-256 `c500281a…`), the guard for every signature - a change that alters the bytes of the
   same graphs and fields breaks the signatures made over the old ones. WP3, the loader, shipped in #515 (squash `eb6021a9`) and
-  mercury #359 (merge `42f6cf81`, Increment 161); WP4, the endpoints (`POST /api/graph/pack` and `/api/graph/unpack`, dev-mode, the
-  set name as `manifest.set`), shipped in #524 (squash `ca0e07a3`) and mercury #364 (merge `f89c0997`, Increment 166), both MERGED
+  mercury #359 (merge `42f6cf81`, Increment 161); WP4, the endpoints (`POST /api/graph-set/pack` and `/api/graph-set/unpack` - moved there from
+  `/api/graph/...` by #525 and mercury #365, because the first paths collided with the executor's `/api/graph/{graph_id}` - dev-mode,
+  the set name as `manifest.set`), shipped in #524 (squash `ca0e07a3`) and mercury #364 (merge `f89c0997`, Increment 166), both MERGED
   2026-10-06; open work, WP5 and WP6: [[graph-set-packaging]]. Extends
   [[canonical-packager-wire-contract]] and [[graph-manifest-list-later-wins]]. (ADR-0027)
   <!-- id: graph-set-pack-and-deploy | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-012206 -->

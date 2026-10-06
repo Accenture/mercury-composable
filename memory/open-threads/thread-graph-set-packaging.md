@@ -27,8 +27,10 @@
   `GraphSetLoader` / `graph_set_loader` deploy a manifest's `sets` through a writable `unpack` folder, all or none, right after its
   loose graphs; the generated manifest's `graphs` lists what deployed and `generated` every file written, which the next start removes
   (a deliberate refinement of the design spec's §3.5 step 4, flagged in both PRs); `list graphs` shows a set graph's set and version.
-  **WP4, the endpoints, MERGED 2026-10-06 - Java #524 squash `ca0e07a3`, mercury #364 merge `f89c0997` (Increment 166):** `POST /api/graph/pack`
-  (`pack.graph.set`) and `POST /api/graph/unpack` (`unpack.graph.set`), dev-mode, in every `rest.yaml` copy and the guide excerpt;
+  **WP4, the endpoints, MERGED 2026-10-06 - Java #524 squash `ca0e07a3`, mercury #364 merge `f89c0997` (Increment 166):** `POST /api/graph-set/pack`
+  (`pack.graph.set`) and `POST /api/graph-set/unpack` (`unpack.graph.set`) - first `/api/graph/pack` and `/unpack`, moved by #525 and
+  mercury #365 (Increment 167) because those collided with the executor's `/api/graph/{graph_id}` - dev-mode, in every `rest.yaml`
+  copy and the guide excerpt;
   the set name travels as `manifest.set` (decided there, flagged in both PRs for Eric's review); `GraphSetEndpointTest` and
   `tests/graph_set_endpoints.rs` drive both through the real routers. Next: WP5 (the panel), then WP6 (the docs), each on Eric's word.
   → proposal: RFC-0005
