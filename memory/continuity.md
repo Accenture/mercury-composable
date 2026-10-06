@@ -530,8 +530,8 @@
   <!-- id: msgpack-nesting-limit-64 | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-025608 -->
 
 - **A zero-dependency MessagePack codec of this repository, `system/minimalist-msgpack`, replaces `org.msgpack:msgpack-core` under
-  platform-core (built 2026-10-06 at Eric's investigation ask; RFC-0006 Open; branch `feature/minimalist-msgpack` at `488c826e`,
-  the full reactor green with 1,767 tests; PR #517 open, not merged).**
+  platform-core (built 2026-10-06 at Eric's investigation ask; RFC-0006 Open; PR #517 squash `527ac5eb` MERGED 2026-10-06, head
+  `488c826e`, the full reactor green with 1,767 tests; RFC-0006 awaits promotion).**
   Eric's criteria - at par or faster, virtual-thread friendly, no deprecated libraries, no unsafe operations - and his
   "minimalist" rule, no custom (extension) types. The module (`org.platformlambda.mini.msgpack`, `java.base` only) is a streaming
   `MsgPackWriter`/`MsgPackReader` written from the published specification for nil, bool, int, float, str, bin, array and map;
@@ -549,8 +549,8 @@
   where msgpack-core also threw unchecked exceptions); a uint64 above Long.MAX_VALUE reads as BigInteger (the Rust engine's
   `rmpv` keeps a u64). Home ruling (Eric): `system/`, because platform-core must depend on it. **Method:** the differential's
   first pass reported 9,124 mismatches from the harness's own expectation model - a comparison must be shown able to fail
-  ([[otel-optional-service-and-negative-control]]). Supersedes nothing yet; [[msgpack-core-cve-upgrade]] closes as moot if
-  accepted. Thread: [[minimalist-msgpack]].
+  ([[otel-optional-service-and-negative-control]]). Supersedes nothing; [[msgpack-core-cve-upgrade]] closed as moot at the
+  merge. Thread: [[minimalist-msgpack]].
   <!-- id: minimalist-msgpack-codec | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-164045 -->
 
 ## Conventions
