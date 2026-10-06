@@ -508,7 +508,8 @@
   <!-- id: mapping-source-verbatim-substitution | created: 2026-10-03 | last_used: 2026-10-04 | uses: 2 | tier: active | origin: 2026-10-04-054327 -->
 
 - **A graph holds no null property: `"key": null` is filtered out wherever a graph enters an engine, `"key": ""` is a value, and
-  `serializer.null.transport` does not apply (Eric's rulings, 2026-10-05; in PR #508 and mercury #356, open at writing).** Found building
+  `serializer.null.transport` does not apply (Eric's rulings, 2026-10-05; PR #508 squash `5e9a0fab` and mercury #356 merge `779cffe1`, both
+  MERGED 2026-10-06).** Found building
   the graph packager: Java's `ConfigReader` drops a null-valued key when it normalizes a deployed graph (`Utility.getFlatMap` skips nulls),
   Rust's reader kept it and both engines' graph import refuses one (`addProperty`: "value cannot be null"), so a graph deployed on Java only,
   and the Java packager packed the nil. Now one rule: a map entry whose value is null is filtered at every depth - on deploy (Java's

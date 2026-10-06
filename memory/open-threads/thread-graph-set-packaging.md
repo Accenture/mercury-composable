@@ -7,15 +7,21 @@
   the module homes, inspect in scope; `pack --from-manifest`, the generated manifest documented, `version` in `list graphs`. Next: the sprint (WP1-WP6); the ADR
   (RFC-0005 → ADR-0027) is written when the implementation lands. Relates [[canonical-packager-wire-contract]],
   [[graph-manifest-list-later-wins]], [[playground-file-import-download]].
-  **WP1 + WP2 implemented 2026-10-05 (Eric: "start with the command-line packager"; PRs open, merges gated):** Java #508 - `GraphModelGate`
+  **WP1 + WP2 implemented 2026-10-05 (Eric: "start with the command-line packager"); MERGED 2026-10-06 - Java #508 squash `5e9a0fab`,
+  mercury #356 merge `779cffe1`:** Java #508 - `GraphModelGate`
   (CompileGraph's checks as one shared method, no change in behavior), `GraphSet` (the set rules, shared with WP3-WP5 later) and
   `helpers/graph-packager` (an executable jar, GraalVM left out) - and the Rust twin mercury #356 (`model_gate`, `graph_set`,
   `tools/graph-packager` with `publish = false`, Increment 158). Both pack the 14 tutorials to identical bytes (`4715598820261ca6…`),
   print identical `inspect` reports and read each other's files; on the 52 shared fixtures both gates refuse the same 18 graphs (the
   interop report's addendum). Settled in the code: `${...}` references are packed unresolved while the gate checks a resolved copy, and
   `inspect --json` sorts its keys. **Settled 2026-10-05 (Eric), in the same PRs:** a graph holds no null property - filtered out on deploy,
-  pack and read in both engines, `"key": ""` kept, `serializer.null.transport` not consulted ([[graph-null-property-filtered]]). **Open:**
-  publishing the Rust tool to crates.io is a release decision. Next: WP3, the loader.
+  pack and read in both engines, `"key": ""` kept, `serializer.null.transport` not consulted ([[graph-null-property-filtered]]).
+  **A set of one graph is valid on purpose (Eric, 2026-10-06): packing a graph alone is how ONE graph gets signed** (the detached
+  `<set>.pack.sig` of RFC-0005 §3.1). Confirmed live on main: `pack --set tutorial-1 tutorial-1.json` writes the same 410 bytes in Java and
+  Rust (SHA-256 `74c213b7…`), again on a second pack and on an unpack-then-repack; an Ed25519 signature over the Java pack verified the Rust
+  pack and failed once a manifest field changed; only an empty set is refused (`a set needs at least one graph`, exit 1). No test names the
+  one-graph set yet (offered as a PR), and the RFC does not state the reason, which belongs in ADR-0027. **Open:** publishing the Rust tool to crates.io
+  is a release decision. Next: WP3, the loader.
   → proposal: RFC-0005
   → serves: vision-mercury-composable
   <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-03-171402 -->
