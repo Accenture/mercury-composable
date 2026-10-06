@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * POST /api/graph/unpack - read a graph set (ADR-0027): the body is the package, a .pack file sent as
+ * POST /api/graph-set/unpack - read a graph set (ADR-0027): the body is the package, a .pack file sent as
  * application/octet-stream, and the answer is {"manifest": {...}, "graphs": {"<graph-id>": <model>, ...}} -
  * the manifest as the package holds it, the packager's 'format' and 'format_version' included, and each
  * graph as a file holds it. The Playground's "Package graphs" panel inspects a dropped package with it and

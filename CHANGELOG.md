@@ -68,7 +68,7 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    Upgrade note: none - a test and a documented rule the decoders already met.
 
 6. **The MiniGraph Playground engine packs and reads graph sets over REST (ADR-0027).** Two dev-mode endpoints,
-   `POST /api/graph/pack` (service `pack.graph.set`) and `POST /api/graph/unpack` (`unpack.graph.set`), listed in the starter
+   `POST /api/graph-set/pack` (service `pack.graph.set`) and `POST /api/graph-set/unpack` (`unpack.graph.set`), listed in the starter
    template's and the examples' `rest.yaml` beside `import.graph.content`, so the Playground's coming "Package graphs" panel
    packs on the engine and never carries a packager of its own. `pack` takes `{"manifest": {"set": "<name>", ...}, "graphs":
    {"<graph-id>": <model>, ...}}` - `manifest.set` names the set and its file, every other manifest field is caller text, and

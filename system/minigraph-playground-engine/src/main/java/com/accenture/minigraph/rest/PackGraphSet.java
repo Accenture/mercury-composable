@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * POST /api/graph/pack - pack graph models into a graph set on the engine (ADR-0027), so the Playground's
+ * POST /api/graph-set/pack - pack graph models into a graph set on the engine (ADR-0027), so the Playground's
  * "Package graphs" panel never carries a packager of its own. The body is a JSON object,
  * {"manifest": {"set": "<name>", ...}, "graphs": {"<graph-id>": <model>, ...}}: the manifest field 'set'
  * names the set and its file, every other manifest field is caller text ('format' and 'format_version' are

@@ -147,11 +147,14 @@ graph-packager inspect <file.pack> [--json]             # manifest, entries (id,
 ### 3.3 The Playground panel and its endpoints
 
 - **Endpoints (dev-mode, `@OptionalService("app.env=dev")`, listed in every `rest.yaml` copy like `import.graph.content`):**
-  - `POST /api/graph/pack` — body `{ "manifest": {k: v}, "graphs": { "<id>": <model>, ... } }`; validates each model
+  - `POST /api/graph-set/pack` — body `{ "manifest": {k: v}, "graphs": { "<id>": <model>, ... } }`; validates each model
     (the import validation, then the gate's static checks when D2 says so), packs, answers `application/octet-stream` with
     `Content-Disposition: attachment; filename="<set>.pack"`; 400 names the first refused graph and reason.
-  - `POST /api/graph/unpack` — body the `.pack` bytes; answers `{ "manifest": {...}, "graphs": { "<id>": <model> } }` (D9).
+  - `POST /api/graph-set/unpack` — body the `.pack` bytes; answers `{ "manifest": {...}, "graphs": { "<id>": <model> } }` (D9).
     The panel uses it to inspect a dropped package and to import one entry as the draft through the existing import path.
+  - *Shipped 2026-10-06 (WP4).* The set name travels as `manifest.set`, mirroring what unpack answers. The paths were first
+    `/api/graph/pack` and `/api/graph/unpack` and moved to `/api/graph-set/...` the same day (Eric): they collided with the
+    executor's `/api/graph/{graph_id}`, where a POST to `/api/graph/pack` is a run of a graph named `pack`.
 - **Panel:** a new left-slot mode `'package'` ("Package graphs"), opened from the Tools menu, in the console's slot like the
   mock-upload form. It has a drop zone and a Browse button that accept several `.json` files at once (the current importer
   takes one — the panel's own handler takes many), an **Add current graph** button for the live draft, a list of entries
@@ -255,7 +258,7 @@ deferred by ADR-0026).
 | D4 | Log level for a duplicate id | ERROR when a set is involved; WARN kept between loose manifests (the rapid-prototyping override is intended there) | ERROR everywhere |
 | D5 | `graph_id` manifest field | Optional entry point, verified against the entries when present; the guide's "subgraphs" wording relaxed | Required for every set |
 | D6 | Root `name` must equal the entry's id | Enforce at pack and at unpack | Warn only |
-| D7 | Where packing happens for the panel | The engine, `POST /api/graph/pack` | A TypeScript packager (a third implementation) |
+| D7 | Where packing happens for the panel | The engine, `POST /api/graph-set/pack` | A TypeScript packager (a third implementation) |
 | D8 | Module homes | Java `helpers/graph-packager` (executable jar); Rust `tools/graph-packager` (bin) | A `main` inside the engine module; a `--features cli` bin in the Rust engine crate |
 | D9 | Inspect and import of a `.pack` in the Playground | In scope (small: one endpoint, one panel mode) | Later |
 
@@ -270,7 +273,7 @@ Lock-step on both engines, each step a PR Eric gates; the webapp lands once (one
 | **WP1 — the gate as a method** (Java + Rust) | Extract `compileOneGraph`'s checks into a reusable validation (`validateModel(graphId, model)`); `CompileGraph` and `compiler.rs` call it; no behavior change | existing CompileGraph tests; the 15 example graphs still compile |
 | **WP2 — the CLI, pack first** (Java `helpers/graph-packager`, Rust `tools/graph-packager`) | `pack` (files, a folder, or `--from-manifest graphs.yaml`), `unpack`, `inspect`; the name rules; D2; exit codes; the `.pack` extension | round trip on the example's graphs; a refused graph (no `end`); both CLIs pack the 15 tutorials to identical bytes (the interop report gains a section) |
 | **WP3 — the loader** (Java + Rust) | `sets` + `unpack` in `graphs.yaml`; the unpacker, generated manifest, all-or-none, precedence, logs, path safety; `CompiledGraphs` location order; `list graphs` shows a graph's set and version | CompileGraph tests with packages built in the test from JSON fixtures: a set deploys and `POST /api/graph/{id}` serves it; a set with one bad graph registers none; a duplicate across set and loose graph (ERROR, later wins); missing `unpack`; `unpack` on classpath refused; a removed graph is cleaned on the next start; `import graph from` finds an unpacked graph; a crafted entry name is refused |
-| **WP4 — the endpoints** (Java + Rust) | `POST /api/graph/pack` and `/unpack`, dev-mode; the five Java and three Rust `rest.yaml` copies and the guide excerpt | REST tests through the real router (200 bytes with the file name header, 400 naming the graph, strict-read 400 on unpack) |
+| **WP4 — the endpoints** (Java + Rust) | `POST /api/graph-set/pack` and `/unpack`, dev-mode; the five Java and three Rust `rest.yaml` copies and the guide excerpt | REST tests through the real router (200 bytes with the file name header, 400 naming the graph, strict-read 400 on unpack) |
 | **WP5 — the Playground panel** (webapp) | `'package'` left-slot mode, multi-file drop, Add current graph, entries, manifest editor, Pack and download, inspect mode; `saveBinaryFile` | vitest for the entry model and the manifest validation; a live drive on both engines (pack in the panel, unpack with the CLI, deploy the file through `sets`, curl the graph) |
 | **WP6 — docs and ledger** | `configuration-reference.md` (`sets`, `unpack`, the generated manifest as the implicit next entry), `ai-agent-guide.md` (deploy-without-rebuild gains the packaged path), `canonical-package-format.md` (the extension, the CLI, the set convention; the "Not part of the packager" paragraph shrinks), `build-your-first-graph.md`, the templates' `graphs.yaml` comments, a `help package` topic for the panel, CHANGELOG both repos, INCREMENTS; RFC-0005 → ADR-0027 (done 2026-10-06, after WP2) | `check-doc-canon`, the grammar specs, `check-doc-claims` (the new ERROR/INFO messages become pinned claims) |
 

@@ -452,7 +452,7 @@ rest:
   # graph set (<set>.pack) on the engine, after the deployment gate's checks
   - service: 'pack.graph.set'
     methods: ['POST']
-    url: '/api/graph/pack'
+    url: '/api/graph-set/pack'
     timeout: 30s
     cors: cors_1
     headers: header_1
@@ -461,7 +461,7 @@ rest:
   # Reads a graph set back - its manifest and its graphs - for the panel's inspect mode
   - service: 'unpack.graph.set'
     methods: ['POST']
-    url: '/api/graph/unpack'
+    url: '/api/graph-set/unpack'
     timeout: 30s
     cors: cors_1
     headers: header_1
