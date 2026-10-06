@@ -41,8 +41,10 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    deployment gate's own checks - CompileGraph's checks are now one shared method, `GraphModelGate`, with no change in behavior - and
    its id follows the file-name rule and agrees with the root node's name; a set that breaks a rule is refused with every reason
    (exit code 1, and 2 for an I/O or format error). The same graphs and fields always give the same bytes: nothing comes from the
-   clock or the environment, and a `${...}` reference stays unresolved for the environment the set is deployed to. Deploying a
-   `.pack` file through `graphs.yaml` is the next step of RFC-0005. Upgrade note: none.
+   clock or the environment, and a `${...}` reference stays unresolved for the environment the set is deployed to. A graph holds
+   no null property: `"key": null` is filtered out when a set is packed, as the engine's serializer does by default, while
+   `"key": ""` is a value and is kept. Deploying a `.pack` file through `graphs.yaml` is the next step of RFC-0005. Upgrade note:
+   none.
 
 ### Changed
 

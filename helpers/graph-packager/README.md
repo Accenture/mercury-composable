@@ -50,6 +50,10 @@ graph-packager inspect <file.pack> [--json]
 - the manifest field `set` is written from `--set`, and `format` and `format_version` by the packager;
 - the optional manifest field `graph_id`, the set's entry-point graph, names a graph of the set.
 
+A graph holds no null property: a `"key": null` is filtered out when a set is packed or read, as the engine's
+serializer does by default and as an application's configuration reader does when it loads a deployed graph. An empty
+string (`"key": ""`) is a value and is kept, and a list keeps its elements in place.
+
 `unpack` and `inspect` read a package strictly (a byte form that is not canonical is refused) and check the entry
 names, the root names and `graph_id` before any name becomes a path.
 

@@ -19,10 +19,14 @@
 package com.accenture.minigraph.common;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.platformlambda.core.serializers.CanonicalPackager;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.util.ConfigReader;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -148,19 +152,60 @@ class GraphSetTest {
         assertThrows(IOException.class, () -> GraphSet.read(trailing));
     }
 
+    private static final String WITH_NULLS = """
+            {"nodes": [
+              {"alias": "root", "types": ["Root"],
+               "properties": {"purpose": "p", "name": "n", "note": null, "empty": "", "flags": [true, null]}},
+              {"alias": "end", "types": ["End"], "properties": {}}],
+             "connections": [{"source": "root", "target": "end", "relations": [{"type": "done", "properties": {"x": null}}]}]}""";
+
+    private static final String WITHOUT_NULLS = """
+            {"nodes": [
+              {"alias": "root", "types": ["Root"],
+               "properties": {"purpose": "p", "name": "n", "empty": "", "flags": [true, null]}},
+              {"alias": "end", "types": ["End"], "properties": {}}],
+             "connections": [{"source": "root", "target": "end", "relations": [{"type": "done", "properties": {}}]}]}""";
+
     @Test
-    void anUnpackedGraphIsReadableJsonInCanonicalOrder() throws IOException {
-        var model = valid("j");
-        @SuppressWarnings("unchecked")
-        var root = (Map<String, Object>) ((List<?>) model.get("nodes")).getFirst();
-        @SuppressWarnings("unchecked")
-        var properties = (Map<String, Object>) root.get("properties");
-        properties.put("note", null);
-        var read = GraphSet.read(GraphSet.pack("j", Map.of(), Map.of("j", model))).graphs().get("j");
+    @SuppressWarnings("unchecked")
+    void aNullPropertyIsFilteredOutAndAnEmptyStringKept() throws IOException {
+        var bytes = GraphSet.pack("n", Map.of(), Map.of("n", graph(WITH_NULLS)));
+        // the same bytes as the graph written without its null properties
+        assertArrayEquals(GraphSet.pack("n", Map.of(), Map.of("n", graph(WITHOUT_NULLS))), bytes);
+        var read = GraphSet.read(bytes).graphs().get("n");
+        var properties = (Map<String, Object>) ((Map<String, Object>) ((List<?>) read.get("nodes")).getFirst())
+                .get("properties");
+        assertFalse(properties.containsKey("note"));
+        assertEquals("", properties.get("empty"));
+        // a list keeps its elements in place
+        assertEquals(List.of(true), ((List<?>) properties.get("flags")).subList(0, 1));
+        assertEquals(2, ((List<?>) properties.get("flags")).size());
         var json = GraphSet.toJson(read);
         assertTrue(json.startsWith("{\n  \"connections\": [\n"), json);
-        assertTrue(json.contains("\"note\": null"), json);
+        assertFalse(json.contains("\"note\""), json);
+        assertFalse(json.contains("\"x\""), json);
+        assertTrue(json.contains("\"empty\": \"\""), json);
         assertTrue(json.endsWith("}\n"));
         assertArrayEquals(CanonicalPackager.encode(read), CanonicalPackager.encode(graph(json)));
+    }
+
+    @Test
+    void readingFiltersANullPropertyOut() throws IOException {
+        var bytes = CanonicalPackager.builder().add("n.json", graph(WITH_NULLS)).build();
+        assertArrayEquals(CanonicalPackager.encode(graph(WITHOUT_NULLS)),
+                CanonicalPackager.encode(GraphSet.read(bytes).graphs().get("n")));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void theDeploymentReadDropsANullPropertyToo(@TempDir Path dir) throws IOException {
+        // the reference behavior the packager follows: CompileGraph's read drops "key": null and keeps "key": ""
+        var file = Files.writeString(dir.resolve("n.json"), WITH_NULLS);
+        var model = new ConfigReader("file:" + file).getMap();
+        var root = (Map<String, Object>) ((List<?>) model.get("nodes")).getFirst();
+        var properties = (Map<String, Object>) root.get("properties");
+        assertFalse(properties.containsKey("note"));
+        assertEquals("", properties.get("empty"));
+        assertNotNull(GraphModelGate.validate("n", model));
     }
 }

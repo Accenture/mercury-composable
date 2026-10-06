@@ -39,6 +39,10 @@ import java.util.TreeMap;
  * 'description' or 'author', and the optional 'graph_id' naming the set's entry-point graph. Nothing is taken from
  * the environment or the clock, so the same graphs and fields always give the same bytes.
  * <p>
+ * A graph holds no null property: "key": null is filtered out when a set is packed or read, as the engine's
+ * serializer does by default ({@link GraphModelGate#withoutNullProperties(Map)}). An empty string is a value and is
+ * kept.
+ * <p>
  * The rules live here so the graph packager, the deployment of packaged sets and the Playground apply the same ones.
  */
 public final class GraphSet {
@@ -47,7 +51,7 @@ public final class GraphSet {
     public static final String GRAPH_ID = "graph_id";
     private static final String JSON_EXT = ".json";
     private static final String ID_RULE = "use letters, digits, '_' and '-' only";
-    private static final Gson JSON = new GsonBuilder().disableHtmlEscaping().serializeNulls().setPrettyPrinting().create();
+    private static final Gson JSON = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
 
     private GraphSet() {
         // utility class
@@ -85,9 +89,10 @@ public final class GraphSet {
      * Pack graph models into a set. Every rule is checked before anything is packed - the set name and each graph id
      * against the file-name rule, each root 'name' against its graph id, the 'graph_id' field against the graphs, and
      * each model against the deployment gate's checks - and the set is refused with every reason when any fails.
+     * A null property is filtered out first: a graph holds none.
      * <p>
      * The gate checks a copy read the way the gate reads a deployed model, normalized and with its ${...} references
-     * resolved, while the model is packed as given: a reference belongs to the environment the set is deployed to,
+     * resolved, while the model is packed as written: a reference belongs to the environment the set is deployed to,
      * and resolving it here would make the bytes depend on the machine that packs them.
      *
      * @param setName the set name, which names the file
@@ -119,7 +124,10 @@ public final class GraphSet {
         if (entryPoint != null && !graphs.containsKey(entryPoint)) {
             reasons.add("manifest field '" + GRAPH_ID + "' - '" + entryPoint + "' is not a graph of the set");
         }
-        for (var graph : new TreeMap<>(graphs).entrySet()) {
+        // a graph holds no null property: "key": null is filtered out before the checks and the pack
+        Map<String, Map<String, Object>> models = new TreeMap<>();
+        graphs.forEach((id, model) -> models.put(id, GraphModelGate.withoutNullProperties(model)));
+        for (var graph : models.entrySet()) {
             var reason = check(graph.getKey(), graph.getValue());
             if (reason != null) {
                 reasons.add(graph.getKey() + ": " + reason);
@@ -131,7 +139,7 @@ public final class GraphSet {
         var builder = CanonicalPackager.builder();
         fields.forEach(builder::manifest);
         builder.manifest(SET, setName);
-        graphs.forEach((id, model) -> builder.add(id + JSON_EXT, model));
+        models.forEach((id, model) -> builder.add(id + JSON_EXT, model));
         return builder.build();
     }
 
@@ -163,7 +171,7 @@ public final class GraphSet {
             if (binary != null) {
                 reasons.add(id + ": binary data at '" + binary + "' - a graph model is JSON");
             }
-            graphs.put(id, entry.getValue());
+            graphs.put(id, GraphModelGate.withoutNullProperties(entry.getValue()));
         }
         if (pkg.maps().isEmpty()) {
             reasons.add("the package holds no graph");
@@ -179,8 +187,8 @@ public final class GraphSet {
     }
 
     /**
-     * Readable JSON for a graph model taken out of a set: the canonical key order the package holds, a two-space
-     * indent and null values kept, so two versions of a set diff cleanly and the file packs to the same bytes again.
+     * Readable JSON for a graph model taken out of a set: the canonical key order the package holds and a two-space
+     * indent, so two versions of a set diff cleanly and the file packs to the same bytes again.
      *
      * @param model a graph model from {@link #read(byte[])}
      * @return the JSON text, ending with a new line

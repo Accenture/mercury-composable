@@ -333,6 +333,35 @@ class GraphPackagerTest {
     }
 
     @Test
+    void aNullPropertyIsFilteredOutWhenPacked() throws Exception {
+        // a graph holds no null property: "key": null is filtered out, and an empty string is a value
+        write(tmp.resolve("a/nulls.json"), """
+                {"nodes": [
+                  {"alias": "root", "types": ["Root"],
+                   "properties": {"purpose": "null properties", "name": "nulls", "note": null, "empty": ""}},
+                  {"alias": "end", "types": ["End"], "properties": {}}],
+                 "connections": [{"source": "root", "target": "end",
+                                  "relations": [{"type": "done", "properties": {"x": null}}]}]}""");
+        write(tmp.resolve("b/nulls.json"), """
+                {"nodes": [
+                  {"alias": "root", "types": ["Root"],
+                   "properties": {"purpose": "null properties", "name": "nulls", "empty": ""}},
+                  {"alias": "end", "types": ["End"], "properties": {}}],
+                 "connections": [{"source": "root", "target": "end",
+                                  "relations": [{"type": "done", "properties": {}}]}]}""");
+        assertEquals(0, run("pack", "--set", "s", "--out", tmp.resolve("out-a").toString(),
+                tmp.resolve("a").toString()).code());
+        assertEquals(0, run("pack", "--set", "s", "--out", tmp.resolve("out-b").toString(),
+                tmp.resolve("b").toString()).code());
+        assertArrayEquals(Files.readAllBytes(tmp.resolve("out-b/s.pack")), Files.readAllBytes(tmp.resolve("out-a/s.pack")));
+        assertEquals(0, run("unpack", tmp.resolve("out-a/s.pack").toString(), "--out",
+                tmp.resolve("unpacked").toString()).code());
+        var text = Files.readString(tmp.resolve("unpacked/nulls.json"), UTF_8);
+        assertFalse(text.contains(": null") || text.contains("\"note\"") || text.contains("\"x\""), text);
+        assertTrue(text.contains("\"empty\": \"\""), text);
+    }
+
+    @Test
     void aReferenceIsCheckedResolvedButPackedAsWritten() throws Exception {
         // the gate reads a deployed model with its ${...} references resolved; the package keeps them,
         // because they belong to the environment the set is deployed to

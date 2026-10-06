@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -117,6 +118,37 @@ public final class GraphModelGate {
             }
         }
         return "";
+    }
+
+    /**
+     * A graph holds no null property: a map entry whose value is null is filtered out, at every depth, as the
+     * engine's serializer does by default and as the configuration reader does when an application loads a deployed
+     * graph. Every other value is kept as it is - an empty string ("key": "") is a value - and a list keeps its
+     * elements in place.
+     *
+     * @param model a graph model
+     * @return a copy of the model without its null properties
+     */
+    public static Map<String, Object> withoutNullProperties(Map<?, ?> model) {
+        Map<String, Object> copy = new LinkedHashMap<>();
+        model.forEach((k, v) -> {
+            if (v != null) {
+                copy.put(String.valueOf(k), withoutNullsIn(v));
+            }
+        });
+        return copy;
+    }
+
+    private static Object withoutNullsIn(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            return withoutNullProperties(map);
+        }
+        if (value instanceof List<?> list) {
+            List<Object> copy = new ArrayList<>();
+            list.forEach(v -> copy.add(withoutNullsIn(v)));
+            return copy;
+        }
+        return value;
     }
 
     private static boolean hasRootPurpose(Map<String, Object> model) {
