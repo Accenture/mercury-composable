@@ -4,8 +4,8 @@
   with a generated manifest that compiles next in sequence, all-or-none per set, later wins with an ERROR when a set is involved. Review and plan:
   `draft-design-specs/graph-set-packaging-and-deployment.md` (six work packages: the gate as a method, the CLI, the loader, the endpoints, the panel, the docs and the ADR).
   Decided 2026-10-03 (Eric): `.pack`, the gate at pack time, all-or-none, ERROR for a set duplicate, optional `graph_id`, root name = id, engine-side packing,
-  the module homes, inspect in scope; `pack --from-manifest`, the generated manifest documented, `version` in `list graphs`. Next: the sprint (WP1-WP6); the ADR
-  (RFC-0005 → ADR-0027) is written when the implementation lands. Relates [[canonical-packager-wire-contract]],
+  the module homes, inspect in scope; `pack --from-manifest`, the generated manifest documented, `version` in `list graphs`. Next: the sprint (WP1-WP6);
+  **RFC-0005 was promoted to ADR-0027 on 2026-10-06 (Eric), after WP2** ([[graph-set-pack-and-deploy]]). Relates [[canonical-packager-wire-contract]],
   [[graph-manifest-list-later-wins]], [[playground-file-import-download]].
   **WP1 + WP2 implemented 2026-10-05 (Eric: "start with the command-line packager"); MERGED 2026-10-06 - Java #508 squash `5e9a0fab`,
   mercury #356 merge `779cffe1`:** Java #508 - `GraphModelGate`
@@ -19,9 +19,10 @@
   **A set of one graph is valid on purpose (Eric, 2026-10-06): packing a graph alone is how ONE graph gets signed** (the detached
   `<set>.pack.sig` of RFC-0005 §3.1). Confirmed live on main: `pack --set tutorial-1 tutorial-1.json` writes the same 410 bytes in Java and
   Rust (SHA-256 `74c213b7…`), again on a second pack and on an unpack-then-repack; an Ed25519 signature over the Java pack verified the Rust
-  pack and failed once a manifest field changed; only an empty set is refused (`a set needs at least one graph`, exit 1). No test names the
-  one-graph set yet (offered as a PR), and the RFC does not state the reason, which belongs in ADR-0027. **Open:** publishing the Rust tool to crates.io
-  is a release decision. Next: WP3, the loader.
+  pack and failed once a manifest field changed; only an empty set is refused (`a set needs at least one graph`, exit 1). **Then pinned and
+  recorded (Eric: "proceed with the additional unit test ... promote RFC-0005 as ADR-0027"):** `aSingleGraphIsPackedAloneSoItCanBeSigned` and the
+  Rust twin pin one 327-byte set (SHA-256 `c500281a…`) in both engines, and ADR-0027 states the reason - PR #510 and mercury #357 (Increment 159),
+  open at writing. **Open:** publishing the Rust tool to crates.io is a release decision. Next: WP3, the loader.
   → proposal: RFC-0005
   → serves: vision-mercury-composable
   <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-03-171402 -->

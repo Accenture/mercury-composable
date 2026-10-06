@@ -526,6 +526,21 @@
   test resources. A package keeps empty collections, as the files hold them. Relates [[graph-set-packaging]], [[canonical-packager-wire-contract]].
   <!-- id: graph-null-property-filtered | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-000717 -->
 
+- **A graph set is one or more graphs in a canonical `<set>.pack`, checked by the gate when packed and deployed all or none through a
+  generated manifest; a set of one graph is how one graph is signed (Eric: decided 2026-10-03, accepted as ADR-0027 on 2026-10-06; PR #510
+  and the Rust twin mercury #357, Increment 159, open at writing).** RFC-0005 was promoted after WP1 and WP2 shipped (#508 squash `5e9a0fab`,
+  mercury #356 merge `779cffe1`). The rules: the gate is one shared method (`GraphModelGate` / `model_gate`) that also runs at pack time (D2);
+  the command lines are `helpers/graph-packager` and `tools/graph-packager` (D8); an entry is `<graph-id>.json`, the root name equals the id
+  (D6), and `graph_id` is an optional entry point (D5); the bytes depend on the graphs and the manifest fields only (no clock, `${...}`
+  packed unresolved, nulls filtered - [[graph-null-property-filtered]]). A deployment manifest lists `sets` and a read-write `file:/`
+  `unpack` folder; each set is unpacked before the gate with a generated manifest that compiles next, all or none (D3), and a duplicate
+  involving a set logs an ERROR (D4). The Playground packs on the engine (D7, D9), and signing stays outside (a detached `<set>.pack.sig`).
+  **The one-graph rule (Eric, 2026-10-06):** only an empty set is refused; a graph packed alone gets bytes of its own to sign, and both
+  engines' tests pin one such set (327 bytes, SHA-256 `c500281a…`), the guard for every signature - a change that alters the bytes of the
+  same graphs and fields breaks the signatures made over the old ones. Open work, WP3 to WP6: [[graph-set-packaging]]. Extends
+  [[canonical-packager-wire-contract]] and [[graph-manifest-list-later-wins]]. (ADR-0027)
+  <!-- id: graph-set-pack-and-deploy | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-012206 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
