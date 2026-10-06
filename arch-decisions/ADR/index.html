@@ -2139,6 +2139,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0028" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0028 — The MessagePack codec is the engine's own: the zero-dependency minimalist-msgpack module replaces msgpack-core
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0027" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3150,6 +3161,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0028" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0028 — The MessagePack codec is the engine's own: the zero-dependency minimalist-msgpack module replaces msgpack-core
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0027" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3494,6 +3516,81 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0028">ADR-0028 — The MessagePack codec is the engine's own: the zero-dependency <code>minimalist-msgpack</code> module replaces msgpack-core<a class="headerlink" href="#adr-0028" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-10-06 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> minimalist-msgpack-codec</p>
+<!-- id: adr-0028 | status: accepted -->
+
+<p><strong>Abstract.</strong> The Java engine's MessagePack codec is a module of this repository, <code>system/minimalist-msgpack</code>
+(<code>org.platformlambda.mini.msgpack</code>), written from the published specification for the eight type families the engine uses -
+nil, bool, int, float, str, bin, array and map - and for no other: there are no extension types, and no dependency beyond
+<code>java.base</code>. platform-core's <code>MsgPack</code>, <code>CanonicalPackager</code> and HTTP relay write and read through it, and
+<code>org.msgpack:msgpack-core</code> left the reactor in PR #517 (squash <code>527ac5eb</code>). Proposed as RFC-0006 in <a href="../RFC/"><code>RFC.md</code></a> on
+2026-10-06 at Eric's investigation ask, built and verified the same day against his four criteria (at par or faster than
+msgpack-core; virtual-thread friendly; no deprecated libraries; no unsafe operations), and accepted on 2026-10-06 after review
+and green CI. The evidence is <code>docs/test-reports/minimalist-msgpack-benchmark.md</code>.</p>
+<p><strong>Context.</strong> The field's scanners flag msgpack-core 0.9.12 for CVE-2026-90472 (stack exhaustion in <code>unpackValue()</code>) and
+CVE-2026-90473 (a <code>map 32</code> count overflow in <code>skipValue()</code>); the advisories name 0.9.13 as the fix, and it is not published.
+The engine reached neither method and had bounded its own reader at 64 levels (CHANGELOG items 9 and 25 of the release after
+4.12.20), but a flagged library at the serialization foundation of every event can block a field release regardless of
+reachability, and the wait had no date. The engine used a small part of MessagePack: a Map or List of scalars, strings and
+bytes, with the value layer (<code>_T</code>/<code>_D</code>, <code>serializer.null.transport</code>, <code>MsgPack.MAX_DEPTH</code>) already its own. The Rust engine
+uses <code>rmp</code>/<code>rmpv</code>, pure Rust and not affected, and the Python and Node.js language packs use their own MessagePack libraries
+over Event-over-HTTP; the shared canonical package vectors (ADR-0026) already pinned the byte-level contract across engines.</p>
+<p><strong>Decision.</strong></p>
+<ul>
+<li><strong>Scope.</strong> The module supports the nil, bool, int, float, str, bin, array and map families, every width of each, and
+  nothing else: no extension types and no timestamp. The writer has no method for an extension value; the reader decodes
+  none but knows the ext framing, so <code>skipValue()</code> steps over one and the value layer reads it as <code>null</code>, as it always did.
+  New MessagePack features need a new decision, not a quiet addition.</li>
+<li><strong>The writer's bytes are a contract.</strong> Every value is written in its smallest format, with the integer rule msgpack-core
+  and <code>rmp</code> share: a value from -32 to 127 is one byte, a larger non-negative value takes the smallest unsigned width, a
+  smaller negative value the smallest signed width; a <code>float</code> is a float32 and a <code>double</code> a float64, bit for bit; text is
+  UTF-8 under the shortest str header, bytes under the shortest bin header, and array and map headers take their shortest
+  form. These choices make the bytes identical to msgpack-core's and the Rust engine's, which the canonical vectors and the
+  20,000-document differential prove; changing any of them breaks that identity and the signatures made over canonical
+  packages (ADR-0027), so none changes without a decision here.</li>
+<li><strong>The reader is built for bytes from outside the process.</strong> Every read is bounded by the array window; the lengths of
+  str, bin and ext values and the counts of arrays and maps are 32-bit unsigned and checked against the remaining bytes
+  before anything is allocated or consumed (an array of N elements needs at least N bytes, a map of N entries 2N, so a
+  header that promises more than the input holds - the CVE-2026-90473 shape among them - is refused at the header);
+  <code>0xc1</code>, which the specification never uses, is refused; <code>skipValue()</code> is iterative, so nesting costs no stack; a failed
+  read leaves the position unchanged; and every failure is one checked <code>MsgPackException extends IOException</code> - nothing
+  unchecked leaves the codec for malformed input. As the specification allows, a str may hold invalid UTF-8 and is decoded
+  leniently (U+FFFD), and str and bin are accepted interchangeably on read, as msgpack-core did by default.</li>
+<li><strong>Implementation constraints.</strong> <code>java.base</code> only; big-endian fields through <code>VarHandle</code> byte-array views, the sanctioned
+  intrinsic, never <code>sun.misc.Unsafe</code>, reflection or a deprecated API; no <code>synchronized</code>, <code>ThreadLocal</code> or lock, and a reader
+  or writer is created per call, so a virtual thread never pins. The module compiles for the engine's Java 21 baseline.</li>
+<li><strong>The value layer stays in platform-core, unchanged.</strong> <code>MsgPack</code> (the event payload codec and the general purpose
+  <code>packMapOrList</code> pair) and <code>CanonicalPackager</code> keep their contracts, their null rule and the 64-level depth bound; the codec
+  below them is streaming only and policy-free, and the depth rule lives where the recursion is.</li>
+<li><strong>Three behaviour changes, each pinned by a test.</strong> <code>org.msgpack.*</code> classes no longer arrive transitively; every decoding
+  failure of <code>MsgPack.unpack</code> is an <code>IOException</code>, which <code>EventEnvelope</code> reports as <code>IllegalArgumentException</code> as its contract
+  always said (msgpack-core also threw its own unchecked exceptions); a <code>uint 64</code> above <code>Long.MAX_VALUE</code>, which another
+  encoder may send, reads as a <code>BigInteger</code> instead of failing, as <code>CanonicalPackager</code> and the Rust engine already did.</li>
+<li><strong>The module lives in <code>system/</code>,</strong> beside <code>minimalist-kafka</code>: platform-core depends on it, and <code>extensions/</code> depend on
+  platform-core, so an extension cannot be the home of a foundation (Eric, 2026-10-06).</li>
+<li><strong>The evidence standard for a change to the codec.</strong> The module's tests pin the specification's format table byte by
+  byte, every format boundary, every hostile-header shape and a random corpus whose every proper prefix is refused, under a
+  90% line-and-branch coverage gate; platform-core's canonical vectors and serializer tests must pass unchanged; and the
+  harness in <code>benchmark/msgpack-codec-harness/</code> (outside the reactor on purpose, so msgpack-core never enters a scanned
+  manifest) is the differential and benchmark method of record.</li>
+</ul>
+<p><strong>Alternatives.</strong> (b) <em>Wait for msgpack-core 0.9.13:</em> no date, and the next finding against the library costs the same wait.
+(c) <em>Another MessagePack library:</em> <code>msgpack-jackson</code> depends on msgpack-core, and the rest are small or unmaintained; it swaps
+one supply-chain exposure for another and keeps an extension-type surface the engine never uses. (d) <em>Suppress the finding
+in the field's scanner:</em> not this repository's decision, and it recurs on every scan. (a), the in-house codec, was chosen:
+the dependency is gone for good, the codec is about nine hundred lines the team reads, the bytes are proven identical, and
+the measured cost is negative - the event envelope packs and unpacks in about 55% of msgpack-core's time, an 8 KB payload
+in 39% and 72%, and a list of 50 records at par.</p>
+<p><strong>Consequences.</strong> The project owns a wire codec. The format table and the smallest-format rule are now a contract with the
+Rust engine and with every language pack's library; the canonical vectors are the guard, and a change to an encoding choice is
+a decision, not a refactor. An application that imported <code>org.msgpack.*</code> through the engine's transitive dependency declares
+<code>msgpack-core</code> itself or moves to the new reader and writer. The three behaviour changes above hold from the release that
+carries PR #517. The next version sweep covers one more pom (the module) and one more literal version (platform-core's
+dependency on it). The Rust engine, the language packs and the canonical package format are unchanged, and the
+<code>msgpack-core-cve-upgrade</code> thread closed as moot. Deferred, deliberately: extension types and the timestamp, a reusable
+writer pool, and a Java 21 runtime benchmark (the report's numbers come from a Java 27 runtime on one developer machine).</p>
 <hr />
 <h2 id="adr-0027">ADR-0027 — Graph sets: one or more graphs in a canonical <code>.pack</code>, gated when packed and deployed all or none<a class="headerlink" href="#adr-0027" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-10-06 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> graph-set-pack-and-deploy</p>

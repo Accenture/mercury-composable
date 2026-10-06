@@ -3086,8 +3086,8 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 </code></pre></div>
 <hr />
 <h2 id="rfc-0006-an-in-house-messagepack-codec-systemminimalist-msgpack-replaces-orgmsgpackmsgpack-core">RFC-0006 — An in-house MessagePack codec: <code>system/minimalist-msgpack</code> replaces <code>org.msgpack:msgpack-core</code><a class="headerlink" href="#rfc-0006-an-in-house-messagepack-codec-systemminimalist-msgpack-replaces-orgmsgpackmsgpack-core" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-10-06 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>minimalist-msgpack</code></p>
-<!-- id: rfc-0006 | status: open | thread: minimalist-msgpack -->
+<p><strong>Status:</strong> Promoted → ADR-0028 · <strong>Raised:</strong> 2026-10-06 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>minimalist-msgpack</code></p>
+<!-- id: rfc-0006 | status: promoted | thread: minimalist-msgpack -->
 
 <p><strong>Proposal.</strong> Replace the engine's one third-party MessagePack dependency with a module of this repository, written from
 the published specification (<a href="https://github.com/msgpack/msgpack/blob/master/spec.md">spec.md</a>, last modified 2017-08-09):
@@ -3107,7 +3107,7 @@ method (#513) and bounds its own reader at 64 levels (#514), but a flagged libra
 field release regardless of reachability, and the wait has no date. The engine uses a small part of MessagePack, so that part
 is written here. Eric's criteria for a replacement (2026-10-06): at par or faster than msgpack-core; virtual-thread friendly;
 no deprecated libraries; no unsafe operations.</p>
-<p><strong>What was built</strong> (branch <code>feature/minimalist-msgpack</code>, not merged). The writer uses the smallest format for every value
+<p><strong>What was built</strong> (branch <code>feature/minimalist-msgpack</code>, merged as PR #517, squash <code>527ac5eb</code>). The writer uses the smallest format for every value
 with the integer rule msgpack-core and <code>rmp</code> share (<code>-32..127</code> one byte, larger non-negative values the smallest unsigned
 width, smaller negative values the smallest signed width), float32 and float64 bit for bit, UTF-8 under the shortest str
 header, the shortest bin, array and map headers; short ASCII text is written straight into the buffer. The reader is a
@@ -3155,7 +3155,11 @@ lenient UTF-8 and str/bin cross-acceptance on read (msgpack-core's defaults).</p
 <p><strong>Open questions.</strong> (1) Release vehicle: the next patch release, or after the field accepts 4.12.20? (2) The Rust engine needs
 no change (<code>rmp</code>/<code>rmpv</code> are pure Rust and not affected); the shared vectors stay the parity proof. (3) The <code>msgpack-core-cve-upgrade</code>
 thread becomes moot if this is accepted. Promotion to an ADR follows review and green CI (the RFC-0001/RFC-0002 method).</p>
-<p><strong>Resolution.</strong> Open.</p>
+<p><strong>Resolution.</strong> Promoted → ADR-0028 (2026-10-06, Eric): option (a), the in-house codec. Accepted after PR #517 (squash
+<code>527ac5eb</code>) merged with green CI: the module and the swap, 134 module tests under a 90% line-and-branch gate, three regression
+tests for the behaviour changes, the two-way differential and the benchmark (<code>docs/test-reports/minimalist-msgpack-benchmark.md</code>).
+The three behaviour changes are accepted as listed; the Rust engine needs no change; the <code>msgpack-core-cve-upgrade</code> thread
+closed as moot. The release vehicle is the next release (CHANGELOG Unreleased, Changed item 10).</p>
 <hr />
 <h2 id="rfc-0005-graph-sets-a-packunpack-cli-a-playground-packaging-panel-and-sets-unpack-in-the-deployment-manifest">RFC-0005 — Graph sets: a pack/unpack CLI, a Playground packaging panel, and <code>sets</code> + <code>unpack</code> in the deployment manifest<a class="headerlink" href="#rfc-0005-graph-sets-a-packunpack-cli-a-playground-packaging-panel-and-sets-unpack-in-the-deployment-manifest" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Promoted → ADR-0027 · <strong>Raised:</strong> 2026-10-03 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>graph-set-packaging</code></p>
