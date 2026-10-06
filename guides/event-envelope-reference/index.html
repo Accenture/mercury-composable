@@ -5144,6 +5144,10 @@ declared length or count, and so is the format byte <code>0xc1</code>, which the
 <p>Empty input decodes as an empty map, so an empty byte array is an empty envelope and never a decoding error; the
 canonical package decoder refuses it, because a package is never empty. This engine is the reference implementation
 and the Rust engine follows it.</p>
+<p>Bytes after the top-level container, well-formed or not, are refused as a decoding error: a payload holds exactly one
+value, in the event codec as in the canonical package decoder. <code>MsgPack</code> throws <code>IOException: Unexpected bytes after
+the value at offset N</code>, <code>EventEnvelope</code> reports it as an <code>IllegalArgumentException</code>, and the Event API answers such a
+request with HTTP 400; the Rust engine applies the same rule.</p>
 <hr />
 <h2 id="creating-an-eventenvelope">Creating an EventEnvelope<a class="headerlink" href="#creating-an-eventenvelope" title="Permanent link">&para;</a></h2>
 <h3 id="constructors">Constructors<a class="headerlink" href="#constructors" title="Permanent link">&para;</a></h3>

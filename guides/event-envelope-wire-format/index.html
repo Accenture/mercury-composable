@@ -3824,6 +3824,11 @@ portable diagnostics.</p>
 <li><strong>Empty input</strong>: an empty payload decodes as an empty map, so an empty byte array is an empty envelope and never a
     decoding error; the canonical package decoder refuses it, because a package is never empty. The Java engine is
     the reference implementation and the Rust engine follows it.</li>
+<li><strong>Exactly one value</strong>: a payload holds exactly one MsgPack value. Bytes after the top-level container, well-formed
+    or not, are refused as a decoding error (<code>Unexpected bytes after the value at offset N</code>), as the canonical package
+    decoder has always done; a decoder MUST NOT read one value and ignore what follows it, since two different byte
+    strings would then decode to the same value. The shared vector file pins an empty map followed by <code>0xc1</code> and by a
+    well-formed nil, and both engines refuse them.</li>
 </ol>
 <h2 id="format-detection">Format detection<a class="headerlink" href="#format-detection" title="Permanent link">&para;</a></h2>
 <p>The compact format's keys are all exactly <strong>one character</strong>; standard keys are all
