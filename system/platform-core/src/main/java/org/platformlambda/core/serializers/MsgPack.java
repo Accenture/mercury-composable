@@ -38,9 +38,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * The event payload serializer and the general purpose Map/List codec, over the minimalist-msgpack reader and writer
  * (a zero-dependency module of this repository, written from the MessagePack specification; no extension types).
  * <p>
- * Every decoding failure - truncated or malformed bytes, a nesting deeper than {@link #MAX_DEPTH}, a top-level value
- * that is not a Map or a List - is an {@link IOException}; no unchecked exception leaves {@link #unpack(byte[])} for
- * bytes that arrive from outside the process.
+ * Every decoding failure - truncated or malformed bytes, bytes after the value (the input holds exactly one), a nesting
+ * deeper than {@link #MAX_DEPTH}, a top-level value that is not a Map or a List - is an {@link IOException}; no unchecked
+ * exception leaves {@link #unpack(byte[])} for bytes that arrive from outside the process.
  */
 public class MsgPack {
     private static final Utility util = Utility.getInstance();
@@ -105,17 +105,24 @@ public class MsgPack {
      *
      * @param bytes - packed structure
      * @return result - Map or List
-     * @throws IOException for mapping exception, or if the packed value is not a Map or List
+     * @throws IOException for mapping exception, if the packed value is not a Map or List, or if bytes follow the
+     *         value - the input holds exactly one value, as for {@link CanonicalPackager#decode(byte[])}
      */
     public Object unpackMapOrList(byte[] bytes) throws IOException  {
         var reader = new MsgPackReader(bytes);
         if (reader.hasNext()) {
             MsgPackFormat format = reader.nextFormat();
-            return switch (format.getType()) {
+            Object result = switch (format.getType()) {
                 case MAP -> unpack(reader, new HashMap<>(), 1);
                 case ARRAY -> unpack(reader, new ArrayList<>(), 1);
                 default -> throw new MsgPackException("Packed input should be Map or List, Actual: " + format.getType());
             };
+            // the input holds exactly one value: bytes after it, well-formed or not, are a decoding error, as the
+            // canonical decoder has always ruled; a decoder that read one value and stopped would never see them
+            if (reader.hasNext()) {
+                throw new MsgPackException("Unexpected bytes after the value at offset " + reader.position());
+            }
+            return result;
         }
         // this should not occur
         return new HashMap<String, Object>();
