@@ -171,7 +171,12 @@ class GraphSuspendResumeTest {
             var r1 = runGraph("unit-test-suspend-5", cid);
             assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r1.getBody()).getElement("type"));
             assertEquals(1, CountingStepTask.getCount("expiry", cid));
-            expireStoredRecord("unit-test-suspend-5", cid);
+            // rewrite the stored record's expiry into the past - a deterministic stand-in for waiting
+            // out the ttl: the store enforces expiry at retrieval time, so an expired stamp behaves
+            // exactly like elapsed wall-clock time, without a sleep in the test
+            var expired = readStoredRecord("unit-test-suspend-5", cid);
+            expired.setElement("expires_at", System.currentTimeMillis() - 1000);
+            writeStoredRecord("unit-test-suspend-5", cid, expired);
             // the record's expiry has passed: the resume falls back to a fresh run and suspends again
             var r2 = runGraph("unit-test-suspend-5", cid);
             assertEquals("suspended", new MultiLevelMap((Map<String, Object>) r2.getBody()).getElement("type"));
@@ -191,10 +196,7 @@ class GraphSuspendResumeTest {
         assertEquals(200, first.getStatus());
         // forge the persisted record: the store is pluggable, so a record is external
         // input - inject reserved keys into its model as a hostile writer would
-        var file = storedFile("unit-test-suspend-1", cid);
-        var msgPack = new MsgPack();
-        var wrapper = (Map<String, Object>) msgPack.unpack(Files.readAllBytes(file.toPath()));
-        var forged = new MultiLevelMap(wrapper);
+        var forged = readStoredRecord("unit-test-suspend-1", cid);
         forged.setElement("data.model.cid", "forged-cid");
         forged.setElement("data.model.instance", "forged-instance");
         forged.setElement("data.model.run", "resume");
@@ -207,7 +209,7 @@ class GraphSuspendResumeTest {
             literal.put("cid.x", "forged-nested");
             literal.put("ttl[0]", "forged-indexed");
         }
-        Files.write(file.toPath(), msgPack.pack(forged.getMap()));
+        writeStoredRecord("unit-test-suspend-1", cid, forged);
         // resume with the real correlation ID: the workflow continues, but none of the
         // forged reserved keys may reach the state machine - model.cid is a capability
         var second = runGraph("unit-test-suspend-1", cid);
@@ -416,17 +418,9 @@ class GraphSuspendResumeTest {
         return new MultiLevelMap(wrapper);
     }
 
-    /**
-     * Rewrite the stored record's expiry into the past - a deterministic stand-in for waiting out
-     * the ttl. The store enforces expiry at retrieval time, so an expired stamp behaves exactly
-     * like elapsed wall-clock time, without a sleep in the test.
-     */
-    @SuppressWarnings("unchecked")
-    private void expireStoredRecord(String graphId, String cid) throws IOException {
-        var file = storedFile(graphId, cid);
-        var wrapper = (Map<String, Object>) new MsgPack().unpack(Files.readAllBytes(file.toPath()));
-        wrapper.put("expires_at", System.currentTimeMillis() - 1000);
-        Files.write(file.toPath(), new MsgPack().pack(wrapper));
+    /** Write a record back as the store holds it, so the next resume reads the rewritten copy. */
+    private void writeStoredRecord(String graphId, String cid, MultiLevelMap record) throws IOException {
+        Files.write(storedFile(graphId, cid).toPath(), new MsgPack().pack(record.getMap()));
     }
 
     private File storedFile(String graphId, String cid) {
