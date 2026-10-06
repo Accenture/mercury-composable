@@ -716,6 +716,18 @@ Map<String, Object> restored = (Map<String, Object>) msgPack.unpackMapOrList(val
 
 `MsgPack` is stateless and thread-safe - a single `static final` instance is the recommended usage.
 
+> **The codec underneath.** The engine's MessagePack codec is its own zero-dependency module,
+> `system/minimalist-msgpack` (`org.platformlambda.mini.msgpack`): a streaming `MsgPackWriter` and `MsgPackReader`
+> written from the published specification for the nil, bool, int, float, str, bin, array and map families, with no
+> extension types, no `sun.misc.Unsafe` and no shared state. It replaced `org.msgpack:msgpack-core`, which the field's
+> scanners flag (CVE-2026-90472, CVE-2026-90473) with no fixed release available. The bytes are identical: the writer
+> uses the same smallest-format rule, which the canonical package vectors shared with the Rust engine prove byte for
+> byte. What changes for an application: `org.msgpack.*` classes no longer arrive transitively (an application that
+> used them directly declares `msgpack-core` itself, or uses the new reader and writer); every decoding failure of
+> `MsgPack.unpack` is an `IOException` (`EventEnvelope` reports it as `IllegalArgumentException`, as documented) where
+> msgpack-core also threw its own unchecked exceptions; and a `uint 64` above `Long.MAX_VALUE`, which another encoder
+> may send, reads as a `BigInteger` instead of failing. The module's README documents the API and its robustness rules.
+
 > **Only a Map or a List is accepted.** A PoJo or a Java primitive is not supported directly: encode
 > it in your application first. For a PoJo, convert it into a Map:
 > ```java
@@ -773,7 +785,7 @@ CanonicalPackager.unpack(bytes, false);                               // non-str
 - **The ordering is the packager's own step.** Keys sort in **UTF-8 byte order** at every depth (maps inside lists included),
   because the Gson serializer has no ordered-keys option and an ordered-keys option such as Jackson's sorts by `String` order
   (UTF-16), which differs from another engine's bytes above U+FFFF.
-- **It writes through msgpack-core directly, not through `MsgPack.pack`**, which drops null values unless a configuration
+- **It writes through the `minimalist-msgpack` writer directly, not through `MsgPack.pack`**, which drops null values unless a configuration
   switch is set, packs a `Float` as float32 and writes a `BigDecimal` zero as `"0.00"`. The canonical profile keeps nulls,
   writes a finite float64 only (a `Float` is widened through its shortest decimal text, so `0.1f` is the float64 `0.1`; NaN and Infinity are rejected with `IllegalArgumentException` naming the path), writes
   a `BigDecimal` in plain notation with a zero of any scale as `"0"`, and a `BigInteger` as its digits. Dates are ISO-8601

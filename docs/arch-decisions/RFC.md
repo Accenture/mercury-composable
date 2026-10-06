@@ -39,6 +39,86 @@
 
 ---
 
+## RFC-0006 — An in-house MessagePack codec: `system/minimalist-msgpack` replaces `org.msgpack:msgpack-core`
+**Status:** Open · **Raised:** 2026-10-06 · **Serves:** vision-mercury-composable · **Thread:** `minimalist-msgpack`
+<!-- id: rfc-0006 | status: open | thread: minimalist-msgpack -->
+
+**Proposal.** Replace the engine's one third-party MessagePack dependency with a module of this repository, written from
+the published specification ([spec.md](https://github.com/msgpack/msgpack/blob/master/spec.md), last modified 2017-08-09):
+a streaming `MsgPackWriter` and `MsgPackReader` (`org.platformlambda.mini.msgpack`, with `MsgPackFormat`, `MsgPackType` and
+one checked `MsgPackException extends IOException`) for the nil, bool, int, float, str, bin, array and map families, with no
+extension types - Eric's "minimalist" rule: no custom types - and no dependency beyond `java.base`. platform-core's `MsgPack`
+(the event payload codec and the general purpose `packMapOrList` pair), `CanonicalPackager` and the HTTP relay read and write
+through it; the value layer keeps its `_T`/`_D` encoding, its null-transport rule and its 64-level depth bound unchanged. The
+module lives in `system/`, beside `minimalist-kafka`, because platform-core must depend on it and `extensions/` depend on
+platform-core (Eric agreed, 2026-10-06). A decision would commit the project to owning a wire codec - the format table, the
+smallest-format rule it shares with msgpack-core and the Rust engine's `rmp`, the robustness checks and their tests - and to the
+three behaviour changes below.
+
+**Why now.** The field's scanners (Mend, Snyk) flag msgpack-core 0.9.12 for CVE-2026-90472 (stack exhaustion in
+`MessageUnpacker.unpackValue()`) and CVE-2026-90473 (a `map 32` count overflow in `skipValue()`); the advisories name 0.9.13
+as the fix, which is not published (2026-10-06: Maven Central 404, GitHub's latest release v0.9.12). The engine reaches neither
+method (#513) and bounds its own reader at 64 levels (#514), but a flagged library at the serialization foundation can block a
+field release regardless of reachability, and the wait has no date. The engine uses a small part of MessagePack, so that part
+is written here. Eric's criteria for a replacement (2026-10-06): at par or faster than msgpack-core; virtual-thread friendly;
+no deprecated libraries; no unsafe operations.
+
+**What was built** (branch `feature/minimalist-msgpack`, not merged). The writer uses the smallest format for every value
+with the integer rule msgpack-core and `rmp` share (`-32..127` one byte, larger non-negative values the smallest unsigned
+width, smaller negative values the smallest signed width), float32 and float64 bit for bit, UTF-8 under the shortest str
+header, the shortest bin, array and map headers; short ASCII text is written straight into the buffer. The reader is a
+cursor: `nextFormat()` peeks, the read methods consume one value or header each, and the robustness rules hold for bytes
+from outside the process: every read is bounded by the array window; str, bin and ext lengths and array and map counts are
+32-bit unsigned and checked against the remaining bytes before anything is allocated or consumed (N elements need N bytes,
+N entries 2N, so the CVE-2026-90473 header `df 80 00 00 00` is refused at the header); `0xc1` is refused; `skipValue()` is
+iterative (100,000 nested arrays skip without stack); a failed read leaves the position unchanged; every failure is the one
+checked exception. Extension values are recognized and skipped, never decoded. Multi-byte fields go through `VarHandle`
+byte-array views (big-endian), the sanctioned intrinsic that replaced `sun.misc.Unsafe`; there is no reflection, no
+`synchronized`, no `ThreadLocal`, no lock, and a reader or writer is created per call. Tests: 134 in the module (the
+specification's format table pinned byte by byte, hand-derived vectors at every format boundary, non-minimal encodings,
+every hostile-header shape, every ext format skipped, a seeded random corpus that round-trips and whose every proper prefix is
+refused, JaCoCo 90% line and branch gate) and three regression tests in platform-core for the behaviour changes.
+
+**Evidence.**
+- *Byte identity.* The canonical package vectors (an independent oracle, byte-identical with the Rust engine) pass unchanged
+  on the new codec, as do `MsgPackTest`, `CanonicalPackagerTest` and `EventEnvelopeTest`. A 20,000-document seeded random
+  corpus (16.9 MB; every integer boundary, all four UTF-8 widths, unpaired surrogates, nulls in maps and lists, nesting to
+  depth 4) packs to byte-identical output through the old and the new `MsgPack`, and each backend decodes the other's corpus
+  with 0 mismatches (the harness is `benchmark/msgpack-codec-harness/`, outside the reactor because it needs msgpack-core on
+  its classpath).
+- *Performance.* Separate JVMs per backend, same machine otherwise idle, three runs each, best of 5 rounds of 2 s after 3 s
+  of warm-up, three payload shapes through `MsgPack.pack`/`unpack` (the value layer included, so this is what the engine
+  sees); the table, method and environment are in `docs/test-reports/minimalist-msgpack-benchmark.md`.
+  Best of three runs: the 395-byte event envelope packs in 0.54 and unpacks in 0.55 of msgpack-core's time, the 8 KB payload packs in 0.39 and unpacks in 0.72, and the 7 KB list of 50 records is at par (pack 0.96, unpack 1.03, within the run-to-run spread of about 4%).
+
+- *Virtual threads and safety.* No shared or thread-local state, no lock, no `Unsafe`, no deprecated API, `java.base` only,
+  compiled for Java 21. msgpack-core allocated an 8 KB `MessageBuffer` per `newDefaultPacker` call and `MsgPack.packMapOrList`
+  wrote it through a synchronized `ByteArrayOutputStream` and copied twice; the small-envelope gain is mostly that overhead.
+
+**Options.** *(a) The in-house codec.* **Recommended**: the dependency is gone for good, the codec is 900 lines the team
+reads, the bytes are proven identical, and the next scanner finding against a MessagePack library is not the engine's
+problem. Cost: owning a wire codec (its tests are the guard). *(b) Wait for msgpack-core 0.9.13* (the open thread's plan): no
+date, and the next CVE costs the same wait. *(c) Another library* (`msgpack-jackson` depends on msgpack-core; the rest are
+small or unmaintained): swaps one supply-chain exposure for another and keeps an extension-type surface the engine never
+uses. *(d) Suppress the finding in the field's scanner*: not this repository's decision, and it recurs on every scan.
+
+**Behaviour changes a decision accepts** (each pinned by a test in `MsgPackTest`): (1) `org.msgpack.*` no longer arrives
+transitively; an application that used it directly declares `msgpack-core` itself or moves to the new reader and writer.
+(2) Every decoding failure of `MsgPack.unpack` is an `IOException`, which `EventEnvelope` reports as `IllegalArgumentException`
+as its contract always said; msgpack-core also threw its own unchecked exceptions, which `AsyncHttpClient` caught by name and
+now need not. (3) A `uint 64` above `Long.MAX_VALUE`, which another encoder may send, reads as a `BigInteger` instead of
+failing - as `CanonicalPackager` and the Rust engine (`rmpv` keeps a `u64`) already do. Unchanged: an extension value reads
+as `null`, nulls in maps follow `serializer.null.transport`, the 64-level limit, a `Float` as float32 in the event codec,
+lenient UTF-8 and str/bin cross-acceptance on read (msgpack-core's defaults).
+
+**Open questions.** (1) Release vehicle: the next patch release, or after the field accepts 4.12.20? (2) The Rust engine needs
+no change (`rmp`/`rmpv` are pure Rust and not affected); the shared vectors stay the parity proof. (3) The `msgpack-core-cve-upgrade`
+thread becomes moot if this is accepted. Promotion to an ADR follows review and green CI (the RFC-0001/RFC-0002 method).
+
+**Resolution.** Open.
+
+---
+
 ## RFC-0005 — Graph sets: a pack/unpack CLI, a Playground packaging panel, and `sets` + `unpack` in the deployment manifest
 **Status:** Promoted → ADR-0027 · **Raised:** 2026-10-03 · **Serves:** vision-mercury-composable · **Thread:** `graph-set-packaging`
 <!-- id: rfc-0005 | status: promoted | thread: graph-set-packaging -->

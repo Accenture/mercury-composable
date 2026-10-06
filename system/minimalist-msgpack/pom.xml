@@ -4,10 +4,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.platformlambda</groupId>
-    <artifactId>platform-core</artifactId>
+    <artifactId>minimalist-msgpack</artifactId>
     <packaging>jar</packaging>
     <version>4.12.20</version>
-    <name>Mercury platform-core module</name>
+    <name>Minimalist MsgPack (zero-dependency codec)</name>
+    <description>
+        A minimalist MessagePack codec written from the published specification: a streaming reader and a
+        streaming writer for nil, booleans, integers, floats, str, bin, arrays and maps - no extension types -
+        with no dependency beyond java.base, no sun.misc.Unsafe, no shared or thread-local state and no
+        synchronization, so it runs in virtual threads without pinning. It is the serialization foundation of
+        platform-core, in place of org.msgpack:msgpack-core.
+    </description>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -18,14 +25,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <tomcat.version>11.0.26</tomcat.version>
         <junit-jupiter.version>6.1.3</junit-jupiter.version>
-        <netty.version>4.2.18.Final</netty.version>
-        <jackson-2-bom.version>2.22.3</jackson-2-bom.version>
-        <jackson-bom.version>3.2.3</jackson-bom.version>
-        <log4j2.version>2.26.1</log4j2.version>
-        <kafka.version>4.3.1</kafka.version>
-        <gson.version>2.14.0</gson.version>
         <java.version>21</java.version>
     </properties>
 
@@ -36,133 +36,8 @@
         </repository>
     </repositories>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.projectreactor</groupId>
-                <artifactId>reactor-bom</artifactId>
-                <version>2025.0.7</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
+    <!-- No compile or runtime dependency: the codec uses java.base only. -->
     <dependencies>
-        <dependency>
-            <groupId>io.projectreactor.netty</groupId>
-            <artifactId>reactor-netty-http</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.github.classgraph</groupId>
-            <artifactId>classgraph</artifactId>
-            <version>4.8.184</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-            <version>3.2.4</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-core</artifactId>
-            <version>5.2.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>com.jayway.jsonpath</groupId>
-            <artifactId>json-path</artifactId>
-            <version>3.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>net.minidev</groupId>
-            <artifactId>json-smart</artifactId>
-            <version>2.6.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
-            <version>9.10.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>33.7.2-jre</version>
-        </dependency>
-
-        <!-- The MessagePack codec: a zero-dependency module of this repository (system/minimalist-msgpack). -->
-        <dependency>
-            <groupId>org.platformlambda</groupId>
-            <artifactId>minimalist-msgpack</artifactId>
-            <version>4.12.20</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.86</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk18on</artifactId>
-            <version>1.86</version>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.junit</groupId>
             <artifactId>junit-bom</artifactId>
@@ -182,7 +57,6 @@
             <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -212,7 +86,6 @@
                         </goals>
                         <configuration>
                             <compilerArgs>
-                                <arg>-proc:full</arg>
                                 <arg>-Xlint:deprecation</arg>
                                 <arg>-Xlint:unchecked</arg>
                             </compilerArgs>
@@ -226,7 +99,6 @@
                         </goals>
                         <configuration>
                             <compilerArgs>
-                                <arg>-proc:full</arg>
                                 <arg>-Xlint:deprecation</arg>
                             </compilerArgs>
                         </configuration>
@@ -262,16 +134,6 @@
                 <version>3.2.0</version>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven</groupId>
-                <artifactId>maven-artifact</artifactId>
-                <version>3.10.0</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven</groupId>
-                <artifactId>maven-repository-metadata</artifactId>
-                <version>3.10.0</version>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.6.0</version>
@@ -292,6 +154,32 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>check-coverage</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.90</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.90</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -18,11 +18,12 @@
 
 package org.platformlambda.core.serializers;
 
-import org.msgpack.core.MessageFormat;
-import org.msgpack.core.MessagePack;
-import org.msgpack.core.MessagePacker;
-import org.msgpack.core.MessageUnpacker;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.mini.msgpack.MsgPackException;
+import org.platformlambda.mini.msgpack.MsgPackFormat;
+import org.platformlambda.mini.msgpack.MsgPackReader;
+import org.platformlambda.mini.msgpack.MsgPackType;
+import org.platformlambda.mini.msgpack.MsgPackWriter;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -70,7 +71,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * serializer has no ordered-keys option, and an ordered-keys option such as Jackson's sorts by {@code String}
  * order (UTF-16), which differs from the byte order of another engine for characters above U+FFFF. The input
  * map may be of any kind (a Gson {@code LinkedTreeMap}, a {@code HashMap}, a {@code LinkedHashMap}); its own
- * order never reaches the bytes. The bytes are written through msgpack-core directly rather than through
+ * order never reaches the bytes. The bytes are written through the minimalist-msgpack writer directly rather than through
  * {@link MsgPack}, because that serializer drops null values unless a configuration switch is set, packs a
  * {@code Float} as float32 and writes a {@code BigDecimal} zero as {@code "0.00"}, and the profile allows none of
  * the three.
@@ -188,10 +189,9 @@ public final class CanonicalPackager {
      * @throws IllegalArgumentException for a value the profile rejects, naming its path
      */
     public static byte[] encode(Object value) throws IOException {
-        try (var packer = MessagePack.newDefaultBufferPacker()) {
-            write(packer, value, "$", 0);
-            return packer.toByteArray();
-        }
+        var writer = new MsgPackWriter();
+        write(writer, value, "$", 0);
+        return writer.toByteArray();
     }
 
     /**
@@ -251,13 +251,14 @@ public final class CanonicalPackager {
      *         the value, or nesting beyond the bound
      */
     public static Object decode(byte[] bytes) throws IOException {
-        try (var unpacker = MessagePack.newDefaultUnpacker(bytes)) {
-            var value = read(unpacker, "$", 0);
-            if (unpacker.hasNext()) {
+        var reader = new MsgPackReader(bytes);
+        try {
+            var value = read(reader, "$", 0);
+            if (reader.hasNext()) {
                 throw new IOException("Unexpected bytes after the value");
             }
             return value;
-        } catch (org.msgpack.core.MessagePackException e) {
+        } catch (MsgPackException e) {
             throw new IOException("Malformed MsgPack: " + e.getMessage(), e);
         }
     }
@@ -292,56 +293,52 @@ public final class CanonicalPackager {
         return result;
     }
 
-    private static void write(MessagePacker packer, Object value, String path, int depth) throws IOException {
+    private static void write(MsgPackWriter writer, Object value, String path, int depth) {
         if (depth > MAX_DEPTH) {
             throw new IllegalArgumentException("Nesting deeper than " + MAX_DEPTH + " at " + path);
         }
         switch (value) {
-            case null -> packer.packNil();
-            case Map<?, ?> map -> writeMap(packer, map, path, depth);
-            case byte[] bytes -> {
-                packer.packBinaryHeader(bytes.length);
-                packer.writePayload(bytes);
-            }
-            case Collection<?> collection -> writeList(packer, collection, path, depth);
-            case Object[] array -> writeList(packer, Arrays.asList(array), path, depth);
-            case String text -> packer.packString(text);
-            case Boolean flag -> packer.packBoolean(flag);
-            case Byte n -> packer.packLong(n);
-            case Short n -> packer.packLong(n);
-            case Integer n -> packer.packLong(n);
-            case Long n -> packer.packLong(n);
-            case AtomicInteger n -> packer.packLong(n.get());
-            case AtomicLong n -> packer.packLong(n.get());
-            case Double d -> writeDouble(packer, d, path);
-            case Float f -> writeDouble(packer, Double.parseDouble(f.toString()), path);
-            case BigInteger n -> packer.packString(n.toString());
-            case BigDecimal n -> packer.packString(canonical(n));
-            case Date date -> packer.packString(Utility.getInstance().date2str(date));
-            case Instant instant -> packer.packString(Utility.getInstance().date2str(Date.from(instant)));
+            case null -> writer.writeNil();
+            case Map<?, ?> map -> writeMap(writer, map, path, depth);
+            case byte[] bytes -> writer.writeBinary(bytes);
+            case Collection<?> collection -> writeList(writer, collection, path, depth);
+            case Object[] array -> writeList(writer, Arrays.asList(array), path, depth);
+            case String text -> writer.writeString(text);
+            case Boolean flag -> writer.writeBoolean(flag);
+            case Byte n -> writer.writeLong(n);
+            case Short n -> writer.writeLong(n);
+            case Integer n -> writer.writeLong(n);
+            case Long n -> writer.writeLong(n);
+            case AtomicInteger n -> writer.writeLong(n.get());
+            case AtomicLong n -> writer.writeLong(n.get());
+            case Double d -> writeDouble(writer, d, path);
+            case Float f -> writeDouble(writer, Double.parseDouble(f.toString()), path);
+            case BigInteger n -> writer.writeString(n.toString());
+            case BigDecimal n -> writer.writeString(canonical(n));
+            case Date date -> writer.writeString(Utility.getInstance().date2str(date));
+            case Instant instant -> writer.writeString(Utility.getInstance().date2str(Date.from(instant)));
             default -> throw new IllegalArgumentException(
                     "Unsupported type " + value.getClass().getName() + " at " + path);
         }
     }
 
-    private static void writeDouble(MessagePacker packer, double value, String path) throws IOException {
+    private static void writeDouble(MsgPackWriter writer, double value, String path) {
         if (Double.isNaN(value) || Double.isInfinite(value)) {
             throw new IllegalArgumentException("A non-finite number is not canonical at " + path + ": " + value);
         }
-        packer.packDouble(value);
+        writer.writeDouble(value);
     }
 
-    private static void writeList(MessagePacker packer, Collection<?> list, String path, int depth)
-            throws IOException {
-        packer.packArrayHeader(list.size());
+    private static void writeList(MsgPackWriter writer, Collection<?> list, String path, int depth) {
+        writer.writeArrayHeader(list.size());
         int i = 0;
         for (var item : list) {
-            write(packer, item, path + "[" + i + "]", depth + 1);
+            write(writer, item, path + "[" + i + "]", depth + 1);
             i++;
         }
     }
 
-    private static void writeMap(MessagePacker packer, Map<?, ?> map, String path, int depth) throws IOException {
+    private static void writeMap(MsgPackWriter writer, Map<?, ?> map, String path, int depth) {
         // keys become text; sorted by UTF-8 bytes (a TreeMap would sort by UTF-16, which differs above U+FFFF)
         var sorted = new ArrayList<Map.Entry<byte[], Map.Entry<String, Object>>>(map.size());
         var seen = new java.util.HashSet<String>();
@@ -357,11 +354,11 @@ public final class CanonicalPackager {
                     new java.util.AbstractMap.SimpleImmutableEntry<>(key, entry.getValue())));
         }
         sorted.sort((a, b) -> Arrays.compareUnsigned(a.getKey(), b.getKey()));
-        packer.packMapHeader(sorted.size());
+        writer.writeMapHeader(sorted.size());
         for (var item : sorted) {
             var key = item.getValue().getKey();
-            packer.packString(key);
-            write(packer, item.getValue().getValue(), path + "." + key, depth + 1);
+            writer.writeString(key);
+            write(writer, item.getValue().getValue(), path + "." + key, depth + 1);
         }
     }
 
@@ -379,77 +376,77 @@ public final class CanonicalPackager {
         return (value.scale() < 0? value.setScale(0, java.math.RoundingMode.UNNECESSARY) : value).toPlainString();
     }
 
-    private static Object read(MessageUnpacker unpacker, String path, int depth) throws IOException {
+    private static Object read(MsgPackReader reader, String path, int depth) throws IOException {
         if (depth > MAX_DEPTH) {
             throw new IOException("Nesting deeper than " + MAX_DEPTH + " at " + path);
         }
-        MessageFormat format = unpacker.getNextFormat();
-        switch (format.getValueType()) {
+        MsgPackFormat format = reader.nextFormat();
+        switch (format.getType()) {
             case NIL -> {
-                unpacker.unpackNil();
+                reader.readNil();
                 return null;
             }
             case BOOLEAN -> {
-                return unpacker.unpackBoolean();
+                return reader.readBoolean();
             }
             case INTEGER -> {
-                return readInteger(unpacker, format);
+                return readInteger(reader, format);
             }
             case FLOAT -> {
-                return readFloat(unpacker, format);
+                return readFloat(reader, format);
             }
             case STRING -> {
-                return unpacker.unpackString();
+                return reader.readString();
             }
             case BINARY -> {
-                return unpacker.readPayload(unpacker.unpackBinaryHeader());
+                return reader.readBinary();
             }
             case ARRAY -> {
-                return readList(unpacker, path, depth);
+                return readList(reader, path, depth);
             }
             case MAP -> {
-                return readMap(unpacker, path, depth);
+                return readMap(reader, path, depth);
             }
             default -> throw new IOException("Unsupported MsgPack type " + format + " at " + path);
         }
     }
 
-    private static Object readInteger(MessageUnpacker unpacker, MessageFormat format) throws IOException {
-        return format == MessageFormat.UINT64? readUnsigned64(unpacker) : (Object) unpacker.unpackLong();
+    private static Object readInteger(MsgPackReader reader, MsgPackFormat format) throws IOException {
+        return format == MsgPackFormat.UINT64? readUnsigned64(reader) : (Object) reader.readLong();
     }
 
-    private static Object readFloat(MessageUnpacker unpacker, MessageFormat format) throws IOException {
-        return format == MessageFormat.FLOAT32? (Object) unpacker.unpackFloat() : unpacker.unpackDouble();
+    private static Object readFloat(MsgPackReader reader, MsgPackFormat format) throws IOException {
+        return format == MsgPackFormat.FLOAT32? (Object) reader.readFloat() : reader.readDouble();
     }
 
-    private static List<Object> readList(MessageUnpacker unpacker, String path, int depth) throws IOException {
-        int size = unpacker.unpackArrayHeader();
+    private static List<Object> readList(MsgPackReader reader, String path, int depth) throws IOException {
+        int size = reader.readArrayHeader();
         var list = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            list.add(read(unpacker, path + "[" + i + "]", depth + 1));
+            list.add(read(reader, path + "[" + i + "]", depth + 1));
         }
         return list;
     }
 
-    private static Map<String, Object> readMap(MessageUnpacker unpacker, String path, int depth)
+    private static Map<String, Object> readMap(MsgPackReader reader, String path, int depth)
             throws IOException {
-        int size = unpacker.unpackMapHeader();
+        int size = reader.readMapHeader();
         var map = new LinkedHashMap<String, Object>();
         for (int i = 0; i < size; i++) {
-            if (unpacker.getNextFormat().getValueType() != org.msgpack.value.ValueType.STRING) {
+            if (reader.nextFormat().getType() != MsgPackType.STRING) {
                 throw new IOException("A key is not text at " + path);
             }
-            var key = unpacker.unpackString();
+            var key = reader.readString();
             if (map.containsKey(key)) {
                 throw new IOException("Duplicate key '" + key + "' at " + path);
             }
-            map.put(key, read(unpacker, path + "." + key, depth + 1));
+            map.put(key, read(reader, path + "." + key, depth + 1));
         }
         return map;
     }
 
-    private static Object readUnsigned64(MessageUnpacker unpacker) throws IOException {
-        BigInteger n = unpacker.unpackBigInteger();
+    private static Object readUnsigned64(MsgPackReader reader) throws IOException {
+        BigInteger n = reader.readBigInteger();
         return n.bitLength() < 64? (Object) n.longValue() : n;
     }
 }

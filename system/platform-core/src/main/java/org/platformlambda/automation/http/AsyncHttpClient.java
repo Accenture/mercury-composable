@@ -44,7 +44,6 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
 import org.platformlambda.core.serializers.SimpleXmlWriter;
 import org.platformlambda.core.system.*;
-import org.msgpack.core.MessagePackException;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.core.util.W3cTrace;
@@ -742,7 +741,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
             }
             try {
                 return new EventEnvelope(b);
-            } catch (IllegalArgumentException | MessagePackException e) {
+            } catch (IllegalArgumentException e) {
                 EventEnvelope restError = restErrorReply(b);
                 return restError != null? restError : new EventEnvelope().setStatus(400)
                         .setBody("Did you configure rest.yaml correctly? Invalid result set - " + e.getMessage());
@@ -949,7 +948,7 @@ public class AsyncHttpClient implements TypedLambdaFunction<EventEnvelope, Void>
                 final EventEnvelope decoded;
                 try {
                     decoded = new EventEnvelope(util.base64ToBytes(text));
-                } catch (IllegalArgumentException | MessagePackException e) {
+                } catch (IllegalArgumentException e) {
                     failInBand(500, "Invalid event stream - malformed envelope frame");
                     return;
                 }
