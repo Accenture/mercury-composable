@@ -135,38 +135,51 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
     own unchecked exceptions; and a `uint 64` above `Long.MAX_VALUE`, which another encoder may send, reads as a `BigInteger`
     instead of failing.
 
+12. **A MsgPack payload holds exactly one value: bytes after the top-level container are refused.** `MsgPack.unpack` and
+    `unpackMapOrList` read one map or list and stopped there, so `80 c1` - an empty map, then the format byte the specification
+    never uses - decoded as an empty map, while `CanonicalPackager.decode` refused the same bytes as `Unexpected bytes after the
+    value`; msgpack-core had behaved the same way, so this was a standing gap, found by an independent correctness review of the
+    new codec. Now every decoder of the engine applies the canonical decoder's rule: bytes after the value, well-formed or not,
+    are a decoding error (`IOException: Unexpected bytes after the value at offset N`; `IllegalArgumentException` at
+    `EventEnvelope`; HTTP 400 at the Event API), so two different byte strings never decode to the same value. The shared vector
+    file `msgpack-hostile-header-vectors.json` gains the two inputs (`80 c1`, and `80 c0` to show the rule is about what follows
+    the value, not about an invalid byte; 24 rejects now), byte-identical with the Rust engine's copy, and the claim
+    `msgpack-exactly-one-value` states the rule in the wire format (rule 11) and the envelope reference. The Rust engine changes
+    the same way (Increment 165). Upgrade note: a producer that appends bytes after a serialized envelope - none is known; every
+    transport of the engine delivers exact byte arrays - now gets a decoding error instead of a silent decode of the value alone.
+
 ### Documentation
 
-12. **The LLM helper certification report** (`docs/test-reports/llm-helper-certification.md`): Java and Rust, each in front of the
+13. **The LLM helper certification report** (`docs/test-reports/llm-helper-certification.md`): Java and Rust, each in front of the
    Python and the Node.js helper, driven through a streaming service, an Event Script flow and two graphs with real Claude
    calls. It shows that every token batch the helper forwards reaches the engine edge as its own frame, that the cadence of
    progressive rendering is the API's and differs by model (Haiku streams continuously, Opus in bursts about every 600 ms),
    and that the error contract holds on the real SDKs.
-13. The AI agent guide's boilerplate manifest no longer calls `flows/flow-11.yml` a support-triage flow: it is Tutorial 11's echo
+14. The AI agent guide's boilerplate manifest no longer calls `flows/flow-11.yml` a support-triage flow: it is Tutorial 11's echo
    flow, the `graph.extension` target (`flow://flow-11`), and a flow's `flows.yaml` entry goes with its file.
 
-14. **The Playground webapp's technical documentation is regenerated from the code** in
+15. **The Playground webapp's technical documentation is regenerated from the code** in
    `system/minigraph-playground-engine/webapp/docs/`: architecture, the backend protocol, components, hooks and state,
    build/test/deploy and extension recipes, replacing the pre-graduation specs. The webapp's scoped memory bank is retired; its
    session memory and open threads live at the repository root.
 
-15. **The JSONPath result shape is documented and pinned on both engines.** The Event Script syntax page states Jayway's rule:
+16. **The JSONPath result shape is documented and pinned on both engines.** The Event Script syntax page states Jayway's rule:
    a definite path (child member names and single indexes only) yields the value, or null when it is absent, and an indefinite
    path (a filter, a wildcard, a deep scan `..`, a slice or a union) always yields a list - one match is a one-element list and
    none an empty list - unless a member name before its first indefinite step is missing, which yields null. The knowledge-graph
    grammar's `$.…` entry points at it; the claim `json-path-result-shape` and the shared fixture `unit-test-jsonpath-1` pin it.
    Nothing changes in this engine. The Rust engine had shaped a result by the number of matches and now follows the same rule.
 
-16. **The graph-set decisions are recorded.** RFC-0005 (graph sets: the command-line packager, the Playground's packaging panel
+17. **The graph-set decisions are recorded.** RFC-0005 (graph sets: the command-line packager, the Playground's packaging panel
    and packaged sets in the deployment manifest) is promoted to ADR-0027, with Eric's rule that a set holds one graph or more so
    that one graph can be signed on its own. The canonical package guide points to it.
 
-17. **RFC-0006, the in-house MessagePack codec, is promoted to ADR-0028.** The decision record states what the project now
+18. **RFC-0006, the in-house MessagePack codec, is promoted to ADR-0028.** The decision record states what the project now
     owns - the format table, the smallest-format rule shared with the Rust engine, the reader's robustness rules, the module's
     home in `system/` and the three behaviour changes of the codec entry above - and why: a flagged dependency with no fixed
     release at the serialization foundation of every event. The RFC register keeps the proposal with its resolution.
 
-18. **The empty-input rule of the MsgPack decoders is stated and pinned.** An empty payload decodes as an empty map at
+19. **The empty-input rule of the MsgPack decoders is stated and pinned.** An empty payload decodes as an empty map at
     `MsgPack.unpack`, so an empty byte array is an empty envelope and never a decoding error, while `CanonicalPackager.decode`
     refuses it, because a package is never empty - the behaviour this engine always had, now wire-format rule 10, a sentence in
     the envelope reference, the claim `msgpack-empty-input`, and a control in the shared vector file that the event codec accepts
@@ -175,33 +188,33 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
 
 ### Fixed
 
-19. **The MiniGraph Playground example deploys tutorial 13.** The example's manifest (`graphs.yaml`) listed tutorials 1 to 12 and 14.
+20. **The MiniGraph Playground example deploys tutorial 13.** The example's manifest (`graphs.yaml`) listed tutorials 1 to 12 and 14.
    Tutorial 13 was left out while it needed a test fixture function, and stayed out after it became an `async.http.request` client
    of the app's own dev mock endpoint (Java PR #267). All fourteen tutorials and `support-triage` now compile (15 graphs) and answer
    at `POST /api/graph/{graph_id}`; `GraphTests` runs tutorial 13 and its unknown-profile error. The README's "model answers for
    tutorials 1 to 11" now says 1 to 14.
-20. **The MiniGraph Playground's help describes `CONDITION` and `DECIMAL`.** The help pages are compiled into the committed webapp
+21. **The MiniGraph Playground's help describes `CONDITION` and `DECIMAL`.** The help pages are compiled into the committed webapp
    bundle, which was last regenerated on 2026-09-23, so `help graph-math` still listed five statement types and said nothing of
    `CONDITION` (#462), the closed expression dialect (#467), `DECIMAL` (#471) or the money guidance (#480). The bundle is regenerated
    with `npm run release` in the webapp: the help now lists seven statement types, shows `DECIMAL` and `CONDITION` in its property
    list and gives the syntax of both. Nothing else in the bundle changed: a rebuild of the unchanged sources reproduces every other
    asset, source maps included, byte for byte.
-21. **The MiniGraph Playground opens with the console at one third of the width.** The graph view and help take the other two
+22. **The MiniGraph Playground opens with the console at one third of the width.** The graph view and help take the other two
    thirds; the console opened at 40%. The split is no longer restored from an earlier session: a drag saved in the browser won at
    the next page load, so an old drag looked like a wrong default, while toggling the console reset it. A drag still holds while
    you work, until the console is toggled or a form takes its place. The node editor and the mock-input panel keep their 30%.
-22. **`describe skill` for a built-in skill opens the skill's page in the Playground's help panel.** The engine answers
+23. **`describe skill` for a built-in skill opens the skill's page in the Playground's help panel.** The engine answers
    `describe skill graph.math` with the `graph-math` help page, and the console cannot render its markdown. The Playground now shows
    that page in the help panel, as it does for `help graph-math`, and the console keeps only the command. `describe graph`,
    `describe node` and `describe connection` still answer in the console, and so does a skill without a bundled page. The engine
    and the companion API are unchanged: `describe skill` still returns the page as text.
-23. **A subscribed MiniGraph Playground session can instantiate and run the graph.** Subscribed sessions are equal partners, and the
+24. **A subscribed MiniGraph Playground session can instantiate and run the graph.** Subscribed sessions are equal partners, and the
    engine already runs a subscriber's command through the primary in every member's session, but the Playground disabled
    **Instantiate** and **Run** in a subscribed session ("Run the graph from the host session"), so a subscriber could not start a
    graph instance or upload its mock input. Both buttons now work in every session. Subscribing or unsubscribing still resets the run controls. (The per-member
    mock input and the prompt every member received were reworked the same day: the run controls became three steps and an upload now
    loads every member's instance; see the items below.)
-24. **Pasting a workspace-clipboard node into the MiniGraph Playground keeps scalar properties scalar.** The paste rebuilt the
+25. **Pasting a workspace-clipboard node into the MiniGraph Playground keeps scalar properties scalar.** The paste rebuilt the
    node with `key[]=value` for every property, and the engine appends on the `[]` signature, so a pasted node's `skill`,
    `description` and every other scalar arrived as a one-element list (`"skill": ["graph.math"]`), which the graph traveler
    reads as the route `[graph.math]`. The paste now writes the node the way the engine's own `edit node` prints it: `key=value`
@@ -209,12 +222,12 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    value, through the same conversion and command builder as the node editor and undo. A node the grammar cannot carry (an
    empty list or map, a value containing `'''`, more than one type) is reported as "Paste failed" instead of being sent. The
    webapp bundle is regenerated for both engines.
-25. **A mock-data upload reaches every member of a collaborative MiniGraph Playground session.** `POST /api/mock/{id}` loaded the
+26. **A mock-data upload reaches every member of a collaborative MiniGraph Playground session.** `POST /api/mock/{id}` loaded the
    payload into the uploader's instance only, so another member's replayed `run` executed without it and aborted. The upload now
    travels like a command: the primary loads it and replays it into every subscriber's instance, a subscriber's upload goes through
    the primary, and every member's console prints `Mock data loaded into 'input.body' namespace`. A session without a graph
    instance is still refused (HTTP 400). The Rust engine carries the same change.
-26. **A knowledge-graph mapping source inserts its `{namespace.key}` values verbatim.** A mapping source may embed a reference
+27. **A knowledge-graph mapping source inserts its `{namespace.key}` values verbatim.** A mapping source may embed a reference
    that resolves before the source is read: a key segment (`census-2020.{model.state}`, the read of a keyed table), a list index
    (`input.body.items[{model.i}]`), or text in a constant or a plugin argument. When the source text contained `!`, `<`, `>`, `==`,
    `&&` or `||`, every text value was quoted as if the source were a boolean expression: `text(Hello {input.body.name}!)` gave
@@ -226,7 +239,7 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    null or non-numeric value. The Rust engine carries the same change. READ: a mapping that relied on the quotes, a text
    constant with one of those characters around a reference, now gets the bare value.
 
-27. **A graph imported into the MiniGraph Playground drops its null properties.** The draft import - the Import Graph button and
+28. **A graph imported into the MiniGraph Playground drops its null properties.** The draft import - the Import Graph button and
     file drop (`POST /api/graph/import/{id}`), its replay to a shared session, and `import graph from` a file or a deployed model -
     filters a `"key": null` out before it imports the model, as an application does when it loads a deployed graph, instead of
     refusing it with `value cannot be null`. It no longer depends on `serializer.null.transport`, which decides only whether the
@@ -234,25 +247,25 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
     deployed graph exactly as this engine's configuration reader does (nulls, empty maps and lists, and a null at the end of a list
     are dropped), pinned by the shared vector file `graph-read-normalization-vectors.json`. Upgrade note: none.
 
-28. **A MsgPack payload nested deeper than 64 maps and lists is refused.** platform-core's `MsgPack` reader recursed once
+29. **A MsgPack payload nested deeper than 64 maps and lists is refused.** platform-core's `MsgPack` reader recursed once
    per level with no bound, so a crafted payload of about 100 KB, such as an Event API request, ended in `StackOverflowError`,
    which no caller catches. It now refuses nesting deeper than 64 levels (`MsgPack.MAX_DEPTH`, the outermost container being
    level 1, the canonical packager's bound too) with `IOException: Nesting deeper than 64 levels`, a decoding error:
    `EventEnvelope` reports it as an `IllegalArgumentException`, and the Event API answers HTTP 400. The Rust engine applies the
    same limit. Upgrade note: an event body may nest at most 63 levels inside its envelope; real payloads are far shallower.
 
-29. **The elastic queue's holding folder is removed at shutdown.** The shutdown hook purged the overflow segment files and the
+30. **The elastic queue's holding folder is removed at shutdown.** The shutdown hook purged the overflow segment files and the
     `RUNNING` marker but left the per-instance folder `<app>-<origin>` under `transient.data.store`, so every run of an application,
     a test JVM included, added an empty folder. The hook now removes the folder once it is empty. With `running.in.cloud=true` the
     folder is the configured store itself, so it stays, as does a folder that holds files of another kind. The Rust engine's
     `shutdown_cleanup` does the same. Upgrade note: none; the empty folders that earlier runs left can be deleted.
 
-30. **The standalone Kafka and Redis helpers remove their data folder after stopping.** `kafka-standalone` (`/tmp/kafka-logs`, and
+31. **The standalone Kafka and Redis helpers remove their data folder after stopping.** `kafka-standalone` (`/tmp/kafka-logs`, and
     `/tmp/kafka2-logs` with `dual.servers`) and `redis-standalone` (`/tmp/soa-redis`) wipe their data folder at every start, so
     nothing in it survived a restart; they now also remove it once the server has stopped, and a test suite that embeds them no
     longer leaves the broker's partitions or the Redis dump behind. Upgrade note: none (development helpers).
 
-31. **An HTTP upload's temporary file is deleted when its exchange ends.** `AsyncHttpClient` buffers a streamed request body (a PUT
+32. **An HTTP upload's temporary file is deleted when its exchange ends.** `AsyncHttpClient` buffers a streamed request body (a PUT
     or POST from a stream, and multipart file uploads) in `async.http.temp` (default `/tmp/async-http-temp`), and only its 30-minute
     housekeeper removed those files, although the code said they were removed after relay: an uploaded file's content stayed on
     disk for up to 30 minutes, and a short-lived process, such as a test JVM, left it behind. The client now deletes them when the

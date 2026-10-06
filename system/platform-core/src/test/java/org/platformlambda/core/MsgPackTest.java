@@ -21,6 +21,7 @@ package org.platformlambda.core;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.PoJo;
+import org.platformlambda.core.serializers.CanonicalPackager;
 import org.platformlambda.core.serializers.MsgPack;
 import org.platformlambda.core.serializers.PayloadMapper;
 import org.platformlambda.core.serializers.SimpleMapper;
@@ -511,6 +512,24 @@ class MsgPackTest {
     }
 
     @SuppressWarnings("unchecked")
+    @Test
+    void bytesAfterTheValueAreRefused() throws IOException {
+        // the input holds exactly one value: a byte after the top-level container is a decoding error whatever it is,
+        // through the event codec as through the canonical decoder, which always refused it; the Rust engine applies
+        // the same rule, and the shared hostile-header vectors pin both inputs in both engines
+        byte[] neverUsed = {(byte) 0x80, (byte) 0xc1};  // an empty map, then the format byte the specification never uses
+        byte[] wellFormed = {(byte) 0x80, (byte) 0xc0}; // an empty map, then a well-formed nil
+        for (byte[] bytes : List.of(neverUsed, wellFormed)) {
+            var e = assertThrows(IOException.class, () -> msgPack.unpack(bytes));
+            assertEquals("Unexpected bytes after the value at offset 1", e.getMessage());
+            assertThrows(IOException.class, () -> msgPack.unpackMapOrList(bytes));
+            assertThrows(IllegalArgumentException.class, () -> new EventEnvelope(bytes));
+            assertThrows(IOException.class, () -> CanonicalPackager.decode(bytes));
+        }
+        // the value alone decodes: the rule refuses what follows the value, not the value
+        assertEquals(Map.of(), msgPack.unpack(new byte[]{(byte) 0x80}));
+    }
+
     @Test
     void aUint64AboveLongMaxReadsAsBigInteger() throws IOException {
         // this serializer never writes one, but another MessagePack encoder may: {"n": 2^64 - 1}

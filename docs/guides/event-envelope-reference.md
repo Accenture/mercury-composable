@@ -55,6 +55,11 @@ Empty input decodes as an empty map, so an empty byte array is an empty envelope
 canonical package decoder refuses it, because a package is never empty. This engine is the reference implementation
 and the Rust engine follows it.
 
+Bytes after the top-level container, well-formed or not, are refused as a decoding error: a payload holds exactly one
+value, in the event codec as in the canonical package decoder. `MsgPack` throws `IOException: Unexpected bytes after
+the value at offset N`, `EventEnvelope` reports it as an `IllegalArgumentException`, and the Event API answers such a
+request with HTTP 400; the Rust engine applies the same rule.
+
 ---
 
 ## Creating an EventEnvelope
