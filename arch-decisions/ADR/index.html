@@ -3637,8 +3637,9 @@ checks can run wherever a graph is packed.</p>
   fronts over the engine's packager and the shared gate: <code>pack</code> (graph files, a folder, or the graphs a deployment manifest lists,
   with <code>--from-manifest</code>), <code>unpack</code> (readable JSON in canonical key order) and <code>inspect [--json]</code> (the manifest, the graphs, the
   size and the SHA-256); exit codes 0, 1 for a refused input and 2 for an I/O or format error.</li>
-<li><strong>The Playground packs on the engine (D7, D9).</strong> A packaging panel calls the dev-mode <code>POST /api/graph/pack</code> and
-  <code>POST /api/graph/unpack</code>; there is no packager in the browser.</li>
+<li><strong>The Playground packs on the engine (D7, D9).</strong> A packaging panel calls the dev-mode <code>POST /api/graph-set/pack</code> and
+  <code>POST /api/graph-set/unpack</code>; there is no packager in the browser. (Amended 2026-10-06, when WP4 shipped: the paths were first
+  <code>/api/graph/pack</code> and <code>/api/graph/unpack</code>, which collided with the executor's <code>/api/graph/{graph_id}</code>.)</li>
 <li><strong>Deployment through the manifest.</strong> A deployment manifest may list <code>sets</code> (each read from <code>&lt;location&gt;/&lt;set&gt;.pack</code>) beside its
   <code>graphs</code>, and then names <code>unpack</code>: a <code>file:/</code> folder the application can read and write (<code>classpath:</code> is rejected, as are the
   Playground's temporary folder and a folder another manifest uses). Before the gate each set is read strictly, its names are
