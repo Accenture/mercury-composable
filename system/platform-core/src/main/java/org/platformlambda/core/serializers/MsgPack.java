@@ -39,6 +39,12 @@ public class MsgPack {
     private static final SimpleObjectMapper mapper = SimpleMapper.getInstance().getMapper();
     private static final String DATA = "_D";
     private static final String TYPE = "_T";
+    /**
+     * The deepest nesting of maps and lists an unpack accepts, the outermost container being level 1. The
+     * reader recurses once per level, so a payload nested deeper is refused with an IOException instead of
+     * exhausting the thread's stack. The Rust engine applies the same limit to its decoder.
+     */
+    public static final int MAX_DEPTH = 64;
     private final boolean supportNulls;
 
     public MsgPack() {
@@ -96,8 +102,8 @@ public class MsgPack {
                 MessageFormat mf = handler.getNextFormat();
                 ValueType type = mf.getValueType();
                 return switch (type) {
-                    case ValueType.MAP -> unpack(handler, new HashMap<>());
-                    case ValueType.ARRAY -> unpack(handler, new ArrayList<>());
+                    case ValueType.MAP -> unpack(handler, new HashMap<>(), 1);
+                    case ValueType.ARRAY -> unpack(handler, new ArrayList<>(), 1);
                     default -> throw new MessageFormatException("Packed input should be Map or List, Actual: " + type);
                 };
             }
@@ -112,7 +118,9 @@ public class MsgPack {
         return new HashMap<String, Object>();
     }
 
-    private Map<String, Object> unpack(MessageUnpacker handler, Map<String, Object> map) throws IOException {
+    private Map<String, Object> unpack(MessageUnpacker handler, Map<String, Object> map, int depth)
+            throws IOException {
+        checkDepth(depth);
         int n = handler.unpackMapHeader();
         for (int i=0; i < n; i++) {
             String key = handler.unpackString();
@@ -122,12 +130,12 @@ public class MsgPack {
                 case MAP -> {
                     Map<String, Object> submap = new HashMap<>();
                     map.put(key, submap);
-                    unpack(handler, submap);
+                    unpack(handler, submap, depth + 1);
                 }
                 case ARRAY -> {
                     List<Object> array = new ArrayList<>();
                     map.put(key, array);
-                    unpack(handler, array);
+                    unpack(handler, array, depth + 1);
                 }
                 default -> {
                     Object value = unpackValue(handler, mf);
@@ -140,7 +148,8 @@ public class MsgPack {
         return map;
     }
 
-    private List<Object> unpack(MessageUnpacker handler, List<Object> list) throws IOException {
+    private List<Object> unpack(MessageUnpacker handler, List<Object> list, int depth) throws IOException {
+        checkDepth(depth);
         int len = handler.unpackArrayHeader();
         for (int i=0; i < len; i++) {
             MessageFormat mf = handler.getNextFormat();
@@ -149,18 +158,24 @@ public class MsgPack {
                 case MAP -> {
                     Map<String, Object> submap = new HashMap<>();
                     list.add(submap);
-                    unpack(handler, submap);
+                    unpack(handler, submap, depth + 1);
                 }
                 case ARRAY -> {
                     List<Object> array = new ArrayList<>();
                     list.add(array);
-                    unpack(handler, array);
+                    unpack(handler, array, depth + 1);
                 }
                 // null value is allowed to preserve the original sequence of the list
                 default -> list.add(unpackValue(handler, mf));
             }
         }
         return list;
+    }
+
+    private static void checkDepth(int depth) throws IOException {
+        if (depth > MAX_DEPTH) {
+            throw new IOException("Nesting deeper than " + MAX_DEPTH + " levels");
+        }
     }
 
     private Object unpackValue(MessageUnpacker handler, MessageFormat mf) throws IOException {

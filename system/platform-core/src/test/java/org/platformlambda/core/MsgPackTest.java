@@ -427,4 +427,64 @@ class MsgPackTest {
         assertEquals(pojo.getName(), result.getName());
         assertEquals(pojo.getAddress(), result.getAddress());
     }
+
+    @Test
+    void nestingUpToTheLimitUnpacks() throws IOException {
+        // 64 nested lists, the outermost being level 1, unpack; the innermost holds a nil
+        assertEquals(MsgPack.MAX_DEPTH, listDepth(msgPack.unpackMapOrList(nestedLists(MsgPack.MAX_DEPTH))));
+        assertInstanceOf(Map.class, msgPack.unpackMapOrList(nestedMaps(MsgPack.MAX_DEPTH)));
+        assertInstanceOf(Map.class, msgPack.unpackMapOrList(nestedMix(MsgPack.MAX_DEPTH)));
+    }
+
+    @Test
+    void nestingBeyondTheLimitIsRefused() {
+        // one level more is refused by name; maps count like lists, and so does a mix of both
+        var e = assertThrows(IOException.class, () -> msgPack.unpackMapOrList(nestedLists(MsgPack.MAX_DEPTH + 1)));
+        assertEquals("Nesting deeper than 64 levels", e.getMessage());
+        assertThrows(IOException.class, () -> msgPack.unpackMapOrList(nestedMaps(MsgPack.MAX_DEPTH + 1)));
+        assertThrows(IOException.class, () -> msgPack.unpackMapOrList(nestedMix(MsgPack.MAX_DEPTH + 1)));
+    }
+
+    @Test
+    void aDeeplyNestedPayloadIsRefusedBeforeTheStackRunsOut() {
+        // 100,000 nested lists, about 100 KB, used to end in StackOverflowError, which no caller catches
+        assertThrows(IOException.class, () -> msgPack.unpack(nestedLists(100_000)));
+    }
+
+    // each 0x91 opens a list of one element; the innermost element is nil (0xc0)
+    private static byte[] nestedLists(int depth) {
+        var bytes = new byte[depth + 1];
+        Arrays.fill(bytes, 0, depth, (byte) 0x91);
+        bytes[depth] = (byte) 0xc0;
+        return bytes;
+    }
+
+    // each level is a map of one entry, the key "a" (0x81 0xa1 0x61); the innermost value is nil
+    private static byte[] nestedMaps(int depth) {
+        var out = new java.io.ByteArrayOutputStream();
+        for (int i = 0; i < depth; i++) {
+            out.writeBytes(new byte[]{(byte) 0x81, (byte) 0xa1, 0x61});
+        }
+        out.write(0xc0);
+        return out.toByteArray();
+    }
+
+    // maps and lists alternate, starting with a map
+    private static byte[] nestedMix(int depth) {
+        var out = new java.io.ByteArrayOutputStream();
+        for (int i = 0; i < depth; i++) {
+            out.writeBytes(i % 2 == 0 ? new byte[]{(byte) 0x81, (byte) 0xa1, 0x61} : new byte[]{(byte) 0x91});
+        }
+        out.write(0xc0);
+        return out.toByteArray();
+    }
+
+    private static int listDepth(Object value) {
+        int depth = 0;
+        while (value instanceof List<?> list) {
+            depth++;
+            value = list.isEmpty() ? null : list.getFirst();
+        }
+        return depth;
+    }
 }

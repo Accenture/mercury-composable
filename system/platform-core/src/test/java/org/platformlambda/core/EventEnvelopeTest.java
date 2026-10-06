@@ -570,4 +570,24 @@ class EventEnvelopeTest {
         assertEquals(500, new EventEnvelope().setException(new IOException("disk")).getStatus());
         assertEquals(422, new EventEnvelope().setException(new AppException(422, "invalid")).getStatus());
     }
+
+    @Test
+    void anEnvelopeNestedTooDeepIsADecodingError() {
+        // the envelope map is level 1, so a body may nest 63 levels and not 64 (the Rust engine counts the same way)
+        var accepted = new EventEnvelope(new EventEnvelope().setBody(nestedList(MsgPack.MAX_DEPTH - 1)).toBytes());
+        assertInstanceOf(List.class, accepted.getBody());
+        var bytes = new EventEnvelope().setBody(nestedList(MsgPack.MAX_DEPTH)).toBytes();
+        var e = assertThrows(IllegalArgumentException.class, () -> new EventEnvelope(bytes));
+        assertTrue(e.getMessage().contains("Nesting deeper than 64 levels"), e.getMessage());
+    }
+
+    private static List<Object> nestedList(int depth) {
+        List<Object> value = new ArrayList<>();
+        for (int i = 1; i < depth; i++) {
+            List<Object> outer = new ArrayList<>();
+            outer.add(value);
+            value = outer;
+        }
+        return value;
+    }
 }
