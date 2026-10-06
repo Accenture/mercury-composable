@@ -19,6 +19,7 @@
 package org.platformlambda.core;
 
 import org.junit.jupiter.api.Test;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.PoJo;
 import org.platformlambda.core.serializers.MsgPack;
 import org.platformlambda.core.serializers.PayloadMapper;
@@ -486,5 +487,59 @@ class MsgPackTest {
             value = list.isEmpty() ? null : list.getFirst();
         }
         return depth;
+    }
+
+    @Test
+    void truncatedBytesAreAnIOExceptionNeverAnUncheckedOne() throws IOException {
+        // the codec reports every malformed payload as an IOException, which EventEnvelope reports as
+        // IllegalArgumentException as its contract says; msgpack-core used to throw its own unchecked exceptions
+        var map = new HashMap<String, Object>();
+        map.put("hello", "world");
+        map.put("list", List.of(1, 2, 3));
+        map.put("nested", Map.of("k", 1.5d));
+        byte[] full = msgPack.pack(map);
+        for (int cut = 1; cut < full.length; cut++) {
+            byte[] truncated = Arrays.copyOf(full, cut);
+            assertThrows(IOException.class, () -> msgPack.unpack(truncated), "cut at " + cut);
+            assertThrows(IllegalArgumentException.class, () -> new EventEnvelope(truncated), "cut at " + cut);
+        }
+        // a top-level value that is not a Map or a List is an IOException too
+        var e = assertThrows(IOException.class, () -> msgPack.unpackMapOrList(new byte[]{(byte) 0xa1, 0x61}));
+        assertEquals("Packed input should be Map or List, Actual: STRING", e.getMessage());
+        // and so is the never-used format byte inside a payload
+        assertThrows(IOException.class, () -> msgPack.unpack(new byte[]{(byte) 0x81, (byte) 0xa1, 0x61, (byte) 0xc1}));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void aUint64AboveLongMaxReadsAsBigInteger() throws IOException {
+        // this serializer never writes one, but another MessagePack encoder may: {"n": 2^64 - 1}
+        byte[] bytes = {(byte) 0x81, (byte) 0xa1, 0x6e, (byte) 0xcf, (byte) 0xff, (byte) 0xff, (byte) 0xff,
+                (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff};
+        var restored = (Map<String, Object>) msgPack.unpackMapOrList(bytes);
+        assertEquals(new BigInteger("18446744073709551615"), restored.get("n"));
+        // a uint64 that fits a long is a Long, and a small one an Integer, as before
+        byte[] fits = {(byte) 0x81, (byte) 0xa1, 0x6e, (byte) 0xcf, 0, 0, 0, 1, 0, 0, 0, 0};
+        assertEquals(4294967296L, ((Map<String, Object>) msgPack.unpackMapOrList(fits)).get("n"));
+        byte[] small = {(byte) 0x81, (byte) 0xa1, 0x6e, (byte) 0xcf, 0, 0, 0, 0, 0, 0, 0, 5};
+        assertEquals(5, ((Map<String, Object>) msgPack.unpackMapOrList(small)).get("n"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void anExtensionValueReadsAsNull() throws IOException {
+        var config = AppConfigReader.getInstance();
+        var transportNulls = "true".equalsIgnoreCase(config.getProperty("serializer.null.transport", "false"));
+        // custom (extension) types are not supported: {"a": fixext1(type 1, 0x00), "b": "kept"} - "a" reads as null,
+        // which the map treats like any null, and the reader stays in step for "b"
+        byte[] bytes = {(byte) 0x82, (byte) 0xa1, 0x61, (byte) 0xd4, 0x01, 0x00,
+                (byte) 0xa1, 0x62, (byte) 0xa4, 'k', 'e', 'p', 't'};
+        var restored = (Map<String, Object>) msgPack.unpackMapOrList(bytes);
+        assertEquals("kept", restored.get("b"));
+        assertNull(restored.get("a"));
+        assertEquals(transportNulls, restored.containsKey("a"));
+        // in a list the null keeps its slot: [timestamp32 (fixext4, type -1), 1]
+        byte[] list = {(byte) 0x92, (byte) 0xd6, (byte) 0xff, 0, 0, 0, 0, 0x01};
+        assertEquals(Arrays.asList(null, 1), msgPack.unpackMapOrList(list));
     }
 }

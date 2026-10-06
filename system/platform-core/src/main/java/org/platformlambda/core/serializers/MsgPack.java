@@ -18,13 +18,14 @@
 
 package org.platformlambda.core.serializers;
 
-import org.msgpack.core.*;
-import org.msgpack.value.ValueType;
 import org.platformlambda.core.models.TypedPayload;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.mini.msgpack.MsgPackException;
+import org.platformlambda.mini.msgpack.MsgPackFormat;
+import org.platformlambda.mini.msgpack.MsgPackReader;
+import org.platformlambda.mini.msgpack.MsgPackWriter;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -33,6 +34,14 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * The event payload serializer and the general purpose Map/List codec, over the minimalist-msgpack reader and writer
+ * (a zero-dependency module of this repository, written from the MessagePack specification; no extension types).
+ * <p>
+ * Every decoding failure - truncated or malformed bytes, a nesting deeper than {@link #MAX_DEPTH}, a top-level value
+ * that is not a Map or a List - is an {@link IOException}; no unchecked exception leaves {@link #unpack(byte[])} for
+ * bytes that arrive from outside the process.
+ */
 public class MsgPack {
     private static final Utility util = Utility.getInstance();
     private static final PayloadMapper converter = PayloadMapper.getInstance();
@@ -89,56 +98,49 @@ public class MsgPack {
      * happens to contain a "_T" key is restored exactly as it was packed. Use this with
      * {@link #packMapOrList(Object)} when MsgPack is your application's own serializer rather than
      * the event payload codec.
+     * <p>
+     * Integers are restored with best effort type matching: an Integer when the value fits, a Long when it
+     * does not, and a BigInteger for a uint64 above Long.MAX_VALUE (which this serializer never writes, but
+     * another MessagePack encoder may). An extension value, which this codec does not support, reads as null.
      *
      * @param bytes - packed structure
      * @return result - Map or List
      * @throws IOException for mapping exception, or if the packed value is not a Map or List
      */
     public Object unpackMapOrList(byte[] bytes) throws IOException  {
-        MessageUnpacker handler = null;
-        try {
-            handler = MessagePack.newDefaultUnpacker(bytes, 0, bytes.length);
-            if (handler.hasNext()) {
-                MessageFormat mf = handler.getNextFormat();
-                ValueType type = mf.getValueType();
-                return switch (type) {
-                    case ValueType.MAP -> unpack(handler, new HashMap<>(), 1);
-                    case ValueType.ARRAY -> unpack(handler, new ArrayList<>(), 1);
-                    default -> throw new MessageFormatException("Packed input should be Map or List, Actual: " + type);
-                };
-            }
-            handler.close();
-            handler = null;
-        } finally {
-            if (handler != null) {
-                handler.close();
-            }
+        var reader = new MsgPackReader(bytes);
+        if (reader.hasNext()) {
+            MsgPackFormat format = reader.nextFormat();
+            return switch (format.getType()) {
+                case MAP -> unpack(reader, new HashMap<>(), 1);
+                case ARRAY -> unpack(reader, new ArrayList<>(), 1);
+                default -> throw new MsgPackException("Packed input should be Map or List, Actual: " + format.getType());
+            };
         }
         // this should not occur
         return new HashMap<String, Object>();
     }
 
-    private Map<String, Object> unpack(MessageUnpacker handler, Map<String, Object> map, int depth)
+    private Map<String, Object> unpack(MsgPackReader reader, Map<String, Object> map, int depth)
             throws IOException {
         checkDepth(depth);
-        int n = handler.unpackMapHeader();
+        int n = reader.readMapHeader();
         for (int i=0; i < n; i++) {
-            String key = handler.unpackString();
-            MessageFormat mf = handler.getNextFormat();
-            ValueType type = mf.getValueType();
-            switch (type) {
+            String key = reader.readString();
+            MsgPackFormat format = reader.nextFormat();
+            switch (format.getType()) {
                 case MAP -> {
                     Map<String, Object> submap = new HashMap<>();
                     map.put(key, submap);
-                    unpack(handler, submap, depth + 1);
+                    unpack(reader, submap, depth + 1);
                 }
                 case ARRAY -> {
                     List<Object> array = new ArrayList<>();
                     map.put(key, array);
-                    unpack(handler, array, depth + 1);
+                    unpack(reader, array, depth + 1);
                 }
                 default -> {
-                    Object value = unpackValue(handler, mf);
+                    Object value = unpackValue(reader, format);
                     if (supportNulls || value != null) {
                         map.put(key, value);
                     }
@@ -148,25 +150,24 @@ public class MsgPack {
         return map;
     }
 
-    private List<Object> unpack(MessageUnpacker handler, List<Object> list, int depth) throws IOException {
+    private List<Object> unpack(MsgPackReader reader, List<Object> list, int depth) throws IOException {
         checkDepth(depth);
-        int len = handler.unpackArrayHeader();
+        int len = reader.readArrayHeader();
         for (int i=0; i < len; i++) {
-            MessageFormat mf = handler.getNextFormat();
-            ValueType type = mf.getValueType();
-            switch (type) {
+            MsgPackFormat format = reader.nextFormat();
+            switch (format.getType()) {
                 case MAP -> {
                     Map<String, Object> submap = new HashMap<>();
                     list.add(submap);
-                    unpack(handler, submap, depth + 1);
+                    unpack(reader, submap, depth + 1);
                 }
                 case ARRAY -> {
                     List<Object> array = new ArrayList<>();
                     list.add(array);
-                    unpack(handler, array, depth + 1);
+                    unpack(reader, array, depth + 1);
                 }
                 // null value is allowed to preserve the original sequence of the list
-                default -> list.add(unpackValue(handler, mf));
+                default -> list.add(unpackValue(reader, format));
             }
         }
         return list;
@@ -178,39 +179,42 @@ public class MsgPack {
         }
     }
 
-    private Object unpackValue(MessageUnpacker handler, MessageFormat mf) throws IOException {
-        ValueType type = mf.getValueType();
-        switch (type) {
+    private Object unpackValue(MsgPackReader reader, MsgPackFormat format) throws IOException {
+        switch (format.getType()) {
             case STRING:
-                return handler.unpackString();
-            // best effort type matching
+                return reader.readString();
             case INTEGER:
-                long n = handler.unpackLong();
-                if (n > Integer.MAX_VALUE || n < Integer.MIN_VALUE) {
-                    return n;
-                } else {
-                    return (int) n;
+                // best effort type matching
+                if (format == MsgPackFormat.UINT64) {
+                    BigInteger big = reader.readBigInteger();
+                    return big.bitLength() < 64 ? narrow(big.longValue()) : big;
                 }
+                return narrow(reader.readLong());
             case FLOAT:
-                if (mf == MessageFormat.FLOAT64) {
-                    return handler.unpackDouble();
+                if (format == MsgPackFormat.FLOAT64) {
+                    return reader.readDouble();
                 } else {
-                    return handler.unpackFloat();
+                    return reader.readFloat();
                 }
             case BINARY:
-                int bytesLen = handler.unpackBinaryHeader();
-                byte[] bytesValue = new byte[bytesLen];
-                handler.readPayload(bytesValue);
-                return bytesValue;
+                return reader.readBinary();
             case BOOLEAN:
-                return handler.unpackBoolean();
+                return reader.readBoolean();
             case NIL:
-                handler.unpackNil();
+                reader.readNil();
                 return null;
             default:
-                // for simplicity, custom types are not supported
-                handler.skipValue();
+                // for simplicity, custom (extension) types are not supported - the value is skipped and reads as null
+                reader.skipValue();
                 return null;
+        }
+    }
+
+    private static Object narrow(long n) {
+        if (n > Integer.MAX_VALUE || n < Integer.MIN_VALUE) {
+            return n;
+        } else {
+            return (int) n;
         }
     }
     /**
@@ -258,96 +262,83 @@ public class MsgPack {
     public byte[] packMapOrList(Object obj) throws IOException {
         if (obj instanceof Map || obj instanceof List) {
             // select low level processing for faster performance
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            MessagePacker packer = null;
-            try {
-                packer = MessagePack.newDefaultPacker(out);
-                pack(packer, obj).close();
-                packer = null;
-            } finally {
-                if (packer != null) {
-                    packer.close();
-                }
-            }
-            return out.toByteArray();
+            var writer = new MsgPackWriter();
+            pack(writer, obj);
+            return writer.toByteArray();
         }
         throw new IllegalArgumentException("Input must be a Map or List. Encode a PoJo or a " +
                 "primitive in your application first (e.g. convert a PoJo into a Map with SimpleMapper)");
     }
 
-    private MessagePacker pack(MessagePacker packer, Object o) throws IOException {
+    private void pack(MsgPackWriter writer, Object o) {
         switch (o) {
-            case null -> packer.packNil();
-            case Map<?, ?> map -> packMap(packer, map);
+            case null -> writer.writeNil();
+            case Map<?, ?> map -> packMap(writer, map);
             case Collection<?> list -> {
-                packer.packArrayHeader(list.size());
+                writer.writeArrayHeader(list.size());
                 for (Object l : list) {
-                    pack(packer, l);
+                    pack(writer, l);
                 }
             }
             case Object[] objects -> {
                 // Array is treated like a list
-                packer.packArrayHeader(objects.length);
+                writer.writeArrayHeader(objects.length);
                 for (Object l : objects) {
-                    pack(packer, l);
+                    pack(writer, l);
                 }
             }
-            case String str -> packer.packString(str);
-            case Short s -> packer.packShort(s);
-            case Byte b -> packer.packByte(b);
-            case Integer i -> packer.packInt(i);
-            case AtomicInteger aInt -> packer.packInt(aInt.get());
-            case Long l -> packer.packLong(l);
-            case AtomicLong aLong -> packer.packLong(aLong.get());
-            case Float f -> packer.packFloat(f);
-            case Double d -> packer.packDouble(d);
+            case String str -> writer.writeString(str);
+            case Short s -> writer.writeLong(s);
+            case Byte b -> writer.writeLong(b);
+            case Integer i -> writer.writeLong(i);
+            case AtomicInteger aInt -> writer.writeLong(aInt.get());
+            case Long l -> writer.writeLong(l);
+            case AtomicLong aLong -> writer.writeLong(aLong.get());
+            case Float f -> writer.writeFloat(f);
+            case Double d -> writer.writeDouble(d);
             case BigInteger bInt ->
                 // convert to string to preserve precision
-                packer.packString(bInt.toString());
+                writer.writeString(bInt.toString());
             case BigDecimal bDecimal ->
                 // convert to string to preserve precision
-                packer.packString(bDecimal.toPlainString());
-            case Boolean bb -> packer.packBoolean(bb);
-            case byte[] b -> {
-                packer.packBinaryHeader(b.length);
-                packer.writePayload(b);
-            }
+                writer.writeString(bDecimal.toPlainString());
+            case Boolean bb -> writer.writeBoolean(bb);
+            case byte[] b -> writer.writeBinary(b);
             case Date d ->
                 // Date object will be packed as ISO-8601 string
-                packer.packString(util.date2str(d));
+                writer.writeString(util.date2str(d));
             case Instant i ->
                 // Instant (java.time) is packed as an ISO-8601 UTC string, like Date
-                packer.packString(util.date2str(Date.from(i)));
+                writer.writeString(util.date2str(Date.from(i)));
             default -> {
                 // handle pojo inside data structure
                 if (util.isPoJo(o)) {
                     try {
                         var value = mapper.readValue(o, Map.class);
-                        pack(packer, value);
+                        pack(writer, value);
                     } catch (Exception e) {
-                        packer.packString(String.valueOf(o));
+                        writer.writeString(String.valueOf(o));
                     }
                 } else {
                     // unknown object
-                    packer.packString(String.valueOf(o));
+                    writer.writeString(String.valueOf(o));
                 }
             }
         }
-        return packer;
     }
 
-    private void packMap(MessagePacker packer, Map<?, ?> map) throws IOException {
+    private void packMap(MsgPackWriter writer, Map<?, ?> map) {
         int mapSize = map.size();
         List<Object> keys = new ArrayList<>(map.keySet());
         mapSize -= getNullKeyCount(map, keys);
-        packer.packMapHeader(mapSize);
+        writer.writeMapHeader(mapSize);
         if (mapSize > 0) {
             for (var k : keys) {
                 Object value = map.get(k);
                 if (supportNulls || value != null) {
                     // Enforce key as a string
-                    packer.packString(k instanceof String text ? text : String.valueOf(k));
-                    pack(packer, value);
+                    writer.writeString(k instanceof String text ? text : String.valueOf(k));
+                    pack(writer, value);
                 }
             }
         }
