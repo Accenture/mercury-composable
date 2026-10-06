@@ -13,9 +13,9 @@
   `tools/graph-packager` with `publish = false`, Increment 158). Both pack the 14 tutorials to identical bytes (`4715598820261ca6…`),
   print identical `inspect` reports and read each other's files; on the 52 shared fixtures both gates refuse the same 18 graphs (the
   interop report's addendum). Settled in the code: `${...}` references are packed unresolved while the gate checks a resolved copy, and
-  `inspect --json` sorts its keys. **Open before WP3:** a graph with a null property deploys on Java and is refused on Rust (the config
-  readers differ on null keys; a separate task investigates), and publishing the Rust tool to crates.io is a release decision. Next: WP3,
-  the loader.
+  `inspect --json` sorts its keys. **Settled 2026-10-05 (Eric), in the same PRs:** a graph holds no null property - filtered out on deploy,
+  pack and read in both engines, `"key": ""` kept, `serializer.null.transport` not consulted ([[graph-null-property-filtered]]). **Open:**
+  publishing the Rust tool to crates.io is a release decision. Next: WP3, the loader.
   → proposal: RFC-0005
   → serves: vision-mercury-composable
   <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-03 | uses: 1 | tier: working | origin: 2026-10-03-171402 -->

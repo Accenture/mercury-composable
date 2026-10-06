@@ -507,6 +507,18 @@
   [[static-decision-table-is-graph-data]]; applies [[help-edit-needs-bundle-release]] (bundle `index-Bz9k-ffR`).
   <!-- id: mapping-source-verbatim-substitution | created: 2026-10-03 | last_used: 2026-10-04 | uses: 2 | tier: active | origin: 2026-10-04-054327 -->
 
+- **A graph holds no null property: `"key": null` is filtered out wherever a graph enters an engine, `"key": ""` is a value, and
+  `serializer.null.transport` does not apply (Eric's rulings, 2026-10-05; in PR #508 and mercury #356, open at writing).** Found building
+  the graph packager: Java's `ConfigReader` drops a null-valued key when it normalizes a deployed graph (`Utility.getFlatMap` skips nulls),
+  Rust's reader kept it and both engines' graph import refuses one (`addProperty`: "value cannot be null"), so a graph deployed on Java only,
+  and the Java packager packed the nil. Now one rule: a map entry whose value is null is filtered at every depth - on deploy (Java's
+  `ConfigReader`; Rust `compiler::load_raw_graph`, also `import graph from`) and when a set is packed or read (`GraphModelGate.withoutNullProperties`;
+  Rust `model_gate::without_null_properties` = `serializer::strip_nulls_always`) - while a list keeps its elements and an empty collection
+  stays. `serializer.null.transport` (default false; platform-core's `SimpleMapper` and `MsgPack`) governs what the event transport keeps,
+  never what a graph holds: the packagers write through the canonical packager, and both engines' tests pack the same bytes with the switch
+  on (Java in a second JVM, after a probe shows `SimpleMapper` keeping a null). Relates [[graph-set-packaging]], [[canonical-packager-wire-contract]].
+  <!-- id: graph-null-property-filtered | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-000717 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
