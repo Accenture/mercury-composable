@@ -2859,6 +2859,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#addendum-the-graph-packager-command-lines-rfc-0005" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Addendum: the graph packager command lines (RFC-0005)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#conclusion" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3157,13 +3168,82 @@ test is the vector file). Build each engine from the commits above in a clean wo
 <p>Then <code>cmp java.pkg rust.pkg</code> (exit 0) and <code>shasum -a 256</code> on both. For the cross-read, strict-read each file with the
 other engine's <code>unpack</code> and re-pack the entries; for the negative control, replace the packager with
 <code>MsgPack.packMapOrList</code> and <code>rmpv::encode::write_value</code>.</p>
+<h2 id="addendum-the-graph-packager-command-lines-rfc-0005">Addendum: the graph packager command lines (RFC-0005)<a class="headerlink" href="#addendum-the-graph-packager-command-lines-rfc-0005" title="Permanent link">&para;</a></h2>
+<p><em>Conducted 2026-10-05 on the <code>feature/graph-packager-cli</code> branch of each repository, which adds the graph packager: Java
+<code>helpers/graph-packager</code> (an executable jar) and Rust <code>tools/graph-packager</code> (a binary).</em> Each command line reads graph
+files with its engine's JSON reader, checks every graph with its engine's deployment gate and writes with its engine's
+packager, so the question widens: <strong>do the two command lines produce the same <code>.pack</code> file, accept the same graphs and read
+each other's files?</strong> Both ran the same command on byte-identical inputs:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>graph-packager<span class="w"> </span>pack<span class="w"> </span>--set<span class="w"> </span>tutorials<span class="w"> </span>--manifest<span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="m">4</span>.12.20<span class="w"> </span>--manifest<span class="w"> </span><span class="nv">description</span><span class="o">=</span><span class="s2">"The tutorial graphs"</span><span class="w"> </span>--out<span class="w"> </span>&lt;dir&gt;<span class="w"> </span>&lt;graphs&gt;
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The 14 tutorials, packed by each command line</td>
+<td><strong>identical</strong>: 20,274 bytes, SHA-256 <code>4715598820261ca6c98617fd124cdfb15f3c6cd138b0e9dffabde3adac7f051f</code></td>
+</tr>
+<tr>
+<td><code>inspect</code> and <code>inspect --json</code> of that file, run by each command line</td>
+<td><strong>identical output</strong>, text and JSON</td>
+</tr>
+<tr>
+<td>Each command line unpacks the file the other wrote</td>
+<td>accepted; the 14 unpacked JSON files are <strong>identical</strong> across the engines</td>
+</tr>
+<tr>
+<td>Each command line packs the folder the other unpacked</td>
+<td><strong>identical</strong> to the original bytes</td>
+</tr>
+<tr>
+<td>The gate on the 52 fixtures that are byte-identical in both repositories</td>
+<td>both refuse the <strong>same 18 graphs</strong>; 17 reasons are word for word the same, and the eighteenth differs only because the Java message for a misplaced <code>ttl</code> also names <code>graph.js</code>, which the Rust engine does not register</td>
+</tr>
+<tr>
+<td>The 34 fixtures both gates accept, packed by each command line</td>
+<td><strong>identical</strong>: 44,776 bytes, SHA-256 <code>7acbad4d862f209205468a1ef6cbd10af6eb59bdcade285a5f5120cbabe712f2</code></td>
+</tr>
+<tr>
+<td>A graph holding <code>"key": null</code> (a root property and a relation property) and <code>"key": ""</code>, packed by each command line</td>
+<td><strong>identical</strong>: 336 bytes, SHA-256 <code>f2517ea7c0402067ab26afc2a02bcf24c8401012b76f782b40b625ab8b7330a2</code>; the null properties are filtered out, the empty string is kept, and the unpacked files are identical</td>
+</tr>
+<tr>
+<td><strong>Negative control</strong>: one character changed in one tutorial (<code>hello world</code> to <code>hello World</code>) before the Rust pack</td>
+<td>the files <strong>differ</strong> (<code>cmp</code> exit 1)</td>
+</tr>
+</tbody>
+</table>
+<p>The tutorial package is 38 bytes longer than Leg 1's because its manifest holds <code>set</code>, <code>version</code> and <code>description</code>
+instead of <code>set</code> alone: the manifest is content, so it is part of the bytes.</p>
+<p><strong>One difference between the engines, found by this drive and closed in the same change.</strong> When it normalizes a graph, the
+Java configuration reader drops a key whose value is null, as the engine's serializer does by default, while the Rust reader
+kept it and the Rust graph import refused a null property: a graph holding <code>"key": null</code> deployed on Java and was refused on
+Rust, by the startup gate and by the packager alike. The rule is now one rule in both engines: <strong>a graph holds no null
+property</strong>. A map entry whose value is null is filtered out, at every depth, when a graph is deployed, packed or read; an
+empty string (<code>"key": ""</code>) is a value and is kept, and a list keeps its elements in place. The null graph's row above is the
+proof. The rule does not follow <code>serializer.null.transport</code>, the switch with which platform-core's serializers keep nulls on
+the event transport: both packagers write through the canonical packager, never through those serializers, and both engines'
+tests pack the same bytes with the switch on (Java in a second JVM, where <code>SimpleMapper</code> is shown keeping a null first).
+The read at deployment now agrees beyond nulls too: the Rust engine reproduces the Java configuration reader's normalization of
+a graph (an empty map or list is dropped, and inside a list such an element is null when a value follows it and dropped at the
+end), pinned by the vector file <code>graph-read-normalization-vectors.json</code>, byte-identical in both repositories.</p>
+<p>To reproduce, build each command line from its branch and run the command above on
+<code>system/minigraph-playground-engine/src/main/resources/graph</code> (Java,
+<code>java -jar helpers/graph-packager/target/graph-packager-&lt;version&gt;.jar</code>) and on <code>crates/knowledge-graph/resources/graph</code>
+(Rust, <code>cargo run -p mercury-graph-packager --</code>), then <code>cmp</code> the two files.</p>
 <h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
 <p>The Java and Rust engines write <strong>identical bytes</strong> for the real graph models the Playground ships: 14 of 14 tutorials and
 50 of 50 test fixtures, one package or one graph at a time, each engine accepting the other's package under the strict
 read. The same comparison fails on all 14 graphs without the packager, so the agreement is the packager's doing and the
 method can see a divergence. Together with the vector file, which holds the typed corners, the contract of the
 <a href="../../guides/canonical-package-format/">Canonical Package Format</a> is verified across both engines from synthetic and from real
-content.</p>
+content. Since RFC-0005 the same holds for the graph packager command lines: they pack the tutorials and the fixtures both
+gates accept to identical files, refuse the same graphs and read each other's packages.</p>
 
 
 
