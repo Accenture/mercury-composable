@@ -9770,7 +9770,7 @@ the Rust engine, whose serialization is snake_case at compile time. Set <code>fa
 </tr>
 </tbody>
 </table>
-<p>When <code>false</code>, a per-instance subdirectory is created under <code>transient.data.store</code>. When <code>true</code>, the path is used as-is (for ephemeral containers).</p>
+<p>When <code>false</code>, a per-instance subdirectory is created under <code>transient.data.store</code> and removed when the application shuts down. When <code>true</code>, the path is used as-is (for ephemeral containers).</p>
 <h3 id="transientdatastore"><code>transient.data.store</code><a class="headerlink" href="#transientdatastore" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
