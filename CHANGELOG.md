@@ -199,6 +199,24 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    `EventEnvelope` reports it as an `IllegalArgumentException`, and the Event API answers HTTP 400. The Rust engine applies the
    same limit. Upgrade note: an event body may nest at most 63 levels inside its envelope; real payloads are far shallower.
 
+25. **The elastic queue's holding folder is removed at shutdown.** The shutdown hook purged the overflow segment files and the
+    `RUNNING` marker but left the per-instance folder `<app>-<origin>` under `transient.data.store`, so every run of an application,
+    a test JVM included, added an empty folder. The hook now removes the folder once it is empty. With `running.in.cloud=true` the
+    folder is the configured store itself, so it stays, as does a folder that holds files of another kind. The Rust engine's
+    `shutdown_cleanup` does the same. Upgrade note: none; the empty folders that earlier runs left can be deleted.
+
+26. **The standalone Kafka and Redis helpers remove their data folder after stopping.** `kafka-standalone` (`/tmp/kafka-logs`, and
+    `/tmp/kafka2-logs` with `dual.servers`) and `redis-standalone` (`/tmp/soa-redis`) wipe their data folder at every start, so
+    nothing in it survived a restart; they now also remove it once the server has stopped, and a test suite that embeds them no
+    longer leaves the broker's partitions or the Redis dump behind. Upgrade note: none (development helpers).
+
+27. **An HTTP upload's temporary file is deleted when its exchange ends.** `AsyncHttpClient` buffers a streamed request body (a PUT
+    or POST from a stream, and multipart file uploads) in `async.http.temp` (default `/tmp/async-http-temp`), and only its 30-minute
+    housekeeper removed those files, although the code said they were removed after relay: an uploaded file's content stayed on
+    disk for up to 30 minutes, and a short-lived process, such as a test JVM, left it behind. The client now deletes them when the
+    exchange ends, whatever the outcome, and when the stream fails before the upload starts; the housekeeper stays as the
+    catch-all. The Rust client does not buffer uploads in files. Upgrade note: none.
+
 ---
 ## Version 4.12.20, 10/1/2026
 
