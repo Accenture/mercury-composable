@@ -18,6 +18,7 @@
 
 package org.platformlambda.mini.msgpack;
 
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,13 +44,9 @@ class MsgPackSpecVectorsTest {
     private static final HexFormat HEX = HexFormat.of();
 
     record Vector(String name, Object value, String hex) {
-        @Override
-        public String toString() {
-            return name;
-        }
     }
 
-    static Stream<Vector> vectors() {
+    static Stream<Named<Vector>> vectors() {
         var list = new ArrayList<Vector>();
         // nil and bool
         list.add(new Vector("nil", null, "c0"));
@@ -111,7 +108,7 @@ class MsgPackSpecVectorsTest {
         list.add(new Vector("{a: {b: [true]}} nested", Map.of("a", Map.of("b", List.of(true))), "81a16181a16291c3"));
         list.add(new Vector("15 entries fixmap", entries(15), "8f" + keyNils(15)));
         list.add(new Vector("16 entries map 16", entries(16), "de0010" + keyNils(16)));
-        return list.stream();
+        return list.stream().map(vector -> Named.of(vector.name(), vector));
     }
 
     // keys "0" to "9" and "A" to "F" in order, each with a nil value
