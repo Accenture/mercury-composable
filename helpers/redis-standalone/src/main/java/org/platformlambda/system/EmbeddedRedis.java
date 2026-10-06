@@ -44,7 +44,8 @@ import java.io.IOException;
  *
  * <p>Like {@code kafka-standalone}, the data directory is <b>wiped and recreated before each start</b>, so
  * a restart begins from a clean slate with no residual records from a previous run - the standalone server
- * is for development and testing, where that is the intended behavior.</p>
+ * is for development and testing, where that is the intended behavior. For the same reason it is removed
+ * once the server has stopped.</p>
  */
 public class EmbeddedRedis {
     private static final Logger log = LoggerFactory.getLogger(EmbeddedRedis.class);
@@ -121,6 +122,7 @@ public class EmbeddedRedis {
             if (redisServer != null) {
                 redisServer.stop();
                 log.info("Standalone Redis server on port {} stopped", port);
+                Utility.getInstance().cleanupDir(new File(DATA_DIR));
             }
         } catch (IOException e) {
             log.warn("Unable to stop Redis server cleanly - {}", e.getMessage());

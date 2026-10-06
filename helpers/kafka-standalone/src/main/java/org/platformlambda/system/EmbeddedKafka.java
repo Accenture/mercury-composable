@@ -39,6 +39,7 @@ public class EmbeddedKafka extends Thread {
     private static final Logger log = LoggerFactory.getLogger(EmbeddedKafka.class);
 
     private KafkaRaftServer kafka;
+    private File logDir;
     private final String serverPropPath;
 
     public EmbeddedKafka(boolean first) {
@@ -88,6 +89,7 @@ public class EmbeddedKafka extends Thread {
         }
         Utility util = Utility.getInstance();
         File kafkaLogs = new File(dir);
+        logDir = kafkaLogs;
         if (kafkaLogs.exists()) {
             util.cleanupDir(kafkaLogs);
         }
@@ -108,11 +110,19 @@ public class EmbeddedKafka extends Thread {
         log.info("Formatted KRaft storage at {} (node.id={})", kafkaLogs, nodeId);
     }
 
-    /** Orderly shutdown; invoked by the JVM shutdown hook and (by an embedding process or test) directly. */
+    /**
+     * Orderly shutdown; invoked by the JVM shutdown hook and (by an embedding process or test) directly. The
+     * storage is formatted afresh at every start, so its directory is removed once the broker has stopped.
+     */
     public void shutdown() {
         log.info("Shutting down");
         if (kafka != null) {
             kafka.shutdown();
+            kafka.awaitShutdown();
+        }
+        if (logDir != null && logDir.exists()) {
+            Utility.getInstance().cleanupDir(logDir);
+            log.info("Removed {}", logDir);
         }
     }
 }
