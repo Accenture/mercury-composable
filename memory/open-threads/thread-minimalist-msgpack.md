@@ -1,6 +1,6 @@
 - [ ] **minimalist-msgpack: review, PR and RFC-0006 (2026-10-06, Eric's investigation ask).** The zero-dependency codec that
-  replaces `msgpack-core` is built and verified on `feature/minimalist-msgpack` (commit `488c826e`, PUSHED 2026-10-06 on Eric's
-  word; Eric opens the PR by hand with the text handed over, since `gh` is bound to an enterprise instance): the full reactor green (1,767 tests), the module's
+  replaces `msgpack-core` is built and verified on `feature/minimalist-msgpack` (commit `488c826e`, pushed 2026-10-06 on Eric's
+  word; **PR #517 open**, opened by Eric by hand since `gh` is bound to an enterprise instance): the full reactor green (1,767 tests), the module's
   134 tests and 90% coverage gate, platform-core's serializer tests unchanged, a 20,000-document two-way differential
   byte-identical with 0 mismatches, and the benchmark at par or faster ([[minimalist-msgpack-codec]];
   `docs/test-reports/minimalist-msgpack-benchmark.md`). **Eric decides:** the PR's review and merge (CI the remaining gate), the

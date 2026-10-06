@@ -531,7 +531,7 @@
 
 - **A zero-dependency MessagePack codec of this repository, `system/minimalist-msgpack`, replaces `org.msgpack:msgpack-core` under
   platform-core (built 2026-10-06 at Eric's investigation ask; RFC-0006 Open; branch `feature/minimalist-msgpack` at `488c826e`,
-  the full reactor green with 1,767 tests, not merged).**
+  the full reactor green with 1,767 tests; PR #517 open, not merged).**
   Eric's criteria - at par or faster, virtual-thread friendly, no deprecated libraries, no unsafe operations - and his
   "minimalist" rule, no custom (extension) types. The module (`org.platformlambda.mini.msgpack`, `java.base` only) is a streaming
   `MsgPackWriter`/`MsgPackReader` written from the published specification for nil, bool, int, float, str, bin, array and map;
