@@ -87,8 +87,8 @@ public final class GraphSet {
 
     /**
      * Pack graph models into a set. Every rule is checked before anything is packed - the set name and each graph id
-     * against the file-name rule, each root 'name' against its graph id, the 'graph_id' field against the graphs, and
-     * each model against the deployment gate's checks - and the set is refused with every reason when any fails.
+     * against the file-name rule, each root 'name' against its graph id, the 'graph_id' field against the graphs.
+     * Each model must pass the deployment gate's checks, and the set is refused with every reason when any rule fails.
      * A null property is filtered out first: a graph holds none.
      * <p>
      * The gate checks a copy read the way the gate reads a deployed model, normalized and with its ${...} references

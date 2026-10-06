@@ -34,8 +34,8 @@ import java.util.Map;
  * deployment of packaged graph sets share, so "passes the gate" means the same thing in every place (RFC-0005).
  * <p>
  * Every check reads the model alone - its structure, the root node's 'purpose', an 'end' node, the data mapping
- * syntax and the rules of GraphModelValidator - and none consults the functions of the target application, so the
- * gate runs as well when a graph set is packed as when an application starts.
+ * syntax and the rules of GraphModelValidator - and none consults the functions of the target application. Therefore,
+ * the gate runs as well when a graph set is packed as when an application starts.
  */
 public final class GraphModelGate {
     private static final Logger log = LoggerFactory.getLogger(GraphModelGate.class);

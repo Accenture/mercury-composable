@@ -772,7 +772,7 @@ class CompanionSyncTest {
      * The export guard validates the root name only when one is DECLARED: a missing or
      * blank root name has no identity evidence to contradict the export target, so the
      * export adopts the target id as the name (exactly like the no-root path already
-     * does). A declared, mismatching name still rejects the overwrite.
+     * does). A declared, mismatching name still rejects the 'overwrite'.
      */
     @Test
     void exportAcceptsMissingRootNameAndStillRejectsMismatch() throws Exception {
@@ -800,7 +800,7 @@ class CompanionSyncTest {
             assertTrue(secondOut.stream().noneMatch(l -> l.startsWith("Expect root node name=")),
                     "no identity rejection without a declared name: " + secondOut);
 
-            // a DECLARED mismatching name still rejects the overwrite
+            // a DECLARED mismatching name still rejects the 'overwrite'
             var sid3 = openCompanionSession("990023");
             syncCommand(po, sid3, """
                     create node root
