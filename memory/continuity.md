@@ -513,7 +513,7 @@
   <!-- id: graph-set-pack-and-deploy | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-012206 -->
 
 - **A MsgPack payload may nest at most 64 maps and lists in both engines, the outermost container being level 1 (Eric, 2026-10-06;
-  Java #514 and the Rust twin mercury #358, Increment 160, open at writing).** Found answering the field scanners' finding on
+  Java #514 squash `15f26aac` and the Rust twin mercury #358 merge `49d599a0`, Increment 160, both MERGED 2026-10-06).** Found answering the field scanners' finding on
   `msgpack-core` 0.9.12 (CVE-2026-90472, deep nesting in the library's `unpackValue()`; CVE-2026-90473, a MAP32 count overflow in
   `skipValue()`). The engine reaches neither method: platform-core's `MsgPack` walks maps and lists itself and calls `skipValue()` only on
   an extension value, and `CanonicalPackager` calls neither. But its own reader recursed with no bound, so about 100 KB of nested arrays
