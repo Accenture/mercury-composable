@@ -244,9 +244,9 @@ final class GraphSetLoader {
     }
 
     /**
-     * A set's package as read: its source path, its bytes and its content.
+     * A set's package as read: its source path, the SHA-256 of its bytes and its content.
      */
-    private record Loaded(String source, byte[] bytes, GraphSet.Contents contents) {
+    private record Loaded(String source, String sha256, GraphSet.Contents contents) {
     }
 
     /**
@@ -269,7 +269,7 @@ final class GraphSetLoader {
         var source = normalizedPath(location, setName + GraphSet.EXTENSION);
         try {
             var bytes = readPackage(source);
-            return new Loaded(source, bytes, GraphSet.read(bytes));
+            return new Loaded(source, sha256(bytes), GraphSet.read(bytes));
         } catch (GraphSet.RefusedException e) {
             throw new NotDeployed(String.join("; ", e.getReasons()), "its names break the set rules");
         } catch (IOException e) {
@@ -368,7 +368,7 @@ final class GraphSetLoader {
 
     private static String provenance(String setName, Loaded loaded) {
         var sb = new StringBuilder("set ").append(setName).append(": ").append(loaded.source()).append(", SHA-256 ")
-                .append(sha256(loaded.bytes()));
+                .append(loaded.sha256());
         loaded.contents().manifest().forEach((key, value) -> {
             if (!GraphSet.SET.equals(key) && !"format".equals(key) && !"format_version".equals(key)) {
                 sb.append(", ").append(key).append('=').append(oneLine(value));
