@@ -143,6 +143,50 @@ class GraphPackagerTest {
     }
 
     @Test
+    void aSingleGraphIsPackedAloneSoItCanBeSigned() throws Exception {
+        // a set may hold one graph: packing a graph alone is how one graph is signed (ADR-0027). A signature is a
+        // detached file over the package bytes, so they must depend on the graph and the manifest fields only - on a
+        // second pack, on a pack of what unpack wrote, and in the Rust engine, whose twin test pins the same digest
+        var graph = write(tmp.resolve("graphs/single.json"), """
+                {"nodes": [
+                  {"alias": "root", "types": ["Root"],
+                   "properties": {"purpose": "a graph packed alone, so that it can be signed", "name": "single"}},
+                  {"alias": "end", "types": ["End"], "properties": {}}],
+                 "connections": [{"source": "root", "target": "end",
+                                  "relations": [{"type": "done", "properties": {}}]}]}""").toString();
+        var digest = "c500281ada1b5582a5de986e7e9155f0c3d4019c5320b44af76fd5615797e68a";
+        var r = run("pack", "--set", "single", "--manifest", "version=1.0.0", "--manifest", "graph_id=single",
+                "--out", tmp.resolve("first").toString(), graph);
+        assertEquals(0, r.code(), r.err());
+        assertTrue(r.out().contains("Packed 1 graph into "), r.out());
+        assertTrue(r.out().contains("SHA-256 " + digest), r.out());
+        var bytes = Files.readAllBytes(tmp.resolve("first/single.pack"));
+        assertEquals(digest, sha256(bytes));
+        var contents = GraphSet.read(bytes);
+        assertEquals(List.of("single"), List.copyOf(contents.graphs().keySet()));
+        assertEquals("single", contents.manifest().get(GraphSet.GRAPH_ID));
+        // a second pack, and a pack of the file unpack writes, give the same bytes, so a signature still verifies
+        assertEquals(0, run("pack", "--set", "single", "--manifest", "version=1.0.0", "--manifest", "graph_id=single",
+                "--out", tmp.resolve("second").toString(), graph).code());
+        assertArrayEquals(bytes, Files.readAllBytes(tmp.resolve("second/single.pack")));
+        assertEquals(0, run("unpack", tmp.resolve("first/single.pack").toString(), "--out",
+                tmp.resolve("unpacked").toString()).code());
+        assertEquals(0, run("pack", "--set", "single", "--manifest", "version=1.0.0", "--manifest", "graph_id=single",
+                "--out", tmp.resolve("repacked").toString(), tmp.resolve("unpacked/single.json").toString()).code());
+        assertArrayEquals(bytes, Files.readAllBytes(tmp.resolve("repacked/single.pack")));
+        // the manifest is signed with the graph: another version is other bytes
+        assertEquals(0, run("pack", "--set", "single", "--manifest", "version=1.0.1", "--manifest", "graph_id=single",
+                "--out", tmp.resolve("other").toString(), graph).code());
+        assertNotEquals(digest, sha256(Files.readAllBytes(tmp.resolve("other/single.pack"))));
+        // one graph is the least a set holds: an empty folder is refused and nothing is written
+        Files.createDirectories(tmp.resolve("empty"));
+        r = run("pack", "--set", "none", "--out", tmp.resolve("none").toString(), tmp.resolve("empty").toString());
+        assertEquals(1, r.code());
+        assertTrue(r.err().contains("a set needs at least one graph"), r.err());
+        assertFalse(Files.exists(tmp.resolve("none/none.pack")));
+    }
+
+    @Test
     void aSetIsRefusedWithEveryReasonTheGateGives() throws Exception {
         var graphs = tutorials(tmp.resolve("graphs"));
         write(graphs.resolve("no-end.json"), """
