@@ -306,7 +306,6 @@ class RestEndpointTest extends TestBase {
         assertEquals("*", response.getHeader("access-control-Allow-Origin"));
     }
 
-    @SuppressWarnings(value = "unchecked")
     @Test
     void responseEchoesInboundCorrelationId() throws InterruptedException, ExecutionException {
         // the edge echoes the request's business correlation-id on the HTTP response so the
@@ -340,6 +339,7 @@ class RestEndpointTest extends TestBase {
         assertFalse(cid.isEmpty());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void serviceTest() throws InterruptedException, ExecutionException {
         final int TTL_SECONDS = 7;

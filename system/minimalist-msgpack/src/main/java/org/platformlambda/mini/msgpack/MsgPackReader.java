@@ -40,7 +40,7 @@ import java.util.Objects;
  * <ul>
  * <li>every read is bounded by the array window; bytes that end before the value does are refused by offset;</li>
  * <li>the lengths of str, bin and ext values and the counts of arrays and maps are 32-bit <em>unsigned</em> and are
- *     checked against the bytes that remain before anything is allocated or consumed - an array of N elements needs
+ *     checked against the bytes that remain before anything is allocated or consumed. An array of N elements needs
  *     at least N bytes and a map of N entries at least 2N, so a header that promises more than the input holds is
  *     refused at the header;</li>
  * <li>{@code 0xc1}, which the specification never uses, is refused as a format byte;</li>
@@ -385,10 +385,9 @@ public final class MsgPackReader {
                 switch (format) {
                     case POSITIVE_FIXINT, NEGATIVE_FIXINT, NIL, BOOLEAN -> position++;
                     case UINT8, INT8 -> advance(2);
-                    case UINT16, INT16 -> advance(3);
+                    case UINT16, INT16, FIXEXT1 -> advance(3);
                     case UINT32, INT32, FLOAT32 -> advance(5);
                     case UINT64, INT64, FLOAT64 -> advance(9);
-                    case FIXEXT1 -> advance(3);
                     case FIXEXT2 -> advance(4);
                     case FIXEXT4 -> advance(6);
                     case FIXEXT8 -> advance(10);

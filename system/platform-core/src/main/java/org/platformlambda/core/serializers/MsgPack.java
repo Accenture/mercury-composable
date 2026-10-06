@@ -99,7 +99,7 @@ public class MsgPack {
      * {@link #packMapOrList(Object)} when MsgPack is your application's own serializer rather than
      * the event payload codec.
      * <p>
-     * Integers are restored with best effort type matching: an Integer when the value fits, a Long when it
+     * Integers are restored with best-effort type matching: an Integer when the value fits, a Long when it
      * does not, and a BigInteger for a uint64 above Long.MAX_VALUE (which this serializer never writes, but
      * another MessagePack encoder may). An extension value, which this codec does not support, reads as null.
      *
@@ -263,10 +263,8 @@ public class MsgPack {
      * @param obj - Map or List
      * @return packed byte array
      *
-     * @throws IOException for msgpack object mapping exception
-     * @throws IllegalArgumentException if the input is not a Map or a List
      */
-    public byte[] packMapOrList(Object obj) throws IOException {
+    public byte[] packMapOrList(Object obj) {
         if (obj instanceof Map || obj instanceof List) {
             // select low level processing for faster performance
             var writer = new MsgPackWriter();

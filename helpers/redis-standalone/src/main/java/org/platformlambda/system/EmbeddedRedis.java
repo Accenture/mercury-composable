@@ -43,7 +43,7 @@ import java.io.IOException;
  * against a known, transient store.</p>
  *
  * <p>Like {@code kafka-standalone}, the data directory is <b>wiped and recreated before each start</b>, so
- * a restart begins from a clean slate with no residual records from a previous run - the standalone server
+ * a restart begins from a clean slate with no residual records from a previous run. The standalone server
  * is for development and testing, where that is the intended behavior. For the same reason it is removed
  * once the server has stopped.</p>
  */

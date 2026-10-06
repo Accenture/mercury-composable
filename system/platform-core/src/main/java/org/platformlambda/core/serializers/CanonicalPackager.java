@@ -71,10 +71,10 @@ import java.util.concurrent.atomic.AtomicLong;
  * serializer has no ordered-keys option, and an ordered-keys option such as Jackson's sorts by {@code String}
  * order (UTF-16), which differs from the byte order of another engine for characters above U+FFFF. The input
  * map may be of any kind (a Gson {@code LinkedTreeMap}, a {@code HashMap}, a {@code LinkedHashMap}); its own
- * order never reaches the bytes. The bytes are written through the minimalist-msgpack writer directly rather than through
- * {@link MsgPack}, because that serializer drops null values unless a configuration switch is set, packs a
- * {@code Float} as float32 and writes a {@code BigDecimal} zero as {@code "0.00"}, and the profile allows none of
- * the three.
+ * order never reaches the bytes. The bytes are written through the minimalist-msgpack writer directly rather than
+ * through {@link MsgPack}, because that serializer drops null values unless a configuration switch is set, packs a
+ * {@code Float} as float32 and writes a {@code BigDecimal} zero as {@code "0.00"}. Moreover, the profile allows none
+ * of the three.
  * <p>
  * The packager is faithful to the type of each value, so the integer 1 and the float 1.0 are different content.
  * Strings are written as given: no Unicode normalization is applied.
@@ -166,10 +166,9 @@ public final class CanonicalPackager {
 
         /**
          * @return the package as one deterministic byte array
-         * @throws IOException when a value cannot be written
          * @throws IllegalArgumentException for a value the profile rejects, naming its path
          */
-        public byte[] build() throws IOException {
+        public byte[] build() {
             var manifest = new LinkedHashMap<String, Object>(fields);
             manifest.put(FORMAT_KEY, FORMAT);
             manifest.put(FORMAT_VERSION_KEY, FORMAT_VERSION);
@@ -185,10 +184,9 @@ public final class CanonicalPackager {
      *
      * @param value a map, list or scalar
      * @return its canonical bytes
-     * @throws IOException when a value cannot be written
      * @throws IllegalArgumentException for a value the profile rejects, naming its path
      */
-    public static byte[] encode(Object value) throws IOException {
+    public static byte[] encode(Object value) {
         var writer = new MsgPackWriter();
         write(writer, value, "$", 0);
         return writer.toByteArray();
