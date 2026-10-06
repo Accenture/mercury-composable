@@ -573,7 +573,15 @@
   constructor's value, the id a fresh uuid, as on Java); the shared file carries it as the first `canonical: reject` control.
   Lesson: parity believed is not parity tested - the shared-file method ([[canonical-packager-wire-contract]],
   [[msgpack-nesting-limit-64]]) caught a divergence the first time it ran. Extends [[minimalist-msgpack-codec]] (ADR-0028's
-  reader rules, now pinned on both sides).
+  reader rules, now pinned on both sides). **Exactly one value (2026-10-06; Java branch `fix/msgpack-trailing-bytes` `987dc053`
+  and the Rust twin `14c0a687`, Increment 165; PRs pending):** an independent correctness review of the codec (a Copilot assessment
+  Eric shared) found the one gap the vectors had not pinned - both engines' event codecs read one value and ignored what followed
+  (`80 c1` decoded as an empty map) while both canonical decoders refused it, a standing behaviour msgpack-core shared. The rule is
+  now the canonical decoder's everywhere: bytes after the top-level container, well-formed or not, are `Unexpected bytes after the
+  value at offset N` (IOException; `IllegalArgumentException` at `EventEnvelope`; HTTP 400 at the Event API); Rust probes for a `u8`
+  after the value, since rmp-serde's zero-copy reader keeps its cursor private; the shared file gains `80 c1` and `80 c0` (24
+  rejects), wire-format rule 11, claim `msgpack-exactly-one-value`. Blast radius measured before the change: every production caller
+  passes exact byte arrays, and the full reactor (1,771 tests) is green.
   <!-- id: msgpack-hostile-header-vectors | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-164045 -->
 
 ## Conventions
