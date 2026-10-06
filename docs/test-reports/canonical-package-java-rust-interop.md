@@ -184,7 +184,9 @@ kept it and the Rust graph import refused a null property: a graph holding `"key
 Rust, by the startup gate and by the packager alike. The rule is now one rule in both engines: **a graph holds no null
 property**. A map entry whose value is null is filtered out, at every depth, when a graph is deployed, packed or read; an
 empty string (`"key": ""`) is a value and is kept, and a list keeps its elements in place. The null graph's row above is the
-proof.
+proof. The rule does not follow `serializer.null.transport`, the switch with which platform-core's serializers keep nulls on
+the event transport: both packagers write through the canonical packager, never through those serializers, and both engines'
+tests pack the same bytes with the switch on (Java in a second JVM, where `SimpleMapper` is shown keeping a null first).
 
 To reproduce, build each command line from its branch and run the command above on
 `system/minigraph-playground-engine/src/main/resources/graph` (Java,

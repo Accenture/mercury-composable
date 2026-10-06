@@ -361,6 +361,50 @@ class GraphPackagerTest {
         assertTrue(text.contains("\"empty\": \"\""), text);
     }
 
+    private static Result fork(String... args) throws Exception {
+        List<String> command = new ArrayList<>();
+        command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
+        command.addAll(List.of(args));
+        var process = new ProcessBuilder(command).start();
+        var out = new String(process.getInputStream().readAllBytes(), UTF_8);
+        var err = new String(process.getErrorStream().readAllBytes(), UTF_8);
+        assertTrue(process.waitFor(60, java.util.concurrent.TimeUnit.SECONDS), "the forked JVM ends");
+        return new Result(process.exitValue(), out, err);
+    }
+
+    @Test
+    void theNullTransportSwitchDoesNotReachThePackage() throws Exception {
+        // serializer.null.transport=true makes platform-core's SimpleMapper and MsgPack keep a null map value. The
+        // packager drops a graph's null properties itself and writes through the canonical packager, so a JVM with
+        // the switch on packs the same bytes. SimpleMapper is a process-wide singleton, hence a second JVM.
+        var graphs = write(tmp.resolve("a/nulls.json"), """
+                {"nodes": [
+                  {"alias": "root", "types": ["Root"],
+                   "properties": {"purpose": "null properties", "name": "nulls", "note": null, "empty": ""}},
+                  {"alias": "end", "types": ["End"], "properties": {}}],
+                 "connections": [{"source": "root", "target": "end",
+                                  "relations": [{"type": "done", "properties": {"x": null}}]}]}""").getParent();
+        assertEquals(0, run("pack", "--set", "s", "--out", tmp.resolve("default").toString(), graphs.toString()).code());
+        var classpath = System.getProperty("java.class.path");
+        var on = "-Dserializer.null.transport=true";
+        // positive control: in the second JVM the switch is on, so SimpleMapper keeps the null
+        var probe = fork(on, "-cp", classpath, NullTransportProbe.class.getName());
+        assertEquals(0, probe.code(), probe.err());
+        assertTrue(probe.out().contains("\"a\": null"), probe.out());
+        assertFalse(fork("-cp", classpath, NullTransportProbe.class.getName()).out().contains("\"a\""));
+        var packed = fork(on, "-cp", classpath, GraphPackager.class.getName(), "pack", "--set", "s",
+                "--out", tmp.resolve("switched").toString(), graphs.toString());
+        assertEquals(0, packed.code(), packed.err());
+        assertArrayEquals(Files.readAllBytes(tmp.resolve("default/s.pack")),
+                Files.readAllBytes(tmp.resolve("switched/s.pack")));
+        var unpacked = fork(on, "-cp", classpath, GraphPackager.class.getName(), "unpack",
+                tmp.resolve("switched/s.pack").toString(), "--out", tmp.resolve("unpacked").toString());
+        assertEquals(0, unpacked.code(), unpacked.err());
+        var text = Files.readString(tmp.resolve("unpacked/nulls.json"), UTF_8);
+        assertFalse(text.contains(": null"), text);
+        assertTrue(text.contains("\"empty\": \"\""), text);
+    }
+
     @Test
     void aReferenceIsCheckedResolvedButPackedAsWritten() throws Exception {
         // the gate reads a deployed model with its ${...} references resolved; the package keeps them,
