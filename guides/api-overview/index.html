@@ -2022,6 +2022,8 @@
       
         
       
+        
+      
     
     
     
@@ -2988,6 +2990,34 @@
     
   
     Test Report — The LLM helper (Claude)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../test-reports/minimalist-msgpack-benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — MsgPack codec, minimalist-msgpack vs msgpack-core
   
 
     
@@ -4267,6 +4297,17 @@ or a database blob - you can use the <code>MsgPack</code> class directly as a ge
 </code></pre></div>
 <p><code>MsgPack</code> is stateless and thread-safe - a single <code>static final</code> instance is the recommended usage.</p>
 <blockquote>
+<p><strong>The codec underneath.</strong> The engine's MessagePack codec is its own zero-dependency module,
+<code>system/minimalist-msgpack</code> (<code>org.platformlambda.mini.msgpack</code>): a streaming <code>MsgPackWriter</code> and <code>MsgPackReader</code>
+written from the published specification for the nil, bool, int, float, str, bin, array and map families, with no
+extension types, no <code>sun.misc.Unsafe</code> and no shared state. It replaced <code>org.msgpack:msgpack-core</code>, which the field's
+scanners flag (CVE-2026-90472, CVE-2026-90473) with no fixed release available. The bytes are identical: the writer
+uses the same smallest-format rule, which the canonical package vectors shared with the Rust engine prove byte for
+byte. What changes for an application: <code>org.msgpack.*</code> classes no longer arrive transitively (an application that
+used them directly declares <code>msgpack-core</code> itself, or uses the new reader and writer); every decoding failure of
+<code>MsgPack.unpack</code> is an <code>IOException</code> (<code>EventEnvelope</code> reports it as <code>IllegalArgumentException</code>, as documented) where
+msgpack-core also threw its own unchecked exceptions; and a <code>uint 64</code> above <code>Long.MAX_VALUE</code>, which another encoder
+may send, reads as a <code>BigInteger</code> instead of failing. The module's README documents the API and its robustness rules.</p>
 <p><strong>Only a Map or a List is accepted.</strong> A PoJo or a Java primitive is not supported directly: encode
 it in your application first. For a PoJo, convert it into a Map:
 <div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="p">,</span><span class="w"> </span><span class="n">Object</span><span class="o">&gt;</span><span class="w"> </span><span class="n">asMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SimpleMapper</span><span class="p">.</span><span class="na">getInstance</span><span class="p">().</span><span class="na">getMapper</span><span class="p">().</span><span class="na">readValue</span><span class="p">(</span><span class="n">pojo</span><span class="p">,</span><span class="w"> </span><span class="n">Map</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
@@ -4315,7 +4356,7 @@ tables) are promoted as one artifact whose identity must be recorded or compared
 <li><strong>The ordering is the packager's own step.</strong> Keys sort in <strong>UTF-8 byte order</strong> at every depth (maps inside lists included),
   because the Gson serializer has no ordered-keys option and an ordered-keys option such as Jackson's sorts by <code>String</code> order
   (UTF-16), which differs from another engine's bytes above U+FFFF.</li>
-<li><strong>It writes through msgpack-core directly, not through <code>MsgPack.pack</code></strong>, which drops null values unless a configuration
+<li><strong>It writes through the <code>minimalist-msgpack</code> writer directly, not through <code>MsgPack.pack</code></strong>, which drops null values unless a configuration
   switch is set, packs a <code>Float</code> as float32 and writes a <code>BigDecimal</code> zero as <code>"0.00"</code>. The canonical profile keeps nulls,
   writes a finite float64 only (a <code>Float</code> is widened through its shortest decimal text, so <code>0.1f</code> is the float64 <code>0.1</code>; NaN and Infinity are rejected with <code>IllegalArgumentException</code> naming the path), writes
   a <code>BigDecimal</code> in plain notation with a zero of any scale as <code>"0"</code>, and a <code>BigInteger</code> as its digits. Dates are ISO-8601
