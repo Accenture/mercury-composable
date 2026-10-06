@@ -125,9 +125,9 @@ class DryRunTimeoutTest {
                     "instantiate graph\ntext(hello) -> input.body.id\nlong(3000) -> model.ttl");
             assertEquals(Boolean.TRUE, instantiated.get("ok"), "instantiate -> ok:true: " + instantiated);
             // dispatch the run with the TAPPED route as the traversal's reply route, so a
-            // stale watcher's late lines would land where this test can see them (through
+            // stale watcher's late lines would land where this test can see them. Through
             // the sync endpoint, the reply route is a per-call capture route that is
-            // released after the drain - late lines would vanish and prove nothing)
+            // released after the drain - late lines would vanish and prove nothing.
             po.send(new EventEnvelope().setTo(GraphCommandService.SINGLETON_COMMAND_HANDLER)
                     .setBody(Map.of("type", "command", "in", inRoute, "out", outRoute,
                             "message", "run", "direct", true)));
@@ -155,7 +155,7 @@ class DryRunTimeoutTest {
 
     /**
      * Close every session the tests opened, as a closing WebSocket does, so the engine removes each session's
-     * draft from the temporary folder. A request, not a send: the reply comes after the session is closed.
+     * draft from the temporary folder. A request, not send: the reply comes after the session is closed.
      */
     @AfterAll
     static void closeSessions() throws Exception {

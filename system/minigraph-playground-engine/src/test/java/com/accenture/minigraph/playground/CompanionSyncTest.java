@@ -820,7 +820,7 @@ class CompanionSyncTest {
 
     /**
      * Close every session the tests opened, as a closing WebSocket does, so the engine removes each session's
-     * draft from the temporary folder. A request, not a send: the reply comes after the session is closed.
+     * draft from the temporary folder. A request, not send: the reply comes after the session is closed.
      */
     @AfterAll
     static void closeSessions() throws Exception {

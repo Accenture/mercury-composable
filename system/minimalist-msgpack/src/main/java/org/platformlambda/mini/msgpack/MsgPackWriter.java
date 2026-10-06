@@ -372,7 +372,8 @@ public final class MsgPackWriter {
         if (needed > MAX_SIZE) {
             throw new IllegalStateException("The MessagePack output would exceed " + MAX_SIZE + " bytes");
         }
+        // at least what is needed, usually double the buffer, never beyond the maximum (needed <= MAX_SIZE here)
         long doubled = (long) buffer.length * 2 + 16;
-        buffer = Arrays.copyOf(buffer, (int) Math.min(Math.max(needed, doubled), MAX_SIZE));
+        buffer = Arrays.copyOf(buffer, Math.clamp(doubled, (int) needed, MAX_SIZE));
     }
 }

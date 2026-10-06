@@ -532,7 +532,7 @@ class MsgPackTest {
 
     @Test
     void aUint64AboveLongMaxReadsAsBigInteger() throws IOException {
-        // this serializer never writes one, but another MessagePack encoder may: {"n": 2^64 - 1}
+        // this serializer never writes one, but another MessagePack encoder may: a map with one key "n" holding 2^64 - 1
         byte[] bytes = {(byte) 0x81, (byte) 0xa1, 0x6e, (byte) 0xcf, (byte) 0xff, (byte) 0xff, (byte) 0xff,
                 (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff};
         var restored = (Map<String, Object>) msgPack.unpackMapOrList(bytes);

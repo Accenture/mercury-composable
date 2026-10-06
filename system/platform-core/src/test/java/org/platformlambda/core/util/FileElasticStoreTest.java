@@ -56,6 +56,15 @@ class FileElasticStoreTest {
         return (String) e.getBody();
     }
 
+    /** Read until the store reports empty - the last read closes it and reclaims its segments. */
+    private static int drain(FileElasticStore q) {
+        int records = 0;
+        while (q.read().length > 0) {
+            records++;
+        }
+        return records;
+    }
+
     /** Count live on-disk segment files for a given queue id (baseDir is package-private for this). */
     private static int segmentFiles(String id) {
         File[] files = FileElasticStore.baseDir == null ? null : FileElasticStore.baseDir.listFiles();
@@ -110,9 +119,7 @@ class FileElasticStoreTest {
         }
         // without reclamation this would grow to ~thousands/records-per-segment; reclamation keeps it small
         assertTrue(peak < 20, "live segments should stay bounded (peak=" + peak + ")");
-        while (q.read().length > 0) {
-            // drain
-        }
+        assertEquals(M + 100, drain(q), "every prefilled record is still there");
         assertEquals(0, segmentFiles(id), "fully reclaimed after drain");
         q.destroy();
     }
@@ -126,9 +133,8 @@ class FileElasticStoreTest {
             for (int i = 0; i < M + 40; i++) {
                 q.write(toRecord("c" + cycle + "-" + i));
             }
-            while (q.read().length > 0) {
-                // drain → auto close() → reclaim segments
-            }
+            // drain → auto close() → reclaim segments
+            assertEquals(M + 40, drain(q), "every record read back, cycle " + cycle);
             assertTrue(q.isClosed(), "closed after drain, cycle " + cycle);
             assertEquals(0, segmentFiles(id), "no leftover segments after cycle " + cycle);
         }

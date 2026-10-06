@@ -23,6 +23,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -101,7 +102,7 @@ class MsgPackSpecVectorsTest {
         list.add(new Vector("256 bytes bin 16", new byte[256], "c50100" + "00".repeat(256)));
         // array family
         list.add(new Vector("empty fixarray", List.of(), "90"));
-        list.add(new Vector("[1, -1, nil] fixarray", nulls(1L, -1L, null), "9301ffc0"));
+        list.add(new Vector("[1, -1, nil] fixarray", Arrays.asList(1L, -1L, null), "9301ffc0"));
         list.add(new Vector("15 nils fixarray", Collections.nCopies(15, null), "9f" + "c0".repeat(15)));
         list.add(new Vector("16 nils array 16", Collections.nCopies(16, null), "dc0010" + "c0".repeat(16)));
         // map family
@@ -113,13 +114,7 @@ class MsgPackSpecVectorsTest {
         return list.stream();
     }
 
-    private static List<Object> nulls(Object... items) {
-        var list = new ArrayList<>();
-        Collections.addAll(list, items);
-        return list;
-    }
-
-    // keys "0".."9", "A".."F" in order, each with a nil value
+    // keys "0" to "9" and "A" to "F" in order, each with a nil value
     private static Map<String, Object> entries(int count) {
         var map = new LinkedHashMap<String, Object>();
         for (int i = 0; i < count; i++) {
