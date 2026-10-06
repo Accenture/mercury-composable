@@ -34,6 +34,8 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -72,7 +74,8 @@ final class GraphSetLoader {
     private static final String CLASSPATH = "classpath:";
     private static final String JSON_EXT = ".json";
     private static final String DEFAULT_TEMP_DIR = "/tmp/graph";
-    private static final String NOT_DEPLOYED = "Set {} not deployed - {}";
+    private static final DateTimeFormatter TIMESTAMP =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
     private static final Set<Path> UNPACK_FOLDERS = ConcurrentHashMap.newKeySet();
 
     private GraphSetLoader() {
@@ -108,12 +111,12 @@ final class GraphSetLoader {
         CompiledGraphs.addDeployedLocation(unpack);
         var folder = folderOf(unpack);
         removePreviousFiles(folder);
-        var record = new Record();
+        var outcome = new Outcome();
         for (var setName : sets) {
-            deploySet(location, unpack, folder, setName, record);
+            deploySet(location, unpack, folder, setName, outcome);
         }
         var generatedManifest = folder.resolve(GENERATED_MANIFEST);
-        writeGeneratedManifest(generatedManifest, manifest, unpack, record);
+        writeGeneratedManifest(generatedManifest, manifest, unpack, outcome);
         log.info("Graph sets in {} unpacked into {} - generated manifest {}", manifest, unpack, generatedManifest);
     }
 
@@ -121,7 +124,7 @@ final class GraphSetLoader {
      * What one manifest's sets left behind: the graphs that deployed, the files written per set (all of them, a
      * refused set's included, for the next start to remove) and one provenance line per set.
      */
-    private static final class Record {
+    private static final class Outcome {
         final List<String> deployed = new ArrayList<>();
         final Map<String, List<String>> generated = new LinkedHashMap<>();
         final List<String> provenance = new ArrayList<>();
@@ -182,18 +185,9 @@ final class GraphSetLoader {
             return;
         }
         try {
-            var reader = new ConfigReader(FILE + previous);
-            if (reader.get(GENERATED) instanceof Map<?, ?> sets) {
+            if (new ConfigReader(FILE + previous).get(GENERATED) instanceof Map<?, ?> sets) {
                 for (var ids : sets.values()) {
-                    if (ids instanceof List<?> list) {
-                        for (var id : list) {
-                            var name = String.valueOf(id);
-                            // a name becomes a path only when it is a valid graph id
-                            if (GraphModelGate.isValidGraphId(name)) {
-                                Files.deleteIfExists(folder.resolve(name + JSON_EXT));
-                            }
-                        }
-                    }
+                    removeFiles(folder, ids);
                 }
             }
         } catch (IllegalArgumentException | IOException e) {
@@ -201,42 +195,95 @@ final class GraphSetLoader {
         }
     }
 
-    private static void deploySet(String location, String unpack, Path folder, String setName, Record record) {
-        if (!GraphModelGate.isValidGraphId(setName)) {
-            log.error(NOT_DEPLOYED, setName, "a set name uses letters, digits, '_' and '-' only");
-            record.provenance.add("set " + setName + " not deployed - invalid set name");
-            return;
+    private static void removeFiles(Path folder, Object ids) throws IOException {
+        if (ids instanceof List<?> list) {
+            for (var id : list) {
+                var name = String.valueOf(id);
+                // a name becomes a path only when it is a valid graph id
+                if (GraphModelGate.isValidGraphId(name)) {
+                    Files.deleteIfExists(folder.resolve(name + JSON_EXT));
+                }
+            }
         }
-        var source = normalizedPath(location, setName + GraphSet.EXTENSION);
-        byte[] bytes;
-        GraphSet.Contents contents;
+    }
+
+    private static void deploySet(String location, String unpack, Path folder, String setName, Outcome outcome) {
+        Loaded loaded;
         try {
-            bytes = readPackage(source);
-            contents = GraphSet.read(bytes);
-        } catch (GraphSet.RefusedException e) {
-            log.error(NOT_DEPLOYED, setName, String.join("; ", e.getReasons()));
-            record.provenance.add("set " + setName + " not deployed - its names break the set rules");
-            return;
-        } catch (IOException e) {
-            log.error(NOT_DEPLOYED, setName, e.getMessage());
-            record.provenance.add("set " + setName + " not deployed - " + oneLine(e.getMessage()));
+            loaded = load(location, setName);
+        } catch (NotDeployed e) {
+            log.error("Set {} not deployed - {}", setName, e.getMessage());
+            outcome.provenance.add("set " + setName + " not deployed - " + e.note);
             return;
         }
-        var ids = new ArrayList<>(contents.graphs().keySet());
+        var ids = new ArrayList<>(loaded.contents().graphs().keySet());
         // the files are written before the gate runs, and stay when it refuses the set, for the operator to inspect
-        record.generated.put(setName, ids);
+        outcome.generated.put(setName, ids);
+        var provenance = provenance(setName, loaded);
         try {
-            for (var graph : contents.graphs().entrySet()) {
+            for (var graph : loaded.contents().graphs().entrySet()) {
                 Files.writeString(folder.resolve(graph.getKey() + JSON_EXT), GraphSet.toJson(graph.getValue()));
             }
         } catch (IOException e) {
-            log.error(NOT_DEPLOYED, setName, "unable to unpack into " + unpack + " - " + e.getMessage());
-            record.provenance.add(provenance(setName, source, bytes, contents) + " - not deployed");
+            log.error("Set {} not unpacked into {} - {}", setName, unpack, e.getMessage());
+            outcome.provenance.add(provenance + " - not unpacked");
             return;
         }
-        // the deployment gate, all or none: every graph is checked before any is registered
-        Map<String, Map<String, Object>> models = new LinkedHashMap<>();
         List<String> failures = new ArrayList<>();
+        var models = gate(unpack, ids, failures);
+        if (!failures.isEmpty()) {
+            logRejected(setName, ids.size(), failures);
+            outcome.provenance.add(provenance + " - rejected");
+            return;
+        }
+        var version = loaded.contents().manifest().getOrDefault(VERSION, "");
+        register(new CompiledGraphs.DeployedSet(setName, version), unpack, models);
+        outcome.deployed.addAll(ids);
+        outcome.provenance.add(provenance + " - deployed");
+        logDeployed(setName, version, loaded.source(), ids.size(), unpack);
+    }
+
+    /**
+     * A set's package as read: its source path, its bytes and its content.
+     */
+    private record Loaded(String source, byte[] bytes, GraphSet.Contents contents) {
+    }
+
+    /**
+     * A set that is not deployed: the reason for the log and a short note for the generated manifest.
+     */
+    private static final class NotDeployed extends Exception {
+        private final String note;
+
+        NotDeployed(String reason, String note) {
+            super(reason);
+            this.note = note;
+        }
+    }
+
+    private static Loaded load(String location, String setName) throws NotDeployed {
+        // the set name is checked before it becomes part of a path
+        if (!GraphModelGate.isValidGraphId(setName)) {
+            throw new NotDeployed("a set name uses letters, digits, '_' and '-' only", "invalid set name");
+        }
+        var source = normalizedPath(location, setName + GraphSet.EXTENSION);
+        try {
+            var bytes = readPackage(source);
+            return new Loaded(source, bytes, GraphSet.read(bytes));
+        } catch (GraphSet.RefusedException e) {
+            throw new NotDeployed(String.join("; ", e.getReasons()), "its names break the set rules");
+        } catch (IOException e) {
+            throw new NotDeployed(e.getMessage(), oneLine(e.getMessage()));
+        }
+    }
+
+    /**
+     * The deployment gate, all or none: every graph is checked before any is registered.
+     *
+     * @return the models that pass, read the way a deployed graph is read
+     */
+    private static Map<String, Map<String, Object>> gate(String unpack, List<String> ids, List<String> failures) {
+        Map<String, Map<String, Object>> models = new LinkedHashMap<>();
         for (var id : ids) {
             try {
                 var model = new ConfigReader(normalizedPath(unpack, id + JSON_EXT)).getMap();
@@ -246,31 +293,36 @@ final class GraphSetLoader {
                 failures.add(id + ": " + e.getMessage());
             }
         }
-        if (!failures.isEmpty()) {
-            log.error("Set {} rejected - {} of {} failed: {}", setName, failures.size(), count(ids.size()),
-                    String.join("; ", failures));
-            record.provenance.add(provenance(setName, source, bytes, contents) + " - rejected");
-            return;
-        }
-        var version = contents.manifest().getOrDefault(VERSION, "");
-        var set = new CompiledGraphs.DeployedSet(setName, version);
+        return models;
+    }
+
+    private static void register(CompiledGraphs.DeployedSet set, String unpack,
+                                 Map<String, Map<String, Object>> models) {
         for (var model : models.entrySet()) {
             var id = model.getKey();
             var previous = CompiledGraphs.getGraphLocation(id);
             if (previous != null) {
-                log.error("Graph {} from set {} ({}) replaces the copy from {}", id, setName, unpack,
-                        describe(previous, CompiledGraphs.getGraphSet(id)));
+                if (log.isErrorEnabled()) {
+                    log.error("Graph {} from set {} ({}) replaces the copy from {}", id, set.name(), unpack,
+                            describe(previous, CompiledGraphs.getGraphSet(id)));
+                }
                 CompiledGraphs.removeGraph(id);
             }
             CompiledGraphs.addGraph(id, model.getValue(), unpack, set);
         }
-        record.deployed.addAll(ids);
-        record.provenance.add(provenance(setName, source, bytes, contents) + " - deployed");
-        if (version.isEmpty()) {
-            log.info("Deployed set {} from {} - {} into {}", setName, source, count(ids.size()), unpack);
-        } else {
-            log.info("Deployed set {} (version {}) from {} - {} into {}", setName, version, source,
-                    count(ids.size()), unpack);
+    }
+
+    private static void logRejected(String setName, int graphs, List<String> failures) {
+        if (log.isErrorEnabled()) {
+            log.error("Set {} rejected - {} of {} failed: {}", setName, failures.size(), count(graphs),
+                    String.join("; ", failures));
+        }
+    }
+
+    private static void logDeployed(String setName, String version, String source, int graphs, String unpack) {
+        if (log.isInfoEnabled()) {
+            log.info("Deployed set {}{} from {} - {} into {}", setName,
+                    version.isEmpty() ? "" : " (version " + version + ")", source, count(graphs), unpack);
         }
     }
 
@@ -314,10 +366,10 @@ final class GraphSetLoader {
         return sb.substring(1);
     }
 
-    private static String provenance(String setName, String source, byte[] bytes, GraphSet.Contents contents) {
-        var sb = new StringBuilder("set ").append(setName).append(": ").append(source).append(", SHA-256 ")
-                .append(sha256(bytes));
-        contents.manifest().forEach((key, value) -> {
+    private static String provenance(String setName, Loaded loaded) {
+        var sb = new StringBuilder("set ").append(setName).append(": ").append(loaded.source()).append(", SHA-256 ")
+                .append(sha256(loaded.bytes()));
+        loaded.contents().manifest().forEach((key, value) -> {
             if (!GraphSet.SET.equals(key) && !"format".equals(key) && !"format_version".equals(key)) {
                 sb.append(", ").append(key).append('=').append(oneLine(value));
             }
@@ -337,18 +389,18 @@ final class GraphSetLoader {
         }
     }
 
-    private static void writeGeneratedManifest(Path file, String manifest, String unpack, Record record) {
+    private static void writeGeneratedManifest(Path file, String manifest, String unpack, Outcome outcome) {
         var sb = new StringBuilder();
         sb.append("# Generated by the graph-set loader from ").append(manifest)
                 .append(" - rewritten at every start; do not edit\n");
-        sb.append("# Unpacked ").append(Instant.now()).append('\n');
-        record.provenance.forEach(line -> sb.append("# ").append(line).append('\n'));
-        sb.append("graphs:").append(record.deployed.isEmpty() ? " []\n" : "\n");
-        record.deployed.forEach(id -> sb.append("  - '").append(id).append("'\n"));
+        sb.append("# Unpacked ").append(TIMESTAMP.format(Instant.now())).append('\n');
+        outcome.provenance.forEach(line -> sb.append("# ").append(line).append('\n'));
+        sb.append("graphs:").append(outcome.deployed.isEmpty() ? " []\n" : "\n");
+        outcome.deployed.forEach(id -> sb.append("  - '").append(id).append("'\n"));
         sb.append("location: '").append(unpack).append("'\n");
         // the files each set's graphs were unpacked into, which the next start removes before it unpacks again
-        sb.append(GENERATED).append(':').append(record.generated.isEmpty() ? " {}\n" : "\n");
-        record.generated.forEach((set, ids) -> {
+        sb.append(GENERATED).append(':').append(outcome.generated.isEmpty() ? " {}\n" : "\n");
+        outcome.generated.forEach((set, ids) -> {
             sb.append("  '").append(set).append("':\n");
             ids.forEach(id -> sb.append("    - '").append(id).append("'\n"));
         });

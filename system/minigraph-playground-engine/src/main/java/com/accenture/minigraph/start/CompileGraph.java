@@ -154,7 +154,7 @@ public class CompileGraph implements EntryPoint {
             var previousSet = CompiledGraphs.getGraphSet(graphId);
             if (previousSet == null) {
                 log.warn("Graph {} from {} replaces the copy from {}", graphId, deployLocation, previous);
-            } else {
+            } else if (log.isErrorEnabled()) {
                 // a duplicate that involves a graph set is an error, the later copy still wins (ADR-0027)
                 log.error("Graph {} from {} replaces the copy from {}", graphId, deployLocation,
                         GraphSetLoader.describe(previous, previousSet));

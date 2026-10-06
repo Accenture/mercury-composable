@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -69,7 +70,7 @@ class GraphSetLoaderTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> graph(String id, String answer) throws IOException {
+    private static Map<String, Object> graph(String id, String answer) {
         return SimpleMapper.getInstance().getMapper().readValue("""
                 {"nodes": [
                   {"alias": "root", "types": ["Root"], "properties": {"purpose": "a graph deployed from a set", "name": "%s"}},
@@ -80,11 +81,12 @@ class GraphSetLoaderTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> graphWithoutEnd(String id) throws IOException {
+    private static Map<String, Object> graphWithoutEnd() {
         return SimpleMapper.getInstance().getMapper().readValue("""
-                {"nodes": [{"alias": "root", "types": ["Root"], "properties": {"purpose": "no end node", "name": "%s"}}],
+                {"nodes": [{"alias": "root", "types": ["Root"],
+                            "properties": {"purpose": "no end node", "name": "unit-test-set-no-end"}}],
                  "connections": []}
-                """.formatted(id), Map.class);
+                """, Map.class);
     }
 
     private static void pack(Path folder, String setName, String version, Map<String, Map<String, Object>> graphs)
@@ -172,7 +174,7 @@ class GraphSetLoaderTest {
     void aSetWithAGraphTheGateRefusesRegistersNone() throws Exception {
         craft(tmp.resolve("packs"), "half-set", Map.of(
                 "unit-test-set-good.json", graph("unit-test-set-good", "good"),
-                "unit-test-set-no-end.json", graphWithoutEnd("unit-test-set-no-end")));
+                "unit-test-set-no-end.json", graphWithoutEnd()));
         compile(manifest(tmp.resolve("graphs.yaml"), file(tmp.resolve("packs")), List.of(), List.of("half-set"),
                 file(tmp.resolve("unpack"))), "unit-test-set-good", "unit-test-set-no-end");
         assertFalse(CompiledGraphs.graphExists("unit-test-set-good"), "all or none: the valid graph is not registered");
@@ -287,7 +289,8 @@ class GraphSetLoaderTest {
     @Test
     void aSetIsReadFromTheClasspathToo() throws Exception {
         // the manifest's location may be classpath:/ - the test classes folder is on the classpath
-        var classes = Path.of(GraphSetLoaderTest.class.getResource("/graph").toURI()).getParent();
+        var graphFolder = Objects.requireNonNull(GraphSetLoaderTest.class.getResource("/graph"), "test graphs");
+        var classes = Path.of(graphFolder.toURI()).getParent();
         pack(classes.resolve("graph-set-test"), "classpath-set", "3",
                 Map.of("unit-test-set-classpath", graph("unit-test-set-classpath", "from the classpath")));
         compile(manifest(tmp.resolve("graphs.yaml"), "classpath:/graph-set-test", List.of(), List.of("classpath-set"),
