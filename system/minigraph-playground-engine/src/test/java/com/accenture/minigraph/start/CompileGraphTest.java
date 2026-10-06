@@ -94,8 +94,10 @@ class CompileGraphTest {
         // primary location is the first manifest's
         assertEquals("classpath:/graph", CompiledGraphs.getDeployedLocation());
         // graph.model.automation names two manifests (comma-separated): both locations are
-        // registered, in manifest order
-        assertEquals(List.of("classpath:/graph", "classpath:/graph-extra"), CompiledGraphs.getDeployedLocations());
+        // registered, in manifest order (GraphSetLoaderTest compiles more manifests in this JVM,
+        // and their folders come after these)
+        assertEquals(List.of("classpath:/graph", "classpath:/graph-extra"),
+                CompiledGraphs.getDeployedLocations().subList(0, 2));
     }
 
     @Test
