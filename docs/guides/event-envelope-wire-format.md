@@ -214,6 +214,12 @@ portable diagnostics.
 8. **Nesting**: a payload nested deeper than 64 maps and lists is refused as a decoding error, the envelope map
    being level 1, so a `body` may nest 63 levels. Decoders MUST refuse deeper nesting instead of recursing into
    it, and encoders SHOULD NOT produce it.
+9. **Hostile headers**: the lengths of str, bin and ext values and the counts of arrays and maps are 32-bit
+   unsigned and are checked against the bytes that remain before anything is allocated or consumed. A header that
+   promises more than the input holds is refused at the header, as a decoding error, and so is the format byte
+   `0xc1`, which the specification never uses. Decoders MUST do the same. The shared vector file
+   `msgpack-hostile-header-vectors.json`, byte-identical in the Java and Rust repositories, pins the inputs both
+   engines refuse and the controls both decode.
 
 ## Format detection
 
