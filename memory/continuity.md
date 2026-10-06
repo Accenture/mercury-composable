@@ -565,8 +565,12 @@
   envelope references) sits beside `msgpack-nesting-limit`. **The first run found a divergence:** `rmpv` reads `0xc1` as nil, so
   the Rust canonical decoder accepted `91 c1` while `rmp-serde` and the Java reader refuse it; the Rust canonical decoder now walks
   the markers before decoding (`check_markers`, iterative, allocation-free) and refuses `0xc1` and any header that promises more
-  than the input holds, the Java reader's rule, with `rmp` declared for its `Marker` table. **Observed, not ruled:** on empty input
-  Java's `MsgPack.unpack` returns an empty map while the Rust decoders refuse it; the vectors leave that case out until Eric rules.
+  than the input holds, the Java reader's rule, with `rmp` declared for its `Marker` table. **The empty-input disparity, RULED (Eric, 2026-10-06): Java is the reference implementation and the Rust port follows** -
+  `MsgPack.unpack` reads empty input as an empty map and `new EventEnvelope(new byte[0])` is an empty envelope, while the canonical
+  decoder refuses it (a package is never empty); Java states it (wire-format rule 10, claim `msgpack-empty-input`, Java branch
+  `test/msgpack-empty-input` `86df4d08`) and Rust changed to match (Increment 164, `fix/msgpack-empty-input` `79a93b88`:
+  `from_msgpack` reads empty input as `{}` and `EventEnvelope` gained a struct-level serde default, so a missing key takes the
+  constructor's value, the id a fresh uuid, as on Java); the shared file carries it as the first `canonical: reject` control.
   Lesson: parity believed is not parity tested - the shared-file method ([[canonical-packager-wire-contract]],
   [[msgpack-nesting-limit-64]]) caught a divergence the first time it ran. Extends [[minimalist-msgpack-codec]] (ADR-0028's
   reader rules, now pinned on both sides).
