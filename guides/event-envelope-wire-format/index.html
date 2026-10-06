@@ -3782,6 +3782,9 @@ portable diagnostics.</p>
    (e.g. <code>2026-07-21T12:00:00.000Z</code>) — never as MsgPack extension types.</li>
 <li><strong>No byte-identical guarantee</strong>: map ordering is unspecified. Conformance is semantic —
    decode, compare values.</li>
+<li><strong>Nesting</strong>: a payload nested deeper than 64 maps and lists is refused as a decoding error, the envelope map
+   being level 1, so a <code>body</code> may nest 63 levels. Decoders MUST refuse deeper nesting instead of recursing into
+   it, and encoders SHOULD NOT produce it.</li>
 </ol>
 <h2 id="format-detection">Format detection<a class="headerlink" href="#format-detection" title="Permanent link">&para;</a></h2>
 <p>The compact format's keys are all exactly <strong>one character</strong>; standard keys are all

@@ -5104,6 +5104,10 @@ prerequisite for advanced function patterns, error handling, and distributed tra
 directly for event transport. (For an application's <em>own</em> binary serialization, such as a cached
 value, <code>MsgPack.packMapOrList</code> / <code>unpackMapOrList</code> are available as a general purpose codec — see
 <a href="../api-overview/#binary-serialization-with-msgpack">API Overview → Binary serialization with MsgPack</a>.)</p>
+<p>A payload nested deeper than 64 maps and lists is refused as a decoding error, the envelope map being level 1, so a
+body may nest 63 levels (<code>MsgPack.MAX_DEPTH</code>; the Rust engine applies the same limit). The limit keeps a crafted payload
+from exhausting the decoder's stack: <code>MsgPack</code> throws <code>IOException: Nesting deeper than 64 levels</code>, <code>EventEnvelope</code>
+reports it as an <code>IllegalArgumentException</code>, and the Event API answers such a request with HTTP 400.</p>
 <hr />
 <h2 id="creating-an-eventenvelope">Creating an EventEnvelope<a class="headerlink" href="#creating-an-eventenvelope" title="Permanent link">&para;</a></h2>
 <h3 id="constructors">Constructors<a class="headerlink" href="#constructors" title="Permanent link">&para;</a></h3>
