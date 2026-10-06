@@ -33,6 +33,88 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0027 — Graph sets: one or more graphs in a canonical `.pack`, gated when packed and deployed all or none {#adr-0027}
+**Status:** Accepted · **Date:** 2026-10-06 · **Serves:** vision-mercury-composable · **Formalizes:** graph-set-pack-and-deploy
+<!-- id: adr-0027 | status: accepted -->
+
+**Abstract.** A **graph set** is one or more graph models delivered as one canonical package (ADR-0026), the file `<set>.pack`,
+so that a pipeline can sign, store and deploy them as one certified unit. **A set may hold a single graph, on purpose: packing a
+graph alone is how one graph is signed** (Eric, 2026-10-06). Every graph passes the deployment gate's own static checks when the
+set is packed, and a packaged set deploys through the deployment manifest (`sets` and `unpack`): it is unpacked before the gate
+into readable files and a generated manifest that compiles as the next manifest in sequence, and it registers all of its graphs
+or none. Signing and verification stay outside the engine. Proposed as RFC-0005 in [`RFC.md`](RFC.md) from Eric's design notes
+of 2026-10-03, decided the same day (D1 to D9) and accepted on 2026-10-06, after the first two work packages shipped in both
+engines: the gate as one shared method and the command-line packager (the Java engine's PR #508; the Rust engine's PR #356,
+Increment 158). The loader, the Playground's pack endpoints and panel, and the documentation follow under this decision; the
+review and plan are in `draft-design-specs/graph-set-packaging-and-deployment.md`.
+
+**Context.** Graph models deploy as loose files: `graph.model.automation` lists manifests, each manifest lists graph ids, and
+CompileGraph registers each graph that passes the gate (ADR-0011; since 4.12.19 a list of manifests, the later one owning a
+duplicate id). A certified unit of several graphs, often cross-referenced through `graph.extension`, has no single artifact:
+there is nothing to sign, and half of it can deploy. ADR-0026 provided the deterministic package and deferred its first
+consumer, the folder tooling and a loader. Every check of the gate is static on the graph JSON (structure, the root node's
+`purpose`, an `end` node, the suspend and resume rules); none consults the target application's function registry, so the
+checks can run wherever a graph is packed.
+
+**Decision.**
+
+- **The artifact.** One package is one set, in the file `<set>.pack` (D1); the file name without the extension is the set name.
+  Each graph is one entry named `<graph-id>.json`, whose id follows the engine's file-name rule (`[A-Za-z0-9_-]+`) and equals the
+  root node's `name` when the root declares one, checked when a set is packed and when it is read (D6). The manifest holds the
+  packager's `format` and `format_version`, the set name in `set`, an optional `graph_id` naming the set's entry-point graph and
+  verified against the entries (D5), and caller fields as text (`version`, `description`, `author`, a ticket or a certification
+  reference), recorded and never interpreted.
+- **A set holds one graph or more.** The only bound is the lower one: an empty set is refused (`a set needs at least one graph`).
+  A graph packed alone gets bytes of its own to sign; several graphs packed together are signed as one unit.
+- **The bytes depend on the graphs and the manifest fields only.** Nothing comes from the clock or the environment (a build time
+  is a field the operator passes), and a `${...}` reference is packed as written, for the environment the set is deployed to,
+  while the gate checks a resolved copy. A graph holds no null property: `"key": null` is filtered out when a set is packed or
+  read, whatever `serializer.null.transport` says, and `"key": ""` is a value. The same graphs and fields therefore give the same
+  bytes in both engines, and a signature made over one pack verifies a repack anywhere; both engines' tests pin the digest of the
+  same single-graph set.
+- **The gate runs when a set is packed (D2).** CompileGraph's checks are one shared method (Java `GraphModelGate.validate`, Rust
+  `model_gate::validate`) that the startup gate and the packager call, and the pack endpoint will, so "passes the gate" means one
+  thing everywhere; a set that breaks any rule is refused with every reason. The startup gate stays the authority, so a check at pack
+  time is defense in depth.
+- **The command line (D8).** Java `helpers/graph-packager` (an executable jar) and Rust `tools/graph-packager` (a binary), thin
+  fronts over the engine's packager and the shared gate: `pack` (graph files, a folder, or the graphs a deployment manifest lists,
+  with `--from-manifest`), `unpack` (readable JSON in canonical key order) and `inspect [--json]` (the manifest, the graphs, the
+  size and the SHA-256); exit codes 0, 1 for a refused input and 2 for an I/O or format error.
+- **The Playground packs on the engine (D7, D9).** A packaging panel calls the dev-mode `POST /api/graph/pack` and
+  `POST /api/graph/unpack`; there is no packager in the browser.
+- **Deployment through the manifest.** A deployment manifest may list `sets` (each read from `<location>/<set>.pack`) beside its
+  `graphs`, and then names `unpack`: a `file:/` folder the application can read and write (`classpath:` is rejected, as are the
+  Playground's temporary folder and a folder another manifest uses). Before the gate each set is read strictly, its names are
+  checked before any path is built, its graphs are written to `<unpack>/<id>.json`, and a generated manifest
+  `<unpack>/graphs.yaml`, written in the open and logged, compiles as the next manifest in sequence, so the automation list stays
+  a list of manifests (the allowlist of ADR-0011). A set registers all of its graphs or none (D3). Compile order is a manifest's
+  loose graphs, then its sets in listed order, then the next manifest; a later graph owns a duplicate id, logged as an ERROR when a
+  set is involved and as a WARN between loose manifests, as today (D4). A set's `version` shows in `list graphs` and in the
+  deployment log.
+- **Signing stays outside the engine.** The convention for a separate signing tool is a detached `<set>.pack.sig` beside the
+  package; `pack` and `inspect` print the SHA-256 of the exact bytes, and the loader's first step is where a verifying hook would
+  sit.
+
+**Alternatives.** (a) A generated manifest in the unpack folder, compiled in sequence — chosen: it reuses every manifest
+mechanism and leaves readable files for an operator and for `import graph from`. (b) Compile the unpacked maps from memory:
+simpler, but an operator cannot read what was deployed and `import graph from` cannot find it. (c) Treat the unpack folder as a
+bare deployed location: it breaks the manifest-as-allowlist rule of ADR-0011. (d) Pack in the browser: a third implementation of
+the wire contract to keep byte-identical. From the decision table: registration per graph (half of a certified set deployed is
+worse than none), an ERROR for every duplicate (the loose-manifest override of the prototyping loop is intended), a required
+`graph_id` (a set of independent graphs has no entry point), a warning for a root name that differs from its id, and a command line
+inside the engine module rather than its own (the separate modules leave the engine artifact unchanged and let the Java jar leave
+GraalVM out).
+
+**Consequences.** Both engines are committed to the `.pack` artifact and its entry convention, the `sets` and `unpack` manifest
+schema, registration all or none, the generated manifest and the shared gate method. The bytes of a set are now a contract with
+every signature made over them: a change that alters them for the same graphs and fields (a field the packager adds, another
+null or normalization rule, a change of profile) breaks the signatures made over the old bytes, and the single-graph digest that
+both engines' tests pin is the guard. The Rust command line is not published to crates.io (`publish = false`) until a release
+decision says otherwise. The `mercury-python` and `mercury-nodejs` language packs are not involved. Deferred, as in ADR-0026:
+verification at startup, hot reload, two versions of a set side by side, compression and per-entry hashes.
+
+---
+
 ## ADR-0026 — A deterministic MsgPack packager: keys sorted by UTF-8 bytes, `{manifest, maps}`, integrity left to the application {#adr-0026}
 **Status:** Accepted · **Date:** 2026-10-01 · **Serves:** vision-mercury-composable · **Formalizes:** canonical-packager-wire-contract
 <!-- id: adr-0026 | status: accepted -->

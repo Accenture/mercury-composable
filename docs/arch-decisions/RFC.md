@@ -40,8 +40,8 @@
 ---
 
 ## RFC-0005 — Graph sets: a pack/unpack CLI, a Playground packaging panel, and `sets` + `unpack` in the deployment manifest
-**Status:** Open · **Raised:** 2026-10-03 · **Serves:** vision-mercury-composable · **Thread:** `graph-set-packaging`
-<!-- id: rfc-0005 | status: open | thread: graph-set-packaging -->
+**Status:** Promoted → ADR-0027 · **Raised:** 2026-10-03 · **Serves:** vision-mercury-composable · **Thread:** `graph-set-packaging`
+<!-- id: rfc-0005 | status: promoted | thread: graph-set-packaging -->
 
 **Proposal.** The first consumer of the canonical packager (ADR-0026), from Eric's design notes of 2026-10-03; the review and
 the sprint plan are in `draft-design-specs/graph-set-packaging-and-deployment.md`. (1) A command-line packager — `pack`,
@@ -76,7 +76,7 @@ implicit next entry of the automation list; a set's `version` shows in `list gra
 is a `file:/` folder with read and write access, `classpath:` rejected. Promotion to an ADR follows the implementation
 (the RFC-0001/RFC-0002 method: implement on a branch, promote after review and green CI).
 
-**Resolution.** Open — implementation in the next sprint (thread `graph-set-packaging`).
+**Resolution.** Promoted → ADR-0027 (2026-10-06, Eric): option (a), the generated manifest in the unpack folder, with D1 to D9 and the three answers above. Accepted after the first two work packages shipped, ahead of the rest of the sprint: the gate as one shared method and the command-line packager (the Java engine's PR #508 and the Rust engine's PR #356, Increment 158). Added at promotion (Eric): a set holds one graph or more, because packing a graph alone is how one graph is signed; both engines' tests pin a set of one graph to the same bytes. The loader, the endpoints, the panel and the documentation (WP3 to WP6) follow under the ADR.
 
 ---
 
