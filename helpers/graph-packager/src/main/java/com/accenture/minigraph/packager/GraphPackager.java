@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HexFormat;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,14 +87,16 @@ public class GraphPackager {
 
             Exit codes: 0 success, 1 a refused input, 2 an I/O or format error""";
 
-    private final PrintStream out;
-    private final PrintStream err;
+    private final PrintStream stdout;
+    private final PrintStream stderr;
 
-    public GraphPackager(PrintStream out, PrintStream err) {
-        this.out = out;
-        this.err = err;
+    public GraphPackager(PrintStream stdout, PrintStream stderr) {
+        this.stdout = stdout;
+        this.stderr = stderr;
     }
 
+    // a command line answers on standard output and standard error, which a pipeline reads; a logger is not its output
+    @SuppressWarnings("java:S106")
     public static void main(String[] args) {
         System.exit(new GraphPackager(System.out, System.err).run(args));
     }
@@ -115,27 +118,27 @@ public class GraphPackager {
                 case "unpack" -> unpack(rest);
                 case "inspect" -> inspect(rest);
                 case "help", "--help", "-h" -> {
-                    out.println(USAGE);
+                    stdout.println(USAGE);
                     yield OK;
                 }
                 default -> throw new UsageException("Unknown command '" + args[0] + "'");
             };
         } catch (UsageException e) {
-            err.println(e.getMessage());
-            err.println(USAGE);
+            stderr.println(e.getMessage());
+            stderr.println(USAGE);
             return REFUSED;
         } catch (GraphSet.RefusedException e) {
-            err.println("Refused:");
-            e.getReasons().forEach(reason -> err.println("  " + reason));
+            stderr.println("Refused:");
+            e.getReasons().forEach(reason -> stderr.println("  " + reason));
             return REFUSED;
         } catch (IllegalArgumentException e) {
-            err.println("Refused: " + e.getMessage());
+            stderr.println("Refused: " + e.getMessage());
             return REFUSED;
         } catch (NoSuchFileException e) {
-            err.println("Error: no such file - " + e.getMessage());
+            stderr.println("Error: no such file - " + e.getMessage());
             return FAILED;
         } catch (IOException e) {
-            err.println("Error: " + e.getMessage());
+            stderr.println("Error: " + e.getMessage());
             return FAILED;
         }
     }
@@ -170,8 +173,8 @@ public class GraphPackager {
         Files.createDirectories(dir);
         var target = dir.resolve(setName + GraphSet.EXTENSION);
         Files.write(target, bytes);
-        out.println("Packed " + count(graphs.size(), "graph") + " into " + target + " (" + bytes.length + " bytes)");
-        out.println("SHA-256 " + sha256(bytes));
+        stdout.println("Packed " + count(graphs.size(), "graph") + " into " + target + " (" + bytes.length + " bytes)");
+        stdout.println("SHA-256 " + sha256(bytes));
         return OK;
     }
 
@@ -193,8 +196,8 @@ public class GraphPackager {
             Files.writeString(dir.resolve(graph.getKey() + JSON_EXT), GraphSet.toJson(graph.getValue()),
                     StandardCharsets.UTF_8);
         }
-        out.println("Unpacked " + count(contents.graphs().size(), "graph") + " from " + file + " into " + dir);
-        contents.graphs().keySet().forEach(id -> out.println("  " + id + JSON_EXT));
+        stdout.println("Unpacked " + count(contents.graphs().size(), "graph") + " from " + file + " into " + dir);
+        contents.graphs().keySet().forEach(id -> stdout.println("  " + id + JSON_EXT));
         return OK;
     }
 
@@ -223,17 +226,17 @@ public class GraphPackager {
                 graphs.add(graph);
             });
             report.put("graphs", graphs);
-            out.println(PRETTY.toJson(report));
+            stdout.println(PRETTY.toJson(report));
         } else {
-            out.println("File      " + file);
-            out.println("Size      " + bytes.length + " bytes");
-            out.println("SHA-256   " + sha);
-            out.println("Manifest");
+            stdout.println("File      " + file);
+            stdout.println("Size      " + bytes.length + " bytes");
+            stdout.println("SHA-256   " + sha);
+            stdout.println("Manifest");
             var keyWidth = contents.manifest().keySet().stream().mapToInt(String::length).max().orElse(0);
-            contents.manifest().forEach((k, v) -> out.println("  " + pad(k, keyWidth) + "  " + v));
-            out.println("Graphs    " + contents.graphs().size());
+            contents.manifest().forEach((k, v) -> stdout.println("  " + pad(k, keyWidth) + "  " + v));
+            stdout.println("Graphs    " + contents.graphs().size());
             var idWidth = contents.graphs().keySet().stream().mapToInt(String::length).max().orElse(0);
-            contents.graphs().forEach((id, model) -> out.println("  " + pad(id, idWidth) + "  " +
+            contents.graphs().forEach((id, model) -> stdout.println("  " + pad(id, idWidth) + "  " +
                     count(size(model, NODES), "node") + ", " + count(size(model, CONNECTIONS), "connection")));
         }
         return OK;
@@ -378,28 +381,38 @@ public class GraphPackager {
             throws UsageException {
         Map<String, List<String>> options = new HashMap<>();
         List<String> positional = new ArrayList<>();
-        for (int i = 0; i < args.length; i++) {
-            var arg = args[i];
+        var remaining = Arrays.asList(args).iterator();
+        while (remaining.hasNext()) {
+            var arg = remaining.next();
             if (!arg.startsWith("--")) {
                 positional.add(arg);
             } else if (flags.contains(arg)) {
-                if (options.put(arg, List.of()) != null) {
-                    throw new UsageException("Give " + arg + " once");
-                }
+                addFlag(options, arg);
             } else if (valued.contains(arg)) {
-                if (i + 1 >= args.length) {
-                    throw new UsageException(arg + " needs a value");
-                }
-                var values = options.computeIfAbsent(arg, k -> new ArrayList<>());
-                if (!values.isEmpty() && !repeatable.contains(arg)) {
-                    throw new UsageException("Give " + arg + " once");
-                }
-                values.add(args[++i]);
+                addValue(options, arg, remaining, repeatable.contains(arg));
             } else {
                 throw new UsageException("Unknown option '" + arg + "'");
             }
         }
         return new Arguments(options, positional);
+    }
+
+    private static void addFlag(Map<String, List<String>> options, String flag) throws UsageException {
+        if (options.put(flag, List.of()) != null) {
+            throw new UsageException("Give " + flag + " once");
+        }
+    }
+
+    private static void addValue(Map<String, List<String>> options, String option, Iterator<String> remaining,
+                                 boolean repeatable) throws UsageException {
+        if (!remaining.hasNext()) {
+            throw new UsageException(option + " needs a value");
+        }
+        var values = options.computeIfAbsent(option, k -> new ArrayList<>());
+        if (!values.isEmpty() && !repeatable) {
+            throw new UsageException("Give " + option + " once");
+        }
+        values.add(remaining.next());
     }
 
     private record Arguments(Map<String, List<String>> options, List<String> positional) {

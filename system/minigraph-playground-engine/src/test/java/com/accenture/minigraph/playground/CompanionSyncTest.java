@@ -621,7 +621,7 @@ class CompanionSyncTest {
      * ID. The store contract scopes records by graph + cid, so the dry-run instance must present
      * an identity that is STABLE across instantiations - here the root node's name - because a
      * per-instantiation handle writes the suspension under a key no later instantiation can ever
-     * read, and every resume silently restarts fresh. The nameless twin is
+     * read, and every attempt to resume silently restarts fresh. The nameless twin is
      * {@link #unnamedDraftResumesAcrossInstantiations()}.
      */
     @Test
@@ -864,6 +864,7 @@ class CompanionSyncTest {
             var imported = syncCommand(po, sid, "import graph from null-properties");
             assertFalse(String.valueOf(imported).contains("cannot be null"), "the null is filtered: " + imported);
             var draft = (Map<String, Object>) GraphCommandService.downloadGraph(sid);
+            assertNotNull(draft, "the session holds a draft after the import");
             var root = ((List<Map<String, Object>>) draft.get("nodes")).stream()
                     .filter(n -> "root".equals(n.get("alias"))).findFirst().orElseThrow();
             var properties = (Map<String, Object>) root.get("properties");

@@ -145,8 +145,8 @@ class GraphPackagerTest {
     @Test
     void aSingleGraphIsPackedAloneSoItCanBeSigned() throws Exception {
         // a set may hold one graph: packing a graph alone is how one graph is signed (ADR-0027). A signature is a
-        // detached file over the package bytes, so they must depend on the graph and the manifest fields only - on a
-        // second pack, on a pack of what unpack wrote, and in the Rust engine, whose twin test pins the same digest
+        // detached file over the package bytes, so the bytes must depend on the graph and the manifest fields only.
+        // They stay the same on a second pack and on a pack of what unpack wrote; the Rust twin test pins this digest.
         var graph = write(tmp.resolve("graphs/single.json"), """
                 {"nodes": [
                   {"alias": "root", "types": ["Root"],
@@ -231,9 +231,9 @@ class GraphPackagerTest {
         assertEquals(1, r.code());
         assertTrue(r.err().contains("manifest field 'format' - it is written by the packager"), r.err());
         assertTrue(r.err().contains("manifest field 'set' - it is written from the set name"), r.err());
-        r = run("pack", "--set", "s", "--manifest", "novalue", "--out", out, graphs);
+        r = run("pack", "--set", "s", "--manifest", "version", "--out", out, graphs);
         assertEquals(1, r.code());
-        assertTrue(r.err().contains("--manifest takes key=value, not 'novalue'"), r.err());
+        assertTrue(r.err().contains("--manifest takes key=value, not 'version'"), r.err());
         r = run("pack", "--set", "s", "--manifest", "k=1", "--manifest", "k=2", "--out", out, graphs);
         assertEquals(1, r.code());
         assertTrue(r.err().contains("The manifest field 'k' is given twice"), r.err());
