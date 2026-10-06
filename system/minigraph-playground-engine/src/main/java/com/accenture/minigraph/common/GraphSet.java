@@ -51,6 +51,7 @@ public final class GraphSet {
     public static final String GRAPH_ID = "graph_id";
     private static final String JSON_EXT = ".json";
     private static final String ID_RULE = "use letters, digits, '_' and '-' only";
+    private static final String MANIFEST_FIELD = "manifest field '";
     private static final Gson JSON = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
 
     private GraphSet() {
@@ -112,9 +113,9 @@ public final class GraphSet {
             if (key == null || key.isEmpty()) {
                 reasons.add("a manifest field needs a name");
             } else if (SET.equals(key)) {
-                reasons.add("manifest field '" + SET + "' - it is written from the set name");
+                reasons.add(MANIFEST_FIELD + SET + "' - it is written from the set name");
             } else if (CanonicalPackager.FORMAT_KEY.equals(key) || CanonicalPackager.FORMAT_VERSION_KEY.equals(key)) {
-                reasons.add("manifest field '" + key + "' - it is written by the packager");
+                reasons.add(MANIFEST_FIELD + key + "' - it is written by the packager");
             }
         }
         if (graphs.isEmpty()) {
@@ -122,7 +123,7 @@ public final class GraphSet {
         }
         var entryPoint = fields.get(GRAPH_ID);
         if (entryPoint != null && !graphs.containsKey(entryPoint)) {
-            reasons.add("manifest field '" + GRAPH_ID + "' - '" + entryPoint + "' is not a graph of the set");
+            reasons.add(MANIFEST_FIELD + GRAPH_ID + "' - '" + entryPoint + "' is not a graph of the set");
         }
         // a graph holds no null property: "key": null is filtered out before the checks and the pack
         Map<String, Map<String, Object>> models = new TreeMap<>();
@@ -178,7 +179,7 @@ public final class GraphSet {
         }
         var entryPoint = pkg.manifest().get(GRAPH_ID);
         if (entryPoint != null && !graphs.containsKey(entryPoint)) {
-            reasons.add("manifest field '" + GRAPH_ID + "' - '" + entryPoint + "' is not a graph of the set");
+            reasons.add(MANIFEST_FIELD + GRAPH_ID + "' - '" + entryPoint + "' is not a graph of the set");
         }
         if (!reasons.isEmpty()) {
             throw new RefusedException(reasons);
@@ -241,20 +242,30 @@ public final class GraphSet {
             return path;
         }
         if (value instanceof Map<?, ?> map) {
-            for (var entry : map.entrySet()) {
-                var found = findBinary(entry.getValue(), path.isEmpty() ? String.valueOf(entry.getKey()) :
-                        path + "." + entry.getKey());
-                if (found != null) {
-                    return found;
-                }
-            }
+            return findBinaryInMap(map, path);
         }
         if (value instanceof List<?> list) {
-            for (int i = 0; i < list.size(); i++) {
-                var found = findBinary(list.get(i), path + "[" + i + "]");
-                if (found != null) {
-                    return found;
-                }
+            return findBinaryInList(list, path);
+        }
+        return null;
+    }
+
+    private static String findBinaryInMap(Map<?, ?> map, String path) {
+        for (var entry : map.entrySet()) {
+            var key = String.valueOf(entry.getKey());
+            var found = findBinary(entry.getValue(), path.isEmpty() ? key : path + "." + key);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    private static String findBinaryInList(List<?> list, String path) {
+        for (int i = 0; i < list.size(); i++) {
+            var found = findBinary(list.get(i), path + "[" + i + "]");
+            if (found != null) {
+                return found;
             }
         }
         return null;
