@@ -157,6 +157,14 @@ Each change merged to `main` after v4.12.20 is listed here; it moves under its r
    null or non-numeric value. The Rust engine carries the same change. READ: a mapping that relied on the quotes, a text
    constant with one of those characters around a reference, now gets the bare value.
 
+20. **A graph imported into the MiniGraph Playground drops its null properties.** The draft import - the Import Graph button and
+    file drop (`POST /api/graph/import/{id}`), its replay to a shared session, and `import graph from` a file or a deployed model -
+    filters a `"key": null` out before it imports the model, as an application does when it loads a deployed graph, instead of
+    refusing it with `value cannot be null`. It no longer depends on `serializer.null.transport`, which decides only whether the
+    event transport keeps a null. An empty string is a value and is kept. The Rust engine carries the same change, and now reads a
+    deployed graph exactly as this engine's configuration reader does (nulls, empty maps and lists, and a null at the end of a list
+    are dropped), pinned by the shared vector file `graph-read-normalization-vectors.json`. Upgrade note: none.
+
 ---
 ## Version 4.12.20, 10/1/2026
 

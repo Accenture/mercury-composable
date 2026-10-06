@@ -21,6 +21,7 @@ package com.accenture.minigraph.services;
 import com.accenture.automation.SimplePluginLoader;
 import com.accenture.automation.SimpleTypeMatchingConverter;
 import com.accenture.minigraph.common.GraphLambdaFunction;
+import com.accenture.minigraph.common.GraphModelGate;
 import com.accenture.minigraph.common.GraphModelValidator;
 import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.models.GraphInstance;
@@ -424,15 +425,18 @@ public class GraphCommandService extends GraphLambdaFunction {
      * is imported: a JSON object whose only top-level sections are "nodes" (a list, mandatory) and
      * "connections" (a list, optional - a work in progress may have none). The model is then parsed by
      * the same importer the session uses, so a node without alias or types is refused here instead of
-     * failing later in the session. CompileGraph remains the quality gate for everything else.
+     * failing later in the session. CompileGraph remains the quality gate for everything else. A graph holds
+     * no null property, so a "key": null is filtered out before the checks (as the import does), whatever
+     * serializer.null.transport let through.
      *
      * @param content the parsed request body
      * @return null when the model is acceptable, otherwise the reason it is refused
      */
     public static String validateGraphModel(Object content) {
-        if (!(content instanceof Map<?, ?> map)) {
+        if (!(content instanceof Map<?, ?> body)) {
             return "A graph model is a JSON object with a 'nodes' section";
         }
+        var map = GraphModelGate.withoutNullProperties(body);
         var unexpected = new ArrayList<String>();
         for (var key : map.keySet()) {
             var k = String.valueOf(key);
@@ -452,7 +456,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             return "The 'connections' section must be a list";
         }
         try {
-            new MiniGraph().importGraph(asGraphMap(map));
+            new MiniGraph().importGraph(map);
         } catch (IllegalArgumentException e) {
             return "Invalid graph model - " + e.getMessage();
         }
@@ -1442,13 +1446,19 @@ public class GraphCommandService extends GraphLambdaFunction {
         importGraphAsDraft(po, inRoute, outRoute, asGraphMap(map));
     }
 
+    /**
+     * Replace the session's draft with a graph model - the one place every import passes (the REST import, its
+     * replay to the members of a shared session, and "import graph from" a file or a deployed model). A graph
+     * holds no null property, so a "key": null is filtered out first, whatever serializer.null.transport let
+     * through the event transport.
+     */
     private void importGraphAsDraft(PostOffice po, String inRoute, String outRoute, Map<String, Object> map) {
         var graph = graphModels.get(inRoute);
         if (graph == null) {
             return;
         }
         try {
-            graph.importGraph(map);
+            graph.importGraph(GraphModelGate.withoutNullProperties(map));
         } catch (IllegalArgumentException e) {
             // the importer resets the draft before it rejects, so the console must say why
             po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model not imported - " + e.getMessage()));

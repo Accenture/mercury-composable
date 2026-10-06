@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.common;
 
+import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.platformlambda.core.serializers.CanonicalPackager;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -207,5 +209,31 @@ class GraphSetTest {
         assertFalse(properties.containsKey("note"));
         assertEquals("", properties.get("empty"));
         assertNotNull(GraphModelGate.validate("n", model));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void theDeploymentReadFollowsTheSharedNormalizationVectors(@TempDir Path dir) throws IOException {
+        // the configuration reader's normalization, which the Rust engine reproduces for graphs: the same vector
+        // file, byte-identical, is read by the Rust compiler's test
+        Map<String, Object> vectors;
+        try (var in = GraphSetTest.class.getResourceAsStream("/graph-read-normalization-vectors.json")) {
+            assertNotNull(in, "the vector file");
+            vectors = SimpleMapper.getInstance().getMapper().readValue(new String(in.readAllBytes(), UTF_8), Map.class);
+        }
+        // the inputs hold nulls, so they are written back with a writer that keeps them
+        var writer = new GsonBuilder().serializeNulls().disableHtmlEscaping().create();
+        var cases = (List<Map<String, Object>>) vectors.get("cases");
+        assertFalse(cases.isEmpty());
+        for (var c : cases) {
+            var name = String.valueOf(c.get("name"));
+            var file = Files.writeString(dir.resolve(name + ".json"), writer.toJson(c.get("input")));
+            var read = new ConfigReader("file:" + file).getMap();
+            assertArrayEquals(CanonicalPackager.encode(c.get("expected")), CanonicalPackager.encode(read),
+                    name + ": " + SimpleMapper.getInstance().getMapper().writeValueAsString(read));
+            if ("accepted".equals(c.get("gate"))) {
+                assertNotNull(GraphModelGate.validate(name, read), name);
+            }
+        }
     }
 }
