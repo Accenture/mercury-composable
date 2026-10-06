@@ -554,7 +554,7 @@
   <!-- id: minimalist-msgpack-codec | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-164045 -->
 
 - **One shared hostile-header vector file pins the MsgPack decoders of both engines (Eric's ask, 2026-10-06; Java branch
-  `test/msgpack-hostile-header-vectors` commit `7d655e65`, the Rust twin on the same branch name; PRs pending).**
+  `test/msgpack-hostile-header-vectors` commit `7d655e65`, PR #519; the Rust twin mercury #361; both open).**
   `msgpack-hostile-header-vectors.json` - 22 inputs every decoder must refuse (a str, bin or ext length or an array or map count
   beyond the remaining bytes, the CVE-2026-90473 `map 32` shape among them; fixed-width values cut short; the never-used `0xc1`;
   65-level nesting) and 9 controls that must decode to exactly their JSON value, so a decoder that refuses everything fails -
