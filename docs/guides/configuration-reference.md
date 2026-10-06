@@ -1524,7 +1524,7 @@ the Rust engine, whose serialization is snake_case at compile time. Set `false` 
 |------|---------|
 | `boolean` | `false` |
 
-When `false`, a per-instance subdirectory is created under `transient.data.store`. When `true`, the path is used as-is (for ephemeral containers).
+When `false`, a per-instance subdirectory is created under `transient.data.store` and removed when the application shuts down. When `true`, the path is used as-is (for ephemeral containers).
 
 ### `transient.data.store`
 

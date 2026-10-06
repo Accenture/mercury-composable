@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayDeque;
@@ -68,6 +69,7 @@ class FileElasticStore implements ElasticStore {
     private static final ReentrantLock SAFETY = new ReentrantLock();
     private static final AtomicBoolean LOADED = new AtomicBoolean(false);
     static File baseDir;   // package-private: read by tests to assert segment reclamation
+    private static boolean instanceFolder;
 
     private final String id;
     private final String safeId;
@@ -105,6 +107,7 @@ class FileElasticStore implements ElasticStore {
                     boolean runningInCloud = "true".equals(config.getProperty("running.in.cloud", "false"));
                     baseDir = runningInCloud ? tmpRoot
                             : new File(tmpRoot, platform.getName() + "-" + platform.getOrigin());
+                    instanceFolder = !runningInCloud;
                     if (!baseDir.exists() && baseDir.mkdirs()) {
                         log.info("{} created", baseDir);
                     }
@@ -148,11 +151,29 @@ class FileElasticStore implements ElasticStore {
 
     private static void shutdown() {
         if (baseDir != null) {
-            purgeLeftoverSegments(baseDir, null);
+            removeHoldingArea(baseDir, instanceFolder);
+        }
+    }
+
+    /**
+     * Clean up a holding area at shutdown: purge its segment files and the RUNNING marker, then remove the
+     * per-instance folder once it is empty. With running.in.cloud the folder is the configured store itself,
+     * so it stays; so does a folder that holds anything else.
+     */
+    static void removeHoldingArea(File dir, boolean instanceFolder) {
+        purgeLeftoverSegments(dir, null);
+        try {
+            Files.deleteIfExists(new File(dir, RUNNING).toPath());
+        } catch (IOException e) {
+            log.debug("Unable to delete {} marker - {}", RUNNING, e.getMessage());
+        }
+        if (instanceFolder) {
             try {
-                Files.deleteIfExists(new File(baseDir, RUNNING).toPath());
+                Files.deleteIfExists(dir.toPath());
+            } catch (DirectoryNotEmptyException e) {
+                log.debug("Holding area {} kept - it holds files of another kind", dir);
             } catch (IOException e) {
-                log.debug("Unable to delete {} marker - {}", RUNNING, e.getMessage());
+                log.debug("Unable to remove {} - {}", dir, e.getMessage());
             }
         }
     }
