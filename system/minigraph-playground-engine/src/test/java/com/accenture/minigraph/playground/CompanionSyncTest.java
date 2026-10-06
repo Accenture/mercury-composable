@@ -18,8 +18,11 @@
 
 package com.accenture.minigraph.playground;
 
+import com.accenture.minigraph.common.GraphSet;
 import com.accenture.minigraph.mock.CountingStepTask;
+import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.services.GraphCommandService;
+import com.accenture.minigraph.start.CompileGraph;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
@@ -34,6 +37,9 @@ import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -883,6 +889,49 @@ class CompanionSyncTest {
         // a connections section given as null is absent, not "not a list"
         assertNull(GraphCommandService.validateGraphModel(mapper.readValue(
                 "{\"nodes\": [{\"alias\": \"root\", \"types\": [\"Root\"]}], \"connections\": null}", Map.class)));
+    }
+
+    /**
+     * A graph deployed from a set (ADR-0027): 'list graphs' shows its set and version, and 'import graph from' finds
+     * its unpacked file, because the unpack folder is a deployed location.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void aGraphFromASetIsListedWithItsSetAndImports() throws Exception {
+        var folder = Files.createTempDirectory("graph-set-sync");
+        try {
+            Map<String, Object> model = SimpleMapper.getInstance().getMapper().readValue("""
+                    {"nodes": [
+                      {"alias": "root", "types": ["Root"],
+                       "properties": {"purpose": "a graph from a set", "name": "unit-test-set-listed"}},
+                      {"alias": "end", "types": ["End"], "properties": {}}],
+                     "connections": [{"source": "root", "target": "end", "relations": [{"type": "done", "properties": {}}]}]}
+                    """, Map.class);
+            Files.write(folder.resolve("listed-set.pack"),
+                    GraphSet.pack("listed-set", Map.of("version", "2.0.0"), Map.of("unit-test-set-listed", model)));
+            Files.writeString(folder.resolve("graphs.yaml"), """
+                    location: 'file:%s'
+                    sets:
+                      - 'listed-set'
+                    unpack: 'file:%s'
+                    """.formatted(folder, folder.resolve("unpack")));
+            new CompileGraph().compileManifest("file:" + folder.resolve("graphs.yaml"));
+            var po = EventEmitter.getInstance();
+            var sid = openCompanionSession("990042");
+            var listed = String.valueOf(syncCommand(po, sid, "list graphs"));
+            assertTrue(listed.contains("unit-test-set-listed - a graph from a set (set listed-set, version 2.0.0)"), listed);
+            syncCommand(po, sid, "import graph from unit-test-set-listed");
+            var draft = (Map<String, Object>) GraphCommandService.downloadGraph(sid);
+            assertNotNull(draft, "the unpacked graph imports as the draft");
+            var root = ((List<Map<String, Object>>) draft.get("nodes")).stream()
+                    .filter(n -> "root".equals(n.get("alias"))).findFirst().orElseThrow();
+            assertEquals("unit-test-set-listed", ((Map<String, Object>) root.get("properties")).get("name"));
+        } finally {
+            CompiledGraphs.removeGraph("unit-test-set-listed");
+            try (var paths = Files.walk(folder)) {
+                paths.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

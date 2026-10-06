@@ -44,8 +44,18 @@ public class CompiledGraphs {
     private static final ConcurrentMap<String, Map<String, Object>> COMPILED_GRAPHS = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, String> GRAPH_LOCATIONS = new ConcurrentHashMap<>();
     private static final CopyOnWriteArrayList<String> DEPLOYED_LOCATIONS = new CopyOnWriteArrayList<>();
+    private static final ConcurrentMap<String, DeployedSet> GRAPH_SETS = new ConcurrentHashMap<>();
 
     private CompiledGraphs() {}
+
+    /**
+     * The graph set a deployed graph came from (ADR-0027)
+     *
+     * @param name the set name, which is the package's file name without '.pack'
+     * @param version the set's 'version' manifest field, empty when the set has none
+     */
+    public record DeployedSet(String name, String version) {
+    }
 
     /**
      * Get a compiled graph model
@@ -75,8 +85,35 @@ public class CompiledGraphs {
      * @param location the deployed location (file:/ or classpath:/) the model was compiled from
      */
     public static void addGraph(String graphId, Map<String, Object> model, String location) {
+        addGraph(graphId, model, location, null);
+    }
+
+    /**
+     * Register a compiled graph model that came from a graph set
+     *
+     * @param graphId of the deployed graph
+     * @param model the compiled graph model
+     * @param location the deployed location (file:/ or classpath:/) the model was compiled from
+     * @param set the graph set it came from, or null for a graph a manifest lists
+     */
+    public static void addGraph(String graphId, Map<String, Object> model, String location, DeployedSet set) {
         COMPILED_GRAPHS.put(graphId, model);
         GRAPH_LOCATIONS.put(graphId, location);
+        if (set == null) {
+            GRAPH_SETS.remove(graphId);
+        } else {
+            GRAPH_SETS.put(graphId, set);
+        }
+    }
+
+    /**
+     * The graph set a compiled graph came from
+     *
+     * @param graphId of the deployed graph
+     * @return the set, or null when a manifest lists the graph or the graph is not compiled
+     */
+    public static DeployedSet getGraphSet(String graphId) {
+        return GRAPH_SETS.get(graphId);
     }
 
     /**
@@ -85,6 +122,7 @@ public class CompiledGraphs {
      * @param graphId of the deployed graph
      */
     public static void removeGraph(String graphId) {
+        GRAPH_SETS.remove(graphId);
         GRAPH_LOCATIONS.remove(graphId);
         COMPILED_GRAPHS.remove(graphId);
     }

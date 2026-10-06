@@ -69,6 +69,10 @@ import java.util.Map;
  * graph that fails, or is not listed, answers HTTP-404 as if it does not exist. This is the
  * CompileFlows precedent: an invalid flow never becomes executable, and there is no lazy
  * loading of unvalidated models.
+ * <p>
+ * A manifest may also list packaged graph sets (ADR-0027): 'sets' names packages read from its location as
+ * '{set}.pack', and 'unpack' names a file:/ folder the application can write. GraphSetLoader unpacks each set
+ * there and deploys it all or none, right after the manifest's own graphs.
  * Ad-hoc graphs created interactively through the dev playground are intentionally out of scope since
  * they are not known ahead of time (the playground dry-run runs from its own temp workspace).
  */
@@ -85,6 +89,7 @@ public class CompileGraph implements EntryPoint {
 
     @Override
     public void start(String[] args) {
+        GraphSetLoader.reset();
         AppConfigReader config = AppConfigReader.getInstance();
         if (!config.getProperty("location.graph.deployed", "").isBlank()) {
             log.warn("location.graph.deployed is obsolete - " +
@@ -107,7 +112,12 @@ public class CompileGraph implements EntryPoint {
         log.info("Graph models compiled: {}", CompiledGraphs.getAllGraphs().size());
     }
 
-    private void compileManifest(String manifest) {
+    /**
+     * Compile one manifest: its loose graphs, then its packaged sets (ADR-0027).
+     *
+     * @param manifest the manifest's path (file:/ or classpath:/)
+     */
+    public void compileManifest(String manifest) {
         try {
             var reader = new ConfigReader(manifest);
             log.info("Loading graph manifest {}", manifest);
@@ -127,6 +137,8 @@ public class CompileGraph implements EntryPoint {
                     compileOneGraph(deployLocation, graphId);
                 }
             }
+            // a manifest's sets compile right after its own graphs, before the next manifest
+            GraphSetLoader.deploy(manifest, reader, deployLocation);
         } catch (IllegalArgumentException e) {
             log.warn("Unable to load graph manifest {} - {}", manifest, e.getMessage());
         }
@@ -139,7 +151,14 @@ public class CompileGraph implements EntryPoint {
         // replace (a curl test would otherwise pass against the old behavior)
         var previous = CompiledGraphs.getGraphLocation(graphId);
         if (previous != null && !previous.equals(deployLocation)) {
-            log.warn("Graph {} from {} replaces the copy from {}", graphId, deployLocation, previous);
+            var previousSet = CompiledGraphs.getGraphSet(graphId);
+            if (previousSet == null) {
+                log.warn("Graph {} from {} replaces the copy from {}", graphId, deployLocation, previous);
+            } else if (log.isErrorEnabled()) {
+                // a duplicate that involves a graph set is an error, the later copy still wins (ADR-0027)
+                log.error("Graph {} from {} replaces the copy from {}", graphId, deployLocation,
+                        GraphSetLoader.describe(previous, previousSet));
+            }
             CompiledGraphs.removeGraph(graphId);
         }
         try {

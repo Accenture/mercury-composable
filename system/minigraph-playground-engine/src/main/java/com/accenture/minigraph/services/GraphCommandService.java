@@ -860,7 +860,17 @@ public class GraphCommandService extends GraphLambdaFunction {
         sb.append("Deployed graph models - extension={graph-id} targets:\n");
         for (var id : ids) {
             var purpose = graphPurpose(id);
-            sb.append(purpose == null? id : id + " - " + purpose).append('\n');
+            sb.append(purpose == null? id : id + " - " + purpose);
+            // a graph deployed from a set shows the set and its version (ADR-0027)
+            var set = CompiledGraphs.getGraphSet(id);
+            if (set != null) {
+                sb.append(" (set ").append(set.name());
+                if (!set.version().isEmpty()) {
+                    sb.append(", version ").append(set.version());
+                }
+                sb.append(')');
+            }
+            sb.append('\n');
         }
         sb.append(TOTAL).append(ids.size()).append(ids.size() == 1? " graph model" : " graph models").append('\n');
         sb.append("Use 'describe graph {graph-id}' for a model's input/output contract");
