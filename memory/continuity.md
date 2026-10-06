@@ -512,6 +512,22 @@
   [[canonical-packager-wire-contract]] and [[graph-manifest-list-later-wins]]. (ADR-0027)
   <!-- id: graph-set-pack-and-deploy | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-012206 -->
 
+- **A MsgPack payload may nest at most 64 maps and lists in both engines, the outermost container being level 1 (Eric, 2026-10-06;
+  Java #514 and the Rust twin mercury #358, Increment 160, open at writing).** Found answering the field scanners' finding on
+  `msgpack-core` 0.9.12 (CVE-2026-90472, deep nesting in the library's `unpackValue()`; CVE-2026-90473, a MAP32 count overflow in
+  `skipValue()`). The engine reaches neither method: platform-core's `MsgPack` walks maps and lists itself and calls `skipValue()` only on
+  an extension value, and `CanonicalPackager` calls neither. But its own reader recursed with no bound, so about 100 KB of nested arrays
+  ended in `StackOverflowError`, which the Event API's `catch (Exception e)` misses. Eric approved 1,024 first, then asked for "a smaller
+  and realistic nesting level for both engines": 64, the canonical packager's bound. **The rule:** `MsgPack.MAX_DEPTH` and Rust
+  `serializer::MAX_DEPTH` are 64; a 65th level is refused with `Nesting deeper than 64 levels` (Java `IOException`, which `EventEnvelope`
+  reports as `IllegalArgumentException`; Rust `serializer::from_msgpack`), and the Event API answers HTTP 400 in both. The envelope map
+  is level 1, so a body nests at most 63. **Rust lesson, measured with a throwaway test:** rmp-serde's default of 1,024 (it counts the
+  outermost container, so 1,023 decode) is no guard in a debug build: a 2 MiB thread stack overflowed between 500 and 600 nested arrays
+  and aborted the process. Measure a library's depth limit against the stack, not against its documentation. Pinned by the claim
+  `msgpack-nesting-limit` (both registries; the wire format's rule 8 and both envelope references) and twin tests; a negative control
+  showed the Java tests failing on the old reader. Relates [[canonical-packager-wire-contract]], [[msgpack-core-cve-upgrade]].
+  <!-- id: msgpack-nesting-limit-64 | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-025608 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
@@ -653,6 +669,15 @@
   carry the result. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout: only the entry
   page moved out of `public/`).
   <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-04 | uses: 9 | tier: archive-candidate | origin: 2026-10-02-015208 -->
+
+- **Under the Spring Boot parent, a bump of a Boot-managed library goes through Boot's version property, and a version sweep is
+  verified by what resolves, not by the pom text (2026-10-06, #513).** The poms declare `junit-bom` as a plain test dependency
+  (`<type>pom</type>`), which manages nothing, so bumping it from 6.0.3 to 6.1.3 left every test on Boot 4.1.1's JUnit 6.0.3, as
+  `mvn dependency:list` showed. `<junit-jupiter.version>` (37 poms, beside `<tomcat.version>`) moved it. Likewise a module that never pins a
+  Maven plugin builds with Boot's pluginManagement version (8 modules: compiler 3.14.1, surefire 3.5.4) or Maven's default (the Kotlin
+  example); the build log's `--- plugin:version` lines show which ran. Replace versions by artifact, never by bare string: 3.3.1 is both
+  maven-source-plugin and maven-resources-plugin. Relates [[conv-template-version-sweep]] (the templates' Gradle builds pin `junit-bom` too).
+  <!-- id: conv-boot-managed-version-overrides | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-025608 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
