@@ -553,6 +553,24 @@
   merge; [[minimalist-msgpack]] closed when both PRs merged. (ADR-0028)
   <!-- id: minimalist-msgpack-codec | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-164045 -->
 
+- **One shared hostile-header vector file pins the MsgPack decoders of both engines (Eric's ask, 2026-10-06; Java branch
+  `test/msgpack-hostile-header-vectors` commit `7d655e65`, the Rust twin on the same branch name; PRs pending).**
+  `msgpack-hostile-header-vectors.json` - 22 inputs every decoder must refuse (a str, bin or ext length or an array or map count
+  beyond the remaining bytes, the CVE-2026-90473 `map 32` shape among them; fixed-width values cut short; the never-used `0xc1`;
+  65-level nesting) and 9 controls that must decode to exactly their JSON value, so a decoder that refuses everything fails -
+  byte-identical in both repositories, every input a top-level container so it reaches the decoders as an event payload would.
+  Java runs it through `MsgPack.unpack`, `EventEnvelope` and `CanonicalPackager.decode`; Rust through `serializer::from_msgpack`,
+  `EventEnvelope::from_bytes` and `canonical_packager::decode`; the claim `msgpack-hostile-header` (wire-format rule 9, both
+  envelope references) sits beside `msgpack-nesting-limit`. **The first run found a divergence:** `rmpv` reads `0xc1` as nil, so
+  the Rust canonical decoder accepted `91 c1` while `rmp-serde` and the Java reader refuse it; the Rust canonical decoder now walks
+  the markers before decoding (`check_markers`, iterative, allocation-free) and refuses `0xc1` and any header that promises more
+  than the input holds, the Java reader's rule, with `rmp` declared for its `Marker` table. **Observed, not ruled:** on empty input
+  Java's `MsgPack.unpack` returns an empty map while the Rust decoders refuse it; the vectors leave that case out until Eric rules.
+  Lesson: parity believed is not parity tested - the shared-file method ([[canonical-packager-wire-contract]],
+  [[msgpack-nesting-limit-64]]) caught a divergence the first time it ran. Extends [[minimalist-msgpack-codec]] (ADR-0028's
+  reader rules, now pinned on both sides).
+  <!-- id: msgpack-hostile-header-vectors | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-164045 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
