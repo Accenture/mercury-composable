@@ -3034,8 +3034,8 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 </code></pre></div>
 <hr />
 <h2 id="rfc-0005-graph-sets-a-packunpack-cli-a-playground-packaging-panel-and-sets-unpack-in-the-deployment-manifest">RFC-0005 — Graph sets: a pack/unpack CLI, a Playground packaging panel, and <code>sets</code> + <code>unpack</code> in the deployment manifest<a class="headerlink" href="#rfc-0005-graph-sets-a-packunpack-cli-a-playground-packaging-panel-and-sets-unpack-in-the-deployment-manifest" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-10-03 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>graph-set-packaging</code></p>
-<!-- id: rfc-0005 | status: open | thread: graph-set-packaging -->
+<p><strong>Status:</strong> Promoted → ADR-0027 · <strong>Raised:</strong> 2026-10-03 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>graph-set-packaging</code></p>
+<!-- id: rfc-0005 | status: promoted | thread: graph-set-packaging -->
 
 <p><strong>Proposal.</strong> The first consumer of the canonical packager (ADR-0026), from Eric's design notes of 2026-10-03; the review and
 the sprint plan are in <code>draft-design-specs/graph-set-packaging-and-deployment.md</code>. (1) A command-line packager — <code>pack</code>,
@@ -3067,7 +3067,7 @@ scope. The open questions: <code>pack --from-manifest &lt;graphs.yaml&gt;</code>
 implicit next entry of the automation list; a set's <code>version</code> shows in <code>list graphs</code> and in the deploy <code>INFO</code> line. <code>unpack</code>
 is a <code>file:/</code> folder with read and write access, <code>classpath:</code> rejected. Promotion to an ADR follows the implementation
 (the RFC-0001/RFC-0002 method: implement on a branch, promote after review and green CI).</p>
-<p><strong>Resolution.</strong> Open — implementation in the next sprint (thread <code>graph-set-packaging</code>).</p>
+<p><strong>Resolution.</strong> Promoted → ADR-0027 (2026-10-06, Eric): option (a), the generated manifest in the unpack folder, with D1 to D9 and the three answers above. Accepted after the first two work packages shipped, ahead of the rest of the sprint: the gate as one shared method and the command-line packager (the Java engine's PR #508 and the Rust engine's PR #356, Increment 158). Added at promotion (Eric): a set holds one graph or more, because packing a graph alone is how one graph is signed; both engines' tests pin a set of one graph to the same bytes. The loader, the endpoints, the panel and the documentation (WP3 to WP6) follow under the ADR.</p>
 <hr />
 <h2 id="rfc-0004-a-bracket-lookup-plugin-for-tariff-tables-fdecimalbracket">RFC-0004 — A bracket-lookup plugin for tariff tables (<code>f:decimalBracket</code>)<a class="headerlink" href="#rfc-0004-a-bracket-lookup-plugin-for-tariff-tables-fdecimalbracket" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Withdrawn · <strong>Raised:</strong> 2026-10-01 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> none</p>

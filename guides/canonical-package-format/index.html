@@ -3149,9 +3149,12 @@ file: every value, package and corpus entry must produce the expected bytes, and
 <p>The <code>mercury-python</code> and <code>mercury-nodejs</code> language packs do not carry it: they serve functions to a Java or Rust application over
 <a href="../event-over-http/">Event over HTTP</a> and never read a graph package.</p>
 <h2 id="not-part-of-the-packager">Not part of the packager<a class="headerlink" href="#not-part-of-the-packager" title="Permanent link">&para;</a></h2>
-<p>Trusted timestamps, per-entry hashes in the manifest, hot reload, compression, the folder <code>pack</code> and <code>unpack</code> tooling, and a
-graph-set loader that would register all graphs or none, are deferred until field use asks for them. The decision and its
-alternatives are recorded in <a href="../../arch-decisions/ADR/#adr-0026">ADR-0026</a>.</p>
+<p>Trusted timestamps, per-entry hashes in the manifest, hot reload and compression are deferred until field use asks for them. The
+decision and its alternatives are recorded in <a href="../../arch-decisions/ADR/#adr-0026">ADR-0026</a>.</p>
+<p>Graph sets, the packager's first consumer, are decided in <a href="../../arch-decisions/ADR/#adr-0027">ADR-0027</a>: one or more graphs in a
+<code>&lt;set&gt;.pack</code> file, which the graph packager (<code>helpers/graph-packager</code>) packs, unpacks and inspects from the command line. A set may
+hold a single graph, so that one graph can be signed on its own. Deploying a set through the deployment manifest, all of its graphs
+or none, is the next step.</p>
 
 
 
