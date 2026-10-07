@@ -516,8 +516,9 @@
   2026-10-06; WP5, the Playground's "Graph set packaging" panel (the `'package'` left-slot mode, packing on the engine, inspect mode, the
   bundle on both engines), shipped in #526 (squash `f84c40cb`) and mercury #366 (merge `82aa3c86`, Increment 168), both MERGED
   2026-10-07; WP6, the docs (`sets` and `unpack` in the configuration reference, the package page's *Graph sets*, the packaged path
-  in the AI agent guide, `help package`, five loader claims on both engines), OPEN as #527 (head `7eced7d2`) and mercury #367
-  (Increment 169) since 2026-10-07: [[graph-set-packaging]]. Extends
+  in the AI agent guide, `help package`, five loader claims on both engines), shipped in #527 (squash `db7069ee`) and mercury #367
+  (merge `daa493ba`, Increment 169), both MERGED 2026-10-07. The sprint is complete and [[graph-set-packaging]] is closed; signing
+  and verifying a set stay outside the engine (the seams of ADR-0027). Extends
   [[canonical-packager-wire-contract]] and [[graph-manifest-list-later-wins]]. (ADR-0027)
   <!-- id: graph-set-pack-and-deploy | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-012206 -->
 
