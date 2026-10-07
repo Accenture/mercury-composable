@@ -10,7 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Each change merged to `main` after v4.12.20 is listed here; it moves under its release heading when the version is cut.
+Nothing yet. Each change merged to `main` after v4.12.21 is listed here; it moves under its release heading when the version is cut.
+
+---
+## Version 4.12.21, 10/7/2026
+
+Graph sets on both engines, and the engine's own MessagePack codec, in lock-step (Rust 4.12.21, Increments 148 to 169). A
+graph set is one or more graph models packed as one deterministic `<set>.pack` (ADR-0027): the graph packager packs, unpacks
+and inspects it from the command line, the deployment manifest deploys it all or none through `sets` and an `unpack` folder,
+the Playground packs and reads one on the engine from its new **Graph set packaging** panel, and the lane is documented with
+five pinned claims. `system/minimalist-msgpack`, a zero-dependency codec written from the specification, replaces
+`org.msgpack:msgpack-core` under platform-core (ADR-0028), and the decoders of both engines are hardened and pinned by shared
+vectors: at most 64 nested levels, hostile headers refused, exactly one value per payload, empty input as an empty map. The
+Playground also imports and downloads graph files, runs in three explicit steps, has one webapp source for both engines, and
+points its AI nodes at the LLM helper app. **Upgrade action: read items 1, 6, 12, 13, 14 and 32.** `org.msgpack.*` is no
+longer transitive and every decoding failure is an `IOException` (an `IllegalArgumentException` at `EventEnvelope`); a payload
+nested deeper than 64 levels, or followed by extra bytes, is refused with HTTP 400 at the Event API; Tomcat, Vert.x, ASM,
+Guava and JUnit move; and a Layer 3 application that wants the new Playground features adds the `import.graph.content`,
+`pack.graph.set` and `unpack.graph.set` routes to its `rest.yaml`.
 
 ### Added
 
