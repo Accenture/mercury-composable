@@ -2401,6 +2401,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#graph-sets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graph sets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#not-part-of-the-packager" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2996,6 +3007,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#graph-sets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graph sets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#not-part-of-the-packager" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3178,13 +3200,35 @@ file: every value, package and corpus entry must produce the expected bytes, and
 </table>
 <p>The <code>mercury-python</code> and <code>mercury-nodejs</code> language packs do not carry it: they serve functions to a Java or Rust application over
 <a href="../event-over-http/">Event over HTTP</a> and never read a graph package.</p>
+<h2 id="graph-sets">Graph sets<a class="headerlink" href="#graph-sets" title="Permanent link">&para;</a></h2>
+<p>The packager's first consumer (<a href="../../arch-decisions/ADR/#adr-0027">ADR-0027</a>): one or more graph models delivered together as
+one <code>&lt;set&gt;.pack</code>. The file name without the extension is the set name. Each graph is one entry named <code>&lt;graph-id&gt;.json</code> — the
+id follows the file-name rule (letters, digits, <code>_</code> and <code>-</code>) and the root node, when it carries a <code>name</code>, is named after it —
+and the manifest holds <code>format</code> and <code>format_version</code> from the packager, <code>set</code> from the set name, and the caller's text
+fields: <code>version</code>, <code>description</code>, <code>author</code>, the optional <code>graph_id</code> naming the set's entry-point graph, anything a pipeline
+wants recorded. Nothing comes from the clock or the environment: the same graphs and fields give the same bytes, a <code>${...}</code>
+reference stays unresolved for the environment the set is deployed to, and a <code>"key": null</code> property is filtered out as the
+engine's serializer does. Every graph passes the deployment gate's own checks as it is packed, so a set that breaks a rule is
+refused with every reason. A set of one graph is valid on purpose — packing a graph alone is how one graph is signed; only an
+empty set is refused.</p>
+<p>Three tools write and read it, all over the engine's packager, so the bytes are the same whichever one packs:</p>
+<ul>
+<li><strong>the command line</strong> — <code>helpers/graph-packager</code>, an executable jar (<code>tools/graph-packager</code>, a binary, in the Rust repository):
+  <code>pack --set &lt;name&gt; [--manifest key=value]... &lt;graph.json&gt;... | &lt;folder&gt;</code>, or <code>pack --set &lt;name&gt; --from-manifest graphs.yaml</code>
+  for exactly the graphs a deployment manifest lists; <code>unpack &lt;file.pack&gt; --out &lt;dir&gt;</code> writes readable JSON in canonical key
+  order; <code>inspect &lt;file.pack&gt; [--json]</code> prints the manifest, the graphs and the SHA-256 — a convenience for a signer, not
+  integrity inside the package. Exit codes: 0, 1 for a refused input, 2 for an I/O or format error;</li>
+<li><strong>the Playground's Graph set packaging panel</strong> (dev mode, in the Tools menu; <code>POST /api/graph-set/pack</code> and
+  <code>POST /api/graph-set/unpack</code>), which packs on the engine and reads a set back for inspection — <code>help package</code> in the
+  console describes it;</li>
+<li><strong>the deployment manifest's <code>sets</code></strong>, which deploys a set all of its graphs or none through an <code>unpack</code> folder — the
+  <code>graph.model.automation</code> key in the <a href="../configuration-reference/">configuration reference</a>.</li>
+</ul>
+<p>A signature stays outside the package: a detached <code>&lt;set&gt;.pack.sig</code> beside the file is the convention a signing utility and a
+later verifying hook can share; the engine verifies nothing at startup in this version.</p>
 <h2 id="not-part-of-the-packager">Not part of the packager<a class="headerlink" href="#not-part-of-the-packager" title="Permanent link">&para;</a></h2>
 <p>Trusted timestamps, per-entry hashes in the manifest, hot reload and compression are deferred until field use asks for them. The
 decision and its alternatives are recorded in <a href="../../arch-decisions/ADR/#adr-0026">ADR-0026</a>.</p>
-<p>Graph sets, the packager's first consumer, are decided in <a href="../../arch-decisions/ADR/#adr-0027">ADR-0027</a>: one or more graphs in a
-<code>&lt;set&gt;.pack</code> file, which the graph packager (<code>helpers/graph-packager</code>) packs, unpacks and inspects from the command line. A set may
-hold a single graph, so that one graph can be signed on its own. Deploying a set through the deployment manifest, all of its graphs
-or none, is the next step.</p>
 
 
 

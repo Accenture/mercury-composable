@@ -3174,6 +3174,11 @@ so the bundled graphs stay deployed beside the prototype; when both list the sam
 manifest wins. Only listed ids are executable, and a deployment is still a restart — <code>CompileGraph</code>
 runs once at startup. The full recipe, with the log lines to verify and the session choreography for
 a hosted Playground, is in the <a href="../ai-agent-guide/#deploy-without-rebuild">AI agent guide</a>.</p>
+<p><strong>Packaged sets.</strong> Graphs that belong together can travel as one file: the graph packager, or the
+Playground's <strong>Graph set packaging</strong> panel, packs them into <code>&lt;set&gt;.pack</code> — checked by the same gate as
+they are packed — and the manifest deploys the set all or none through <code>sets</code> and an <code>unpack</code> folder.
+See the <a href="../../canonical-package-format/#graph-sets">canonical package format</a> and the
+<a href="../../configuration-reference/">configuration reference</a>.</p>
 <p>At startup, <code>CompileGraph</code> validates every manifest graph once — structure, the root node's
 <code>purpose</code>, data-mapping syntax, and the suspend/resume contract — and only graphs that pass
 become executable. A graph that fails the gate, or is not listed, answers <strong>HTTP-404</strong> as if

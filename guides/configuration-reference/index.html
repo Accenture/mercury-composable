@@ -7626,6 +7626,36 @@ ADR-0011). Like every property, a JVM system property overrides it for one run
 the bundled manifest keeps its graphs, and a <code>file:/</code> manifest beside it deploys an exported graph
 without a rebuild — the <a href="../knowledge-graph/ai-agent-guide/#deploy-without-rebuild">rapid-prototyping path</a>.
 Only the ids the listed manifests name are executable.</p>
+<p><strong>Packaged sets (ADR-0027).</strong> Beside its <code>graphs</code>, a manifest may list <code>sets</code> — graph sets packed as
+<code>&lt;set&gt;.pack</code> (<a href="../canonical-package-format/#graph-sets">the canonical package</a>), read from the manifest's
+<code>location</code> — and must then name an <code>unpack</code> folder: a <code>file:/</code> location the application can write, where the
+loader writes every graph of a set as <code>&lt;unpack&gt;/&lt;graph-id&gt;.json</code> before the gate reads it. A <code>classpath:</code> value,
+the Playground's temp folder (<code>location.graph.temp</code>) and a folder another manifest already uses are refused:
+<code>sets</code> need a writable <code>unpack</code> folder of their own, and without one the manifest's sets are skipped with an ERROR
+while its loose graphs still compile.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">graphs</span><span class="p">:</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'tutorial-1'</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="s">'classpath:/graph'</span><span class="w">          </span><span class="c1"># where &lt;graph-id&gt;.json AND &lt;set&gt;.pack are read from</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="nt">sets</span><span class="p">:</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'settlement'</span><span class="w">                      </span><span class="c1"># &lt;location&gt;/settlement.pack</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nt">unpack</span><span class="p">:</span><span class="w"> </span><span class="s">'file:/opt/graphs/unpacked'</span><span class="w">   </span><span class="c1"># required with sets: file:/ only, read-write, one manifest per folder</span>
+</code></pre></div>
+<p>At startup each set is read strictly and its names are checked before any path is built — every entry is
+<code>&lt;graph-id&gt;.json</code>, the root node is named after its id, an optional <code>graph_id</code> names one of the entries — so a set
+with a crafted entry name is rejected before any file is written. Its graphs are then unpacked and pass the gate
+like any deployed graph, and a set registers all of its graphs or none: one rejected graph leaves none of its set
+executable, and the ERROR names every failure. A manifest's sets compile right after its own graphs, in the order
+listed, and the precedence rule above holds across sets — a later copy in compile order owns a duplicate id, and
+a duplicate that involves a set is logged as an ERROR (between loose manifests it stays a warning). The loader
+writes a generated manifest, <code>&lt;unpack&gt;/graphs.yaml</code>, listing the graphs it deployed and every file it wrote, so
+the next start removes a graph a new version of the set no longer holds and touches no other file; the generated
+manifest is the implicit next entry of the automation list — logged at every start, never added to the property —
+which is why <code>list graphs</code> shows a set's graphs with their set and version (<code>tutorial-1 (set settlement, version
+1.0.0)</code>) and <code>import graph from &lt;id&gt;</code> finds the unpacked copy. The startup log reads <code>Deployed set settlement
+(version 1.0.0) from file:/... - 2 graphs into file:/opt/graphs/unpacked</code>; a set that cannot be read (a missing
+or non-canonical file) is skipped with an ERROR and the other sets still deploy. The graph packager and the
+Playground's <strong>Graph set packaging</strong> panel write the file; a deployment is still a restart.</p>
 <h3 id="locationgraphtemp"><code>location.graph.temp</code><a class="headerlink" href="#locationgraphtemp" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -9821,63 +9851,63 @@ the Rust engine, whose serialization is snake_case at compile time. Set <code>fa
 <h2 id="complete-example">Complete Example<a class="headerlink" href="#complete-example" title="Permanent link">&para;</a></h2>
 <p>A typical <code>src/main/resources/application.properties</code> for a REST-serving composable
 application. This covers the properties most developers will need to configure.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">#</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># Mercury Composable — Example application.properties</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1">#</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># --- Application Identity ---</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="na">application.name</span><span class="o">=</span><span class="s">my-service</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="na">info.app.version</span><span class="o">=</span><span class="s">1.0.0</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="na">info.app.description</span><span class="o">=</span><span class="s">My composable microservice</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># --- Server ---</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="na">rest.server.port</span><span class="o">=</span><span class="s">8100</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="c1"># --- REST Automation ---</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="na">rest.automation</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="na">yaml.rest.automation</span><span class="o">=</span><span class="s">classpath:/rest.yaml</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="na">static.html.folder</span><span class="o">=</span><span class="s">classpath:/public</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="c1"># --- Event Script / Flows ---</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="na">yaml.flow.automation</span><span class="o">=</span><span class="s">classpath:/flows.yaml</span>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="c1"># --- Component Scanning ---</span>
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="na">web.component.scan</span><span class="o">=</span><span class="s">com.example.myapp</span>
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
-<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="c1"># --- Threading ---</span>
-<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="c1"># Increase only if many @KernelThreadRunner functions are used.</span>
-<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="na">kernel.thread.pool</span><span class="o">=</span><span class="s">100</span>
-<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>
-<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="c1"># --- HTTP Client ---</span>
-<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="na">http.client.connection.timeout</span><span class="o">=</span><span class="s">5000</span>
-<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>
-<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="c1"># --- Distributed Tracing ---</span>
-<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="c1"># The trace ID travels as the "X-Trace-Id" header and the W3C "traceparent" header (traceId + spanId).</span>
-<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="c1"># Both are emitted outbound and accepted inbound; "traceparent" takes precedence on inbound. No config.</span>
-<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>
-<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="c1"># --- Correlation ID ---</span>
-<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="c1"># Business correlation-id headers (configurable; defaults shown). Captured at the edge, preserved as</span>
-<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="c1"># model.cid, and propagated downstream. A fresh UUID is generated when absent.</span>
-<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="na">http.correlation.id.header</span><span class="o">=</span><span class="s">X-Correlation-Id</span>
-<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="na">kafka.correlation.id.header</span><span class="o">=</span><span class="s">cid</span>
-<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a>
-<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="c1"># --- Health ---</span>
-<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="c1"># List health-check routes that must all pass for /health to return 200.</span>
-<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="c1"># Add cloud.connector.health when cloud.connector != none.</span>
-<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="c1"># mandatory.health.dependencies=cloud.connector.health</span>
-<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a>
-<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="c1"># --- Actuators ---</span>
-<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="na">protect.info.endpoints</span><span class="o">=</span><span class="s">false</span>
-<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a>
-<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a><span class="c1"># --- Serialization ---</span>
-<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a><span class="na">snake.case.serialization</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a>
-<a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a><span class="c1"># --- Logging ---</span>
-<a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a><span class="na">log.format</span><span class="o">=</span><span class="s">text</span>
-<a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a>
-<a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a><span class="c1"># --- Cloud Connector (uncomment for service mesh) ---</span>
-<a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a><span class="c1"># cloud.connector=kafka</span>
-<a id="__codelineno-1-57" name="__codelineno-1-57" href="#__codelineno-1-57"></a><span class="c1"># cloud.client.properties=file:/tmp/config/kafka.properties,classpath:/kafka.properties</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">#</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># Mercury Composable — Example application.properties</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">#</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># --- Application Identity ---</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="na">application.name</span><span class="o">=</span><span class="s">my-service</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="na">info.app.version</span><span class="o">=</span><span class="s">1.0.0</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="na">info.app.description</span><span class="o">=</span><span class="s">My composable microservice</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># --- Server ---</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="na">rest.server.port</span><span class="o">=</span><span class="s">8100</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c1"># --- REST Automation ---</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="na">rest.automation</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="na">yaml.rest.automation</span><span class="o">=</span><span class="s">classpath:/rest.yaml</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="na">static.html.folder</span><span class="o">=</span><span class="s">classpath:/public</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1"># --- Event Script / Flows ---</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="na">yaml.flow.automation</span><span class="o">=</span><span class="s">classpath:/flows.yaml</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="c1"># --- Component Scanning ---</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="na">web.component.scan</span><span class="o">=</span><span class="s">com.example.myapp</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="c1"># --- Threading ---</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="c1"># Increase only if many @KernelThreadRunner functions are used.</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="na">kernel.thread.pool</span><span class="o">=</span><span class="s">100</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="c1"># --- HTTP Client ---</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="na">http.client.connection.timeout</span><span class="o">=</span><span class="s">5000</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="c1"># --- Distributed Tracing ---</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="c1"># The trace ID travels as the "X-Trace-Id" header and the W3C "traceparent" header (traceId + spanId).</span>
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="c1"># Both are emitted outbound and accepted inbound; "traceparent" takes precedence on inbound. No config.</span>
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a>
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="c1"># --- Correlation ID ---</span>
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="c1"># Business correlation-id headers (configurable; defaults shown). Captured at the edge, preserved as</span>
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="c1"># model.cid, and propagated downstream. A fresh UUID is generated when absent.</span>
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="na">http.correlation.id.header</span><span class="o">=</span><span class="s">X-Correlation-Id</span>
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="na">kafka.correlation.id.header</span><span class="o">=</span><span class="s">cid</span>
+<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a>
+<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="c1"># --- Health ---</span>
+<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a><span class="c1"># List health-check routes that must all pass for /health to return 200.</span>
+<a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a><span class="c1"># Add cloud.connector.health when cloud.connector != none.</span>
+<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a><span class="c1"># mandatory.health.dependencies=cloud.connector.health</span>
+<a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a>
+<a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a><span class="c1"># --- Actuators ---</span>
+<a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a><span class="na">protect.info.endpoints</span><span class="o">=</span><span class="s">false</span>
+<a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a>
+<a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a><span class="c1"># --- Serialization ---</span>
+<a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a><span class="na">snake.case.serialization</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-2-51" name="__codelineno-2-51" href="#__codelineno-2-51"></a>
+<a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a><span class="c1"># --- Logging ---</span>
+<a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a><span class="na">log.format</span><span class="o">=</span><span class="s">text</span>
+<a id="__codelineno-2-54" name="__codelineno-2-54" href="#__codelineno-2-54"></a>
+<a id="__codelineno-2-55" name="__codelineno-2-55" href="#__codelineno-2-55"></a><span class="c1"># --- Cloud Connector (uncomment for service mesh) ---</span>
+<a id="__codelineno-2-56" name="__codelineno-2-56" href="#__codelineno-2-56"></a><span class="c1"># cloud.connector=kafka</span>
+<a id="__codelineno-2-57" name="__codelineno-2-57" href="#__codelineno-2-57"></a><span class="c1"># cloud.client.properties=file:/tmp/config/kafka.properties,classpath:/kafka.properties</span>
 </code></pre></div>
 <hr />
 <h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
