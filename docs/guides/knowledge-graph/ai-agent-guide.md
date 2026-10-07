@@ -210,7 +210,8 @@ A reliable order for building a graph:
    export overwrites cleanly; the delete-and-verify here is defense in depth.) Deploy the JSON
    into your project's `resources/graph/`, list the id in `graphs.yaml`, rebuild, restart, then
    call `POST /api/graph/{name}` — that is the production path; for a prototype or a demo,
-   [deploy from an external manifest without a rebuild](#deploy-without-rebuild).
+   [deploy from an external manifest without a rebuild](#deploy-without-rebuild), and for graphs
+   that travel as one signed artifact, [pack them as a graph set](#deploy-without-rebuild).
 8. **Dry-running the deployed model in a fresh session:** a Playground session opened after the
    restart starts **empty** — no root node — even though the graph is deployed. Run
    `import graph from {name}` first (it falls back to the deployed classpath model, `ok:true`),
@@ -275,6 +276,40 @@ cases, `export graph as {name}`, stage the export in the deploy folder and list 
 manifest, restart with both manifests, and test the deployed behaviour with `curl` — the external
 copy has replaced the bundled one — before bundling the updated JSON into the application.
 
+**The packaged path (ADR-0027).** When the graphs travel as one artifact, pack them into a graph set
+and deploy the set through the manifest's `sets` instead of loose files: the gate checks every graph
+as it is packed, a set deploys all of its graphs or none, and one file is what a pipeline signs and
+promotes.
+
+1. **Pack** — in the Playground, the Tools menu's **Graph set packaging** panel (drop the
+   `<graph-id>.json` files or add the current graph, name the set, *Pack and download*; `help package`
+   describes it), or the command line:
+   ```bash
+   java -jar helpers/graph-packager/target/graph-packager-<version>.jar pack --set {set} --manifest version=1.0.0 /tmp/graph/{name}.json
+   ```
+2. **Stage** the file with a manifest that names the set and an `unpack` folder the application can write:
+   ```bash
+   mkdir -p /tmp/graph/deploy && cp {set}.pack /tmp/graph/deploy/
+   cat > /tmp/graph/deploy/graphs.yaml <<'EOF'
+   location: 'file:/tmp/graph/deploy'
+   sets:
+     - '{set}'
+   unpack: 'file:/tmp/graph/deploy/unpacked'
+   EOF
+   ```
+3. **Restart** with both manifests as above and **verify** the set in the startup log:
+   ```
+   Deployed set {set} (version 1.0.0) from file:/tmp/graph/deploy/{set}.pack - 1 graphs into file:/tmp/graph/deploy/unpacked
+   ```
+   `list graphs` shows `{name} (set {set}, version 1.0.0)`, a duplicate of a bundled id is logged as an
+   ERROR (the set's copy wins, as a later manifest's does), and `import graph from {name}` finds the
+   unpacked copy. The loader's generated manifest, `/tmp/graph/deploy/unpacked/graphs.yaml`, records what
+   deployed and which files it wrote.
+
+The rules of a set — the entry names, the root-name agreement, the manifest fields, the command line
+and the panel's inspect mode — are in the [canonical package format](../canonical-package-format.md#graph-sets);
+`sets`, `unpack` and the generated manifest in the [configuration reference](../configuration-reference.md).
+
 ## Worked example {#example}
 
 Building the hello-world graph via the **synchronous** `/sync` endpoint, one command per request.
@@ -330,7 +365,7 @@ browser notices).
 | `rest.yaml` | REST routes | keep — trim **by profile, below** |
 | `flows.yaml` + `flows/graph-executor.yml` | Binds `POST /api/graph/{graph_id}` to the graph executor | keep |
 | `flows/flow-11.yml` and other example flows | Tutorial 11's echo flow, the `graph.extension` target (`flow://flow-11`), and any other demo flow; a flow's `flows.yaml` entry goes with its file | drop unless used |
-| `graphs.yaml` + `graph/*.json` | Your deployed graph models — list every id you serve | replace with yours |
+| `graphs.yaml` + `graph/*.json` | Your deployed graph models — list every id you serve, or the `sets` you deploy | replace with yours |
 | Main class annotated `@MainApplication` | App entry point | keep (rename) |
 
 > **One endpoint serves every graph.** `POST /api/graph/{graph_id}` takes the graph id from the URL
