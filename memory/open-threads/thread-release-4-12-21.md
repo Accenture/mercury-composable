@@ -7,7 +7,8 @@
   #42 merge `acb1f78` 02:16:34Z - each identical to its branch head outside `memory/`, titles clean, branches gone. CI at the one
   read: the packs green, Rust in progress; the Java post-merge run's *Starter Templates (Gradle)* job failed at its Maven install
   step - the Spring Boot parent POM 4.1.1 unresolvable on that runner, a resolution failure, since the PR head's run and the same
-  run's reactor job resolved it - to be re-run before the tag. Gates remaining, in order: a green main, tag `v4.12.21` on each, publish
+  run's reactor job resolved it; the failed job was re-run at 02:26Z and passed at 02:28Z, so the main run on `b76db298` is green on
+  both jobs (a one-off Central refusal on that runner). Gates remaining, in order: tag `v4.12.21` on each, publish
   (the Java artifacts, `cargo publish --workspace` from the tag, `npm publish`, PyPI); then verify the tag commits (the non-memory diff
   from the squash or merge empty, the version at the tag, the GitHub release published, main CI green), rewrite `latest_release` and
   close this thread. Relates [[graph-set-pack-and-deploy]], [[minimalist-msgpack-codec]] (the release's content).
