@@ -32,7 +32,7 @@
   `0411c398`) and mercury #365 (merge `b12931f5`, Increment 167), both MERGED 2026-10-06, because those collided with the executor's `/api/graph/{graph_id}` - dev-mode, in every `rest.yaml`
   copy and the guide excerpt;
   the set name travels as `manifest.set` (decided there, flagged in both PRs for Eric's review); `GraphSetEndpointTest` and
-  `tests/graph_set_endpoints.rs` drive both through the real routers. **WP5, the panel, OPEN 2026-10-07 as #526 (head `ac41a5a5`) and
+  `tests/graph_set_endpoints.rs` drive both through the real routers. **WP5, the panel, OPEN 2026-10-07 as #526 (head `31aef158`) and
   mercury #366 (Increment 168, the deployed bundle):** the `'package'` left-slot mode from the Tools menu - several graph files at once
   and the current graph as entries, flagged in place with what the engine would refuse; the manifest editor with the set name required
   (a blank value is not sent - flagged); Pack and download through `/api/graph-set/pack`, `saveBinaryFile`; inspect mode through
