@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>minimalist-msgpack</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.20</version>
+    <version>4.12.21</version>
     <name>Minimalist MsgPack (zero-dependency codec)</name>
     <description>
         A minimalist MessagePack codec written from the published specification: a streaming reader and a
