@@ -284,6 +284,8 @@ Suggested order: WP1 → WP2 (a `pack` that exists makes every later fixture rea
 ADR after WP2 (2026-10-06), so the remaining work packages are built under ADR-0027. Roughly two to three engine PRs per repo
 and one webapp PR.
 
+**Status (2026-10-07):** WP1 to WP6 shipped on both engines between 2026-10-05 and 2026-10-07; the sprint is complete.
+
 ---
 
 ## 6. Open questions — answered by Eric on 2026-10-03

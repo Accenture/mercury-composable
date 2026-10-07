@@ -40,6 +40,7 @@ The essentials:
 | Describe | `describe graph` · `describe node <name>` · `describe skill <route>` |
 | List | `list nodes` · `list connections` · `seen` |
 | Persist | `export graph as <name>` · `import graph from <name>` · in the UI: **Download** (`<graph-id>.json` to your computer) and **Import Graph** or a `.json` file dropped on the canvas (`POST /api/graph/import/{id}`) |
+| Package | in the UI: **Graph set packaging** (Tools menu) packs graph files and the current graph into `<set>.pack` on the engine (`POST /api/graph-set/pack`) and inspects a dropped set (`POST /api/graph-set/unpack`); `help package` |
 | Help | `help` · `help <topic>` |
 
 A typical loop — build, seed, dry-run, inspect:
