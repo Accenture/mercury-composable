@@ -56,9 +56,11 @@ interface NavigationProps {
    *  notifications appear in the same rendered toast stack. */
   addToast: (message: string, type?: ToastType) => void;
   sessionCollaboration?: SessionCollaborationController | null;
+  /** When provided, the Tools menu ends with "Graph set packaging", which opens the graph-set panel. */
+  onPackageGraphs?: () => void;
 }
 
-export default function Navigation({ addToast, sessionCollaboration }: NavigationProps) {
+export default function Navigation({ addToast, sessionCollaboration, onPackageGraphs }: NavigationProps) {
   const ctx = useWebSocketContext();
 
   // Collect live phases for the aggregate dot on the Tools menu
@@ -94,6 +96,7 @@ export default function Navigation({ addToast, sessionCollaboration }: Navigatio
 
       {/* ── Tools (nav + connection status combined) ── */}
       <NavMenu label="Tools" dotStatus={toolsDotStatus}>
+        {(close) => (<>
         {/* ── Connect / Disconnect All ── */}
         <div className={styles.connectAllRow}>
           <button
@@ -155,6 +158,24 @@ export default function Navigation({ addToast, sessionCollaboration }: Navigatio
             );
           })}
         </ul>
+
+        {/* ── Graph set packaging (the graph-set panel, ADR-0027) ── */}
+        {onPackageGraphs && (
+          <ul className={`${styles.menuList} ${styles.menuSection}`} role="none">
+            <li role="none">
+              <button
+                type="button"
+                role="menuitem"
+                className={`${styles.menuItem} ${styles.menuButton}`}
+                onClick={() => { close(); onPackageGraphs(); }}
+                title="Pack graph models into a graph set (<set>.pack), or inspect one"
+              >
+                📦 Graph set packaging
+              </button>
+            </li>
+          </ul>
+        )}
+        </>)}
       </NavMenu>
 
       {/* ── Quick Links ─── */}

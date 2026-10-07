@@ -42,6 +42,22 @@
   outline-offset: -2px;
 }
 
+/* A menu item rendered as a button (Graph set packaging) */
+
+.menuButton {
+  width: 100%;
+  background: none;
+  border: none;
+  font: inherit;
+  text-align: left;
+}
+
+/* A section at the foot of a menu, separated from the rows above */
+
+.menuSection {
+  border-top: 1px solid var(--border-color);
+}
+
 /* ── Tool row (combined nav + connect) ── */
 
 /*

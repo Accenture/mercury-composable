@@ -141,7 +141,39 @@ the canvas in [graph-view.md](graph-view.md) (state machine, matching, pacing, r
   the graph and sets the root node's `name` to the graph id (what `export graph as` does on the
   engine, so the file and the model agree; the live graph is untouched); `saveTextFile` uses
   `showSaveFilePicker` where the browser has it (the user picks the folder; a cancel resolves
-  `{saved: false}`) and otherwise a Blob + `<a download>` into the download folder.
+  `{saved: false}`) and otherwise a Blob + `<a download>` into the download folder. `saveBinaryFile`
+  is its binary twin for `<set>.pack` (the `application/octet-stream` type, the same two paths).
+
+## Graph sets (`hooks/useGraphSetPanel.ts`, `utils/graphSet.ts`)
+
+**`useGraphSetPanel({ addToast, importFiles, graphData, graphName })`** owns the graph-set panel
+(ADR-0027): `isOpen` / `open` / `close` (the entries and the manifest survive a close, so the panel
+can be put away while a graph is edited), `mode` (`assemble` | `inspect`) and `busy`.
+
+- **Entries.** `addFiles(files)` takes several files at once: each `.json` is type-checked
+  (`utils/jsonFile.ts`), parsed and validated (`validateGraphModel`) and becomes an entry whose id is
+  the file name without `.json` (`entryIdFromFileName`); every file not taken is reported in
+  `fileErrors`. One `.pack` on its own is read back instead (below); a `.pack` among other files is
+  refused. `addCurrentGraph` builds the live graph's entry through `buildGraphFileText` (the root
+  node named after `suggestGraphId(graphName)`) and replaces an earlier copy of the current graph.
+  `entryIssues` (`utils/graphSet.ts`) flags what the engine would refuse: an id that breaks the
+  file-name rule, a root name that differs from the id (D6), a duplicate id.
+- **Manifest.** `setName` with `validateSetName` (required, the file-name rule) and the rows
+  (`updateRow` / `addRow` / `removeRow`), seeded with `version` and `description`; `manifestRowIssues`
+  ignores blank rows and blank values, needs a name for a value, refuses `set`, `format` and
+  `format_version` (the engine writes them), a duplicate name, and a `graph_id` that names no entry.
+- **Pack.** `canPack` when there is an entry, no issue and a valid name; `pack()` posts
+  `buildPackRequest` (`{manifest: {set, ...fields}, graphs: {id: model}}`) to
+  `POST /api/graph-set/pack`, where the deployment gate checks every graph (D2), and saves the
+  answered bytes with `saveBinaryFile` as `<set>.pack` (toast "Graph set saved as …"); a refusal is
+  the engine's message in `packError`, cleared by the next edit. One `AbortController` at a time;
+  a close aborts.
+- **Inspect.** A dropped `.pack` is posted as `application/octet-stream` to
+  `POST /api/graph-set/unpack`; `parseUnpackAnswer` reads `{manifest, graphs}` into `inspected`
+  and the mode flips. `importInspectedGraph(id)` wraps the graph as a `<id>.json` `File` and hands
+  it to `useGraphFileImport.importFiles`, so the confirm-before-replace dialog applies;
+  `editInspectedSet()` loads the graphs and the caller fields (`manifestRowsOf`, without `set`,
+  `format` and `format_version`) into the editor under the set's name; `leaveInspect()` returns.
 
 ## Saved graphs and naming
 

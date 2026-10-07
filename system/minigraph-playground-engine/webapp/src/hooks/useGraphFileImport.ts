@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { type ToastType } from './useToast';
 import { readFileAsText, validateJsonFileType } from '../utils/jsonFile';
 import { validateGraphModel, type ValidGraphFile } from '../utils/graphFile';
+import { responseErrorMessage } from '../utils/httpResponse';
 
 export interface PendingGraphImport extends ValidGraphFile {
   fileName: string;
@@ -32,17 +33,6 @@ export interface UseGraphFileImportReturn {
 
 export function graphImportPath(sessionId: string): string {
   return `/api/graph/import/${sessionId}`;
-}
-
-async function errorMessage(response: Response): Promise<string> {
-  const text = await response.text();
-  try {
-    const parsed = JSON.parse(text) as { message?: unknown };
-    if (typeof parsed.message === 'string') return parsed.message;
-  } catch {
-    // plain text body
-  }
-  return text || `HTTP ${response.status}`;
 }
 
 /**
@@ -79,7 +69,7 @@ export function useGraphFileImport({
         body:    JSON.stringify(file.model),
       });
       if (!response.ok) {
-        addToast(`Import of "${file.fileName}" refused - ${await errorMessage(response)}`, 'error');
+        addToast(`Import of "${file.fileName}" refused - ${await responseErrorMessage(response)}`, 'error');
       }
     } catch (err) {
       addToast(`Import of "${file.fileName}" failed: ${(err as Error).message}`, 'error');

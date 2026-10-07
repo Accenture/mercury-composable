@@ -43,6 +43,7 @@ import RightPanel from './RightPanel/RightPanel';
 import LeftPanel from './LeftPanel/LeftPanel';
 import NodeEditPanel from './NodeEditPanel/NodeEditPanel';
 import MockUploadPanel from './MockUploadPanel/MockUploadPanel';
+import GraphSetPanel from './GraphSetPanel/GraphSetPanel';
 import ConnectionPopover from './ConnectionPopover/ConnectionPopover';
 import { useGraphAuthoring } from './GraphAuthoring/useGraphAuthoring';
 import { useSessionCollaboration } from '../session/useSessionCollaboration';
@@ -52,6 +53,7 @@ import { ClipboardDuplicateDialog } from './ClipboardSidebar/ClipboardDuplicateD
 import { GraphDownloadDialog } from './GraphFileDialogs/GraphDownloadDialog';
 import { GraphImportConfirmDialog } from './GraphFileDialogs/GraphImportConfirmDialog';
 import { useGraphFileImport } from '../hooks/useGraphFileImport';
+import { useGraphSetPanel } from '../hooks/useGraphSetPanel';
 import { buildGraphFileText, graphFileName, saveTextFile, suggestGraphId, supportsSaveFilePicker } from '../utils/graphFile';
 import { type PlaygroundConfig } from '../config/playgrounds';
 import { resolveBundledHelpTopic } from '../utils/localHelpCommand';
@@ -70,16 +72,16 @@ interface PlaygroundProps {
 }
 
 /**
- * What currently occupies the left panel slot. The node editor and the
- * mock-upload form take the console's space in turn; the console itself
- * is the resting state.
+ * What currently occupies the left panel slot. The node editor, the
+ * mock-upload form and the graph-set panel take the console's space in
+ * turn; the console itself is the resting state.
  */
-type LeftPanelMode = 'console' | 'node-edit' | 'upload';
+type LeftPanelMode = 'console' | 'node-edit' | 'upload' | 'package';
 
 /**
  * Default left-panel widths per slot content, as percentages of the
  * playground width. The console opens at one third and leaves two thirds to
- * the graph view and help (Eric, 2026-10-01; it was 40%); the two in-place
+ * the graph view and help (Eric, 2026-10-01; it was 40%); the in-place
  * forms are narrow cards that only need 30% (Eric's spec, 2026-09-09).
  * Applied when the playground opens and on every slot-content change; a
  * separator drag holds until the slot content changes or the page reloads.
@@ -88,6 +90,7 @@ const LEFT_PANEL_DEFAULT_PERCENT: Record<LeftPanelMode, number> = {
   'console':   100 / 3,
   'node-edit': 30,
   'upload':    30,
+  'package':   30,
 };
 
 /** Default width of the clipboard sidebar, as a percentage of the playground width. */
@@ -543,6 +546,19 @@ export default function Playground({ config }: PlaygroundProps) {
 
   const graphDisplayName = reliableGraphName ?? graphSaveName;
 
+  // ── Graph-set panel (left slot) ──────────────────────────────────────────
+  // "Graph set packaging" in the Tools menu: graph files and the current graph
+  // become one `<set>.pack`, packed on the engine (POST /api/graph-set/pack,
+  // where the deployment gate runs); a dropped `.pack` is read back
+  // (POST /api/graph-set/unpack) and each of its graphs can become the draft
+  // through the file-import path above. The entries survive a close.
+  const graphSet = useGraphSetPanel({
+    addToast,
+    importFiles: graphFileImport.importFiles,
+    graphData,
+    graphName: graphDisplayName,
+  });
+
   // ── Graph authoring ───────────────────────────────────────────────────────
   const graphAuthoringExecutor = useMemo(
     () => createGraphAuthoringExecutor(ws.sendRawText),
@@ -647,7 +663,7 @@ export default function Playground({ config }: PlaygroundProps) {
   // only fires on new messages, so an unchanged backlog would otherwise
   // reappear scrolled to the top.
   const consoleRef = ws.consoleRef;
-  const consoleVisible = consoleOpen && nodeEditSession === null && uploadPanelPath === null;
+  const consoleVisible = consoleOpen && nodeEditSession === null && uploadPanelPath === null && !graphSet.isOpen;
   useEffect(() => {
     if (consoleVisible && consoleRef.current) {
       consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
@@ -712,12 +728,13 @@ export default function Playground({ config }: PlaygroundProps) {
 
   // ── Left panel slot mode + default widths ─────────────────────────────────
   // Priority: the node editor wins the slot, then the upload form, then the
-  // console. Each content type opens at its own default width (console one
-  // third, editor/upload 30%); a manual separator drag holds until the slot
-  // content changes again.
+  // graph-set panel, then the console. Each content type opens at its own
+  // default width (console one third, the in-place cards 30%); a manual
+  // separator drag holds until the slot content changes again.
   const leftPanelMode: LeftPanelMode | null =
     nodeEditSession !== null ? 'node-edit'
     : uploadPanelPath !== null ? 'upload'
+    : graphSet.isOpen ? 'package'
     : consoleOpen ? 'console' : null;
 
   const leftPanelRef = useRef<PanelImperativeHandle | null>(null);
@@ -772,6 +789,21 @@ export default function Playground({ config }: PlaygroundProps) {
     }
     handleOpenUploadPanel(`/api/mock/${sessionId}`);
   }, [sessionCollaboration.state.sessionId, handleOpenUploadPanel, addToast]);
+
+  // The Tools menu's "Graph set packaging" opens the graph-set panel in the
+  // console's slot. The node editor keeps the slot while it is open (its
+  // edits are not discarded on the user's behalf); an open upload form is
+  // closed, as the Console button closes it.
+  const handleOpenPackagePanel = useCallback(() => {
+    if (nodeEditSession !== null) {
+      addToast('Close the node editor first.', 'info');
+      return;
+    }
+    if (uploadPanelPath !== null) {
+      handleCloseUploadPanel();
+    }
+    graphSet.open();
+  }, [nodeEditSession, uploadPanelPath, handleCloseUploadPanel, graphSet.open, addToast]);
 
   return (
     <div className={styles.wrapper}>
@@ -853,17 +885,27 @@ export default function Playground({ config }: PlaygroundProps) {
                 setConsoleOpen(true);
                 return;
               }
+              if (graphSet.isOpen) {
+                if (!graphSet.busy) {
+                  graphSet.close();
+                  setConsoleOpen(true);
+                }
+                return;
+              }
               setConsoleOpen(prev => !prev);
             }}
             aria-label={nodeEditSession !== null
               ? 'Show console panel and close the node editor'
               : uploadPanelPath !== null
                 ? 'Show console panel and close the upload form'
-                : consoleOpen ? 'Hide console panel' : 'Show console panel'}
+                : graphSet.isOpen
+                  ? 'Show console panel and close the graph-set panel'
+                  : consoleOpen ? 'Hide console panel' : 'Show console panel'}
             aria-pressed={consoleVisible}
             title={nodeEditSession !== null
               ? 'Closes the node editor'
-              : uploadPanelPath !== null ? 'Closes the upload form' : undefined}
+              : uploadPanelPath !== null ? 'Closes the upload form'
+              : graphSet.isOpen ? 'Closes the graph-set panel' : undefined}
           >
             Console
           </button>
@@ -880,6 +922,7 @@ export default function Playground({ config }: PlaygroundProps) {
           <Navigation
             addToast={addToast}
             sessionCollaboration={supportsSessionCollaboration ? sessionCollaboration : null}
+            onPackageGraphs={supportsAuthoring ? handleOpenPackagePanel : undefined}
           />
           {supportsHelp && (
             <div className={styles.helpButtonWrapper}>
@@ -966,6 +1009,11 @@ export default function Playground({ config }: PlaygroundProps) {
                   onError={handleUploadError}
                   description="The JSON becomes the instance's input.body. In a shared session every member's instance receives it."
                   inputPathHints={graphRun.inputBodyPaths}
+                />
+              ) : graphSet.isOpen ? (
+                <GraphSetPanel
+                  controller={graphSet}
+                  supportsFolderPicker={supportsSaveFilePicker()}
                 />
               ) : (
                 <LeftPanel

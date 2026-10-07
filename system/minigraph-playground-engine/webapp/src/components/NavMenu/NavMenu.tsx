@@ -9,9 +9,12 @@
  *    Connections menu to reflect aggregate WebSocket state).
  *  - Accepts arbitrary children so callers can render NavLinks, anchors, or
  *    custom ConnectionBar rows without coupling this component to any one use-case.
+ *    Children may be a function of `close`, for an item that closes the menu
+ *    when it is picked (nothing else closes it on an item click).
  */
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -27,13 +30,14 @@ interface NavMenuProps {
   label: string;
   /** Optional status dot shown next to the label */
   dotStatus?: DotStatus;
-  /** Menu content */
-  children: ReactNode;
+  /** Menu content, or a function of `close` for content with an item that closes the menu */
+  children: ReactNode | ((close: () => void) => ReactNode);
 }
 
 export default function NavMenu({ label, dotStatus, children }: NavMenuProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
 
   // Close on outside click
   useEffect(() => {
@@ -84,7 +88,7 @@ export default function NavMenu({ label, dotStatus, children }: NavMenuProps) {
 
       {open && (
         <div className={styles.dropdown} role="menu">
-          {children}
+          {typeof children === 'function' ? children(close) : children}
         </div>
       )}
     </div>
