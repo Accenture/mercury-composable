@@ -36,8 +36,12 @@
   from 4.12.15 with the LLM helper app: mercury-nodejs #110 → merge `80d4889`, tag → `279e784`, release 02:36:40Z (182 tests);
   mercury-python #42 → merge `acb1f78`, tag → `fe43380`, release 02:37:17Z (187 tests). Main CI green on all four tag commits; the
   Java post-merge Gradle job needed one re-run (a one-off "could not find artifact" from Maven Central for the Boot parent POM).
-  **Publication pending (Eric preparing): the twelve crates on crates.io, npm, PyPI** — verified in [[release-4-12-21]] when done.
-  Next: the publications' verification, then the field-acceptance wait (CI, Snyk, Sonar). Origin 2026-10-07-013257.md.
+  **Published and VERIFIED 2026-10-07:** the twelve crates on crates.io at 4.12.21 (created 02:40:03Z–02:40:17Z, none yanked, all in
+  the sparse index; the published platform-core tarball identical to the tag), npm `mercury-composable` 4.12.21 as `latest`
+  (02:43:40Z; the 41 compiled files identical to a build of the tag, the two runtime dependencies and no LLM SDK), PyPI
+  `mercury-composable` 4.12.21 (wheel 02:45:59Z, sdist 02:46:00Z; the sdist's 20 modules identical to the tag). The Java artifacts
+  are the tag and the GitHub release, as always (not on Maven Central). Next: the field-acceptance wait (CI, Snyk, Sonar).
+  Origin 2026-10-07-013257.md.
   Prior: v4.12.20 (2026-10-01 03:11:27Z — exact decimal arithmetic for money and the deterministic package format, lock-step with
   Rust; #485 squash `9e515825`, tag → `fc940bea`; the `DECIMAL` statement #471 ([[decimal-statement-exact-arithmetic]], ADR-0025),
   the `f:decimal*` plugins #475, `round` half-up #472, the `CanonicalPackager` #481 ([[canonical-packager-wire-contract]], ADR-0026);
