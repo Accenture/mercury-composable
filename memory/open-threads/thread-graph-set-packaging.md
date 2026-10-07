@@ -32,7 +32,13 @@
   `0411c398`) and mercury #365 (merge `b12931f5`, Increment 167), both MERGED 2026-10-06, because those collided with the executor's `/api/graph/{graph_id}` - dev-mode, in every `rest.yaml`
   copy and the guide excerpt;
   the set name travels as `manifest.set` (decided there, flagged in both PRs for Eric's review); `GraphSetEndpointTest` and
-  `tests/graph_set_endpoints.rs` drive both through the real routers. Next: WP5 (the panel), then WP6 (the docs), each on Eric's word.
+  `tests/graph_set_endpoints.rs` drive both through the real routers. **WP5, the panel, OPEN 2026-10-07 as #526 (head `ac41a5a5`) and
+  mercury #366 (Increment 168, the deployed bundle):** the `'package'` left-slot mode from the Tools menu - several graph files at once
+  and the current graph as entries, flagged in place with what the engine would refuse; the manifest editor with the set name required
+  (a blank value is not sent - flagged); Pack and download through `/api/graph-set/pack`, `saveBinaryFile`; inspect mode through
+  `/api/graph-set/unpack` with Import as draft (the file-import path, so the confirm dialog applies) and Edit as new set (flagged, not
+  in the spec's list). The live drive: the panel's pack byte-identical with the command line's (SHA-256 `5e6b9a9f…`), deployed through
+  `sets` and answered over curl. Next: WP6 (the docs) on Eric's word.
   → proposal: RFC-0005
   → serves: vision-mercury-composable
   <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-06 | uses: 5 | tier: working | origin: 2026-10-03-171402 -->

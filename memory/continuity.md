@@ -513,7 +513,9 @@
   `/api/graph/...` by #525 (squash `0411c398`) and mercury #365 (merge `b12931f5`, Increment 167), both MERGED 2026-10-06, because the
   first paths collided with the executor's `/api/graph/{graph_id}` - dev-mode,
   the set name as `manifest.set`), shipped in #524 (squash `ca0e07a3`) and mercury #364 (merge `f89c0997`, Increment 166), both MERGED
-  2026-10-06; open work, WP5 and WP6: [[graph-set-packaging]]. Extends
+  2026-10-06; WP5, the Playground's "Package graphs" panel (the `'package'` left-slot mode, packing on the engine, inspect mode, the
+  bundle on both engines), OPEN as #526 (head `ac41a5a5`) and mercury #366 (Increment 168) since 2026-10-07; WP6 remains:
+  [[graph-set-packaging]]. Extends
   [[canonical-packager-wire-contract]] and [[graph-manifest-list-later-wins]]. (ADR-0027)
   <!-- id: graph-set-pack-and-deploy | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-012206 -->
 
