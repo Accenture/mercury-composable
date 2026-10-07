@@ -515,8 +515,9 @@
   the set name as `manifest.set`), shipped in #524 (squash `ca0e07a3`) and mercury #364 (merge `f89c0997`, Increment 166), both MERGED
   2026-10-06; WP5, the Playground's "Graph set packaging" panel (the `'package'` left-slot mode, packing on the engine, inspect mode, the
   bundle on both engines), shipped in #526 (squash `f84c40cb`) and mercury #366 (merge `82aa3c86`, Increment 168), both MERGED
-  2026-10-07; WP6, the docs, remains:
-  [[graph-set-packaging]]. Extends
+  2026-10-07; WP6, the docs (`sets` and `unpack` in the configuration reference, the package page's *Graph sets*, the packaged path
+  in the AI agent guide, `help package`, five loader claims on both engines), OPEN as #527 (head `7eced7d2`) and mercury #367
+  (Increment 169) since 2026-10-07: [[graph-set-packaging]]. Extends
   [[canonical-packager-wire-contract]] and [[graph-manifest-list-later-wins]]. (ADR-0027)
   <!-- id: graph-set-pack-and-deploy | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-012206 -->
 

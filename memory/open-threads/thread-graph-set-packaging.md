@@ -38,7 +38,11 @@
   (a blank value is not sent - flagged); Pack and download through `/api/graph-set/pack`, `saveBinaryFile`; inspect mode through
   `/api/graph-set/unpack` with Import as draft (the file-import path, so the confirm dialog applies) and Edit as new set (flagged, not
   in the spec's list). The live drive: the panel's pack byte-identical with the command line's (SHA-256 `5e6b9a9f…`), deployed through
-  `sets` and answered over curl. Next: WP6 (the docs) on Eric's word.
+  `sets` and answered over curl. **WP6, the docs, OPEN 2026-10-07 as #527 (head `7eced7d2`) and mercury #367 (Increment 169, head
+  `6bf21141`):** `sets`, `unpack` and the generated manifest in the configuration reference; a *Graph sets* section on the package
+  page; the packaged path in the AI agent guide; the first-graph and Playground guides; the starter template's manifest comments;
+  `help package` (the bundle regenerated, the help mirrored); five loader claims pinned on both engines. Next: the merge closes
+  the sprint.
   → proposal: RFC-0005
   → serves: vision-mercury-composable
   <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-06 | uses: 5 | tier: working | origin: 2026-10-03-171402 -->
