@@ -8,9 +8,12 @@
   read: the packs green, Rust in progress; the Java post-merge run's *Starter Templates (Gradle)* job failed at its Maven install
   step - the Spring Boot parent POM 4.1.1 unresolvable on that runner, a resolution failure, since the PR head's run and the same
   run's reactor job resolved it; the failed job was re-run at 02:26Z and passed at 02:28Z, so the main run on `b76db298` is green on
-  both jobs (a one-off Central refusal on that runner). Gates remaining, in order: tag `v4.12.21` on each, publish
-  (the Java artifacts, `cargo publish --workspace` from the tag, `npm publish`, PyPI); then verify the tag commits (the non-memory diff
-  from the squash or merge empty, the version at the tag, the GitHub release published, main CI green), rewrite `latest_release` and
+  both jobs (a one-off Central refusal on that runner). **TAGGED 2026-10-07 (Eric), all four verified:** Java tag → `87dd9e78` (two
+  memory-only commits past the squash, non-memory diff empty, pom 4.12.21, release published 02:35:00Z, CI green on the tag commit),
+  Rust → `9f524fa3` (release 02:36:06Z), nodejs → `279e784` (02:36:40Z), python → `fe43380` (02:37:17Z) - each one memory commit past
+  its merge, the version at the tag, the release published, CI green; `latest_release` rewritten in both engine repos, the packs'
+  status lines moved to TAGGED. **Remaining: the publications (Eric preparing) - the twelve crates on crates.io, `npm publish`, PyPI -
+  and their verification (the registry's version, created time and, for the crates, the published tarball against the tag); then
   close this thread. Relates [[graph-set-pack-and-deploy]], [[minimalist-msgpack-codec]] (the release's content).
   → serves: vision-mercury-composable
   <!-- id: release-4-12-21 | created: 2026-10-07 | last_used: 2026-10-07 | uses: 1 | tier: working | origin: 2026-10-07-013257 -->

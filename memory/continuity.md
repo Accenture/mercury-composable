@@ -19,20 +19,30 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.20 (2026-10-01 03:11:27Z — **exact decimal arithmetic for money and a deterministic package format, lock-step with
-  the Rust port**: release PR #485 squash `9e515825`, tag `v4.12.20` → `fc940bea` (two memory-only commits past the squash; the non-memory
-  diff is empty), pom verified at the tag; the GitHub release is published (not a draft). **Content:** the `DECIMAL` statement #471
-  ([[decimal-statement-exact-arithmetic]], ADR-0025), the `f:decimal*` plugins #475, `round` half-up #472, the `CanonicalPackager` #481
-  ([[canonical-packager-wire-contract]], ADR-0026), the dialect docs #467, the money-loop and packager guides, and a late `Float` widening
-  in the packager (Eric). **READ:** a numeric-looking string now compares as a number in `== != < <= > >=`, and `round(-2.5)` is `-3`;
-  both reach graphs that never say `DECIMAL`. Sweep BUILD FILES ONLY 43 / 98 (the 4.12.19 shape). Readiness: full reactor
-  `mvn -o clean install` BUILD SUCCESS, 231 suites, 1587 tests, 0 failures, 3 skipped (4.12.19 had 1520), then platform-core 525/0 after the
-  Float change. **Lockstep:** Rust v4.12.20 the same minute (mercury #340 → merge `b4783c5b`, tag → `d63e102a`, release 03:12:43Z;
-  Increments 143–147; 123 suites / 655 tests / 0 failed); the Java–Rust byte-for-byte interop on the 14 tutorials and 50 fixtures
-  (`docs/test-reports/canonical-package-java-rust-interop.md`, composable #486 / mercury #341, docs only) found 0 differences with a
-  14/14 negative control; the python/node packs need no change. Main CI green on both tag commits. **The twelve Rust crates are on crates.io at 4.12.20 (verified 12/12, published 03:21:45Z-03:21:58Z by Eric's `cargo publish --workspace` from the tag; the published
-  platform-core tarball matches the tag).** Next: the field-acceptance wait (CI, Snyk, Sonar),
-  and the AI SDLC/MCP backlog ([[bp-agent-orchestration]]). Origin 2026-09-30-221603.md.
+- **latest_release:** v4.12.21 (2026-10-07 02:35:00Z — **graph sets on both engines and the engine's own MessagePack codec, lock-step
+  with the Rust port and the two language packs**: release PR #528 squash `b76db298`, tag `v4.12.21` → `87dd9e78` (two memory-only
+  commits past the squash; the non-memory diff is empty), pom verified at the tag; the GitHub release is published (not a draft).
+  **Content:** graph sets end to end (ADR-0027: the packager #508, the loader #515, the endpoints #524/#525, the Playground's "Graph set
+  packaging" panel #526, the docs with five claims #527 — [[graph-set-pack-and-deploy]]), the in-house codec `minimalist-msgpack` #517
+  (ADR-0028, [[minimalist-msgpack-codec]]) and the decoder hardening pinned by shared vectors (#514 the 64-level limit, #519/#520/#521 —
+  [[msgpack-nesting-limit-64]], [[msgpack-hostile-header-vectors]]), the Playground's file import and download #500, three-step run
+  controls #498, single-source webapp #496, the LLM helper pointer #488, the dependency bumps #513, the temp-file housekeeping #516.
+  **READ:** `org.msgpack.*` is no longer transitive and every decoding failure is an `IOException`; a payload nested deeper than 64
+  levels, or followed by extra bytes, answers HTTP 400 at the Event API; a Layer 3 app that wants the new Playground features adds the
+  `import.graph.content`, `pack.graph.set` and `unpack.graph.set` routes. Sweep BUILD FILES ONLY 45 / 102 (two files more than
+  4.12.20: the `minimalist-msgpack` and `graph-packager` poms). Readiness: full reactor `mvn -o clean install` BUILD SUCCESS, 239
+  suites, 1778 tests, 0 failures, 3 skipped (4.12.20 had 1587). **Lockstep:** Rust v4.12.21 the same minute (mercury #368 → merge
+  `28457ccf`, tag → `9f524fa3`, release 02:36:06Z; Increments 148–169; 134 suites / 702 tests / 0 failed), and the packs catching up
+  from 4.12.15 with the LLM helper app: mercury-nodejs #110 → merge `80d4889`, tag → `279e784`, release 02:36:40Z (182 tests);
+  mercury-python #42 → merge `acb1f78`, tag → `fe43380`, release 02:37:17Z (187 tests). Main CI green on all four tag commits; the
+  Java post-merge Gradle job needed one re-run (a one-off "could not find artifact" from Maven Central for the Boot parent POM).
+  **Publication pending (Eric preparing): the twelve crates on crates.io, npm, PyPI** — verified in [[release-4-12-21]] when done.
+  Next: the publications' verification, then the field-acceptance wait (CI, Snyk, Sonar). Origin 2026-10-07-013257.md.
+  Prior: v4.12.20 (2026-10-01 03:11:27Z — exact decimal arithmetic for money and the deterministic package format, lock-step with
+  Rust; #485 squash `9e515825`, tag → `fc940bea`; the `DECIMAL` statement #471 ([[decimal-statement-exact-arithmetic]], ADR-0025),
+  the `f:decimal*` plugins #475, `round` half-up #472, the `CanonicalPackager` #481 ([[canonical-packager-wire-contract]], ADR-0026);
+  READ: a numeric-looking string compares as a number and `round(-2.5)` is `-3`; 1587 tests; Rust #340 → `b4783c5b`, tag → `d63e102a`,
+  crates 12/12 at 4.12.20; the Java–Rust interop on 14 tutorials and 50 fixtures found 0 differences. Origin 2026-09-30-221603.md.)
   Prior: v4.12.19 (2026-09-25 23:58:19Z — the rapid-prototyping deploy lane on both engines; #466 squash `a261ff18`, tag → `35000ef2`;
   `graph.model.automation` takes a comma-separated list of manifests and the later one wins ([[graph-manifest-list-later-wins]]); 1520
   tests; Rust #333 → `ff6e269c`, crates 12/12; FIELD-ACCEPTED 2026-09-25 — the field's CI, Snyk and Sonar clean. Origin 2026-09-25-232807.md.)
