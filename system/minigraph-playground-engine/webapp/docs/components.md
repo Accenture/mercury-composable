@@ -11,7 +11,7 @@ Playground
 │           Navigation ── SessionMenu, NavMenu "Tools", NavMenu "Quick Links",   help toggle (?)
 ├── ClipboardDuplicateDialog               (only while a clip collides)
 └── panel group (react-resizable-panels)
-    ├── left slot:  NodeEditPanel | MockUploadPanel | LeftPanel ── Console (ConsoleMessage*) + CommandInput
+    ├── left slot:  NodeEditPanel | MockUploadPanel | GraphSetPanel | LeftPanel ── Console (ConsoleMessage*) + CommandInput
     ├── right:      RightPanel ── tabs: PayloadEditor (+SampleButtons) | GraphView | GraphDataView
     │                             └── vertical split with HelpBrowser when help is open
     └── sidebar:    ClipboardSidebar ── ClipboardItem*, ClipboardItemContextMenu, ClipboardEmptyState
@@ -26,12 +26,13 @@ Playground
   design: `MockUploadPanel` POSTs through `useMockUpload`, and `Navigation` connects and
   disconnects sockets through the WebSocket context. `RightPanel` keeps its help split in
   `sessionStorage`.
-- **In-place editors, not modals.** `NodeEditPanel` and `MockUploadPanel` take the console's slot;
+- **In-place editors, not modals.** `NodeEditPanel`, `MockUploadPanel` and `GraphSetPanel` take the console's slot;
   the parent swaps the slot and the console's open flag is never touched, so closing the editor
   gives the slot back to whatever it held. `ConnectionPopover` is a popover anchored at the gesture.
-- **Escape closes the thing that opened last.** The node editor, the upload panel, the connection
-  popover, the clipboard context menu and the sort popover each register a document-level Escape
-  handler; an in-flight submit blocks closing, exactly like the disabled Cancel button.
+- **Escape closes the thing that opened last.** The node editor, the upload panel, the graph-set
+  panel, the connection popover, the clipboard context menu and the sort popover each register a
+  document-level Escape handler; an in-flight submit blocks closing, exactly like the disabled
+  Cancel button.
 - **Presentational components own only transient UI state** (an open flag, an inline form); all
   domain state and validation sit in the hooks.
 
@@ -151,7 +152,9 @@ Props: `addToast`, `sessionCollaboration?` (null hides the Session menu). Render
 - **Tools** menu with an aggregate status dot (connected / idle / connecting / partial): a
   "Connect All" / "Disconnect All" button (connects only idle slots, disconnects connected and
   connecting ones) and, per playground, a `NavLink` with its dot plus a Start / Stop button whose
-  title is the socket URL. The button is separate from the link so it never navigates.
+  title is the socket URL. The button is separate from the link so it never navigates. With
+  `onPackageGraphs` set (the Minigraph playground), the menu ends with **📦 Package graphs…**,
+  which closes the menu and opens the graph-set panel in the left slot.
 - **Quick Links** (new tab): `/info`, `/info/lib`, `/info/routes`, `/health`, `/env`, and the two
   legacy pages `http://localhost:8085/api/ws/json` and `…/api/ws/graph` (hard-coded host).
 
@@ -163,7 +166,8 @@ Uses `useWebSocketContext()` directly: `getSlot(wsPath).phase`, `connect(wsPath,
 A dropdown primitive: trigger with an optional status dot and `aria-expanded`, a `role="menu"`
 that is **unmounted while closed** (children lose their state on close), closing on the trigger,
 an outside `mousedown`, or Escape (which refocuses the trigger). Nothing closes it when an item is
-clicked.
+clicked, unless the children are a function of `close` and the item calls it (the Tools menu's
+Package graphs… does).
 
 ### `SessionMenu` (`components/SessionMenu/SessionMenu.tsx`)
 
@@ -261,6 +265,33 @@ is JSON-only). `Ctrl/⌘+Enter` submits, `Escape` closes unless an upload is in 
 `useMockUpload` (raw textarea text, `Content-Type: application/json`); a non-2xx answer shows
 "❌ Upload failed: HTTP <status> — <body>" inline and reaches the parent's toast. One panel is open
 at a time; a further open request queues FIFO in `useMockUploadPanel`.
+
+### `GraphSetPanel` (`components/GraphSetPanel/GraphSetPanel.tsx`)
+
+Props: `controller` (the `useGraphSetPanel` return value, which owns the state and the transport)
+and `supportsFolderPicker`. Opened from the Tools menu's **Package graphs…**; the panel for graph
+sets (ADR-0027): graph models packed together as one `<set>.pack`, checked by the deployment gate
+as they are packed on the engine.
+
+- **Assemble mode** (`📦 Package graphs`): a ribbon with the file name the set will be saved as and a
+  close button; a drop zone with a hidden multi-file input and "Browse files…" that take several
+  `.json` graph files at once (each becomes an entry named after its file, `<graph-id>.json`) or one
+  `.pack` (which switches to inspect mode); **Add current graph** (the live graph as an entry named
+  after its display name, the root node renamed as Download does; a re-add replaces it) and **Clear
+  list**; the entries with their node and connection counts, a remove button each, and the engine's
+  refusal reasons flagged in place (an id that breaks the file-name rule, a root name that differs
+  from the id, a duplicate id); the manifest editor - the **Set name** (required, the file-name rule,
+  the `.pack` suffix shown) and free field rows seeded with `version` and `description` (a blank value
+  is left out; `set`, `format` and `format_version` are refused as the engine refuses them; `graph_id`
+  must name an entry); the engine's refusal of the whole set as an inline banner; **Cancel** and
+  **Pack and download**, enabled once there is an entry, no flag and a valid name. The footer says
+  where the file goes (the native "save as" dialog or the download folder). The set name is focused
+  on open; `Escape` closes unless a request is in flight.
+- **Inspect mode** (`📦 Graph set`, after a `.pack` drop): the file name, the manifest as the package
+  holds it, the graphs with their counts and an **Import as draft** button each (through the file-import
+  path, so the UI asks before replacing a loaded graph), the drop zone again, **Back** and **Edit as
+  new set** (the set's graphs and caller fields replace the editor's list, to pack it again). `Escape`
+  goes back to the editor.
 
 ### `NodeEditPanel` (`components/NodeEditPanel/NodeEditPanel.tsx`)
 

@@ -95,13 +95,15 @@ For one `PlaygroundConfig` it creates the `ProtocolBus`, runs the kernel, and wi
 - `useGraphAuthoring` with a `createGraphAuthoringExecutor(ws.sendRawText)`; the create/edit panel
   and the connection popover render from its state.
 - `useGraphRunWorkflow` (Instantiate / Run), `useMockUploadPanel` (the upload form in the left
-  slot), `useLargePayloadDownload`, `useAutoHelpNavigate`, `useSavedGraphs` + `useGraphSaveName` +
-  `useSavedGraphWorkflow`, `useSendToJsonPath`, the clipboard context.
+  slot), `useGraphFileImport` (a graph file as the draft), `useGraphSetPanel` (the graph-set panel
+  in the left slot), `useLargePayloadDownload`, `useAutoHelpNavigate`, `useSavedGraphs` +
+  `useGraphSaveName` + `useSavedGraphWorkflow`, `useSendToJsonPath`, the clipboard context.
 
-Layout: a horizontal `react-resizable-panels` group — the **left slot** (console, or the node editor,
-or the mock-upload form, in that priority), the **right panel** (tabs: graph / graph data / payload,
-with the help browser splitting it vertically) and the optional **workspace sidebar**. Default widths
-are one third for the console (30% for the two forms), 20% for the sidebar, the right panel takes the
+Layout: a horizontal `react-resizable-panels` group — the **left slot** (the node editor, or the
+mock-upload form, or the graph-set panel, or the console, in that priority), the **right panel**
+(tabs: graph / graph data / payload, with the help browser splitting it vertically) and the optional
+**workspace sidebar**. Default widths are one third for the console (30% for the in-place cards),
+20% for the sidebar, the right panel takes the
 complement; the split is deliberately not persisted across page loads (a saved drag kept looking like
 a wrong default). On viewports narrower than 768 px the group stacks vertically.
 

@@ -123,7 +123,7 @@ interface SaveFilePickerOptions {
 
 interface WritableFileHandle {
   name: string;
-  createWritable(): Promise<{ write(data: string): Promise<void>; close(): Promise<void> }>;
+  createWritable(): Promise<{ write(data: string | Uint8Array<ArrayBuffer>): Promise<void>; close(): Promise<void> }>;
 }
 
 type PickerWindow = Window & {
@@ -139,12 +139,34 @@ export type SaveOutcome =
   | { saved: true; fileName: string }
   | { saved: false; cancelled: true };
 
+/** What the native "save as" dialog offers as the file type, and the download's MIME type. */
+interface SaveFileType {
+  description: string;
+  mimeType: string;
+  extension: string;
+}
+
+const GRAPH_FILE_TYPE: SaveFileType = { description: 'MiniGraph model (JSON)', mimeType: 'application/json', extension: '.json' };
+const GRAPH_SET_FILE_TYPE: SaveFileType = { description: 'MiniGraph graph set', mimeType: 'application/octet-stream', extension: '.pack' };
+
 /**
  * Save text as a file: through the native "save as" dialog where the browser has one (the user
  * picks the folder and may rename; the `.json` type is kept), otherwise as a download into the
  * browser's download folder under `fileName`.
  */
-export async function saveTextFile(text: string, fileName: string): Promise<SaveOutcome> {
+export function saveTextFile(text: string, fileName: string): Promise<SaveOutcome> {
+  return saveFile(text, fileName, GRAPH_FILE_TYPE);
+}
+
+/**
+ * The binary twin of {@link saveTextFile}: a graph set's bytes to `<set>.pack`, through the native
+ * dialog where the browser has one, otherwise into the download folder.
+ */
+export function saveBinaryFile(bytes: Uint8Array<ArrayBuffer>, fileName: string): Promise<SaveOutcome> {
+  return saveFile(bytes, fileName, GRAPH_SET_FILE_TYPE);
+}
+
+async function saveFile(data: string | Uint8Array<ArrayBuffer>, fileName: string, type: SaveFileType): Promise<SaveOutcome> {
   const picker = (window as PickerWindow).showSaveFilePicker;
   if (typeof picker === 'function') {
     let handle: WritableFileHandle;
@@ -152,18 +174,18 @@ export async function saveTextFile(text: string, fileName: string): Promise<Save
       handle = await picker.call(window, {
         suggestedName: fileName,
         excludeAcceptAllOption: true,
-        types: [{ description: 'MiniGraph model (JSON)', accept: { 'application/json': ['.json'] } }],
+        types: [{ description: type.description, accept: { [type.mimeType]: [type.extension] } }],
       });
     } catch (err) {
       if ((err as Error).name === 'AbortError') return { saved: false, cancelled: true };
       throw err;
     }
     const writable = await handle.createWritable();
-    await writable.write(text);
+    await writable.write(data);
     await writable.close();
     return { saved: true, fileName: handle.name };
   }
-  const blob = new Blob([text], { type: 'application/json' });
+  const blob = new Blob([data], { type: type.mimeType });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
