@@ -19,13 +19,13 @@ describe('NavMenu', () => {
     render(
       <NavMenu label="Tools">
         {(close) => (
-          <button type="button" role="menuitem" onClick={() => { close(); picked(); }}>Package graphs…</button>
+          <button type="button" role="menuitem" onClick={() => { close(); picked(); }}>Graph set packaging</button>
         )}
       </NavMenu>,
     );
     const trigger = screen.getByRole('button', { name: 'Tools' });
     fireEvent.click(trigger);
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Package graphs…' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Graph set packaging' }));
 
     expect(picked).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('menu')).toBeNull();

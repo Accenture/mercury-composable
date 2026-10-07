@@ -95,7 +95,7 @@ function suggestedRows(nextKey: () => number): ManifestRow[] {
 }
 
 /**
- * The "Package graphs" panel: assembles a graph set from `.json` graph files and the current graph,
+ * The "Graph set packaging" panel: assembles a graph set from `.json` graph files and the current graph,
  * with a manifest, and has the engine pack it (`POST /api/graph-set/pack` - the gate runs there, D2
  * of ADR-0027) before the bytes are saved as `<set>.pack`. A dropped `.pack` is read back through
  * `POST /api/graph-set/unpack` and shown - its manifest and its graphs, each importable as the

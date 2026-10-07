@@ -45,7 +45,7 @@ describe('GraphSetPanel', () => {
   it('renders in place - a left-slot region, not a dialog - with the set name focused and Pack disabled', async () => {
     render(<Harness />);
 
-    const region = await screen.findByRole('region', { name: '📦 Package graphs' });
+    const region = await screen.findByRole('region', { name: '📦 Graph set packaging' });
     expect(region).toBeTruthy();
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.activeElement).toBe(screen.getByLabelText('Set name'));
@@ -56,7 +56,7 @@ describe('GraphSetPanel', () => {
 
   it('closes on Escape and on Cancel', async () => {
     render(<Harness />);
-    await screen.findByRole('region', { name: '📦 Package graphs' });
+    await screen.findByRole('region', { name: '📦 Graph set packaging' });
 
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(await screen.findByText('panel closed')).toBeTruthy();
@@ -64,7 +64,7 @@ describe('GraphSetPanel', () => {
 
   it('adds the current graph, flags a duplicate from a dropped file, and enables Pack once the set is named', async () => {
     render(<Harness graphData={MODEL} />);
-    await screen.findByRole('region', { name: '📦 Package graphs' });
+    await screen.findByRole('region', { name: '📦 Graph set packaging' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Add current graph' }));
     expect(await screen.findByText('demo')).toBeTruthy();
@@ -94,7 +94,7 @@ describe('GraphSetPanel', () => {
 
   it('takes files from the Browse picker and flags a manifest row in place', async () => {
     render(<Harness />);
-    await screen.findByRole('region', { name: '📦 Package graphs' });
+    await screen.findByRole('region', { name: '📦 Graph set packaging' });
 
     const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
     expect(input.multiple).toBe(true);
@@ -118,7 +118,7 @@ describe('GraphSetPanel', () => {
     })));
     const importFiles = vi.fn().mockResolvedValue(undefined);
     render(<Harness importFiles={importFiles} />);
-    await screen.findByRole('region', { name: '📦 Package graphs' });
+    await screen.findByRole('region', { name: '📦 Graph set packaging' });
 
     fireEvent.drop(screen.getByLabelText('Drop graph files or a graph set here'), {
       dataTransfer: { files: [new File([new Uint8Array([1])], 'demo.pack')], types: ['Files'] },
@@ -133,6 +133,6 @@ describe('GraphSetPanel', () => {
 
     // Escape leaves inspect mode first; the editor keeps its state
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(await screen.findByRole('region', { name: '📦 Package graphs' })).toBeTruthy();
+    expect(await screen.findByRole('region', { name: '📦 Graph set packaging' })).toBeTruthy();
   });
 });

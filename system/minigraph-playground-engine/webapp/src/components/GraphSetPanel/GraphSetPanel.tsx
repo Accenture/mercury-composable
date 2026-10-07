@@ -10,7 +10,7 @@ interface GraphSetPanelProps {
   supportsFolderPicker: boolean;
 }
 
-const TITLE = '📦 Package graphs';
+const TITLE = '📦 Graph set packaging';
 
 function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;

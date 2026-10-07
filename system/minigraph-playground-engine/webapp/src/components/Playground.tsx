@@ -547,7 +547,7 @@ export default function Playground({ config }: PlaygroundProps) {
   const graphDisplayName = reliableGraphName ?? graphSaveName;
 
   // ── Graph-set panel (left slot) ──────────────────────────────────────────
-  // "Package graphs" in the Tools menu: graph files and the current graph
+  // "Graph set packaging" in the Tools menu: graph files and the current graph
   // become one `<set>.pack`, packed on the engine (POST /api/graph-set/pack,
   // where the deployment gate runs); a dropped `.pack` is read back
   // (POST /api/graph-set/unpack) and each of its graphs can become the draft
@@ -790,7 +790,7 @@ export default function Playground({ config }: PlaygroundProps) {
     handleOpenUploadPanel(`/api/mock/${sessionId}`);
   }, [sessionCollaboration.state.sessionId, handleOpenUploadPanel, addToast]);
 
-  // The Tools menu's "Package graphs…" opens the graph-set panel in the
+  // The Tools menu's "Graph set packaging" opens the graph-set panel in the
   // console's slot. The node editor keeps the slot while it is open (its
   // edits are not discarded on the user's behalf); an open upload form is
   // closed, as the Console button closes it.

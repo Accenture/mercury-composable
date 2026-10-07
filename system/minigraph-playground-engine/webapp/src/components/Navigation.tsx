@@ -56,7 +56,7 @@ interface NavigationProps {
    *  notifications appear in the same rendered toast stack. */
   addToast: (message: string, type?: ToastType) => void;
   sessionCollaboration?: SessionCollaborationController | null;
-  /** When provided, the Tools menu ends with "Package graphs…", which opens the graph-set panel. */
+  /** When provided, the Tools menu ends with "Graph set packaging", which opens the graph-set panel. */
   onPackageGraphs?: () => void;
 }
 
@@ -159,7 +159,7 @@ export default function Navigation({ addToast, sessionCollaboration, onPackageGr
           })}
         </ul>
 
-        {/* ── Package graphs (the graph-set panel, ADR-0027) ── */}
+        {/* ── Graph set packaging (the graph-set panel, ADR-0027) ── */}
         {onPackageGraphs && (
           <ul className={`${styles.menuList} ${styles.menuSection}`} role="none">
             <li role="none">
@@ -170,7 +170,7 @@ export default function Navigation({ addToast, sessionCollaboration, onPackageGr
                 onClick={() => { close(); onPackageGraphs(); }}
                 title="Pack graph models into a graph set (<set>.pack), or inspect one"
               >
-                📦 Package graphs…
+                📦 Graph set packaging
               </button>
             </li>
           </ul>

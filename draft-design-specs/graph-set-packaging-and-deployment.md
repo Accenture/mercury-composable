@@ -164,6 +164,9 @@ graph-packager inspect <file.pack> [--json]             # manifest, entries (id,
   "Import as draft" per entry).
 - **Download:** `saveBinaryFile(bytes, "<set>.pack")`, the binary twin of `saveTextFile` (the native save dialog in Chromium,
   the download folder elsewhere).
+  - *Shipped 2026-10-07 (WP5).* The menu item and the panel are titled "Graph set packaging" (Eric: consistency with the
+    inspect mode's "Graph set" title); the panel takes the set name as `manifest.set`, a blank manifest value is left out, and
+    inspect mode also offers "Edit as new set".
 
 ### 3.4 The deployment manifest
 

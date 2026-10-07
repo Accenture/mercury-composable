@@ -39,7 +39,7 @@ import java.util.concurrent.TimeoutException;
  * POST /api/graph-set/unpack - read a graph set (ADR-0027): the body is the package, a .pack file sent as
  * application/octet-stream, and the answer is {"manifest": {...}, "graphs": {"<graph-id>": <model>, ...}} -
  * the manifest as the package holds it, the packager's 'format' and 'format_version' included, and each
- * graph as a file holds it. The Playground's "Package graphs" panel inspects a dropped package with it and
+ * graph as a file holds it. The Playground's "Graph set packaging" panel inspects a dropped package with it and
  * imports one of its graphs as the draft through POST /api/graph/import/{id}. Bytes that are not a canonical
  * package, and a set that breaks a rule - an entry not named <graph-id>.json, a root name that differs from
  * its graph id, a 'graph_id' that names no graph - are refused with the reason.

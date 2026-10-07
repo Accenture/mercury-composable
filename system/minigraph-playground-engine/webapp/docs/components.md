@@ -153,7 +153,7 @@ Props: `addToast`, `sessionCollaboration?` (null hides the Session menu). Render
   "Connect All" / "Disconnect All" button (connects only idle slots, disconnects connected and
   connecting ones) and, per playground, a `NavLink` with its dot plus a Start / Stop button whose
   title is the socket URL. The button is separate from the link so it never navigates. With
-  `onPackageGraphs` set (the Minigraph playground), the menu ends with **📦 Package graphs…**,
+  `onPackageGraphs` set (the Minigraph playground), the menu ends with **📦 Graph set packaging**,
   which closes the menu and opens the graph-set panel in the left slot.
 - **Quick Links** (new tab): `/info`, `/info/lib`, `/info/routes`, `/health`, `/env`, and the two
   legacy pages `http://localhost:8085/api/ws/json` and `…/api/ws/graph` (hard-coded host).
@@ -167,7 +167,7 @@ A dropdown primitive: trigger with an optional status dot and `aria-expanded`, a
 that is **unmounted while closed** (children lose their state on close), closing on the trigger,
 an outside `mousedown`, or Escape (which refocuses the trigger). Nothing closes it when an item is
 clicked, unless the children are a function of `close` and the item calls it (the Tools menu's
-Package graphs… does).
+Graph set packaging does).
 
 ### `SessionMenu` (`components/SessionMenu/SessionMenu.tsx`)
 
@@ -269,11 +269,11 @@ at a time; a further open request queues FIFO in `useMockUploadPanel`.
 ### `GraphSetPanel` (`components/GraphSetPanel/GraphSetPanel.tsx`)
 
 Props: `controller` (the `useGraphSetPanel` return value, which owns the state and the transport)
-and `supportsFolderPicker`. Opened from the Tools menu's **Package graphs…**; the panel for graph
+and `supportsFolderPicker`. Opened from the Tools menu's **Graph set packaging**; the panel for graph
 sets (ADR-0027): graph models packed together as one `<set>.pack`, checked by the deployment gate
 as they are packed on the engine.
 
-- **Assemble mode** (`📦 Package graphs`): a ribbon with the file name the set will be saved as and a
+- **Assemble mode** (`📦 Graph set packaging`): a ribbon with the file name the set will be saved as and a
   close button; a drop zone with a hidden multi-file input and "Browse files…" that take several
   `.json` graph files at once (each becomes an entry named after its file, `<graph-id>.json`) or one
   `.pack` (which switches to inspect mode); **Add current graph** (the live graph as an entry named

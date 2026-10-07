@@ -448,7 +448,7 @@ rest:
     headers: header_1
     tracing: true
 
-  # Backs the Playground's "Package graphs" panel: packs graph models into a
+  # Backs the Playground's "Graph set packaging" panel: packs graph models into a
   # graph set (<set>.pack) on the engine, after the deployment gate's checks
   - service: 'pack.graph.set'
     methods: ['POST']
