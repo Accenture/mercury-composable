@@ -1,8 +1,7 @@
-- [ ] **v4.12.20 post-release: field acceptance.** v4.12.20 is tagged, released and published on both repos (Java `9e515825`/tag `fc940bea`, Rust
-  `b4783c5b`/tag `d63e102a`; GitHub releases 03:11Z and 03:12Z; main CI green on both tag commits; the twelve Rust crates verified 12/12 on crates.io at
-  4.12.20, published 03:21:45Z-03:21:58Z, the published platform-core tarball matching the tag). **Open:** the field-acceptance wait (CI, Snyk, Sonar on
-  v4.12.20), as for 4.12.19; the two docs-only interop-report PRs (composable #486, mercury #341) are separate. The python/node language packs need no
-  change. Not part of this thread: the folder `pack`/`unpack` tooling and the graph-set loader RFC (deferred in ADR-0026), RFC-0003 (Parked) and RFC-0004
-  (Withdrawn). Relates [[decimal-statement-exact-arithmetic]], [[canonical-packager-wire-contract]], [[eric-release-rhythm]].
+- [x] **v4.12.20 post-release: field acceptance — CLOSED 2026-10-08, accepted with v4.12.21.** Outcome: the field never took
+  4.12.20 on its own; v4.12.21 (Java tag → `87dd9e78`, carrying 4.12.20's `DECIMAL:` statement and canonical packager) passed the
+  field's CI pipeline with the Snyk and Sonar scans clean and is deployed to the field (Eric, 2026-10-08) — recorded on the Java
+  and Rust `latest_release` lines as FIELD-ACCEPTED. Lesson: a field-acceptance wait closes on the first release the field
+  actually takes, which need not be the release that opened it. Origin: 2026-10-07-013257.md (the field-acceptance paragraph).
   → serves: vision-mercury-composable
   <!-- id: decimal-ports-and-release | created: 2026-10-01 | last_used: 2026-09-30 | uses: 1 | tier: working -->

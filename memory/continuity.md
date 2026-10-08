@@ -40,8 +40,8 @@
   the sparse index; the published platform-core tarball identical to the tag), npm `mercury-composable` 4.12.21 as `latest`
   (02:43:40Z; the 41 compiled files identical to a build of the tag, the two runtime dependencies and no LLM SDK), PyPI
   `mercury-composable` 4.12.21 (wheel 02:45:59Z, sdist 02:46:00Z; the sdist's 20 modules identical to the tag). The Java artifacts
-  are the tag and the GitHub release, as always (not on Maven Central). Next: the field-acceptance wait (CI, Snyk, Sonar).
-  Origin 2026-10-07-013257.md.
+  are the tag and the GitHub release, as always (not on Maven Central). **FIELD-ACCEPTED 2026-10-08 (Eric):** the field's CI
+  pipeline passed with the Snyk and Sonar scans clean, and 4.12.21 is deployed to the field. Origin 2026-10-07-013257.md.
   Prior: v4.12.20 (2026-10-01 03:11:27Z — exact decimal arithmetic for money and the deterministic package format, lock-step with
   Rust; #485 squash `9e515825`, tag → `fc940bea`; the `DECIMAL` statement #471 ([[decimal-statement-exact-arithmetic]], ADR-0025),
   the `f:decimal*` plugins #475, `round` half-up #472, the `CanonicalPackager` #481 ([[canonical-packager-wire-contract]], ADR-0026);
