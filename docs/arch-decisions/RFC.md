@@ -66,8 +66,10 @@ response headers, `input.header.*` and `input.query.*` as parameters, and the st
 session shows the spec while authoring, and a discovery endpoint answers the skeleton and its evidence as JSON for the panel. The
 file drops into `extensions/api-playground` unchanged, and Swagger UI's explore bar can load the engine URL directly - the dev
 routes and the executor route carry the wildcard CORS entry. **(4) Input validation.** When the root node carries `schema`, both
-walkers - the executor and the Playground's traveler - validate `input.body` against it before the root's own work. The step is
-**assumed** by the engine, nothing is written into the node (Eric, 2026-10-08: assumed properties leave no room for a typo): the
+walkers - the executor and the Playground's traveler - validate `input.body` against it as the first thing at the root on every
+run; a root node's own skill, if it has one, runs after a successful validation, and a failed validation never reaches it. The
+step is **assumed** by the engine, nothing is written into the node (Eric, 2026-10-08: assumed properties leave no room for a
+typo): the
 engine invokes the built-in function `graph.schema.validator` through the task skill's own request and response machinery with
 `{body, schema}`; 200 passes, 400 carries every violation up to a cap in one message (`Input validation failed - input.body.a:
 expected number; input.body.b: required`), which the standard task error path turns into the run's abort status, the root's
@@ -92,7 +94,8 @@ never stored, and to the gate rules: a malformed schema fails, an unknown keywor
 surface warns.
 
 **Options.** *(a) Declared schema, discovery, and validation assumed by the engine* - the file stays as authored, the dry run and
-the deployed run behave identically, the function stays the atom, and the root keeps a skill of its own. **Recommended.**
+the deployed run behave identically, the function stays the atom, and the root keeps a skill of its own, run after the
+validation. **Recommended.**
 *(b) Discovery only, no declaration* - the structural minimum the viability study measured over the bundled models (the shape
 comes free; of 57 output mappings in the 14 tutorials 15 carry a type, of 31 input references 2; none reads a header or a query
 parameter): honest, but never a real contract and no validation. *(c) Validator lines written into the root node at export or
