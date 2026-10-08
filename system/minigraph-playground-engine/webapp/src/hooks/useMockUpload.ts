@@ -3,8 +3,10 @@ import { useState, useRef, useCallback } from 'react';
 export interface UseMockUploadOptions {
   /** The POST path extracted from the server message, e.g. "/api/mock/ws-417669-24" */
   uploadPath: string;
-  /** The current textarea value — the JSON string to POST. */
+  /** The current textarea value — the JSON string to POST (may be empty when headers are given). */
   json: string;
+  /** Mock request headers to POST to `${uploadPath}?namespace=header` after the body; empty = none. */
+  headers?: Record<string, string>;
   /** Called with the response body text on a successful (2xx) upload. */
   onSuccess: (responseBody: string) => void;
   /** Called with a human-readable error message on failure. */
@@ -40,6 +42,7 @@ export interface UseMockUploadReturn {
 export function useMockUpload({
   uploadPath,
   json,
+  headers,
   onSuccess,
   onError,
 }: UseMockUploadOptions): UseMockUploadReturn {
@@ -61,24 +64,43 @@ export function useMockUpload({
 
     setIsUploading(true);
 
+    const headerEntries = Object.entries(headers ?? {});
+    const hasBody = json.trim() !== '';
     try {
-      const response = await fetch(uploadPath, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    json,
-        signal:  controller.signal,
-      });
-
-      const body = await response.text();
-
-      if (!response.ok) {
-        setIsUploading(false);
-        onError(`HTTP ${response.status} — ${body}`);
-        return;
+      let lastBody = '';
+      if (hasBody) {
+        const response = await fetch(uploadPath, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    json,
+          signal:  controller.signal,
+        });
+        lastBody = await response.text();
+        if (!response.ok) {
+          setIsUploading(false);
+          onError(`HTTP ${response.status} — ${lastBody}`);
+          return;
+        }
+      }
+      // the headers go to the header namespace of the same endpoint, after the body, so
+      // a failure names the step that failed
+      if (headerEntries.length > 0) {
+        const response = await fetch(`${uploadPath}?namespace=header`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(Object.fromEntries(headerEntries)),
+          signal:  controller.signal,
+        });
+        lastBody = await response.text();
+        if (!response.ok) {
+          setIsUploading(false);
+          onError(`HTTP ${response.status} — ${lastBody} (mock headers)`);
+          return;
+        }
       }
 
       setIsUploading(false);
-      onSuccess(body);
+      onSuccess(lastBody);
     } catch (err) {
       if ((err as Error).name === 'AbortError') {
         // Cancelled by the caller — do not call onError.
@@ -88,7 +110,7 @@ export function useMockUpload({
       setIsUploading(false);
       onError((err as Error).message ?? 'Network error');
     }
-  }, [uploadPath, json, onSuccess, onError]);
+  }, [uploadPath, json, headers, onSuccess, onError]);
 
   return { isUploading, upload, cancel };
 }

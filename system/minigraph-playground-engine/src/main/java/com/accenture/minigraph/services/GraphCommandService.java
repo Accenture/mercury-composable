@@ -69,6 +69,10 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String UPLOAD = "upload";
     private static final String CONTENT = "content";
     private static final String MOCK_DATA_LOADED = "Mock data loaded into 'input.body' namespace";
+    private static final String MOCK_HEADERS_LOADED = "Mock data loaded into 'input.header' namespace";
+    private static final String NAMESPACE = "namespace";
+    private static final String BODY_NAMESPACE = "body";
+    private static final String HEADER_NAMESPACE = "header";
     private static final String IMPORT = "import";
     private static final String CONNECTIONS = "connections";
     private static final String GRAPH_IMPORTED = "Graph model imported as draft";
@@ -188,7 +192,8 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private void handleUploadRequest(PostOffice po, String inRoute, Map<String, Object> input, boolean forwarded) {
         if (input.get(OUT) instanceof String outRoute && input.get(CONTENT) != null) {
-            handleUpload(po, inRoute, outRoute, input.get(CONTENT), forwarded);
+            var namespace = input.get(NAMESPACE) instanceof String ns? ns : BODY_NAMESPACE;
+            handleUpload(po, inRoute, outRoute, input.get(CONTENT), namespace, forwarded);
         }
     }
 
@@ -203,11 +208,13 @@ public class GraphCommandService extends GraphLambdaFunction {
      * its instance loads the payload and the upload is replayed into every subscriber's instance; a
      * subscriber forwards the payload to the primary, which does the same (the subscriber receives it
      * back on the replay). Every member of a collaborative session then runs the graph with the same
-     * {@code input.body}, and every member's console confirms the load.
+     * {@code input.body} (or {@code input.header}, the namespace the upload names), and every member's
+     * console confirms the load.
      */
-    private void handleUpload(PostOffice po, String inRoute, String outRoute, Object content, boolean forwarded) {
+    private void handleUpload(PostOffice po, String inRoute, String outRoute, Object content, String namespace,
+                              boolean forwarded) {
         if (forwarded) {
-            loadMockContent(po, inRoute, outRoute, content);
+            loadMockContent(po, inRoute, outRoute, content, namespace);
             return;
         }
         var me = sessions.get(inRoute);
@@ -215,25 +222,28 @@ public class GraphCommandService extends GraphLambdaFunction {
             return;
         }
         if (me.isPrimary()) {
-            uploadAsPrimary(po, content, inRoute, outRoute, me);
+            uploadAsPrimary(po, content, namespace, inRoute, outRoute, me);
         } else {
-            forwardUploadToPrimary(po, content, me);
+            forwardUploadToPrimary(po, content, namespace, me);
         }
     }
 
-    private void uploadAsPrimary(PostOffice po, Object content, String inRoute, String outRoute, GraphSession me) {
-        loadMockContent(po, inRoute, outRoute, content);
+    private void uploadAsPrimary(PostOffice po, Object content, String namespace,
+                                 String inRoute, String outRoute, GraphSession me) {
+        loadMockContent(po, inRoute, outRoute, content, namespace);
         for (var subOutRoute : me.getSubscribers()) {
             var subInRoute = GraphSession.getInRoute(subOutRoute);
-            var forwardBody = Map.of(TYPE, UPLOAD, IN, subInRoute, OUT, subOutRoute, CONTENT, content, FORWARDED, true);
+            var forwardBody = Map.of(TYPE, UPLOAD, IN, subInRoute, OUT, subOutRoute, CONTENT, content,
+                                     NAMESPACE, namespace, FORWARDED, true);
             po.send(new EventEnvelope().setTo(ROUTE).setBody(forwardBody));
         }
     }
 
-    private void forwardUploadToPrimary(PostOffice po, Object content, GraphSession me) {
+    private void forwardUploadToPrimary(PostOffice po, Object content, String namespace, GraphSession me) {
         var targetInRoute = GraphSession.getInRoute(me.getTargetId());
         var targetOutRoute = GraphSession.getOutRoute(me.getTargetId());
-        var forwardBody = Map.of(TYPE, UPLOAD, IN, targetInRoute, OUT, targetOutRoute, CONTENT, content);
+        var forwardBody = Map.of(TYPE, UPLOAD, IN, targetInRoute, OUT, targetOutRoute, CONTENT, content,
+                                 NAMESPACE, namespace);
         po.send(new EventEnvelope().setTo(ROUTE).setBody(forwardBody));
     }
 
@@ -272,15 +282,21 @@ public class GraphCommandService extends GraphLambdaFunction {
         return (Map<String, Object>) content;
     }
 
-    private void loadMockContent(PostOffice po, String inRoute, String outRoute, Object content) {
+    /**
+     * Load the mock content into the instance's {@code input.body} or, for the {@code header}
+     * namespace, {@code input.header} - the names kept as given, since the graph reads headers
+     * case-insensitively, exactly as it reads a real request's.
+     */
+    private void loadMockContent(PostOffice po, String inRoute, String outRoute, Object content, String namespace) {
         var instance = graphInstances.get(inRoute);
         if (instance == null) {
             po.send(new EventEnvelope().setTo(outRoute).setBody(
                     "Mock data not loaded - this session has no graph instance (instantiate first)"));
             return;
         }
-        instance.stateMachine.setElement(INPUT_BODY, content);
-        po.send(new EventEnvelope().setTo(outRoute).setBody(MOCK_DATA_LOADED));
+        var header = HEADER_NAMESPACE.equals(namespace);
+        instance.stateMachine.setElement(header? INPUT_HEADER_NAMESPACE : INPUT_BODY, content);
+        po.send(new EventEnvelope().setTo(outRoute).setBody(header? MOCK_HEADERS_LOADED : MOCK_DATA_LOADED));
     }
 
     private void handleCommand(PostOffice po, String command, String inRoute, String outRoute,
@@ -396,7 +412,8 @@ public class GraphCommandService extends GraphLambdaFunction {
         var graphInstance = getGraphInstance(inRoute);
         if (graphInstance != null) {
             var name = getTempGraphName(inRoute);
-            po.send(new EventEnvelope().setTo(outRoute).setBody("You may upload JSON payload -> POST /api/mock/" + name));
+            po.send(new EventEnvelope().setTo(outRoute).setBody("You may upload JSON payload -> POST /api/mock/" + name +
+                    " (mock headers, a JSON object of text values -> POST /api/mock/" + name + "?namespace=header)"));
         }
     }
 
@@ -410,13 +427,28 @@ public class GraphCommandService extends GraphLambdaFunction {
      * @return false when the session has no graph instance
      */
     public static boolean uploadContent(String id, Object content) {
+        return uploadContent(id, content, BODY_NAMESPACE);
+    }
+
+    /**
+     * Load mock data into the session's graph instance under the given namespace: {@code body}
+     * (a map or a list as {@code input.body}) or {@code header} (a map of text values as
+     * {@code input.header}). The REST edge validates the payload shape for the namespace.
+     *
+     * @param id session id
+     * @param content the mock content
+     * @param namespace body or header
+     * @return false when the session has no graph instance
+     */
+    public static boolean uploadContent(String id, Object content, String namespace) {
         var inRoute = GraphSession.getInRoute(id);
         var outRoute = GraphSession.getOutRoute(id);
         if (!sessions.containsKey(inRoute) || !graphInstances.containsKey(inRoute)) {
             return false;
         }
         var po = EventEmitter.getInstance();
-        po.send(new EventEnvelope().setTo(ROUTE).setBody(Map.of(TYPE, UPLOAD, IN, inRoute, OUT, outRoute, CONTENT, content)));
+        po.send(new EventEnvelope().setTo(ROUTE).setBody(Map.of(TYPE, UPLOAD, IN, inRoute, OUT, outRoute,
+                CONTENT, content, NAMESPACE, namespace)));
         return true;
     }
 

@@ -66,7 +66,8 @@ middle one is optional (tutorial 1 needs no input):
   properties by `graphRun/graphInputPaths.ts`, descriptive keys excluded, UI hints only).
   Instantiate stays enabled while `ready`: instantiating again starts a fresh instance.
 - **Upload** is a local action, not a workflow phase: `Playground` opens `MockUploadPanel` for this
-  session's own `/api/mock/{sessionId}` (the hints are the graph's `input.body.*` paths). No
+  session's own `/api/mock/{sessionId}` (the hints are the graph's `input.body.*` paths and its
+  `input.header.*` names; the panel's header rows post to `?namespace=header` after the body). No
   console command is sent, so in a collaborative session only the member who clicked sees the
   form; the engine loads the payload into every member's instance and confirms in every console.
   A replayed `upload.invitation` line never opens a panel (that was the 2026-10-02 defect: one

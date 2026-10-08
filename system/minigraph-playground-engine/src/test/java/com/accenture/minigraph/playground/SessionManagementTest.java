@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.playground;
 
+import com.accenture.minigraph.rest.UploadMockContent;
 import com.accenture.minigraph.services.GraphCommandService;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -829,5 +830,76 @@ class SessionManagementTest {
             clientB.close();
             clientC.close();
         }
+    }
+
+    /**
+     * The header namespace of the mock upload (POST /api/mock/{id}?namespace=header): a JSON object
+     * of text values becomes every member's input.header, the names kept as given (the graph reads
+     * headers case-insensitively), the body untouched; the invitation names both endpoints; the REST
+     * edge refuses an unknown namespace and a header payload that is not an object of text values.
+     */
+    @Test
+    void mockHeaderUploadLoadsEveryMemberInstanceTest() throws InterruptedException {
+        final String headersLoaded = "Mock data loaded into 'input.header' namespace";
+        SessionFixture fx = createFixture();
+        if (fx == null) {
+            return;
+        }
+        try (fx) {
+            po.send(fx.txPathB(), "session subscribe " + fx.sessionA());
+            assertNotNull(waitForMessage(fx.messagesB(), "Subscribed to " + fx.sessionA(), 5));
+            po.send(fx.txPathA(), "create node root");
+            assertNotNull(waitForMessage(fx.messagesB(), "node root created", 5));
+            po.send(fx.txPathA(), "create node end");
+            assertNotNull(waitForMessage(fx.messagesB(), "node end created", 5));
+            po.send(fx.txPathA(), "connect root to end with relates");
+            assertNotNull(waitForMessage(fx.messagesB(), "node root connected to end", 5));
+            po.send(fx.txPathA(), "instantiate graph");
+            assertNotNull(waitForMessage(fx.messagesA(), "Graph instance created", 5));
+            assertNotNull(waitForMessage(fx.messagesB(), "Graph instance created", 5));
+            // the subscriber uploads mock headers: forwarded to the primary, loaded there and
+            // replayed into every subscriber's instance - into input.header, the names as given
+            fx.messagesA().clear();
+            fx.messagesB().clear();
+            assertTrue(GraphCommandService.uploadContent(fx.sessionB(), Map.of("X-Request-Id", "abc-123"), "header"));
+            assertNotNull(waitForMessage(fx.messagesA(), headersLoaded, 5));
+            assertNotNull(waitForMessage(fx.messagesB(), headersLoaded, 5));
+            assertEquals(Map.of("X-Request-Id", "abc-123"), GraphCommandService.downloadContent(fx.sessionA(), "input.header"));
+            assertEquals(Map.of("X-Request-Id", "abc-123"), GraphCommandService.downloadContent(fx.sessionB(), "input.header"));
+            // a body upload leaves the headers in place
+            fx.messagesA().clear();
+            fx.messagesB().clear();
+            assertTrue(GraphCommandService.uploadContent(fx.sessionA(), Map.of("person_id", 300)));
+            assertNotNull(waitForMessage(fx.messagesA(), MOCK_DATA_LOADED, 5));
+            assertNotNull(waitForMessage(fx.messagesB(), MOCK_DATA_LOADED, 5));
+            assertEquals(Map.of("X-Request-Id", "abc-123"), GraphCommandService.downloadContent(fx.sessionB(), "input.header"));
+            assertEquals(Map.of("person_id", 300), GraphCommandService.downloadContent(fx.sessionB(), "input.body"));
+            // the console reads the headers back, and the invitation names both endpoints
+            fx.messagesB().clear();
+            po.send(fx.txPathB(), "inspect input.header");
+            assertNotNull(waitForMessage(fx.messagesB(), "abc-123", 5));
+            fx.messagesA().clear();
+            po.send(fx.txPathA(), "upload mock data");
+            assertNotNull(waitForMessage(fx.messagesA(), "?namespace=header", 5));
+        }
+        // the REST edge: an unknown namespace, then a header payload that is not an object of text values
+        var edge = new UploadMockContent();
+        var unknown = new AsyncHttpRequest().setPathParameter("id", "ws-000000-0")
+                .setQueryParameter("namespace", "cookie").setBody(Map.of("a", "b"));
+        var ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(Map.of(), unknown, 1));
+        assertEquals("Unknown mock namespace 'cookie' - use body or header", ex.getMessage());
+        var nonText = new AsyncHttpRequest().setPathParameter("id", "ws-000000-0")
+                .setQueryParameter("namespace", "header").setBody(Map.of("count", 5));
+        ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(Map.of(), nonText, 1));
+        assertEquals("Mock headers must be a JSON object with text values", ex.getMessage());
+        var list = new AsyncHttpRequest().setPathParameter("id", "ws-000000-0")
+                .setQueryParameter("namespace", "header").setBody(List.of("a"));
+        ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(Map.of(), list, 1));
+        assertEquals("Mock headers must be a JSON object with text values", ex.getMessage());
+        // a well-formed header payload for an unknown session is refused after the shape check
+        var expired = new AsyncHttpRequest().setPathParameter("id", "ws-000000-0")
+                .setQueryParameter("namespace", "header").setBody(Map.of("a", "b"));
+        ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(Map.of(), expired, 1));
+        assertEquals("Session ws-000000-0 is expired or invalid", ex.getMessage());
     }
 }

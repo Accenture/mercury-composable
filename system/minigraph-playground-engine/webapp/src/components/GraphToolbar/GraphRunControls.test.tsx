@@ -136,7 +136,7 @@ describe('GraphRunControls', () => {
 
     expect(instantiateTooltip.textContent).toBe('Create a runnable instance of the current graph.');
     expect(uploadTooltip.textContent).toBe(
-      'Upload a JSON payload as the mock input.body of the instance (optional). Only you see the form. Instantiate the graph first.',
+      'Upload a JSON payload as the mock input.body of the instance, and optional mock headers as its input.header. Only you see the form. Instantiate the graph first.',
     );
     expect(runTooltip.textContent).toBe(
       'Run the instantiated graph, with the uploaded mock input if any. Instantiate the graph first.',
@@ -191,7 +191,7 @@ describe('GraphRunControls', () => {
       'Create a runnable instance of the current graph. Instantiating again starts from a fresh instance.',
     );
     expect(readyUpload.textContent).toBe(
-      'Upload a JSON payload as the mock input.body of the instance (optional). Only you see the form. This graph does not read input.body, so uploading is optional.',
+      'Upload a JSON payload as the mock input.body of the instance, and optional mock headers as its input.header. Only you see the form. This graph reads neither input.body nor input.header, so uploading is optional.',
     );
     expect(readyRun.textContent).toBe('Run the instantiated graph, with the uploaded mock input if any.');
 
@@ -199,7 +199,7 @@ describe('GraphRunControls', () => {
       phase: 'ready', canUpload: true, canRun: true, inputBodyPaths: ['input.body.person_id', 'input.body.name'],
     }).element);
     expect(screen.getAllByRole('tooltip')[1].textContent).toBe(
-      'Upload a JSON payload as the mock input.body of the instance (optional). Only you see the form. This graph reads 2 input.body paths.',
+      'Upload a JSON payload as the mock input.body of the instance, and optional mock headers as its input.header. Only you see the form. This graph reads 2 input.body paths.',
     );
   });
 });

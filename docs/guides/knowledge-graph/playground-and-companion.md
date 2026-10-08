@@ -81,9 +81,9 @@ session reset                 # clear the primary session; subscribers keep thei
 
 When you subscribe to a primary session, commands mirror **both ways** — every command except the
 `session` topology commands propagates to the primary and all subscribers alike, so all parties
-(human or AI) are equal co-authors of one shared model. A mock-data upload (`POST /api/mock/{id}`)
-propagates the same way, into every member's graph instance, so a dry-run started by any member runs
-with the same `input.body`; a graph model imported from a file (`POST /api/graph/import/{id}`, the
+(human or AI) are equal co-authors of one shared model. A mock-data upload (`POST /api/mock/{id}` for
+the JSON body, `?namespace=header` for request headers) propagates the same way, into every member's
+graph instance, so a dry-run started by any member runs with the same `input.body` and `input.header`; a graph model imported from a file (`POST /api/graph/import/{id}`, the
 Graph view's Import Graph button or a dropped `.json` file) replaces every member's draft the same
 way. (You can't subscribe to yourself or to a
 non-primary session; a primary session has nothing to unsubscribe.)

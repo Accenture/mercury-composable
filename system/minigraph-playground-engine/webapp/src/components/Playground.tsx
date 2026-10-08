@@ -1007,8 +1007,9 @@ export default function Playground({ config }: PlaygroundProps) {
                   onSuccess={handleUploadSuccess}
                   onClose={handleCloseUploadPanel}
                   onError={handleUploadError}
-                  description="The JSON becomes the instance's input.body. In a shared session every member's instance receives it."
+                  description="The JSON becomes the instance's input.body and the optional headers its input.header. In a shared session every member's instance receives them."
                   inputPathHints={graphRun.inputBodyPaths}
+                  inputHeaderHints={graphRun.inputHeaderNames}
                 />
               ) : graphSet.isOpen ? (
                 <GraphSetPanel
@@ -1062,6 +1063,7 @@ export default function Playground({ config }: PlaygroundProps) {
               canRun: graphRun.canRun,
               disabledReason: graphRun.disabledReason,
               inputBodyPaths: graphRun.inputBodyPaths,
+                  inputHeaderNames: graphRun.inputHeaderNames,
               onInstantiate: graphRun.instantiateGraph,
               onUpload: handleOpenMockUpload,
               onRun: graphRun.runGraph,
