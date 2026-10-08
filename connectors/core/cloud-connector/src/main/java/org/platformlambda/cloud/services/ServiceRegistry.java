@@ -309,6 +309,9 @@ public class ServiceRegistry implements LambdaFunction {
         }
         String origin = headers.get(ORIGIN);
         if (headers.containsKey(ROUTE) && headers.containsKey(PERSONALITY)) {
+            if (isOwnEcho(headers, origin, myOrigin)) {
+                return;
+            }
             // add a single route
             String route = headers.get(ROUTE);
             String personality = headers.get(PERSONALITY);
@@ -359,6 +362,9 @@ public class ServiceRegistry implements LambdaFunction {
         }
         String route = headers.get(ROUTE);
         String origin = headers.get(ORIGIN);
+        if (isOwnEcho(headers, origin, myOrigin)) {
+            return;
+        }
         // remove from routing table
         removeRoute(origin, route);
         if (origin.equals(myOrigin) && !headers.containsKey(IS_FINAL)) {
@@ -368,6 +374,24 @@ public class ServiceRegistry implements LambdaFunction {
                     .setHeaders(headers).setHeader(IS_FINAL, true);
             po.send(request);
         }
+    }
+
+    /**
+     * A single-route add or unregister that this instance broadcast to its peers comes back to it
+     * as the same event carrying the 'final' flag. The local event already applied the change
+     * before it was broadcast, and the echo exists for the peers, so it is ignored here - as the
+     * route-list form of 'add' already ignores its own origin. Applying the echo raced the echo of
+     * the next event: the two travel the same multi-instance route and can complete out of order
+     * on a loaded host, re-adding a route unregistered moments after its add (or removing one
+     * re-added moments after its unregister). A peer's events carry 'final' too and are applied.
+     *
+     * @param headers the event headers
+     * @param origin the origin named by the event
+     * @param myOrigin this instance's origin
+     * @return true when the event is this instance's own broadcast echo
+     */
+    private static boolean isOwnEcho(Map<String, String> headers, String origin, String myOrigin) {
+        return origin.equals(myOrigin) && headers.containsKey(IS_FINAL);
     }
 
     private void sendMyRoutes(boolean exchange) {
