@@ -39,6 +39,88 @@
 
 ---
 
+## RFC-0007 — The graph contract: a `schema` on the root and end nodes, discovery, OpenAPI on demand, input validation and a Schema panel
+**Status:** Open · **Raised:** 2026-10-08 · **Serves:** vision-mercury-composable · **Thread:** `graph-contract-schema`
+<!-- id: rfc-0007 | status: open | thread: graph-contract-schema -->
+
+**Proposal.** Give a graph model an explicit, machine-readable contract and put it to three uses, from Eric's design of
+2026-10-08 (the viability study is in the session log `memory/sessions/` of that date). **(1) Declaration.** An optional `schema`
+property on the root node describes `input.body` and an optional `schema` on the end node describes `output.body` (the node says
+which side it is - Eric's naming), each a schema object in the OpenAPI 3.0 dialect stored as a nested property map through the
+Playground grammar's composite keys - `schema.type=object`, `schema.required[]=a`, `schema.properties.a.type=number` - so
+`edit node`, `update node` and the node editor carry it with no new grammar, and it travels with the graph through export, import,
+pack and `graph.extension`. The root and end nodes are skill-less in the common case, so the map already sits in every run's state
+machine by reference, as `purpose` does; no per-run cost. **(2) Discovery.** One contract class per engine, extracted from the
+`describe graph` scanner that both engines already share byte for byte, derives the data surface and as much typing as the model
+gives: the path scan (names, nesting, arrays from `[]`, `[*]` and `[0]`), direct evidence (typed constants and wrappers, known
+plugin results such as `f:now` and `f:listOfMap`, `for_each` sources, JSONPath star steps) and one-hop propagation through the
+model namespace (a `COMPUTE` result is a number, a `CONDITION` a boolean, a `DECIMAL` a string, a mapper constant its own type, a
+pass-through from a typed input its type, a `graph.extension` target's declared output its `result`); it records which nodes
+reference each path. The declaration wins; discovered paths it lacks are appended untyped and flagged; declared paths the model
+never references are kept (a declaration may describe what a whole-body passthrough forwards) and flagged. **(3) OpenAPI on
+demand.** A dev-mode `GET /api/openapi/{graph_id}` answers a minimal OpenAPI 3.0 document for a deployed graph as a YAML
+attachment (`?format=json` for JSON): `info` from the root node's `purpose` and the deployed set's version, `servers` from the
+request's Host header so a downloaded file points back at the engine that generated it, `POST /api/graph/{graph_id}` with the
+request-body schema, the `200` response schema, every `int(N) -> output.status` constant as a response code, `output.header.*` as
+response headers, `input.header.*` and `input.query.*` as parameters, and the standard error shape. A draft variant through the
+session shows the spec while authoring, and a discovery endpoint answers the skeleton and its evidence as JSON for the panel. The
+file drops into `extensions/api-playground` unchanged, and Swagger UI's explore bar can load the engine URL directly - the dev
+routes and the executor route carry the wildcard CORS entry. **(4) Input validation.** When the root node carries `schema`, both
+walkers - the executor and the Playground's traveler - validate `input.body` against it as the first thing at the root on every
+run; a root node's own skill, if it has one, runs after a successful validation, and a failed validation never reaches it. The
+step is **assumed** by the engine, nothing is written into the node (Eric, 2026-10-08: assumed properties leave no room for a
+typo): the
+engine invokes the built-in function `graph.schema.validator` through the task skill's own request and response machinery with
+`{body, schema}`; 200 passes, 400 carries every violation up to a cap in one message (`Input validation failed - input.body.a:
+expected number; input.body.b: required`), which the standard task error path turns into the run's abort status, the root's
+`exception=` handler, or the console line of a dry run; the application property `graph.schema.validator` names a substitute
+function with the same contract. The vocabulary is a **closed subset of OpenAPI 3.0 keywords by their OpenAPI names** - `type`
+(object, array, string, number, integer, boolean), `properties`, `required`, `items`, `enum`, `minimum`, `maximum`,
+`exclusiveMinimum`, `exclusiveMaximum`, `minLength`, `maxLength`, `pattern`, `minItems`, `maxItems`, `nullable`,
+`additionalProperties` - with `title`, `description`, `example` and `format` documentary and never validated. The gate refuses any
+other keyword, because a constraint the validator silently ignores teaches that unflagged means safe (the partial-gate lesson of
+2026-09-18). Types are strict JSON types - a numeric string is not a number; money is `type: string` with a `pattern`, as the
+`DECIMAL:` guidance already says. A `pattern` runs after `maxLength`, in the regex subset common to Java and the Rust crate, and
+comes from the author, never the caller. The schema compiles once per compiled model. The end node's `schema` stays documentary.
+**(5) The Schema panel.** A left-slot panel like the packaging panel, opened from the Tools menu or from the root or end node
+editor: Input and Output tabs, one row per path - path, type, required, description, and a source chip reading declared,
+discovered or from last run - pre-filled from discovery; a "Fill from last run" action infers types and examples from the
+instance's actual `input.body` and `output.body` through the inspect endpoint, the only way to type a task's or a fetcher's
+result; Save writes the two properties through the existing update-node command, so every session member sees it and an agent
+does the same by command; Download fetches the draft spec. A decision would commit the project to the two `schema` properties
+and the closed keyword subset on both engines (a shared vector file pins accept and reject with their messages, the method of
+ADR-0026), to validation by declaration at the root as an assumed step, to the OpenAPI document as a derived artifact that is
+never stored, and to the gate rules: a malformed schema fails, an unknown keyword fails, a mismatch between declaration and
+surface warns.
+
+**Options.** *(a) Declared schema, discovery, and validation assumed by the engine* - the file stays as authored, the dry run and
+the deployed run behave identically, the function stays the atom, and the root keeps a skill of its own, run after the
+validation. **Recommended.**
+*(b) Discovery only, no declaration* - the structural minimum the viability study measured over the bundled models (the shape
+comes free; of 57 output mappings in the 14 tutorials 15 carry a type, of 31 input references 2; none reads a header or a query
+parameter): honest, but never a real contract and no validation. *(c) Validator lines written into the root node at export or
+by the panel* - visible in the file, but two sources of truth: a re-imported graph carries them as draft properties, a removed
+schema leaves a dangling validator, the dry run validates only after an export and an import, and a task node needs its two
+`input[]` mappings as well, four lines a developer can mistype. Rejected by Eric, 2026-10-08. *(d) A dedicated validation skill* -
+one more built-in skill for a step every graph with a contract wants; the assumed step through the task machinery gives the same
+traversal-log line and error path without it. *(e) Sample a dry run only* - accurate types and examples, but per session and only
+after an execution; kept as the panel's "Fill from last run", not as the contract. *(f) JSON Schema 2020-12 with OpenAPI 3.1* -
+fuller, but the api-playground's Swagger UI and the field's tooling target 3.0; revisit when a 3.1-only keyword is needed.
+
+**Settled (Eric, 2026-10-08).** The property is named `schema` on both nodes; the validator is assumed, never inserted; the
+vocabulary borrows a minimal set of OpenAPI 3.0 syntax. **Open:** the closed subset above as the first cut; strict JSON types;
+`additionalProperties` left to OpenAPI's default (extra fields pass unless the author declares `false`); the cap on reported
+violations (proposed 10); the draft-spec route's shape. Work packages: **WP1** the contract class, discovery, the OpenAPI and
+discovery endpoints, and `describe graph` printing the declaration (both engines, one shared fixture); **WP2** the validator
+function, the assumed step in both walkers, the gate rules and the shared accept/reject vectors (both engines); **WP3** the
+Schema panel with fill-from-run and download (one source, two deploy targets); **WP4** the help page, the command reference,
+the AI agent guide recipe, the api-playground round trip and the claims. Promotion follows the implementation, as RFC-0001,
+RFC-0002 and RFC-0005 did.
+
+**Resolution.** (open)
+
+---
+
 ## RFC-0006 — An in-house MessagePack codec: `system/minimalist-msgpack` replaces `org.msgpack:msgpack-core`
 **Status:** Promoted → ADR-0028 · **Raised:** 2026-10-06 · **Serves:** vision-mercury-composable · **Thread:** `minimalist-msgpack`
 <!-- id: rfc-0006 | status: promoted | thread: minimalist-msgpack -->
