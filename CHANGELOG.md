@@ -10,7 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Nothing yet. Each change merged to `main` after v4.12.21 is listed here; it moves under its release heading when the version is cut.
+Each change merged to `main` after v4.12.21 is listed here; it moves under its release heading when the version is cut.
+
+### Fixed
+
+1. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers
+   of the Kafka service mesh and comes back to its sender as the same event carrying `final`. The registry applied that echo to
+   its own routing table, and because the two echoes of an add followed by an unregister travel the same ten-instance route, they
+   can complete out of order on a loaded host: the unregister's echo found nothing to remove and the add's echo re-added the route
+   for good (`ServiceRegistryEdgeTest` failed this way on CI on 2026-10-08; the poll added by PR #164 cannot settle a reordered
+   pair). `ServiceRegistry.onAdd` and `onUnregister` now ignore an event whose origin is this instance and which carries `final`,
+   as the route-list form already did: the local event applied the change before it was broadcast, and the echo exists for the
+   peers. A peer's events are unchanged. Pinned by `ownBroadcastEchoesAreIgnored`, which delivers the two echoes in the reversed
+   order and fails on the previous code. No upgrade action.
 
 ---
 ## Version 4.12.21, 10/7/2026

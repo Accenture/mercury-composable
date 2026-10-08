@@ -180,10 +180,10 @@ class ServiceRegistryEdgeTest extends TestBase {
         po.asyncRequest(add, 5000).onSuccess(bench::add);
         assertNotNull(bench.poll(10, TimeUnit.SECONDS));
         assertTrue(ServiceRegistry.getInstances("edge.local.route").contains(myOrigin));
-        // and unregistering it broadcasts the removal. The earlier add was broadcast through the
-        // mock cloud, which loops it back as an add (final) event - on a slow runner that loopback
-        // can land AFTER this unregister and momentarily re-add the route, so poll until the
-        // trailing unregister (final) loopback settles the registry to the removed state.
+        // and unregistering it broadcasts the removal. Both broadcasts loop back through the mock
+        // cloud as this instance's own 'final' echoes, which the registry ignores (a reordered pair
+        // of echoes once re-added the route for good - see ownBroadcastEchoesAreIgnored), so the
+        // registry settles on the local events alone; the poll stays as a guard against a slow runner.
         EventEnvelope remove = new EventEnvelope().setTo(ServiceDiscovery.SERVICE_REGISTRY)
                 .setHeader(TYPE, "unregister").setHeader(ORIGIN, myOrigin)
                 .setHeader(ROUTE, "edge.local.route");
@@ -264,5 +264,65 @@ class ServiceRegistryEdgeTest extends TestBase {
         po.send(ServiceDiscovery.SERVICE_REGISTRY,
                 new Kv(TYPE, "unsubscribe_life_cycle"), new Kv(ROUTE, "never.subscribed"));
         po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, "unsubscribe_pm_status"));
+    }
+
+    /**
+     * The registry ignores its own broadcast echoes. A local add or unregister is broadcast to the
+     * peers and comes back to its sender as the same event carrying 'final'. The two echoes of an
+     * add followed by an unregister travel the same multi-instance route and can complete out of
+     * order on a loaded host (CI, 2026-10-08): the unregister's echo found nothing to remove and the
+     * add's echo re-added the route for good. The echoes are delivered here in that reversed order,
+     * deterministically, and must leave the routing table as the local events left it; a peer's
+     * events, which carry 'final' too, keep registering and unregistering.
+     */
+    @Order(5)
+    @Test
+    void ownBroadcastEchoesAreIgnored() throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        EventEmitter po = EventEmitter.getInstance();
+        String myOrigin = Platform.getInstance().getOrigin();
+        String route = "edge.echo.route";
+        String peer = "edge-echo-peer";
+        // a local add, then a local unregister
+        po.asyncRequest(localAdd(route, myOrigin), 5000).onSuccess(bench::add);
+        assertNotNull(bench.poll(10, TimeUnit.SECONDS));
+        assertTrue(ServiceRegistry.getInstances(route).contains(myOrigin));
+        po.asyncRequest(localUnregister(route, myOrigin), 5000).onSuccess(bench::add);
+        assertNotNull(bench.poll(10, TimeUnit.SECONDS));
+        assertFalse(ServiceRegistry.getInstances(route).contains(myOrigin));
+        // the two echoes in the reversed order: the unregister's first, then the add's
+        po.asyncRequest(localUnregister(route, myOrigin).setHeader("final", true), 5000).onSuccess(bench::add);
+        assertNotNull(bench.poll(10, TimeUnit.SECONDS));
+        po.asyncRequest(localAdd(route, myOrigin).setHeader("final", true), 5000).onSuccess(bench::add);
+        assertNotNull(bench.poll(10, TimeUnit.SECONDS));
+        assertFalse(ServiceRegistry.getInstances(route).contains(myOrigin), "a late add echo must not re-add the route");
+        // the mirror: a route re-added right after its unregister survives a late unregister echo
+        po.asyncRequest(localAdd(route, myOrigin), 5000).onSuccess(bench::add);
+        assertNotNull(bench.poll(10, TimeUnit.SECONDS));
+        po.asyncRequest(localUnregister(route, myOrigin).setHeader("final", true), 5000).onSuccess(bench::add);
+        assertNotNull(bench.poll(10, TimeUnit.SECONDS));
+        assertTrue(ServiceRegistry.getInstances(route).contains(myOrigin), "a late unregister echo must not remove the route");
+        // a peer's add and unregister carry 'final' (set by the broadcasting peer) and still apply
+        po.asyncRequest(localAdd(route, peer).setHeader("final", true), 5000).onSuccess(bench::add);
+        assertNotNull(bench.poll(10, TimeUnit.SECONDS));
+        assertTrue(ServiceRegistry.getInstances(route).contains(peer));
+        po.asyncRequest(localUnregister(route, peer).setHeader("final", true), 5000).onSuccess(bench::add);
+        assertNotNull(bench.poll(10, TimeUnit.SECONDS));
+        assertFalse(ServiceRegistry.getInstances(route).contains(peer));
+        // clean up the local route
+        po.asyncRequest(localUnregister(route, myOrigin), 5000).onSuccess(bench::add);
+        assertNotNull(bench.poll(10, TimeUnit.SECONDS));
+        assertFalse(ServiceRegistry.getInstances(route).contains(myOrigin));
+    }
+
+    private static EventEnvelope localAdd(String route, String origin) {
+        return new EventEnvelope().setTo(ServiceDiscovery.SERVICE_REGISTRY)
+                .setHeader(TYPE, "add").setHeader(ORIGIN, origin)
+                .setHeader(ROUTE, route).setHeader("personality", "APP");
+    }
+
+    private static EventEnvelope localUnregister(String route, String origin) {
+        return new EventEnvelope().setTo(ServiceDiscovery.SERVICE_REGISTRY)
+                .setHeader(TYPE, "unregister").setHeader(ORIGIN, origin).setHeader(ROUTE, route);
     }
 }
