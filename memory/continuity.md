@@ -102,8 +102,10 @@
   in the nature of the work and where execution goes; AI gains a **run-time participant** role. **The north star MOVED: the
   next invariant re-verify must check the 2026-09-17 text, not the 2026-06-20 one.** [[bp-agent-orchestration]] is Track 2's
   Blueprint gap; Track 1 and the collaboration foundation are delivered.
-- **last_invariant_check:** 2026-10-09 | 2026-10-09-032243.md (PROMPTED — [[reverify-invariants-20261009]] raised at the 2026-10-09 review, 59 sessions after the
-  2026-09-25 walk; Eric walks the 19 `core` facts and the Vision.) Prior: 2026-09-25 | 2026-09-25-022841.md (COMPLETE — Eric walked the 19 `core` facts and the Vision — **the 2026-09-17
+- **last_invariant_check:** 2026-10-09 | 2026-10-09-045453.md (COMPLETE — Eric walked the 19 `core` facts and the Vision — **the 2026-09-17
+  two-track text** — against live-tree evidence at the 2026-10-09 review's gate [[reverify-invariants-20261009]]; ALL CONFIRMED as written, two
+  wordings refreshed (`stack-messaging-kafka`, `conv-serialization-gotchas` — the in-house MsgPack codec of ADR-0028); core stays 19. Cadence 40;
+  the next re-verify is due 40 sessions after 2026-10-09-045453.) Prior: 2026-09-25 | 2026-09-25-022841.md (COMPLETE — Eric walked the 19 `core` facts and the Vision — **the 2026-09-17
   two-track text** — against live-tree evidence; 18 facts + the Vision CONFIRMED as written, `instant-serialization` DEMOTED
   from core (Eric: an implementation detail that no longer influences key decisions; unreferenced since 2026-06-27, so it
   archives as faded in the same review); core 19 → 18; [[reverify-invariants-20260925]] closed. Cadence 40; the next re-verify
@@ -147,8 +149,8 @@
   <!-- id: stack-integration-spring-boot4 | created: 2026-08-27 | last_used: 2026-08-27 | uses: 1 | tier: core | supersedes: stack-integration-spring | origin: 2026-08-27-213034 -->
 - Messaging: Kafka — the connector/presence pair (`connectors/adapters/kafka/`) plus the
   grown family: `system/twin-kafka`, `system/minimalist-kafka`, `helpers/kafka-standalone`
-  (+ demos); MsgPack wire serialization; customized Gson. (Wording refreshed 2026-08-21 at
-  invariant re-verify — substance unchanged.)
+  (+ demos); MsgPack wire serialization through the engine's own `minimalist-msgpack` codec since ADR-0028 (2026-10-06); customized Gson.
+  (Wording refreshed 2026-08-21 and 2026-10-09 at invariant re-verify — substance unchanged.)
   <!-- id: stack-messaging-kafka | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - CI: GitHub Actions (`.github/workflows/`)
   <!-- id: stack-ci-gha | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -638,7 +640,8 @@
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
   <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-07 | uses: 24 | tier: active | origin: 2026-09-11-005808 -->
-- Watch serialization gotchas (Long↔Integer downcast; use `util.str2int/str2long`).
+- Watch serialization gotchas (Long↔Integer downcast — the in-house codec writes the smallest integer width, so it holds since
+  ADR-0028; use `util.str2int/str2long`). (Wording refreshed 2026-10-09 at invariant re-verify — substance unchanged.)
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - **Declare a Memory Reference when a fact is CONSULTED to make a decision, not only when it is edited (Eric agreed,
   2026-09-04) — since agent-memory v4.42.1 the protocol states the rule, and this fact keeps the local history.** The rule:
