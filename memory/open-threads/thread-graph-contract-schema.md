@@ -20,7 +20,7 @@
   report cases; the Rust port matched on its first run) - Java #534, mercury #371 (Increment 172), both MERGED 2026-10-09
   (`fd4d39fa`, `867bc56f`); the four open points
   implemented as proposed (the subset, strict types with an integral float as an integer, `additionalProperties` default, cap 10) for
-  Eric to confirm at promotion. **WP3 delivered 2026-10-09 (branches pushed, PRs for Eric to open):** the Schema panel - Tools →
+  Eric to confirm at promotion. **WP3 delivered 2026-10-09 (PR #535 and mercury #372 opened by Eric, CI running):** the Schema panel - Tools →
   **Graph schema** and a link in the root/end node editor; Input (root) and Output (end) tabs, one row per body path and per header
   name (path, type, required, description, example, a `declared`/`discovered`/`from last run`/`new` chip, the other keywords a
   read-only chip carried through Save), pre-filled from the WP1 contract view, Fill from last run through `/api/inspect`, Save as one
