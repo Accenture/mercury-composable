@@ -13,10 +13,13 @@
   mercury #369 (Increment 170); all three MERGED 2026-10-09 (`6c53389c`, `46d19b06`, `c4932455`). **WP1 delivered 2026-10-09:** the contract class, the OpenAPI
   document, `GET /api/openapi/{graph_id}` and `/api/openapi/session/{sessionId}`, `describe graph` with types - Java #533, mercury #370
   (Increment 171), one shared fixture `graph-contract-vectors.json` (six cases; the Rust port matched on its first run); query parameters
-  out by design; both MERGED 2026-10-09 (`4dfe3dfb`, `df95e04e`). Open: WP2 with Eric's open points (the keyword subset, strict
-  types, `additionalProperties`, the violation cap) (the subset, strict types,
-  `additionalProperties`, the violation cap, the draft route), then WP1 (contract class, discovery, endpoints, both engines, one shared
-  fixture), WP2 (validator, assumed step, gate, shared vectors), WP3 (the panel), WP4 (docs, help, AI guide, api-playground, claims).
+  out by design; both MERGED 2026-10-09 (`4dfe3dfb`, `df95e04e`). **WP2 delivered 2026-10-09:** the validator function `graph.schema.validator`, the assumed step in both walkers (one synchronous
+  request at the first visit to the root, the failure staged under `root.*` so the standard error path applies), the gate rules (an
+  unknown or inapplicable keyword, a malformed value or a pattern outside the common regex subset refused with its location; a
+  declaration-surface mismatch a WARN at deploy and pack) and the shared `graph-schema-vectors.json` (56 compile, 29 validate, 2
+  report cases; the Rust port matched on its first run) - Java #534, mercury #371 (Increment 172), both OPEN; the four open points
+  implemented as proposed (the subset, strict types with an integral float as an integer, `additionalProperties` default, cap 10) for
+  Eric to confirm at promotion. Open: WP3 (the Schema panel), WP4 (docs, help, AI guide, api-playground, claims), then promotion.
   Relates [[graph-set-pack-and-deploy]] (the panel and endpoint precedents), [[canonical-packager-wire-contract]] (the shared-vector
   method), [[clean-knowledge-design-over-engine-coverage]] (why the keyword subset is closed), [[conv-proposals-not-in-adr-ledger]].
   → proposal: RFC-0007
