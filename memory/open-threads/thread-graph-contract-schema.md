@@ -33,7 +33,7 @@
   entries and five claims on both engines - Java `8877167c`, Rust `9abe0f1a` (Increment 174). **Promotion 2026-10-09 (Eric: "then promote RFC-0007 to ADR"):**
   ADR-0029 written and RFC-0007 marked `Promoted → ADR-0029` on `docs/adr-0029-graph-contract` (`3ad7a490`; CHANGELOG Added 6;
   SkillSnapshotTest and the docs canon green), the six open points accepted as implemented; the fact is
-  [[graph-contract-by-declaration]]. Eric opens the PR; the thread closes at its merge.
+  [[graph-contract-by-declaration]]. PR #537 opened by Eric (CI running); the thread closes at its merge.
   Relates [[graph-set-pack-and-deploy]] (the panel and endpoint precedents), [[canonical-packager-wire-contract]] (the shared-vector
   method), [[clean-knowledge-design-over-engine-coverage]] (why the keyword subset is closed), [[conv-proposals-not-in-adr-ledger]].
   → proposal: RFC-0007
