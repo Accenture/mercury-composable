@@ -64,38 +64,47 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         var po = new PostOffice(headers, instance);
         var callbackId = input.getCorrelationId();
         if (callbackId != null && callbackId.contains("@")) {
-            var sep = callbackId.indexOf('@');
-            var restored = callbackId.substring(sep+1);
-            ScheduledJob job = JobLoader.getJob(restored);
-            if (job != null) {
-                po.send(new EventEnvelope().setTo(job.resolver).setHeader(TYPE, END).setHeader(NAME, job.name));
-            }
+            jobCompleted(po, callbackId);
         } else {
-            var name = headers.get(JOB);
-            var operator = headers.get(OPERATOR);
-            if (name != null) {
-                ScheduledJob job = JobLoader.getJob(name);
-                if (job != null) {
-                    var env = ActiveEnvironment.getInstance();
-                    if (operator != null) {
-                        // an operator's run is explicit: honoured on a standby instance too, and said so
-                        if (env.isActiveNow()) {
-                            log.info("Operator {} runs {} manually", operator, job.name);
-                        } else {
-                            log.info("Operator {} runs {} manually on a standby instance - the active environment is {}, " +
-                                    "this instance is {}", operator, job.name, env.getActive(), env.getEnvironment());
-                        }
-                        executeJob(po, job);
-                    } else if (env.isActiveNow()) {
-                        prepareJob(po, job);
-                    } else {
-                        log.info("Standby: job {} skipped - the active environment is {}, this instance is {}",
-                                job.name, env.getActive(), env.getEnvironment());
-                    }
-                }
+            var job = JobLoader.getJob(headers.get(JOB));
+            if (job != null) {
+                jobTriggered(po, job, headers.get(OPERATOR));
             }
         }
         return null;
+    }
+
+    /** A job's service replied: the job name rides the correlation id after the '@'; tell the resolver the job ended. */
+    private void jobCompleted(PostOffice po, String callbackId) {
+        var restored = callbackId.substring(callbackId.indexOf('@') + 1);
+        ScheduledJob job = JobLoader.getJob(restored);
+        if (job != null) {
+            po.send(new EventEnvelope().setTo(job.resolver).setHeader(TYPE, END).setHeader(NAME, job.name));
+        }
+    }
+
+    /**
+     * The scheduled point (RFC-0008): an operator's run is explicit and honoured on a standby instance too;
+     * a Quartz trigger runs the job's normal path on an active instance and is skipped with one line otherwise.
+     */
+    private void jobTriggered(PostOffice po, ScheduledJob job, String operator)
+            throws ExecutionException, InterruptedException {
+        var env = ActiveEnvironment.getInstance();
+        var active = env.isActiveNow();
+        if (operator != null) {
+            if (active) {
+                log.info("Operator {} runs {} manually", operator, job.name);
+            } else {
+                log.info("Operator {} runs {} manually on a standby instance - the active environment is {}, " +
+                        "this instance is {}", operator, job.name, env.getActive(), env.getEnvironment());
+            }
+            executeJob(po, job);
+        } else if (active) {
+            prepareJob(po, job);
+        } else {
+            log.info("Standby: job {} skipped - the active environment is {}, this instance is {}",
+                    job.name, env.getActive(), env.getEnvironment());
+        }
     }
 
     private void prepareJob(PostOffice po, ScheduledJob job) throws ExecutionException, InterruptedException {

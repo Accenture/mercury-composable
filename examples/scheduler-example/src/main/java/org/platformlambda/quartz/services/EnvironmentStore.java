@@ -35,8 +35,8 @@ import java.util.Map;
  * This is just a sample store of the active environment (RFC-0008).
  * <p>
  * For production, you must implement your own store that persists the active environment name into
- * a data store shared by every instance of the site - a database such as PostgreSQL or MongoDB, or a
- * distributed cache - because Kubernetes restarts a pod without notice and an in-memory value would
+ * a data store shared by every instance of the site. For example, a database such as PostgreSQL or MongoDB,
+ * or a distributed cache. It is because Kubernetes restarts a pod without notice and an in-memory value would
  * reset. The scheduler reads this store at every scheduled point. Keep the route name
  * {@code v1.environment.store}, or set {@code scheduler.environment.store} to yours.
  * <p>
@@ -86,7 +86,6 @@ public class EnvironmentStore implements TypedLambdaFunction<Map<String, Object>
         throw new IllegalArgumentException("type must be get or set");
     }
 
-    @SuppressWarnings("unchecked")
     private String read() {
         if (!RECORD.exists()) {
             return null;
@@ -96,11 +95,11 @@ public class EnvironmentStore implements TypedLambdaFunction<Map<String, Object>
     }
 
     private void write(String name, String operator) {
-        Map<String, Object> record = new HashMap<>();
-        record.put(ACTIVE, name);
-        record.put(OPERATOR, operator);
-        record.put(TIME, new Date());
-        util.str2file(RECORD, SimpleMapper.getInstance().getMapper().writeValueAsString(record));
+        Map<String, Object> rec = new HashMap<>();
+        rec.put(ACTIVE, name);
+        rec.put(OPERATOR, operator);
+        rec.put(TIME, new Date());
+        util.str2file(RECORD, SimpleMapper.getInstance().getMapper().writeValueAsString(rec));
         log.info("Active environment {} persisted by {}", name, operator);
     }
 }

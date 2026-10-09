@@ -70,14 +70,14 @@ public final class ActiveEnvironment {
     private static final long STORE_TIMEOUT = 5000;
     private static final ActiveEnvironment INSTANCE = new ActiveEnvironment();
 
-    private final String environment;
-    private final String store;
-    private final AtomicReference<String> active = new AtomicReference<>(DEFAULT_ENVIRONMENT);
+    private final String localEnvironment;
+    private final String storeRoute;
+    private final AtomicReference<String> activeEnvironment = new AtomicReference<>(DEFAULT_ENVIRONMENT);
 
     private ActiveEnvironment() {
         var config = AppConfigReader.getInstance();
-        this.environment = name(config.getProperty(ENVIRONMENT, DEFAULT_ENVIRONMENT), ENVIRONMENT);
-        this.store = config.getProperty(ENVIRONMENT_STORE, DEFAULT_STORE).trim();
+        this.localEnvironment = name(config.getProperty(ENVIRONMENT, DEFAULT_ENVIRONMENT), ENVIRONMENT);
+        this.storeRoute = config.getProperty(ENVIRONMENT_STORE, DEFAULT_STORE).trim();
     }
 
     public static ActiveEnvironment getInstance() {
@@ -86,27 +86,27 @@ public final class ActiveEnvironment {
 
     /** This instance's environment ({@code scheduler.environment}). */
     public String getEnvironment() {
-        return environment;
+        return localEnvironment;
     }
 
     /** The active environment as this instance last read from the store or set; {@code prod} until an operator sets one. */
     public String getActive() {
-        return active.get();
+        return activeEnvironment.get();
     }
 
     /** The route of the persistence function ({@code scheduler.environment.store}). */
     public String getStore() {
-        return store;
+        return storeRoute;
     }
 
     /** True when this instance's environment is the active one, by the last read or set value. */
     public boolean isActive() {
-        return environment.equalsIgnoreCase(active.get());
+        return localEnvironment.equalsIgnoreCase(activeEnvironment.get());
     }
 
     /** True when the store function is registered, so the active environment survives a restart. */
     public boolean isPersistent() {
-        return postOffice().exists(store);
+        return postOffice().exists(storeRoute);
     }
 
     /**
@@ -130,19 +130,19 @@ public final class ActiveEnvironment {
     public String refresh() {
         if (isPersistent()) {
             try {
-                var result = postOffice().request(new EventEnvelope().setTo(store).setHeader(TYPE, GET), STORE_TIMEOUT).get();
+                var result = postOffice().request(new EventEnvelope().setTo(storeRoute).setHeader(TYPE, GET), STORE_TIMEOUT).get();
                 if (result.getBody() instanceof String name && !name.isBlank()) {
-                    active.set(name.trim());
+                    activeEnvironment.set(name.trim());
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.warn("Active environment not read from {} - interrupted; keeping {}", store, active.get());
+                log.warn("Active environment not read from {} - interrupted; keeping {}", storeRoute, activeEnvironment.get());
             } catch (ExecutionException e) {
                 var cause = e.getCause() != null ? e.getCause() : e;
-                log.warn("Active environment not read from {} - {}; keeping {}", store, cause.getMessage(), active.get());
+                log.warn("Active environment not read from {} - {}; keeping {}", storeRoute, cause.getMessage(), activeEnvironment.get());
             }
         }
-        return active.get();
+        return activeEnvironment.get();
     }
 
     /**
@@ -160,43 +160,43 @@ public final class ActiveEnvironment {
         if (isPersistent()) {
             persist(target, who);
         }
-        active.set(target);
-        log.info("Active environment set to {} by {} - this instance ({}) is {}", target, who, environment,
+        activeEnvironment.set(target);
+        log.info("Active environment set to {} by {} - this instance ({}) is {}", target, who, localEnvironment,
                 isActive() ? ACTIVE : STANDBY);
         return status();
     }
 
     private void persist(String target, String who) {
-        var event = new EventEnvelope().setTo(store).setHeader(TYPE, SET)
+        var event = new EventEnvelope().setTo(storeRoute).setHeader(TYPE, SET)
                 .setHeader(ENVIRONMENT_HEADER, target).setHeader(OPERATOR, who);
         try {
             var result = postOffice().request(event, STORE_TIMEOUT).get();
             if (result.getStatus() != 200 || !Boolean.TRUE.equals(result.getBody())) {
-                throw new IllegalStateException("Active environment not persisted by " + store + " - " + result.getBody());
+                throw new IllegalStateException("Active environment not persisted by " + storeRoute + " - " + result.getBody());
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Active environment not persisted by " + store + " - interrupted");
+            throw new IllegalStateException("Active environment not persisted by " + storeRoute + " - interrupted");
         } catch (ExecutionException e) {
             var cause = e.getCause() != null ? e.getCause() : e;
-            throw new IllegalStateException("Active environment not persisted by " + store + " - " + cause.getMessage());
+            throw new IllegalStateException("Active environment not persisted by " + storeRoute + " - " + cause.getMessage());
         }
     }
 
     /** The status an operations dashboard shows: environment, active, mode, persistent, store. */
     public Map<String, Object> status() {
         var result = new LinkedHashMap<String, Object>();
-        result.put(ENVIRONMENT_HEADER, environment);
-        result.put(ACTIVE, active.get());
+        result.put(ENVIRONMENT_HEADER, localEnvironment);
+        result.put(ACTIVE, activeEnvironment.get());
         result.put(MODE, isActive() ? ACTIVE : STANDBY);
         result.put(PERSISTENT, isPersistent());
-        result.put(STORE, store);
+        result.put(STORE, storeRoute);
         return result;
     }
 
     /** Drop the in-memory value, as a restart does; the next {@link #refresh()} reads the store again. */
     public void reset() {
-        active.set(DEFAULT_ENVIRONMENT);
+        activeEnvironment.set(DEFAULT_ENVIRONMENT);
     }
 
     /** An environment name is one word of letters, digits, hyphens and underscores. */
@@ -209,6 +209,6 @@ public final class ActiveEnvironment {
     }
 
     private static PostOffice postOffice() {
-        return new PostOffice("scheduler.environment", Utility.getInstance().getUuid(), "ACTIVE environment");
+        return new PostOffice(ENVIRONMENT, Utility.getInstance().getUuid(), "ACTIVE environment");
     }
 }
