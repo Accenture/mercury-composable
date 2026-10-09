@@ -4,4 +4,4 @@
   and Rust `latest_release` lines as FIELD-ACCEPTED. Lesson: a field-acceptance wait closes on the first release the field
   actually takes, which need not be the release that opened it. Origin: 2026-10-07-013257.md (the field-acceptance paragraph).
   → serves: vision-mercury-composable
-  <!-- id: decimal-ports-and-release | created: 2026-10-01 | last_used: 2026-09-30 | uses: 1 | tier: working -->
+  <!-- id: decimal-ports-and-release | created: 2026-10-01 | last_used: 2026-10-07 | uses: 2 | tier: active -->

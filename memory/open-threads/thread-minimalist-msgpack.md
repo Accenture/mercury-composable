@@ -6,4 +6,4 @@
   origin: 2026-10-06-164045; close 2026-10-06-164045.
   → proposal: RFC-0006
   → serves: vision-mercury-composable
-  <!-- id: minimalist-msgpack | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-164045 -->
+  <!-- id: minimalist-msgpack | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: archive-candidate | origin: 2026-10-06-164045 -->

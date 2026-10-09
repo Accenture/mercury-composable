@@ -36,4 +36,4 @@
   method), [[clean-knowledge-design-over-engine-coverage]] (why the keyword subset is closed), [[conv-proposals-not-in-adr-ledger]].
   → proposal: RFC-0007
   → serves: vision-mercury-composable
-  <!-- id: graph-contract-schema | created: 2026-10-08 | last_used: 2026-10-08 | uses: 1 | tier: working | origin: 2026-10-08-190305 -->
+  <!-- id: graph-contract-schema | created: 2026-10-08 | last_used: 2026-10-09 | uses: 6 | tier: working | origin: 2026-10-08-190305 -->

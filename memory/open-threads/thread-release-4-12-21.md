@@ -6,4 +6,4 @@
   is the symptom, a `while read` loop the fix; and a one-off Maven Central refusal on a runner is a re-run, not a tree change.
   Origin: 2026-10-07-013257.md (the whole narrative).
   → serves: vision-mercury-composable
-  <!-- id: release-4-12-21 | created: 2026-10-07 | last_used: 2026-10-07 | uses: 1 | tier: working | origin: 2026-10-07-013257 -->
+  <!-- id: release-4-12-21 | created: 2026-10-07 | last_used: 2026-10-07 | uses: 1 | tier: active | origin: 2026-10-07-013257 -->

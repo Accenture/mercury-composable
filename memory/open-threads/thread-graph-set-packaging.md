@@ -7,4 +7,4 @@
   session logs of 2026-10-05 to 2026-10-07 (last: 2026-10-07-004323.md).
   → proposal: RFC-0005
   → serves: vision-mercury-composable
-  <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-06 | uses: 5 | tier: working | origin: 2026-10-03-171402 -->
+  <!-- id: graph-set-packaging | created: 2026-10-03 | last_used: 2026-10-07 | uses: 10 | tier: active | origin: 2026-10-03-171402 -->

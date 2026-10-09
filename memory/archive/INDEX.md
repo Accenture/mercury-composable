@@ -223,3 +223,15 @@
 - decimal-mode — Exact decimal arithmetic: a `DECIMAL:` statement for `graph.math` and an explicit plugin f… — faded — 2026-Q4.md
 - flow-11-doc-label — (drift) The AI agent guide mislabelled `flows/flow-11.yml`. CLOSED 2026-10-02. PR #490 (sq… — faded — 2026-Q4.md
 - playground-bundle-stale — (drift) The Java Playground's committed webapp bundle lacked the `CONDITION` and `DECIMAL`… — faded — 2026-Q4.md
+- llm-helper-certification-java — The LLM helper is not engine code: it is a Claude-only function host in the Python and Nod… — faded — 2026-Q4.md
+- graph-null-property-filtered — A graph holds no null property: `"key": null` is filtered out wherever a graph enters an e… — faded — 2026-Q4.md
+- close-stalled-threads-20261005 — Close stalled threads (due) — CLOSED 2026-10-05: post-4-12-15-carry-overs (41 sessions) —… — completed thread swept (older than archive_window) — 2026-Q4.md
+- playground-split-describe-skill-rust-twin — (twin) The Rust Playground lacked the one-third console default and `describe skill` in th… — completed thread swept (older than archive_window) — 2026-Q4.md
+- playground-subscriber-run-controls-rust-twin — (twin) The Rust Playground still disabled Instantiate and Run in a subscribed session. CLO… — completed thread swept (older than archive_window) — 2026-Q4.md
+- playground-usability-sprint — Playground UI usability sprint (Eric, 2026-10-03). CLOSED 2026-10-03 (Eric: delivered). PR… — completed thread swept (older than archive_window) — 2026-Q4.md
+- post-4-12-15-carry-overs — Carry-overs after v4.12.15 — CLOSED 2026-10-05 at the stalled-thread gate (Eric: close). P… — completed thread swept (older than archive_window) — 2026-Q4.md
+- step6-release-sweep-gaps — (review) CLOSED 2026-10-05 - the two release conventions were relied on, not faded; kept a… — completed thread swept (older than archive_window) — 2026-Q4.md
+- webapp-tests-webstorage-rust-twin — (twin) The Rust webapp's vitest suite had no web storage setup file. CLOSED 2026-10-02 as… — completed thread swept (older than archive_window) — 2026-Q4.md
+- playground-session-broker — Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's — faded — 2026-Q4.md
+- graph-js-deprecated-removal — `graph.js` is deprecated and its module will be removed once field installations finish mi… — faded — 2026-Q4.md
+- mapping-source-verbatim-substitution — A mapping source inserts its `{namespace.key}` values verbatim, never quoted; a JSONPath f… — faded — 2026-Q4.md

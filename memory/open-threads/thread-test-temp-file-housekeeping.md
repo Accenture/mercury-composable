@@ -6,4 +6,4 @@
   -newer`); the measurement found what reading missed, an HTTP comment the code contradicted and a Rust test removing a folder its
   siblings shared. Rule: [[conv-tests-remove-temp-files]]. origin: 2026-10-06-045656, closed in 2026-10-06-054340.
   → serves: vision-mercury-composable
-  <!-- id: test-temp-file-housekeeping | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: working | origin: 2026-10-06-045656 -->
+  <!-- id: test-temp-file-housekeeping | created: 2026-10-06 | last_used: 2026-10-06 | uses: 3 | tier: archive-candidate | origin: 2026-10-06-045656 -->
