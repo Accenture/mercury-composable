@@ -3113,11 +3113,15 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 
 <p><strong>Proposal.</strong> Give a graph model an explicit, machine-readable contract and put it to three uses, from Eric's design of
 2026-10-08 (the viability study is in the session log <code>memory/sessions/</code> of that date). <strong>(1) Declaration.</strong> An optional <code>schema</code>
-property on the root node describes <code>input.body</code> and an optional <code>schema</code> on the end node describes <code>output.body</code> (the node says
-which side it is - Eric's naming), each a schema object in the OpenAPI 3.0 dialect stored as a nested property map through the
-Playground grammar's composite keys - <code>schema.type=object</code>, <code>schema.required[]=a</code>, <code>schema.properties.a.type=number</code> - so
-<code>edit node</code>, <code>update node</code> and the node editor carry it with no new grammar, and it travels with the graph through export, import,
-pack and <code>graph.extension</code>. The root and end nodes are skill-less in the common case, so the map already sits in every run's state
+property on the root node describes the request and an optional <code>schema</code> on the end node describes the response (the node says
+which side it is - Eric's naming). Each has two optional parts that mirror the state machine's namespaces: <code>schema.body</code>, a
+schema object in the OpenAPI 3.0 dialect for <code>input.body</code> or <code>output.body</code>, and <code>schema.header</code>, an object schema whose
+properties are header names for <code>input.header</code> or <code>output.header</code> - a graph instance receives the whole <code>input</code> of the flow
+that invokes <code>graph.executor</code>, headers included, and the Playground's Upload step mocks them since the same day (Eric,
+2026-10-08, second round). Both parts are stored as nested property maps through the Playground grammar's composite keys -
+<code>schema.body.type=object</code>, <code>schema.body.required[]=a</code>, <code>schema.body.properties.a.type=number</code>,
+<code>schema.header.required[]=x-api-key</code>, <code>schema.header.properties.x-api-key.type=string</code> - so <code>edit node</code>, <code>update node</code> and the
+node editor carry them with no new grammar, and they travel with the graph through export, import, pack and <code>graph.extension</code>. The root and end nodes are skill-less in the common case, so the map already sits in every run's state
 machine by reference, as <code>purpose</code> does; no per-run cost. <strong>(2) Discovery.</strong> One contract class per engine, extracted from the
 <code>describe graph</code> scanner that both engines already share byte for byte, derives the data surface and as much typing as the model
 gives: the path scan (names, nesting, arrays from <code>[]</code>, <code>[*]</code> and <code>[0]</code>), direct evidence (typed constants and wrappers, known
@@ -3129,18 +3133,23 @@ never references are kept (a declaration may describe what a whole-body passthro
 demand.</strong> A dev-mode <code>GET /api/openapi/{graph_id}</code> answers a minimal OpenAPI 3.0 document for a deployed graph as a YAML
 attachment (<code>?format=json</code> for JSON): <code>info</code> from the root node's <code>purpose</code> and the deployed set's version, <code>servers</code> from the
 request's Host header so a downloaded file points back at the engine that generated it, <code>POST /api/graph/{graph_id}</code> with the
-request-body schema, the <code>200</code> response schema, every <code>int(N) -&gt; output.status</code> constant as a response code, <code>output.header.*</code> as
-response headers, <code>input.header.*</code> and <code>input.query.*</code> as parameters, and the standard error shape. A draft variant through the
+request-body schema, the <code>200</code> response schema, every <code>int(N) -&gt; output.status</code> constant as a response code, the declared or
+discovered <code>output.header.*</code> as response headers, the declared or discovered <code>input.header.*</code> as header parameters (a declared
+header carries its <code>required</code> and its schema), <code>input.query.*</code> as query parameters, and the standard error shape. A draft variant through the
 session shows the spec while authoring, and a discovery endpoint answers the skeleton and its evidence as JSON for the panel. The
 file drops into <code>extensions/api-playground</code> unchanged, and Swagger UI's explore bar can load the engine URL directly - the dev
 routes and the executor route carry the wildcard CORS entry. <strong>(4) Input validation.</strong> When the root node carries <code>schema</code>, both
-walkers - the executor and the Playground's traveler - validate <code>input.body</code> against it as the first thing at the root on every
-run; a root node's own skill, if it has one, runs after a successful validation, and a failed validation never reaches it. The
+walkers - the executor and the Playground's traveler - validate <code>input.body</code> against <code>schema.body</code> and <code>input.header</code> against
+<code>schema.header</code> as the first thing at the root on every run; a root node's own skill, if it has one, runs after a successful
+validation, and a failed validation never reaches it. Header names match case-insensitively, the engine's rule for
+<code>input.header.*</code>; a header value is text, so <code>type: integer</code>, <code>number</code> or <code>boolean</code> validates the parsed text; <code>required</code> names
+the headers that must be present; the Playground's Upload step supplies mock headers (<code>POST /api/mock/{id}?namespace=header</code>,
+mercury-composable #531 and mercury #369), so a dry run can satisfy a header requirement. The
 step is <strong>assumed</strong> by the engine, nothing is written into the node (Eric, 2026-10-08: assumed properties leave no room for a
 typo): the
 engine invokes the built-in function <code>graph.schema.validator</code> through the task skill's own request and response machinery with
-<code>{body, schema}</code>; 200 passes, 400 carries every violation up to a cap in one message (<code>Input validation failed - input.body.a:
-expected number; input.body.b: required</code>), which the standard task error path turns into the run's abort status, the root's
+<code>{body, header, schema}</code>; 200 passes, 400 carries every violation up to a cap in one message (<code>Input validation failed -
+input.body.a: expected number; input.body.b: required; input.header.x-api-key: required</code>), which the standard task error path turns into the run's abort status, the root's
 <code>exception=</code> handler, or the console line of a dry run; the application property <code>graph.schema.validator</code> names a substitute
 function with the same contract. The vocabulary is a <strong>closed subset of OpenAPI 3.0 keywords by their OpenAPI names</strong> - <code>type</code>
 (object, array, string, number, integer, boolean), <code>properties</code>, <code>required</code>, <code>items</code>, <code>enum</code>, <code>minimum</code>, <code>maximum</code>,
@@ -3149,14 +3158,15 @@ function with the same contract. The vocabulary is a <strong>closed subset of Op
 other keyword, because a constraint the validator silently ignores teaches that unflagged means safe (the partial-gate lesson of
 2026-09-18). Types are strict JSON types - a numeric string is not a number; money is <code>type: string</code> with a <code>pattern</code>, as the
 <code>DECIMAL:</code> guidance already says. A <code>pattern</code> runs after <code>maxLength</code>, in the regex subset common to Java and the Rust crate, and
-comes from the author, never the caller. The schema compiles once per compiled model. The end node's <code>schema</code> stays documentary.
+comes from the author, never the caller. The schema compiles once per compiled model. The end node's <code>schema</code> stays documentary, headers included.
 <strong>(5) The Schema panel.</strong> A left-slot panel like the packaging panel, opened from the Tools menu or from the root or end node
-editor: Input and Output tabs, one row per path - path, type, required, description, and a source chip reading declared,
-discovered or from last run - pre-filled from discovery; a "Fill from last run" action infers types and examples from the
-instance's actual <code>input.body</code> and <code>output.body</code> through the inspect endpoint, the only way to type a task's or a fetcher's
-result; Save writes the two properties through the existing update-node command, so every session member sees it and an agent
-does the same by command; Download fetches the draft spec. A decision would commit the project to the two <code>schema</code> properties
-and the closed keyword subset on both engines (a shared vector file pins accept and reject with their messages, the method of
+editor: Input and Output tabs, each with a body section (one row per path) and a header section (one row per header name) -
+path or name, type, required, description, and a source chip reading declared, discovered or from last run - pre-filled from
+discovery; a "Fill from last run" action infers types and examples from the instance's actual <code>input.body</code>, <code>input.header</code>,
+<code>output.body</code> and <code>output.header</code> through the inspect endpoint, the only way to type a task's or a fetcher's result; Save writes
+the two properties through the existing update-node command, so every session member sees it and an agent does the same by
+command; Download fetches the draft spec. A decision would commit the project to the two <code>schema</code> properties with their <code>body</code>
+and <code>header</code> parts and the closed keyword subset on both engines (a shared vector file pins accept and reject with their messages, the method of
 ADR-0026), to validation by declaration at the root as an assumed step, to the OpenAPI document as a derived artifact that is
 never stored, and to the gate rules: a malformed schema fails, an unknown keyword fails, a mismatch between declaration and
 surface warns.</p>
@@ -3174,12 +3184,15 @@ traversal-log line and error path without it. <em>(e) Sample a dry run only</em>
 after an execution; kept as the panel's "Fill from last run", not as the contract. <em>(f) JSON Schema 2020-12 with OpenAPI 3.1</em> -
 fuller, but the api-playground's Swagger UI and the field's tooling target 3.0; revisit when a 3.1-only keyword is needed.</p>
 <p><strong>Settled (Eric, 2026-10-08).</strong> The property is named <code>schema</code> on both nodes; the validator is assumed, never inserted; the
-vocabulary borrows a minimal set of OpenAPI 3.0 syntax. <strong>Open:</strong> the closed subset above as the first cut; strict JSON types;
-<code>additionalProperties</code> left to OpenAPI's default (extra fields pass unless the author declares <code>false</code>); the cap on reported
-violations (proposed 10); the draft-spec route's shape. Work packages: <strong>WP1</strong> the contract class, discovery, the OpenAPI and
+vocabulary borrows a minimal set of OpenAPI 3.0 syntax; headers are declared and validated beside the body, in <code>schema.header</code>,
+their names case-insensitive (the second round of the same day, with the Upload step's mock headers shipped ahead of the sprint).
+<strong>Open:</strong> the closed subset above as the first cut; strict JSON types; <code>additionalProperties</code> left to OpenAPI's default (extra
+fields pass unless the author declares <code>false</code>); the cap on reported violations (proposed 10); the draft-spec route's shape;
+<code>schema.query</code> for <code>input.query</code> by the same mechanism, if a graph ever reads query parameters (none of the bundled models does). Work packages: <strong>WP1</strong> the contract class, discovery, the OpenAPI and
 discovery endpoints, and <code>describe graph</code> printing the declaration (both engines, one shared fixture); <strong>WP2</strong> the validator
-function, the assumed step in both walkers, the gate rules and the shared accept/reject vectors (both engines); <strong>WP3</strong> the
-Schema panel with fill-from-run and download (one source, two deploy targets); <strong>WP4</strong> the help page, the command reference,
+function for the body and the headers, the assumed step in both walkers, the gate rules and the shared accept/reject vectors
+(both engines); <strong>WP3</strong> the Schema panel with its body and header sections, fill-from-run and download (one source, two deploy
+targets); <strong>WP4</strong> the help page, the command reference,
 the AI agent guide recipe, the api-playground round trip and the claims. Promotion follows the implementation, as RFC-0001,
 RFC-0002 and RFC-0005 did.</p>
 <p><strong>Resolution.</strong> (open)</p>
