@@ -545,6 +545,29 @@
   passes exact byte arrays, and the full reactor (1,771 tests) is green.
   <!-- id: msgpack-hostile-header-vectors | created: 2026-10-06 | last_used: 2026-10-06 | uses: 2 | tier: archive-candidate | origin: 2026-10-06-164045 -->
 
+- **A graph carries its contract as a `schema` on the root and end nodes, the engine discovers the rest, validates the request at the
+  root by an assumed step and serves OpenAPI 3.0 on demand (Eric's design 2026-10-08; RFC-0007 promoted to ADR-0029 on 2026-10-09 after the
+  four work packages merged on both engines: Java #533/#534/#535/#536, Rust #370–#373, Increments 171–174).** `schema.body` and
+  `schema.header` on the root describe `input.body`/`input.header`, the same on the end node describe the response, stored through the
+  grammar's composite keys so they travel with the graph; the vocabulary is a CLOSED OpenAPI 3.0 subset (`type`, `properties`,
+  `required`, `items`, `enum`, min/max and exclusive variants, `minLength`/`maxLength`, `pattern`, `minItems`/`maxItems`, `nullable`,
+  `additionalProperties`; `title`/`description`/`example`/`format` documentary) and the gate refuses any other or inapplicable keyword
+  ([[clean-knowledge-design-over-engine-coverage]]: a silently ignored constraint teaches that unflagged means safe); types are strict
+  JSON (an integral float is an integer), `additionalProperties` keeps OpenAPI's default. **Validation is assumed, never written into
+  the node:** both walkers send one synchronous request to `graph.schema.validator` with `{body, header, schema}` at the first visit
+  to the root (armed at run start, not on resume); 400 carries up to ten violations (`Input validation failed - input.body.a: expected
+  number; …`) through the task error path, so a dry run and a deployed run refuse the same request; the property
+  `graph.schema.validator` names a substitute. Discovery derives the surface from the shared `describe graph` scanner and the
+  declaration wins (mismatch = WARN at deploy/pack, never a refusal). `GET /api/openapi/{graph_id}` (dev-mode, YAML, `?format=json`) and
+  `/api/openapi/session/{sessionId}` (`?view=contract` for the panel) derive the document each time, never stored; no query parameters
+  by design. The Schema panel edits path/type/required/description/example only (other keywords a read-only chip) and saves as one
+  `update node` re-sending the node's other properties. Pinned by the shared `graph-contract-vectors.json` and
+  `graph-schema-vectors.json` and five claims per engine. **READ at release:** opt-in per graph - a model with a root `schema` now
+  answers 400 at the root for a bad request; `graph.schema.validator` is a reserved route. Guide: `docs/guides/knowledge-graph/graph-contract.md`.
+  Extends [[graph-set-pack-and-deploy]] (the shared gate, the panel precedent) and [[canonical-packager-wire-contract]] (the
+  shared-vector method). (ADR-0029)
+  <!-- id: graph-contract-by-declaration | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: working | origin: 2026-10-09-041751 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge

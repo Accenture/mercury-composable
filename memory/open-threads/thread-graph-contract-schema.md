@@ -30,8 +30,10 @@
   **WP4 delivered 2026-10-09 (PR #536 squash `04109379` and mercury #373 merge `8eb01ad8` - after a one-line skill-inventory fix - both MERGED 2026-10-09):** the guide page *The graph contract*
   (`docs/guides/knowledge-graph/graph-contract.md`), `help schema`, the command grammar's typed `describe graph` and invariant 7,
   the AI agent guide's recipe *Declare the contract*, `graph.schema.validator` in the configuration reference, the nav/llms/files.list
-  entries and five claims on both engines - Java `8877167c`, Rust `9abe0f1a` (Increment 174). Open: promotion of RFC-0007 to an ADR
-  on Eric's confirmation of the WP2 and WP3 points.
+  entries and five claims on both engines - Java `8877167c`, Rust `9abe0f1a` (Increment 174). **Promotion 2026-10-09 (Eric: "then promote RFC-0007 to ADR"):**
+  ADR-0029 written and RFC-0007 marked `Promoted → ADR-0029` on `docs/adr-0029-graph-contract` (`3ad7a490`; CHANGELOG Added 6;
+  SkillSnapshotTest and the docs canon green), the six open points accepted as implemented; the fact is
+  [[graph-contract-by-declaration]]. Eric opens the PR; the thread closes at its merge.
   Relates [[graph-set-pack-and-deploy]] (the panel and endpoint precedents), [[canonical-packager-wire-contract]] (the shared-vector
   method), [[clean-knowledge-design-over-engine-coverage]] (why the keyword subset is closed), [[conv-proposals-not-in-adr-ledger]].
   → proposal: RFC-0007
