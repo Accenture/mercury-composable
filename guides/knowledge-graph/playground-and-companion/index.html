@@ -3108,9 +3108,9 @@ be shared so several people model the same graph together:</p>
 </code></pre></div>
 <p>When you subscribe to a primary session, commands mirror <strong>both ways</strong> — every command except the
 <code>session</code> topology commands propagates to the primary and all subscribers alike, so all parties
-(human or AI) are equal co-authors of one shared model. A mock-data upload (<code>POST /api/mock/{id}</code>)
-propagates the same way, into every member's graph instance, so a dry-run started by any member runs
-with the same <code>input.body</code>; a graph model imported from a file (<code>POST /api/graph/import/{id}</code>, the
+(human or AI) are equal co-authors of one shared model. A mock-data upload (<code>POST /api/mock/{id}</code> for
+the JSON body, <code>?namespace=header</code> for request headers) propagates the same way, into every member's
+graph instance, so a dry-run started by any member runs with the same <code>input.body</code> and <code>input.header</code>; a graph model imported from a file (<code>POST /api/graph/import/{id}</code>, the
 Graph view's Import Graph button or a dropped <code>.json</code> file) replaces every member's draft the same
 way. (You can't subscribe to yourself or to a
 non-primary session; a primary session has nothing to unsubscribe.)</p>
