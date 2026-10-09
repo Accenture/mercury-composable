@@ -23,6 +23,7 @@ import com.accenture.automation.SimpleTypeMatchingConverter;
 import com.accenture.minigraph.common.GraphLambdaFunction;
 import com.accenture.minigraph.common.GraphModelGate;
 import com.accenture.minigraph.common.GraphModelValidator;
+import com.accenture.minigraph.contract.GraphContract;
 import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.GraphSession;
@@ -932,51 +933,12 @@ public class GraphCommandService extends GraphLambdaFunction {
             sb.append("Purpose: ").append(purpose).append('\n');
         }
         sb.append("Nodes: ").append(nodes).append(", connections: ").append(connections).append('\n');
-        var inputs = new TreeSet<String>();
-        var outputs = new TreeSet<String>();
-        collectModelSurface(model, inputs, outputs);
-        appendSurface(sb, "Input surface", inputs);
-        appendSurface(sb, "Output surface", outputs);
-        sb.append("(derived from the model's data mappings)");
+        // the contract (RFC-0007): the surfaces with the types the model gives, then the declaration
+        var contract = GraphContract.derive(graphId, model, CompiledGraphs::getGraph);
+        sb.append(contract.describe());
+        sb.append("(derived from the model's data mappings; the OpenAPI document: GET /api/openapi/")
+          .append(graphId).append(')');
         po.send(new EventEnvelope().setTo(outRoute).setBody(sb.toString()));
-    }
-
-    /**
-     * Derive the input/output surface from every node's properties (mapping
-     * entries, plugin args, substitution variables in statements).
-     */
-    private void collectModelSurface(Map<String, Object> model, TreeSet<String> inputs, TreeSet<String> outputs) {
-        if (model.get(NODES) instanceof List<?> nodeList) {
-            for (var n : nodeList) {
-                if (n instanceof Map<?, ?> node && node.get(PROPERTIES) != null) {
-                    var text = propertiesAsText(node.get(PROPERTIES));
-                    collectPathTokens(text, "input.", inputs);
-                    collectPathTokens(text, "output.", outputs);
-                }
-            }
-        }
-    }
-
-    /**
-     * JSON form of a node's properties - the same text shape the Rust engine
-     * scans, so the derived contract stays byte-identical across engines.
-     */
-    private static String propertiesAsText(Object properties) {
-        try {
-            return SimpleMapper.getInstance().getMapper().writeValueAsString(properties);
-        } catch (Exception e) {
-            return String.valueOf(properties);
-        }
-    }
-
-    private static void appendSurface(StringBuilder sb, String title, TreeSet<String> paths) {
-        sb.append(title).append(":\n");
-        if (paths.isEmpty()) {
-            sb.append("  (none referenced)\n");
-        }
-        for (var path : paths) {
-            sb.append("  ").append(path).append('\n');
-        }
     }
 
     /**
@@ -999,66 +961,6 @@ public class GraphCommandService extends GraphLambdaFunction {
         } catch (Exception e) {
             return Collections.emptyMap();
         }
-    }
-
-    /**
-     * Collect dotted-path tokens starting with the prefix from free text
-     * (mapping entries, plugin args, substitution variables in statements).
-     */
-    private void collectPathTokens(String text, String prefix, TreeSet<String> found) {
-        int start = 0;
-        while (start != -1) {
-            start = nextPathToken(text, prefix, start, found);
-        }
-    }
-
-    /**
-     * Scan one prefix occurrence from the start position, adding a well-formed
-     * token to the collection. Returns the next scan position, or -1 when the
-     * text is exhausted.
-     */
-    private int nextPathToken(String text, String prefix, int start, TreeSet<String> found) {
-        int begin = text.indexOf(prefix, start);
-        if (begin == -1) {
-            return -1;
-        }
-        // a mid-word match is part of a longer identifier, not a path token
-        if (begin > 0 && isWordChar(text.charAt(begin - 1))) {
-            return begin + prefix.length();
-        }
-        int end = begin + prefix.length();
-        while (end < text.length() && isTokenChar(text.charAt(end))) {
-            end++;
-        }
-        var token = trimToken(text.substring(begin, end));
-        if (token.length() > prefix.length()) {
-            found.add(token);
-        }
-        return end;
-    }
-
-    private static boolean isWordChar(char c) {
-        return Character.isLetterOrDigit(c) || c == '_' || c == '.';
-    }
-
-    private static boolean isTokenChar(char c) {
-        return Character.isLetterOrDigit(c) || c == '.' || c == '_' || c == '-' || c == '[' || c == ']';
-    }
-
-    /**
-     * Strip trailing separators, then a trailing ']' when there is no matching
-     * '[' (unbalanced - can arise from non-JSON serialization forms where a
-     * list's closing bracket is absorbed).
-     */
-    private static String trimToken(String token) {
-        var result = token;
-        while (!result.isEmpty() && (result.endsWith(".") || result.endsWith("-") || result.endsWith("["))) {
-            result = result.substring(0, result.length() - 1);
-        }
-        while (result.endsWith("]") && result.indexOf('[') == -1) {
-            result = result.substring(0, result.length() - 1);
-        }
-        return result;
     }
 
     private void listFlows(StringBuilder sb) {

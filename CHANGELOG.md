@@ -27,9 +27,30 @@ Each change merged to `main` after v4.12.21 is listed here; it moves under its r
    `SessionManagementTest.mockHeaderUploadLoadsEveryMemberInstanceTest` and the Rust twin. No upgrade action: the body endpoint
    and its reply are unchanged apart from a `namespace` field in the JSON answer.
 
+2. **A graph's OpenAPI 3.0 document on demand, and the contract behind it (RFC-0007, WP1).** `GET /api/openapi/{graph_id}`
+   answers a minimal OpenAPI 3.0 document of a deployed graph as a YAML attachment named after the graph (`?format=json` for JSON
+   inline; `?view=contract` for the derived contract with its evidence, as JSON), and `GET /api/openapi/session/{sessionId}` the
+   same for a session's draft, named after its root node; both dev-mode, in the five `rest.yaml` copies. The document holds the
+   graph's one endpoint `POST /api/graph/{graph-id}`, its request body and header parameters, the `200` response with its body
+   and headers, every status the model stages with `int(N) -> output.status`, the engine's error shape, `info` from the root
+   node's `purpose` and the deployed set's version (else the application's), and `servers` from the request's Host header.
+   The contract is derived by the new `GraphContract` class in three tiers - the `describe graph` path scan (nesting, the `[]`,
+   `[*]` and `[0]` array markers, now reading a JSONPath `$.input.body...` reference too), direct evidence (typed constants and
+   wrappers, plugins with a known result, `for_each` sources, `graph.math` results, arithmetic and ordered-comparison operands)
+   and one hop through a typed variable or a `graph.extension` target's declared output - and merged with the optional
+   `schema` property of the root node (`schema.body` for `input.body`, `schema.header` for `input.header`) and of the end node
+   (`output.body`, `output.header`), each part an OpenAPI 3.0 schema object: the declaration wins, a discovered path it lacks is
+   kept untyped and flagged, a declared path the model never references is kept and flagged, header names are
+   case-insensitive. `describe graph {id}` now prints each path's type, marks a declared-only path, lists the staged status
+   codes, says what is declared and points at the document. Query parameters are not part of the graph API (one endpoint for
+   every graph), so they are neither declared nor derived. Pinned by the shared vector file `graph-contract-vectors.json` (six
+   cases, byte-identical in the Rust repository: the contract view, the document and the describe lines of each) and
+   `GraphOpenApiEndpointTest`. No upgrade action: a Layer 3 application that wants the endpoint adds the two `rest.yaml`
+   entries.
+
 ### Fixed
 
-2. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers
+3. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers
    of the Kafka service mesh and comes back to its sender as the same event carrying `final`. The registry applied that echo to
    its own routing table, and because the two echoes of an add followed by an unregister travel the same ten-instance route, they
    can complete out of order on a loaded host: the unregister's echo found nothing to remove and the add's echo re-added the route

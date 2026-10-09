@@ -67,7 +67,9 @@ attachment (`?format=json` for JSON): `info` from the root node's `purpose` and 
 request's Host header so a downloaded file points back at the engine that generated it, `POST /api/graph/{graph_id}` with the
 request-body schema, the `200` response schema, every `int(N) -> output.status` constant as a response code, the declared or
 discovered `output.header.*` as response headers, the declared or discovered `input.header.*` as header parameters (a declared
-header carries its `required` and its schema), `input.query.*` as query parameters, and the standard error shape. A draft variant through the
+header carries its `required` and its schema), and the standard error shape. Query parameters are not part of the graph API -
+`/api/graph/{graph_id}` is one endpoint URI for every graph, by design (Eric, 2026-10-08) - so they are neither declared nor
+derived. A draft variant through the
 session shows the spec while authoring, and a discovery endpoint answers the skeleton and its evidence as JSON for the panel. The
 file drops into `extensions/api-playground` unchanged, and Swagger UI's explore bar can load the engine URL directly - the dev
 routes and the executor route carry the wildcard CORS entry. **(4) Input validation.** When the root node carries `schema`, both
@@ -121,8 +123,8 @@ fuller, but the api-playground's Swagger UI and the field's tooling target 3.0; 
 vocabulary borrows a minimal set of OpenAPI 3.0 syntax; headers are declared and validated beside the body, in `schema.header`,
 their names case-insensitive (the second round of the same day, with the Upload step's mock headers shipped ahead of the sprint).
 **Open:** the closed subset above as the first cut; strict JSON types; `additionalProperties` left to OpenAPI's default (extra
-fields pass unless the author declares `false`); the cap on reported violations (proposed 10); the draft-spec route's shape;
-`schema.query` for `input.query` by the same mechanism, if a graph ever reads query parameters (none of the bundled models does). Work packages: **WP1** the contract class, discovery, the OpenAPI and
+fields pass unless the author declares `false`); the cap on reported violations (proposed 10). Settled in WP1: the draft route is
+`GET /api/openapi/session/{sessionId}`, and `schema.query` is out (no query parameters on the graph endpoint). Work packages: **WP1** the contract class, discovery, the OpenAPI and
 discovery endpoints, and `describe graph` printing the declaration (both engines, one shared fixture); **WP2** the validator
 function for the body and the headers, the assumed step in both walkers, the gate rules and the shared accept/reject vectors
 (both engines); **WP3** the Schema panel with its body and header sections, fill-from-run and download (one source, two deploy

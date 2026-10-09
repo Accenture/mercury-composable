@@ -473,6 +473,24 @@ rest:
     headers: header_1
     tracing: true
 
+  # The OpenAPI 3.0 document of a deployed graph (RFC-0007): a YAML attachment, ?format=json,
+  # ?view=contract for the derived contract; the second entry documents a session's draft
+  - service: 'get.graph.openapi'
+    methods: ['GET']
+    url: '/api/openapi/{graph_id}'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: 'get.graph.openapi'
+    methods: ['GET']
+    url: '/api/openapi/session/{sessionId}'
+    timeout: 30s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
   # Backs the Playground's "Import Graph" button and a graph file dropped on the
   # graph view: a model from the user's computer becomes the session's draft
   - service: 'import.graph.content'
