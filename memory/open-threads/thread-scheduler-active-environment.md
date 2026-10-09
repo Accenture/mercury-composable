@@ -21,5 +21,9 @@
   (`v1.environment.store`, the `get`/`set` contract) and `EnvironmentAdmin` behind `GET`/`POST /api/scheduler/environment`; the
   configuration reference's three properties, both READMEs, CHANGELOG Added 7, the claim `scheduler-active-environment-standby`
   (pinned by the probe job the test fires through the executor in both modes) and RFC-0008 (Open; promotion after the merge).
+  **Eric's review on PR #539 (2026-10-09):** with the data store as the source of truth, `scheduler.active.environment` is not
+  required - dropped in `51731690`; the active environment is `prod` until an operator sets one, the store is read at every scheduled
+  point (confirmed: `isActiveNow()` → `refresh()` before each scheduled job), the last value read is the fallback for a store
+  that fails to answer.
   → serves: vision-mercury-composable
   <!-- id: scheduler-active-environment | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: working | origin: 2026-10-09-045453 -->
