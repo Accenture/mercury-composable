@@ -12,5 +12,14 @@
   [[event-script-over-code]] (the REST edge wires through rest.yaml), [[kafka-mesh-opt-in]] (the existing leader election is
   in-cluster, not cross-site). Gate: unit tests on `mini-scheduler` and `scheduler-example`; the configuration reference and the
   module README. Then v4.12.22, then [[bp-agent-orchestration]] resumes.
+  **Decided (Eric, 2026-10-09):** the two properties as proposed, `scheduler.environment=${ENV_NAME:prod}` and
+  `scheduler.active.environment=prod`; the active environment PERSISTED through a function the field implements against its own
+  database (a template like the example's `StateResolver`), because a pod restarts without notice. **Delivered 2026-10-09 on
+  `feat/scheduler-active-environment` (`1d116170`; PR for Eric to open):** `ActiveEnvironment` in the module (status, refresh from the
+  store before every scheduled job, activate = persist then memory), the executor's standby skip with one log line and the honoured
+  operator run, the startup announcement (a WARN when no store is registered); the example's file-backed `EnvironmentStore`
+  (`v1.environment.store`, the `get`/`set` contract) and `EnvironmentAdmin` behind `GET`/`POST /api/scheduler/environment`; the
+  configuration reference's three properties, both READMEs, CHANGELOG Added 7, the claim `scheduler-active-environment-standby`
+  (pinned by the probe job the test fires through the executor in both modes) and RFC-0008 (Open; promotion after the merge).
   → serves: vision-mercury-composable
   <!-- id: scheduler-active-environment | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: working | origin: 2026-10-09-045453 -->
