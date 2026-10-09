@@ -3160,8 +3160,8 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 </code></pre></div>
 <hr />
 <h2 id="rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment">RFC-0008 — The mini-scheduler's active environment: one site runs the jobs of an active-active deployment<a class="headerlink" href="#rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-10-09 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>scheduler-active-environment</code></p>
-<!-- id: rfc-0008 | status: open | thread: scheduler-active-environment -->
+<p><strong>Status:</strong> Promoted → ADR-0030 · <strong>Raised:</strong> 2026-10-09 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>scheduler-active-environment</code></p>
+<!-- id: rfc-0008 | status: promoted | thread: scheduler-active-environment -->
 
 <p><strong>Proposal.</strong> A field installation deploys the scheduler in Production and DR active-active. The DR scheduler fires the same
 jobs, whose flows publish to the DR Kafka cluster, and the DR applications - which must stay idle while Production is up - consume
@@ -3193,7 +3193,11 @@ Quartz scheduler on standby</em> - no trigger log, and a resume races the first 
 mode. <em>(d) Keep the value in memory per instance</em> - the dashboard's call reaches one instance behind a load balancer, and a pod
 restart resets it; rejected by Eric. <em>(e) Extend the state resolver's contract with the environment</em> - changes a contract the field
 has implemented for job state; a separate function keeps the two concerns apart.</p>
-<p><strong>Resolution.</strong> (open)</p>
+<p><strong>Resolution.</strong> Promoted → ADR-0030 (2026-10-09, Eric): option (a), the declared environment with the store as the source of truth,
+read at every scheduled point. Accepted after PR #539 (squash <code>74212b1e</code>) merged with green CI: <code>ActiveEnvironment</code> and the executor's
+standby path in the module, the example's <code>EnvironmentStore</code> template and <code>GET</code>/<code>POST /api/scheduler/environment</code>, the configuration
+reference, the claim <code>scheduler-active-environment-standby</code>; the <code>scheduler.active.environment</code> property of the first draft dropped at
+Eric's review. The release vehicle is the next release (CHANGELOG Unreleased, Added item 7).</p>
 <hr />
 <h2 id="rfc-0007-the-graph-contract-a-schema-on-the-root-and-end-nodes-discovery-openapi-on-demand-input-validation-and-a-schema-panel">RFC-0007 — The graph contract: a <code>schema</code> on the root and end nodes, discovery, OpenAPI on demand, input validation and a Schema panel<a class="headerlink" href="#rfc-0007-the-graph-contract-a-schema-on-the-root-and-end-nodes-discovery-openapi-on-demand-input-validation-and-a-schema-panel" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Promoted → ADR-0029 · <strong>Raised:</strong> 2026-10-08 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>graph-contract-schema</code></p>

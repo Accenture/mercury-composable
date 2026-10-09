@@ -2169,6 +2169,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0030" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0030 — The mini-scheduler's active environment: one site of an active-active deployment runs the jobs, decided by a data store read at every scheduled point
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0029" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3202,6 +3213,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0030" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0030 — The mini-scheduler's active environment: one site of an active-active deployment runs the jobs, decided by a data store read at every scheduled point
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0029" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3568,6 +3590,60 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0030">ADR-0030 — The mini-scheduler's active environment: one site of an active-active deployment runs the jobs, decided by a data store read at every scheduled point<a class="headerlink" href="#adr-0030" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-10-09 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> scheduler-active-environment-store</p>
+<!-- id: adr-0030 | status: accepted -->
+
+<p><strong>Abstract.</strong> A scheduler deployed in two sites, Production and DR, active-active, fires its jobs in one of them. The application
+property <code>scheduler.environment</code> names the instance's own environment (default <code>prod</code>); the <strong>active environment</strong> - the one whose
+scheduler runs the jobs - lives in a data store the application provides through the function named by <code>scheduler.environment.store</code>
+(default route <code>v1.environment.store</code>), read at every scheduled point before a job runs. An instance whose environment is the active
+one is active; any other stands by: a scheduled job is skipped with one log line, and an operator's manual run is still honoured. The
+operations team moves the active environment around a maintenance window through the application's REST endpoint, which writes the
+store, so one call moves every instance of every site and a pod restart changes nothing. Proposed as RFC-0008 in <a href="../RFC/"><code>RFC.md</code></a>
+from Eric's problem statement of 2026-10-09, delivered the same day in PR #539 (squash <code>74212b1e</code>) and accepted on 2026-10-09.</p>
+<p><strong>Context.</strong> A field installation runs the scheduler in Production and DR active-active. The DR scheduler fires the same jobs, whose
+flows publish to the DR Kafka cluster, and the DR applications - which must stay idle while Production is up - consume them:
+unintended side effects in an event-driven design where only the Production cluster is meant to carry traffic. The module's two
+existing mechanisms are single-site: <code>leader.election</code> picks one instance inside a service mesh, and the state resolver dedupes job
+runs inside one state store. Neither spans two sites with two Kafka clusters, so the decision needs a notion the sites share.</p>
+<p><strong>Decision.</strong></p>
+<ul>
+<li><strong>A declared environment, one property.</strong> <code>scheduler.environment</code> names this instance's environment, one word of letters, digits,
+  hyphens and underscores (<code>${ENV_NAME:prod}</code> in a deployment), compared case-insensitively with the active environment. The
+  property is not <code>app.env</code>, which already selects the Playground's dev mode (<code>@OptionalService("app.env=dev")</code>): a Layer 3
+  application that also schedules jobs must be able to be in dev mode and count as Production at once.</li>
+<li><strong>The store is the source of truth, and there is no second origin.</strong> The active environment is read from the store at every
+  scheduled point, before a job runs; a first draft's <code>scheduler.active.environment</code> property was dropped at review (Eric,
+  2026-10-09), because a startup value beside a store is a question the operator has to answer. Until an operator sets a value the
+  active environment is <code>prod</code>, so an unconfigured installation runs as before; the last value read is kept only as the fallback for
+  a store that fails to answer, and the failure is logged. When no store function is registered, the value lives in memory only and
+  the scheduler warns at startup.</li>
+<li><strong>The store contract is two messages.</strong> Header <code>type=get</code> answers the persisted name as text, empty when none was set yet; header
+  <code>type=set</code> with <code>environment</code> and <code>operator</code> persists the name and answers <code>true</code>. The application implements it against its own
+  database or distributed cache; the scheduler example's file-backed <code>EnvironmentStore</code> is the template, in the shape of its sample
+  <code>StateResolver</code>. <code>scheduler.environment.store</code> names another route.</li>
+<li><strong>Standby skips at execution, not at scheduling.</strong> Quartz keeps firing; the job executor reads the store, compares, and either
+  runs the job's normal path (leader election or the state resolver, then the job) or skips it with one log line (<code>Standby: job
+  demo-task skipped - the active environment is prod, this instance is DR</code>). A switch takes effect at the next trigger with no
+  restart, and the trace shows the skipped firing.</li>
+<li><strong>An operator's manual run is honoured on a standby instance,</strong> because it is explicit; the log says it ran on a standby instance.</li>
+<li><strong>The switch is the application's REST endpoint.</strong> The module exposes <code>ActiveEnvironment</code> (status, refresh, activate); the
+  application wires the endpoint through rest.yaml, as the example does with <code>GET</code>/<code>POST /api/scheduler/environment</code> and the body
+  <code>{"active": "DR", "operator": "..."}</code>. Activate persists first, then updates memory, and refuses a malformed name.</li>
+</ul>
+<p><strong>Alternatives.</strong> (b) <em>Pause the Quartz scheduler on standby:</em> no trigger log, and a resume races the first firings. (c) <em>Reuse
+<code>app.env</code>:</em> collides with dev mode. (d) <em>Keep the value in memory per instance:</em> the dashboard's one call reaches one instance behind
+a load balancer, and a pod restart resets it; rejected by Eric. (e) <em>Extend the state resolver's contract with the environment:</em>
+changes a contract the field has implemented for job state; a separate function keeps the two concerns apart. (f) <em>A startup property
+beside the store:</em> two origins; dropped at review.</p>
+<p><strong>Consequences.</strong> The module is committed to the property, the store contract and its default route, skip-at-execution and the
+honoured manual run; pinned by the claim <code>scheduler-active-environment-standby</code>. A scheduler that sets no environment runs as
+before. Every scheduled point now costs one request to the store, bounded by a five-second timeout with the last value as fallback;
+an application that wants the switch to survive restarts must implement the store, and one that registers none runs the module as
+it always did, with a warning. The Rust port has no scheduler, and the language packs are not involved. Deferred: a built-in store
+over the framework's own key-value extensions, and a per-job override of the environment rule.</p>
 <hr />
 <h2 id="adr-0029">ADR-0029 — The graph contract: a <code>schema</code> on the root and end nodes, discovered and declared, validated at the root by an assumed step, and served as OpenAPI 3.0 on demand<a class="headerlink" href="#adr-0029" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-10-09 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> graph-contract-by-declaration</p>
