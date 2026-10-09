@@ -570,6 +570,24 @@
   shared-vector method). (ADR-0029)
   <!-- id: graph-contract-by-declaration | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: working | origin: 2026-10-09-041751 -->
 
+- **The mini-scheduler runs its jobs in one site of an active-active deployment, and the active environment's source of truth is a
+  data store read at every scheduled point (Eric's problem statement and rulings, 2026-10-09; RFC-0008 promoted to ADR-0030 the same
+  day; PR #539 squash `74212b1e`).** A field installation ran the scheduler in Production and DR active-active; the DR scheduler's jobs
+  published to the DR Kafka cluster and woke applications that must stay idle. `scheduler.environment` (one word, default `prod`,
+  `${ENV_NAME:prod}` in a deployment) names the instance's environment - not `app.env`, which selects the Playground's dev mode; the
+  active environment lives in the function named by `scheduler.environment.store` (default `v1.environment.store`; `type=get` → the
+  name as text, `type=set` + `environment` + `operator` → `true`), which the application implements against its own database (the
+  example's file-backed `EnvironmentStore` is the template), because a pod restarts without notice. **No second origin:** a first
+  `scheduler.active.environment` property was dropped at Eric's review - a startup value beside a store is a question the operator
+  has to answer; the active environment is `prod` until an operator sets one, the last value read is the fallback for a store that
+  fails to answer, and without a registered store the value is in memory only with a startup WARN. Standby skips at execution with
+  one log line (Quartz keeps firing, a switch needs no restart); an operator's manual run is honoured on a standby instance; the
+  switch is the application's REST endpoint (`GET`/`POST /api/scheduler/environment` in the example). The existing `leader.election`
+  and state resolver are single-site and unchanged. Claim `scheduler-active-environment-standby`; no Rust twin (the port has no
+  scheduler). Relates [[kafka-mesh-opt-in]] (the leader election is in-cluster), [[event-script-over-code]] (the REST edge through
+  rest.yaml). (ADR-0030)
+  <!-- id: scheduler-active-environment-store | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: working | origin: 2026-10-09-045453 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge

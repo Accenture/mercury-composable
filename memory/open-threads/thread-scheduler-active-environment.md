@@ -26,6 +26,6 @@
   point (confirmed: `isActiveNow()` → `refresh()` before each scheduled job), the last value read is the fallback for a store
   that fails to answer.
   **PR #539 MERGED 2026-10-09 as squash `74212b1e`** (identical to `51731690` outside `memory/`; main fast-forwarded, the branch
-  deleted). Open: promotion of RFC-0008 to an ADR on Eric's word, then the v4.12.22 release.
+  deleted). **Promotion (Eric: "1 and 3 first"):** ADR-0030 written and RFC-0008 marked promoted on `docs/adr-0030-scheduler-active-environment` (`22f7e844`; CHANGELOG Added 8; SkillSnapshotTest and the canon green), the fact [[scheduler-active-environment-store]] created; PR for Eric to open, the thread closes at its merge. Then v4.12.22.
   → serves: vision-mercury-composable
   <!-- id: scheduler-active-environment | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: working | origin: 2026-10-09-045453 -->
