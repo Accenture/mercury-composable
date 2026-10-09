@@ -1257,6 +1257,8 @@
       
         
       
+        
+      
     
     
     
@@ -1494,6 +1496,34 @@
     
   
     Playground & AI companion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../knowledge-graph/graph-contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The graph contract
   
 
     
@@ -2654,6 +2684,17 @@
     <span class="md-ellipsis">
       
         graph.model.automation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graph-schema-validator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.schema.validator
       
     </span>
   </a>
@@ -5369,6 +5410,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#graph-schema-validator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.schema.validator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#locationgraphtemp" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -7656,6 +7708,31 @@ which is why <code>list graphs</code> shows a set's graphs with their set and ve
 (version 1.0.0) from file:/... - 2 graphs into file:/opt/graphs/unpacked</code>; a set that cannot be read (a missing
 or non-canonical file) is skipped with an ERROR and the other sets still deploy. The graph packager and the
 Playground's <strong>Graph set packaging</strong> panel write the file; a deployment is still a restart.</p>
+<h3 id="graph-schema-validator"><code>graph.schema.validator</code><a class="headerlink" href="#graph-schema-validator" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (route name)</td>
+<td><code>graph.schema.validator</code></td>
+</tr>
+</tbody>
+</table>
+<p>The function both walkers call for the <strong>assumed validation step</strong> of <a href="../knowledge-graph/graph-contract/#validation">the graph
+contract</a>: when a root node carries a <code>schema</code>
+property, the executor and the Playground's traveler send <code>{body, header, schema}</code> to this route as
+the first thing at the root on every run, before the root's own skill, and stage a failure under the
+root as the standard task error path (HTTP 400 with every violation, or the root's <code>exception=</code>
+handler). The default is the built-in validator of the closed OpenAPI 3.0 subset; a substitute names
+another function with the same contract — <code>{valid: true}</code> on success, a 400 whose error is the
+violation message on failure — for an installation that wants a different vocabulary or an audit hook.
+Nothing is written into the graph for the step, so a substitute applies to every graph of the
+application at once.</p>
 <h3 id="locationgraphtemp"><code>location.graph.temp</code><a class="headerlink" href="#locationgraphtemp" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

@@ -1259,6 +1259,8 @@
       
         
       
+        
+      
     
     
     
@@ -1499,6 +1501,34 @@
     
   
     Playground & AI companion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="graph-contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The graph contract
   
 
     
@@ -3166,7 +3196,9 @@ full contract and self-correction rules). (Both the Playground and companion end
 <p>To keep this honest — the engine is real, the enterprise lifecycle is partly aspirational:</p>
 <p><strong>Available now:</strong> interactive model authoring; instance creation (<code>instantiate graph</code> with mock
 data); execution (<code>run</code>, or single-node <code>execute</code>); state-machine inspection; JSON <code>export</code>/<code>import</code>;
-<strong>dry-run</strong> in the Playground; collaborative multi-user sessions; loop detection.</p>
+<strong>dry-run</strong> in the Playground; collaborative multi-user sessions; loop detection; a declared
+<a href="graph-contract/">graph contract</a> — a <code>schema</code> on the root and end nodes that the engine validates
+at the root and renders as an OpenAPI 3.0 document on demand.</p>
 <p><strong>On the roadmap (not yet in code):</strong> the governance lifecycle (certify → stage → approve → promote)
 described as the target operating model; graph versioning; access control on the dev endpoints; and
 persistence of sessions across restarts. Where this Part describes those, it marks them as the
@@ -3175,6 +3207,7 @@ persistence of sessions across restarts. Where this Part describes those, it mar
 <ul>
 <li><a href="build-your-first-graph/">Build your first Active Knowledge Graph</a> — a hands-on walkthrough: model a service, dry-run it, deploy it, and call it over REST.</li>
 <li><a href="skills-reference/">Built-in skills reference</a> — the ten <code>graph.*</code> skills with syntax and worked examples.</li>
+<li><a href="graph-contract/">The graph contract</a> — declare the request and response as a <code>schema</code>, validate at the root, get an OpenAPI 3.0 document on demand, and fill it in from the Playground's Schema panel.</li>
 <li><a href="composing-the-layers/">Composing the layers</a> — external APIs, sub-graph/flow extension, and REST exposure.</li>
 <li><a href="playground-and-companion/">Playground &amp; AI companion</a> — the interactive workbench and user–AI collaboration.</li>
 <li><a href="property-graph/">Minimalist Property Graph</a> — the underlying graph data structures and API.</li>

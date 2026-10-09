@@ -16,7 +16,7 @@
         <link rel="prev" href="../composing-the-layers/">
       
       
-        <link rel="next" href="../property-graph/">
+        <link rel="next" href="../graph-contract/">
       
       
         
@@ -1259,6 +1259,8 @@
       
         
       
+        
+      
     
     
     
@@ -1620,6 +1622,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../graph-contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The graph contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -3073,6 +3103,10 @@ The essentials:</p>
 <td>in the UI: <strong>Graph set packaging</strong> (Tools menu) packs graph files and the current graph into <code>&lt;set&gt;.pack</code> on the engine (<code>POST /api/graph-set/pack</code>) and inspects a dropped set (<code>POST /api/graph-set/unpack</code>); <code>help package</code></td>
 </tr>
 <tr>
+<td>Schema</td>
+<td>in the UI: <strong>Graph schema</strong> (Tools menu, or the root/end node editor) declares the request and response contract as rows — pre-filled from the engine's contract view of the draft (<code>GET /api/openapi/session/{sessionId}?view=contract</code>) and from the last run, saved through <code>update node</code>, the draft's OpenAPI document downloadable; <code>help schema</code> and <a href="../graph-contract/#panel">the graph contract</a></td>
+</tr>
+<tr>
 <td>Help</td>
 <td><code>help</code> · <code>help &lt;topic&gt;</code></td>
 </tr>
@@ -3280,13 +3314,13 @@ endpoint; maturing it into an integrated, pluggable companion is on the roadmap 
         
         
           
-          <a href="../property-graph/" class="md-footer__link md-footer__link--next" aria-label="Next: Minimalist Property Graph">
+          <a href="../graph-contract/" class="md-footer__link md-footer__link--next" aria-label="Next: The graph contract">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Minimalist Property Graph
+                The graph contract
               </div>
             </div>
             <div class="md-footer__button md-icon">

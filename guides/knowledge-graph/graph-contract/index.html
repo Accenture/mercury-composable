@@ -10,31 +10,31 @@
       
       
       
-        <link rel="canonical" href="https://accenture.github.io/mercury-composable/test-reports/streaming-return-route-cross-pod/">
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/guides/knowledge-graph/graph-contract/">
       
       
-        <link rel="prev" href="../distributed-cache-interop/">
+        <link rel="prev" href="../playground-and-companion/">
       
       
-        <link rel="next" href="../otel-dynatrace-certification/">
+        <link rel="next" href="../property-graph/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>Test Report — Streaming Return Route, cross-pod dry-run - Composable for Java</title>
+        <title>The graph contract - Composable for Java</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -53,9 +53,9 @@
       
     
     
-      <link rel="stylesheet" href="../../css/extra.css">
+      <link rel="stylesheet" href="../../../css/extra.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#test-report-streaming-return-route-cross-pod-dry-run" class="md-skip">
+        <a href="#the-graph-contract" class="md-skip">
           Skip to content
         </a>
       
@@ -94,7 +94,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Composable for Java" class="md-header__button md-logo" aria-label="Composable for Java" data-md-component="logo">
+    <a href="../../.." title="Composable for Java" class="md-header__button md-logo" aria-label="Composable for Java" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 11a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M4.22 4.22C5.65 2.79 8.75 3.43 12 5.56c3.25-2.13 6.35-2.77 7.78-1.34s.79 4.53-1.34 7.78c2.13 3.25 2.77 6.35 1.34 7.78s-4.53.79-7.78-1.34c-3.25 2.13-6.35 2.77-7.78 1.34S3.43 15.25 5.56 12C3.43 8.75 2.79 5.65 4.22 4.22m11.32 4.24c.61.62 1.17 1.25 1.69 1.88 1.38-2.13 1.88-3.96 1.13-4.7-.74-.75-2.57-.25-4.7 1.13.63.52 1.26 1.08 1.88 1.69m-7.08 7.08c-.61-.62-1.17-1.25-1.69-1.88-1.38 2.13-1.88 3.96-1.13 4.7.74.75 2.57.25 4.7-1.13-.63-.52-1.26-1.08-1.88-1.69m-2.82-9.9c-.75.74-.25 2.57 1.13 4.7.52-.63 1.08-1.26 1.69-1.88.62-.61 1.25-1.17 1.88-1.69-2.13-1.38-3.96-1.88-4.7-1.13m4.24 8.48c.7.7 1.42 1.34 2.12 1.91.7-.57 1.42-1.21 2.12-1.91s1.34-1.42 1.91-2.12c-.57-.7-1.21-1.42-1.91-2.12S12.7 8.54 12 7.97c-.7.57-1.42 1.21-2.12 1.91S8.54 11.3 7.97 12c.57.7 1.21 1.42 1.91 2.12m8.48 4.24c.75-.74.25-2.57-1.13-4.7-.52.63-1.08 1.26-1.69 1.88-.62.61-1.25 1.17-1.88 1.69 2.13 1.38 3.96 1.88 4.7 1.13"/></svg>
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Test Report — Streaming Return Route, cross-pod dry-run
+              The graph contract
             
           </span>
         </div>
@@ -237,7 +237,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../.." class="md-tabs__link">
+      <a href="../../.." class="md-tabs__link">
         
   
   
@@ -258,7 +258,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../guides/getting-started/" class="md-tabs__link">
+        <a href="../../getting-started/" class="md-tabs__link">
           
   
   
@@ -280,7 +280,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../guides/architecture/" class="md-tabs__link">
+        <a href="../../architecture/" class="md-tabs__link">
           
   
   
@@ -302,7 +302,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../guides/event-driven/" class="md-tabs__link">
+        <a href="../../event-driven/" class="md-tabs__link">
           
   
   
@@ -324,7 +324,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../guides/event-script/" class="md-tabs__link">
+        <a href="../../event-script/" class="md-tabs__link">
           
   
   
@@ -342,11 +342,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../guides/knowledge-graph/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
           
   
   
@@ -368,7 +370,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../guides/build-test-deploy/" class="md-tabs__link">
+        <a href="../../build-test-deploy/" class="md-tabs__link">
           
   
   
@@ -386,13 +388,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../arch-decisions/ADR/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../../arch-decisions/ADR/" class="md-tabs__link">
           
   
   
@@ -428,7 +428,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Composable for Java" class="md-nav__button md-logo" aria-label="Composable for Java" data-md-component="logo">
+    <a href="../../.." title="Composable for Java" class="md-nav__button md-logo" aria-label="Composable for Java" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 11a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M4.22 4.22C5.65 2.79 8.75 3.43 12 5.56c3.25-2.13 6.35-2.77 7.78-1.34s.79 4.53-1.34 7.78c2.13 3.25 2.77 6.35 1.34 7.78s-4.53.79-7.78-1.34c-3.25 2.13-6.35 2.77-7.78 1.34S3.43 15.25 5.56 12C3.43 8.75 2.79 5.65 4.22 4.22m11.32 4.24c.61.62 1.17 1.25 1.69 1.88 1.38-2.13 1.88-3.96 1.13-4.7-.74-.75-2.57-.25-4.7 1.13.63.52 1.26 1.08 1.88 1.69m-7.08 7.08c-.61-.62-1.17-1.25-1.69-1.88-1.38 2.13-1.88 3.96-1.13 4.7.74.75 2.57.25 4.7-1.13-.63-.52-1.26-1.08-1.88-1.69m-2.82-9.9c-.75.74-.25 2.57 1.13 4.7.52-.63 1.08-1.26 1.69-1.88.62-.61 1.25-1.17 1.88-1.69-2.13-1.38-3.96-1.88-4.7-1.13m4.24 8.48c.7.7 1.42 1.34 2.12 1.91.7-.57 1.42-1.21 2.12-1.91s1.34-1.42 1.91-2.12c-.57-.7-1.21-1.42-1.91-2.12S12.7 8.54 12 7.97c-.7.57-1.42 1.21-2.12 1.91S8.54 11.3 7.97 12c.57.7 1.21 1.42 1.91 2.12m8.48 4.24c.75-.74.25-2.57-1.13-4.7-.52.63-1.08 1.26-1.69 1.88-.62.61-1.25 1.17-1.88 1.69 2.13 1.38 3.96 1.88 4.7 1.13"/></svg>
@@ -458,7 +458,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
   
@@ -545,7 +545,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/getting-started/" class="md-nav__link">
+      <a href="../../getting-started/" class="md-nav__link">
         
   
   
@@ -573,7 +573,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mercury-story/" class="md-nav__link">
+      <a href="../../../mercury-story/" class="md-nav__link">
         
   
   
@@ -601,7 +601,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mercury-family/" class="md-nav__link">
+      <a href="../../../mercury-family/" class="md-nav__link">
         
   
   
@@ -696,7 +696,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/architecture/" class="md-nav__link">
+      <a href="../../architecture/" class="md-nav__link">
         
   
   
@@ -724,7 +724,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/methodology/" class="md-nav__link">
+      <a href="../../methodology/" class="md-nav__link">
         
   
   
@@ -752,7 +752,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/ai-developer-guide/" class="md-nav__link">
+      <a href="../../ai-developer-guide/" class="md-nav__link">
         
   
   
@@ -822,7 +822,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../guides/event-driven/" class="md-nav__link ">
+            <a href="../../event-driven/" class="md-nav__link ">
               
   
   
@@ -866,7 +866,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/event-driven/write-your-first-function/" class="md-nav__link">
+      <a href="../../event-driven/write-your-first-function/" class="md-nav__link">
         
   
   
@@ -894,7 +894,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/event-driven/function-execution/" class="md-nav__link">
+      <a href="../../event-driven/function-execution/" class="md-nav__link">
         
   
   
@@ -922,7 +922,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/event-driven/ai-agent-guide/" class="md-nav__link">
+      <a href="../../event-driven/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -950,7 +950,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/rest-automation/" class="md-nav__link">
+      <a href="../../rest-automation/" class="md-nav__link">
         
   
   
@@ -978,7 +978,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/rest-automation/rest-grammar/" class="md-nav__link">
+      <a href="../../rest-automation/rest-grammar/" class="md-nav__link">
         
   
   
@@ -1006,7 +1006,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/rest-automation/ai-agent-guide/" class="md-nav__link">
+      <a href="../../rest-automation/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1072,7 +1072,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../guides/event-script/" class="md-nav__link ">
+            <a href="../../event-script/" class="md-nav__link ">
               
   
   
@@ -1116,7 +1116,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/event-script/syntax/" class="md-nav__link">
+      <a href="../../event-script/syntax/" class="md-nav__link">
         
   
   
@@ -1144,7 +1144,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/event-script/flow-grammar/" class="md-nav__link">
+      <a href="../../event-script/flow-grammar/" class="md-nav__link">
         
   
   
@@ -1172,7 +1172,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/event-script/ai-agent-guide/" class="md-nav__link">
+      <a href="../../event-script/ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1200,7 +1200,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/flow-schema-reference/" class="md-nav__link">
+      <a href="../../flow-schema-reference/" class="md-nav__link">
         
   
   
@@ -1232,6 +1232,8 @@
       
   
   
+    
+  
   
   
     
@@ -1263,20 +1265,23 @@
     
     
       
+        
+        
+      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../guides/knowledge-graph/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
   
@@ -1294,13 +1299,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1320,7 +1325,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/knowledge-graph/build-your-first-graph/" class="md-nav__link">
+      <a href="../build-your-first-graph/" class="md-nav__link">
         
   
   
@@ -1348,7 +1353,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/knowledge-graph/workflow-suspension/" class="md-nav__link">
+      <a href="../workflow-suspension/" class="md-nav__link">
         
   
   
@@ -1376,7 +1381,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/knowledge-graph/skills-reference/" class="md-nav__link">
+      <a href="../skills-reference/" class="md-nav__link">
         
   
   
@@ -1404,7 +1409,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/knowledge-graph/command-reference/" class="md-nav__link">
+      <a href="../command-reference/" class="md-nav__link">
         
   
   
@@ -1432,7 +1437,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/knowledge-graph/ai-agent-guide/" class="md-nav__link">
+      <a href="../ai-agent-guide/" class="md-nav__link">
         
   
   
@@ -1460,7 +1465,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/knowledge-graph/composing-the-layers/" class="md-nav__link">
+      <a href="../composing-the-layers/" class="md-nav__link">
         
   
   
@@ -1488,7 +1493,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/knowledge-graph/playground-and-companion/" class="md-nav__link">
+      <a href="../playground-and-companion/" class="md-nav__link">
         
   
   
@@ -1513,10 +1518,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../guides/knowledge-graph/graph-contract/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The graph contract
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1532,6 +1564,125 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#declare" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Declare the contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vocabulary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The vocabulary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discovery and describe graph
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#openapi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The OpenAPI document on demand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input validation at the root
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Schema panel
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-playground" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Round trip through the API playground
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1544,7 +1695,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/knowledge-graph/property-graph/" class="md-nav__link">
+      <a href="../property-graph/" class="md-nav__link">
         
   
   
@@ -1657,7 +1808,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/build-test-deploy/" class="md-nav__link">
+      <a href="../../build-test-deploy/" class="md-nav__link">
         
   
   
@@ -1685,7 +1836,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/observability/" class="md-nav__link">
+      <a href="../../observability/" class="md-nav__link">
         
   
   
@@ -1713,7 +1864,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/spring-boot/" class="md-nav__link">
+      <a href="../../spring-boot/" class="md-nav__link">
         
   
   
@@ -1741,7 +1892,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/event-over-http/" class="md-nav__link">
+      <a href="../../event-over-http/" class="md-nav__link">
         
   
   
@@ -1769,7 +1920,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/http-streaming/" class="md-nav__link">
+      <a href="../../http-streaming/" class="md-nav__link">
         
   
   
@@ -1797,7 +1948,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/polyglot-functions/" class="md-nav__link">
+      <a href="../../polyglot-functions/" class="md-nav__link">
         
   
   
@@ -1825,7 +1976,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/minimalist-kafka/" class="md-nav__link">
+      <a href="../../minimalist-kafka/" class="md-nav__link">
         
   
   
@@ -1853,7 +2004,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/twin-kafka/" class="md-nav__link">
+      <a href="../../twin-kafka/" class="md-nav__link">
         
   
   
@@ -1881,7 +2032,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/distributed-cache/" class="md-nav__link">
+      <a href="../../distributed-cache/" class="md-nav__link">
         
   
   
@@ -1909,7 +2060,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/schema-registry-mock/" class="md-nav__link">
+      <a href="../../schema-registry-mock/" class="md-nav__link">
         
   
   
@@ -1937,7 +2088,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/sync-over-async/" class="md-nav__link">
+      <a href="../../sync-over-async/" class="md-nav__link">
         
   
   
@@ -1965,7 +2116,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/service-mesh/" class="md-nav__link">
+      <a href="../../service-mesh/" class="md-nav__link">
         
   
   
@@ -1997,10 +2148,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -2058,22 +2207,19 @@
     
     
       
-        
-        
-      
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -2091,7 +2237,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2109,7 +2255,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../arch-decisions/ADR/" class="md-nav__link">
+      <a href="../../../arch-decisions/ADR/" class="md-nav__link">
         
   
   
@@ -2137,7 +2283,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../arch-decisions/RFC/" class="md-nav__link">
+      <a href="../../../arch-decisions/RFC/" class="md-nav__link">
         
   
   
@@ -2165,7 +2311,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/api-overview/" class="md-nav__link">
+      <a href="../../api-overview/" class="md-nav__link">
         
   
   
@@ -2193,7 +2339,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/annotations-reference/" class="md-nav__link">
+      <a href="../../annotations-reference/" class="md-nav__link">
         
   
   
@@ -2221,7 +2367,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/configuration-reference/" class="md-nav__link">
+      <a href="../../configuration-reference/" class="md-nav__link">
         
   
   
@@ -2249,7 +2395,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/event-envelope-reference/" class="md-nav__link">
+      <a href="../../event-envelope-reference/" class="md-nav__link">
         
   
   
@@ -2277,7 +2423,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/event-envelope-wire-format/" class="md-nav__link">
+      <a href="../../event-envelope-wire-format/" class="md-nav__link">
         
   
   
@@ -2305,7 +2451,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/canonical-package-format/" class="md-nav__link">
+      <a href="../../canonical-package-format/" class="md-nav__link">
         
   
   
@@ -2333,7 +2479,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/registration-metadata-contract/" class="md-nav__link">
+      <a href="../../registration-metadata-contract/" class="md-nav__link">
         
   
   
@@ -2361,7 +2507,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../event-over-http-interop/" class="md-nav__link">
+      <a href="../../../test-reports/event-over-http-interop/" class="md-nav__link">
         
   
   
@@ -2389,7 +2535,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../progressive-rendering-interop/" class="md-nav__link">
+      <a href="../../../test-reports/progressive-rendering-interop/" class="md-nav__link">
         
   
   
@@ -2417,7 +2563,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../suspend-resume-interop/" class="md-nav__link">
+      <a href="../../../test-reports/suspend-resume-interop/" class="md-nav__link">
         
   
   
@@ -2445,7 +2591,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../distributed-cache-interop/" class="md-nav__link">
+      <a href="../../../test-reports/distributed-cache-interop/" class="md-nav__link">
         
   
   
@@ -2470,37 +2616,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Test Report — Streaming Return Route (cross-pod)
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../../test-reports/streaming-return-route-cross-pod/" class="md-nav__link">
         
   
   
@@ -2516,125 +2635,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#the-scenario-under-test" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The scenario under test
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scenario-1-ordered-tokens-across-pods-the-chat-shape" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Scenario 1 — ordered tokens across pods (the chat shape)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scenario-2-lost-notification-healed-by-the-next-drain" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Scenario 2 — lost notification, healed by the next drain
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scenario-3-lost-close-recovered-by-the-final-drain-at-idle-expiry" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Scenario 3 — lost close, recovered by the final drain at idle expiry
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scenario-4-producer-killed-mid-stream-kill-9" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Scenario 4 — producer killed mid-stream (kill -9)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scenario-5-ui-pod-killed-kill-9-producer-orphan-stop-ttl-bounded" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Scenario 5 — UI pod killed (kill -9) → producer orphan stop, TTL-bounded
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#scenario-6-real-llm-tokens-across-pods-experiment-e4-the-blueprint-payoff" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Scenario 6 — real LLM tokens across pods (experiment E4, the blueprint payoff)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#observations-and-round-notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Observations and round notes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#what-remains" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What remains
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2647,7 +2647,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../otel-dynatrace-certification/" class="md-nav__link">
+      <a href="../../../test-reports/otel-dynatrace-certification/" class="md-nav__link">
         
   
   
@@ -2675,7 +2675,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../llm-helper-certification/" class="md-nav__link">
+      <a href="../../../test-reports/llm-helper-certification/" class="md-nav__link">
         
   
   
@@ -2703,7 +2703,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../minimalist-msgpack-benchmark/" class="md-nav__link">
+      <a href="../../../test-reports/minimalist-msgpack-benchmark/" class="md-nav__link">
         
   
   
@@ -2731,7 +2731,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/reserved-names-and-headers/" class="md-nav__link">
+      <a href="../../reserved-names-and-headers/" class="md-nav__link">
         
   
   
@@ -2759,7 +2759,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/actuators-and-http-client/" class="md-nav__link">
+      <a href="../../actuators-and-http-client/" class="md-nav__link">
         
   
   
@@ -2787,7 +2787,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/code-conventions/" class="md-nav__link">
+      <a href="../../code-conventions/" class="md-nav__link">
         
   
   
@@ -2815,7 +2815,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/documentation-conventions/" class="md-nav__link">
+      <a href="../../documentation-conventions/" class="md-nav__link">
         
   
   
@@ -2982,10 +2982,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-scenario-under-test" class="md-nav__link">
+  <a href="#declare" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The scenario under test
+        Declare the contract
       
     </span>
   </a>
@@ -2993,10 +2993,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scenario-1-ordered-tokens-across-pods-the-chat-shape" class="md-nav__link">
+  <a href="#vocabulary" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scenario 1 — ordered tokens across pods (the chat shape)
+        The vocabulary
       
     </span>
   </a>
@@ -3004,10 +3004,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scenario-2-lost-notification-healed-by-the-next-drain" class="md-nav__link">
+  <a href="#discovery" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scenario 2 — lost notification, healed by the next drain
+        Discovery and describe graph
       
     </span>
   </a>
@@ -3015,10 +3015,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scenario-3-lost-close-recovered-by-the-final-drain-at-idle-expiry" class="md-nav__link">
+  <a href="#openapi" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scenario 3 — lost close, recovered by the final drain at idle expiry
+        The OpenAPI document on demand
       
     </span>
   </a>
@@ -3026,10 +3026,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scenario-4-producer-killed-mid-stream-kill-9" class="md-nav__link">
+  <a href="#validation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scenario 4 — producer killed mid-stream (kill -9)
+        Input validation at the root
       
     </span>
   </a>
@@ -3037,10 +3037,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scenario-5-ui-pod-killed-kill-9-producer-orphan-stop-ttl-bounded" class="md-nav__link">
+  <a href="#panel" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scenario 5 — UI pod killed (kill -9) → producer orphan stop, TTL-bounded
+        The Schema panel
       
     </span>
   </a>
@@ -3048,10 +3048,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scenario-6-real-llm-tokens-across-pods-experiment-e4-the-blueprint-payoff" class="md-nav__link">
+  <a href="#api-playground" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scenario 6 — real LLM tokens across pods (experiment E4, the blueprint payoff)
+        Round trip through the API playground
       
     </span>
   </a>
@@ -3059,10 +3059,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#observations-and-round-notes" class="md-nav__link">
+  <a href="#design-rules" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Observations and round notes
+        Design rules
       
     </span>
   </a>
@@ -3070,10 +3070,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-remains" class="md-nav__link">
+  <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What remains
+        See also
       
     </span>
   </a>
@@ -3100,203 +3100,362 @@
   
 
 
-<h1 id="test-report-streaming-return-route-cross-pod-dry-run">Test Report — Streaming Return Route, cross-pod dry-run<a class="headerlink" href="#test-report-streaming-return-route-cross-pod-dry-run" title="Permanent link">&para;</a></h1>
-<p><em>Live two-pod validation of the
-<a href="https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/streaming-return-route.md">streaming return route</a>
-(experiment E3), conducted 2026-09-12 (local time) on a single developer machine with three
-JVM processes and <code>curl</code> as the client. This report is a permanent record in the tradition of
-the <a href="../progressive-rendering-interop/">progressive-rendering interop report</a>: what was run,
-the evidence, and the observations the round produced.</em></p>
-<h2 id="the-scenario-under-test">The scenario under test<a class="headerlink" href="#the-scenario-under-test" title="Permanent link">&para;</a></h2>
-<p>The streaming return route exists for exactly one gap: in a horizontally scaled deployment,
-the pod that <em>produces</em> progressive events is generally not the pod holding the user's HTTP
-connection. E3 makes that literal — <strong>two separate JVMs</strong>:</p>
+<hr />
+<p>title: The graph contract
+summary: Declare a graph's request and response as a <code>schema</code> on the root and end nodes - a
+  closed subset of OpenAPI 3.0 - and put it to three uses: the engine validates every request at
+  the root, answers an OpenAPI 3.0 document on demand, and the Playground's Schema panel fills the
+  declaration in from discovery and from the last run.
+layer: knowledge-graph
+audience: [developer, architect, ai-agent]
+keywords: [graph contract, schema, openapi, input validation, schema panel, describe graph, swagger, api playground]
+related:
+  - guides/knowledge-graph/command-reference.md
+  - guides/knowledge-graph/ai-agent-guide.md
+  - guides/knowledge-graph/playground-and-companion.md
+  - guides/configuration-reference.md</p>
+<hr />
+<h1 id="the-graph-contract">The graph contract<a class="headerlink" href="#the-graph-contract" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>A graph declares its contract as an optional <strong><code>schema</code> property on the root node</strong> (the
+  request: <code>schema.body</code> for <code>input.body</code>, <code>schema.header</code> for <code>input.header</code>) and <strong>on the end
+  node</strong> (the response: <code>output.body</code>, <code>output.header</code>). Each part is a schema object in a
+  <strong>closed subset of OpenAPI 3.0</strong>; the deployment gate refuses anything outside it.</li>
+<li><strong>Three uses.</strong> When the root carries a <code>schema</code>, every run validates the request at the root
+  before anything else runs. <code>GET /api/openapi/{graph-id}</code> answers a minimal <strong>OpenAPI 3.0
+  document</strong> derived from the model on demand. The Playground's <strong>Schema panel</strong> starts from what
+  the engine discovers in the model and from the last dry run, so a contract is confirmed rather
+  than typed.</li>
+<li>The declaration is <strong>data on the graph</strong>: it travels with export, import, pack and
+  <code>graph.extension</code>, needs no code, and the engine assumes the validation step - nothing is
+  written into the node for it.</li>
+</ul>
+</blockquote>
+<h2 id="declare">Declare the contract<a class="headerlink" href="#declare" title="Permanent link">&para;</a></h2>
+<p>The root node describes the request and the end node the response - the node says which side it is.
+Each <code>schema</code> has two optional parts that mirror the state machine's namespaces:</p>
 <table>
 <thead>
 <tr>
-<th>Process</th>
-<th>Role</th>
-<th>Port</th>
-<th>Notes</th>
+<th>Part</th>
+<th>Describes</th>
+<th>Shape</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>redis-standalone</code></td>
-<td>the rendezvous</td>
-<td>6379</td>
-<td>the only shared infrastructure — <strong>no broker anywhere</strong> (design D3); both pods run with the Kafka building blocks switched off</td>
+<td><code>schema.body</code></td>
+<td><code>input.body</code> (root) or <code>output.body</code> (end)</td>
+<td>any schema object of the vocabulary below</td>
 </tr>
 <tr>
-<td><code>sync-over-async-demo</code>, profile <code>stream-ui</code> (<strong>pod A</strong>)</td>
-<td>holds the SSE connection</td>
-<td>8600</td>
-<td>return-route coordinator + <code>StreamBridge</code> facade; <code>sync.stream.ttl.seconds=30</code> for this run so the TTL-bounded endings complete quickly</td>
-</tr>
-<tr>
-<td><code>sync-over-async-demo</code>, profile <code>stream-producer</code> (<strong>pod B</strong>)</td>
-<td>posts the events</td>
-<td>8601</td>
-<td><code>StreamResponder</code> only — <strong>no coordinator</strong>, no subscriber, no <code>sync.over.async.enabled</code></td>
+<td><code>schema.header</code></td>
+<td><code>input.header</code> (root) or <code>output.header</code> (end)</td>
+<td>an object schema whose <code>properties</code> are header names; a header is text</td>
 </tr>
 </tbody>
 </table>
-<p>The client opens <code>GET /api/notifications</code> on pod A (<code>stream: true</code>, SSE); the facade
-announces the session's correlation-id as the first SSE event; the client then POSTs to
-pod B's <code>/api/produce</code>, quoting that cid — the notification use case's exact shape. Pod B's
-chaos mode (<code>"mode": "lost"</code>) stores a segment while suppressing its wake-up, simulating a
-lost Pub/Sub notification. The build under test is the unified list mechanism
-(D7/D8 + <code>StreamBridge</code>, PRs #369/#370, pre-release).</p>
-<h2 id="scenario-1-ordered-tokens-across-pods-the-chat-shape">Scenario 1 — ordered tokens across pods (the chat shape)<a class="headerlink" href="#scenario-1-ordered-tokens-across-pods-the-chat-shape" title="Permanent link">&para;</a></h2>
-<p>Pod B posts five tokens and <code>eof</code> sequentially over one connection; pod A renders them out
-its SSE edge. <strong>No sequence number exists anywhere in the pipeline</strong> — order is carried by
-posting discipline → Redis list order → serialized drain → the edge's ordered reply lane:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>14:59:04.656  event: cid
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>14:59:04.656  data: 61ea9747fb934af2b821322d5ef786d0
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>14:59:07.409  data: Streaming
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>14:59:07.409  data:  across
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>14:59:07.409  data:  pods
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>14:59:07.410  data:  by
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>14:59:07.411  data:  design
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>14:59:07.411  event: done
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>14:59:07.411  data: {"tokens":5}
+<p>The parts are ordinary nested properties, written through the node grammar's composite keys - so
+<code>create node</code>, <code>update node</code>, <code>edit node</code>, the node editor and the Schema panel all carry them with
+no new syntax:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>update node root
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>with type Root
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>with properties
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>name=payment
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>purpose=A root schema validates the request before anything runs
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>schema.body.type=object
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>schema.body.required[]=amount
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>schema.body.required[]=currency
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>schema.body.properties.amount.type=number
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>schema.body.properties.amount.minimum=0
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>schema.body.properties.amount.exclusiveMinimum=true
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>schema.body.properties.amount.description=the amount to charge
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>schema.body.properties.currency.type=string
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>schema.body.properties.currency.enum[]=USD
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>schema.body.properties.currency.enum[]=EUR
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>schema.body.properties.note.type=string
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>schema.body.properties.note.maxLength=40
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>schema.body.properties.note.nullable=true
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>schema.header.required[]=X-Tenant
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>schema.header.properties.X-Tenant.type=string
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>schema.header.properties.X-Tenant.minLength=4
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>schema.header.properties.X-Retry.type=integer
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>schema.header.properties.X-Retry.minimum=0
 </code></pre></div>
-<p>Producer's view: <code>{"mode":"chat","live":true,"posted":6}</code>. <strong>Exact order preserved,
-terminal metadata delivered, rendezvous closed.</strong> ✅</p>
-<h2 id="scenario-2-lost-notification-healed-by-the-next-drain">Scenario 2 — lost notification, healed by the next drain<a class="headerlink" href="#scenario-2-lost-notification-healed-by-the-next-drain" title="Permanent link">&para;</a></h2>
-<p>Three notifications from pod B: <code>orders</code> (normal), <code>billing</code> (<strong>wake-up suppressed</strong>),
-<code>payments</code> (normal). Mid-run check after the suppressed post: <code>billing</code> is stored in Redis
-but <strong>absent from the render</strong> — then the <code>payments</code> wake-up's drain delivers both, in list
-order, and a backend-side <code>close</code> ends the channel ("the end signal is also an event"):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>14:59:30.835  event: orders
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>14:59:30.835  data: order 42 shipped
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>              (billing posted with its wake-up suppressed - nothing renders)
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>14:59:34.082  event: billing
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>14:59:34.082  data: invoice 7 ready
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>14:59:34.082  event: payments
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>14:59:34.082  data: refund 9 done
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>14:59:35.191  event: done
-</code></pre></div>
-<p><strong>A dropped signal costs latency, never data.</strong> ✅</p>
-<h2 id="scenario-3-lost-close-recovered-by-the-final-drain-at-idle-expiry">Scenario 3 — lost <em>close</em>, recovered by the final drain at idle expiry<a class="headerlink" href="#scenario-3-lost-close-recovered-by-the-final-drain-at-idle-expiry" title="Permanent link">&para;</a></h2>
-<p>The worst case design D4's nuance exists for: a data segment <strong>and the terminal <code>eof</code></strong> are
-stored with every wake-up suppressed. Nothing wakes pod A. At the channel's idle allowance
-(6s, set per request via <code>x-stream-idle-seconds</code>) the facade watchdog performs its <strong>single
-final drain</strong> — and the render completes successfully:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>14:59:54.769  event: cid
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>              (data + eof stored at ~14:59:57, all wake-ups suppressed)
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>15:00:00.770  event: orders
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>15:00:00.770  data: the last update
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>15:00:00.771  event: done
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>15:00:00.771  data: {"recovered":true}
-</code></pre></div>
-<p>The drain fired at <strong>idle + 1 ms</strong> (channel opened 14:59:54.769, drain at 15:00:00.770).
-<strong>The one-shot "final read before timeout" cornerstone, working as a stream, across pods.</strong> ✅</p>
-<h2 id="scenario-4-producer-killed-mid-stream-kill-9">Scenario 4 — producer killed mid-stream (<code>kill -9</code>)<a class="headerlink" href="#scenario-4-producer-killed-mid-stream-kill-9" title="Permanent link">&para;</a></h2>
-<p>Pod B posts two tokens ("stall" mode) and is then killed. No terminal can ever arrive; the
-render must fail <strong>in-band</strong> at idle expiry, exactly like the failure table says:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>15:00:22.841  event: cid
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>15:00:25.402  data: first
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>15:00:25.403  data: second
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>              (pod B kill -9)
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>15:00:31.415  event: error
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>15:00:31.415  data: {"status":408,"message":"Stream idle timeout","type":"error"}
-</code></pre></div>
-<p>408 at 6.01s after the last segment (the watchdog re-armed by the activity, then firing).
-The rendezvous keys were deleted by the close; the queue remnant needs no sweeper. ✅</p>
-<h2 id="scenario-5-ui-pod-killed-kill-9-producer-orphan-stop-ttl-bounded">Scenario 5 — UI pod killed (<code>kill -9</code>) → producer orphan stop, TTL-bounded<a class="headerlink" href="#scenario-5-ui-pod-killed-kill-9-producer-orphan-stop-ttl-bounded" title="Permanent link">&para;</a></h2>
-<p>Pod A is killed with a channel open (route TTL 30s in this run). The route key is Redis
-state, so it does <strong>not</strong> vanish with the pod — a post inside the TTL window is accepted
-into the void (stored, published to a channel nobody subscribes to), and the producer stops
-as soon as the route expires:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>15:01:05  post right after the kill: {"mode":"notify","live":true}    &lt;- TTL-bounded void window
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>15:01:48  post after the 30s TTL:    {"mode":"notify","live":false}   &lt;- orphan stop
-</code></pre></div>
-<p><strong>Bounded, deterministic stop with no liveness machinery</strong> — the TTL is the crash backstop
-doing exactly its job (contract 5). The spec's failure table has been tightened to state the
-timing explicitly: the producer stops <em>within the route TTL</em> of a UI-pod crash, not
-instantaneously, and the abandoned queue remnant ages out on its own TTL. ✅</p>
-<h2 id="scenario-6-real-llm-tokens-across-pods-experiment-e4-the-blueprint-payoff">Scenario 6 — real LLM tokens across pods (experiment E4, the blueprint payoff)<a class="headerlink" href="#scenario-6-real-llm-tokens-across-pods-experiment-e4-the-blueprint-payoff" title="Permanent link">&para;</a></h2>
-<p>The reason this transport exists (agent-orchestration Q8, second half): an LLM's token stream
-produced on one pod, rendered on another. Same topology, one more composition — <strong>pod B pulls the
-provider's own SSE stream through the platform's shipped SSE consumer</strong> (<code>async.http.request</code> with
-<code>Accept: text/event-stream</code> + a reply route) <strong>and a bridge function forwards each relayed
-<code>x-event-stream</code> envelope into the rendezvous</strong> via <code>StreamResponder</code>. No SDK, no new
-infrastructure: the request leg is one event, and the bridge is ~40 lines of forwarding.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>  pod A (SSE render)      Redis       pod B: async.http.request ──SSE──► Gemini
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    event: cid ────────────────────────► POST /api/produce {cid, mode: "llm", prompt}
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    ◄── token batches ◄── queue:{cid} ◄── demo.llm.bridge (reply route, instances=1)
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    event: done {usage}
-</code></pre></div>
-<p>Live run (Gemini <code>streamGenerateContent?alt=sse</code>, <code>gemini-flash-latest</code> resolving to
-<code>gemini-3.8-flash</code>, developer key from the environment):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>15:57:56.709  event: cid
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>15:57:56.709  data: 4b6345d72a73466c990e93c6265169df
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>15:58:01.108  data: They decouple components, allowing individual services to scale
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>              independently based on demand. Additionally, asynchronous communication
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>15:58:01.109  data:  prevents bottlenecks by letting producers and consumers process
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>              tasks at their own pace.
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>15:58:01.113  event: done
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>15:58:01.114  data: {"provider":"gemini","model":"gemini-3.8-flash","finishReason":"STOP",
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>              "promptTokenCount":14,"candidatesTokenCount":32,"totalTokenCount":46}
-</code></pre></div>
-<p>Real tokens, in generation order, terminal <code>done</code> carrying the provider's usage metadata — and the
-provider's early refusals (a 404 during the round) rode the same path in-band as <code>event: error</code>. ✅</p>
-<p>This is also the wrapper-side shape a <code>graph.task</code> node drives (E0 proved the live
-<code>graph.task → wrapper</code> leg): the node streams progress out-of-band through the rendezvous while its
-own graph edge stays plain request/response — graph-run streaming with <strong>zero engine change</strong>.</p>
-<p><strong>Two findings from this round:</strong></p>
-<ol>
-<li><strong>platform-core: the HTTP client percent-encoded <code>:</code> in URI path segments</strong> (form encoding via
-   <code>URLEncoder</code>), which Google-style custom methods (<code>…/models/&lt;model&gt;:streamGenerateContent</code> —
-   every Google Cloud <code>:verb</code> API) reject with 404. RFC 3986 allows <code>:</code> in a path segment (pchar);
-   fixed in <code>Utility.encodeUriSegments</code> with a regression pin (its own PR).</li>
-<li><strong>The producer contract bites forwarders too:</strong> the bridge initially ran 50 function instances,
-   so relayed frames were posted concurrently — and a token batch sequenced <em>behind</em> the terminal
-   in the queue is discarded by design (the first live run rendered a mid-sentence answer).
-   <code>instances = 1</code> restores post-in-order (design D7) — the same reason the HTTP edge's reply
-   lanes are single-instance routes. A high-fanout application would mint one temporary route per
-   stream.</li>
-</ol>
-<p>(Demo note: current flash aliases resolve to <em>thinking</em> models — the demo disables the thinking
-budget and bounds <code>maxOutputTokens</code>, or a short generation spends its whole budget on reasoning
-and returns <code>MAX_TOKENS</code> with no visible text.)</p>
-<h2 id="observations-and-round-notes">Observations and round notes<a class="headerlink" href="#observations-and-round-notes" title="Permanent link">&para;</a></h2>
+<p>A value the grammar stores as text (<code>minimum=0</code>, <code>nullable=true</code>) is read as the keyword expects. In
+the exported JSON the same declaration is the nested object you would write by hand. The end node's
+<code>schema</code> is <strong>documentary</strong>: it describes the response in the OpenAPI document and is never enforced,
+headers included.</p>
+<h2 id="vocabulary">The vocabulary<a class="headerlink" href="#vocabulary" title="Permanent link">&para;</a></h2>
+<p>The vocabulary is a closed subset of OpenAPI 3.0 keywords, and the gate refuses any other keyword:</p>
+<table>
+<thead>
+<tr>
+<th>Keywords</th>
+<th>Applies to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code> - <code>object</code>, <code>array</code>, <code>string</code>, <code>number</code>, <code>integer</code>, <code>boolean</code></td>
+<td>every schema; a header is <code>string</code>, <code>number</code>, <code>integer</code> or <code>boolean</code></td>
+</tr>
+<tr>
+<td><code>properties</code>, <code>required</code>, <code>additionalProperties</code></td>
+<td><code>object</code></td>
+</tr>
+<tr>
+<td><code>items</code>, <code>minItems</code>, <code>maxItems</code></td>
+<td><code>array</code></td>
+</tr>
+<tr>
+<td><code>enum</code>, <code>nullable</code></td>
+<td>any scalar (<code>nullable</code> not on a header)</td>
+</tr>
+<tr>
+<td><code>minimum</code>, <code>maximum</code>, <code>exclusiveMinimum</code>, <code>exclusiveMaximum</code></td>
+<td><code>number</code>, <code>integer</code></td>
+</tr>
+<tr>
+<td><code>minLength</code>, <code>maxLength</code>, <code>pattern</code></td>
+<td><code>string</code></td>
+</tr>
+<tr>
+<td><code>title</code>, <code>description</code>, <code>example</code>, <code>format</code></td>
+<td>documentary - carried, never validated</td>
+</tr>
+</tbody>
+</table>
+<p>The rules that follow from it:</p>
 <ul>
-<li><strong>No mechanism defects found.</strong> All five scenarios behaved per the ratified design on the
-  first complete run.</li>
-<li><strong>Sizing note for operators:</strong> <code>sync.stream.ttl.seconds</code> bounds two things at once — how
-  long a crashed UI pod's rendezvous accepts posts into the void, and how long a stalled
-  consumer's queue survives. The 1800s default favors long-lived quiet notification
-  channels; deployments with chatty producers may prefer a smaller value (this run used 30s
-  to make the bound observable).</li>
-<li><strong>One demo-side fix during the round</strong> (not a mechanism issue): a function addressed
-  <em>directly</em> by a rest.yaml entry receives the whole <code>AsyncHttpRequest</code> object as its input —
-  the JSON body is inside it — unlike a flow task, whose input mapping extracts
-  <code>input.body</code>. The demo's producer endpoint now unwraps accordingly
-  (<code>new AsyncHttpRequest(request.getBody())</code>), and the
-  <a href="../../guides/rest-automation/">REST automation guide</a> now states the contract
-  explicitly for interceptor/untyped functions (gap closed in the same round, confirmed by
-  the maintainer).</li>
-<li>The demo's <code>stream-ui</code> / <code>stream-producer</code> profiles are permanent: the runbook in the
-  <a href="https://github.com/Accenture/mercury-composable/tree/main/examples/sync-over-async-demo">sync-over-async-demo README</a>
-  reproduces this report end-to-end with three terminals and <code>curl</code>.</li>
+<li><strong>Strict JSON types.</strong> A numeric string is not a number and <code>true</code> is not <code>1</code>; an integral float
+  (<code>2.0</code>) counts as an integer. Money is <code>type: string</code> with a <code>pattern</code>, as the
+  <a href="../skills-reference/#math-decimal"><code>DECIMAL</code> statement</a> already advises - a JSON number is a double
+  on the wire.</li>
+<li><strong>A header is text.</strong> <code>type: integer</code>, <code>number</code> or <code>boolean</code> validates the parsed text (<code>"12"</code>
+  passes <code>integer</code>, <code>"many"</code> fails). Header names match <strong>case-insensitively</strong>, the engine's rule for
+  <code>input.header.*</code>; the declared spelling is kept in the document. <code>properties</code>, <code>required</code>, <code>items</code>,
+  <code>minItems</code>, <code>maxItems</code>, <code>additionalProperties</code> and <code>nullable</code> do not apply to a header.</li>
+<li><strong><code>pattern</code></strong> runs after <code>maxLength</code>, in the regular-expression subset common to the Java and the
+  Rust engine: lookaround, atomic groups, backreferences and possessive quantifiers are refused at
+  the gate, and character classes are Unicode-aware on both engines. A pattern comes from the author,
+  never from the caller.</li>
+<li><strong><code>additionalProperties</code></strong> keeps OpenAPI's default: extra fields pass unless the author declares
+  <code>false</code> (or a schema for them). Lengths count code points.</li>
+<li><strong>At most ten violations</strong> are reported per message, with the rest counted (<code>; and 3 more</code>).</li>
 </ul>
-<h2 id="what-remains">What remains<a class="headerlink" href="#what-remains" title="Permanent link">&para;</a></h2>
-<p>Nothing — scenario 6 completed the E-series (E4, the blueprint payoff). The transport half of
-agent-orchestration Q8's second question is delivered: a graph/LLM wrapper posts its token stream
-to the return route as it works, and whichever pod holds the user's connection renders it. Driving
-this bridge from an LLM node <em>inside</em> a live graph run is the agent-orchestration thread's next
-experiment, on the foundation recorded here.</p>
+<p>The deployment gate (<code>CompileGraph</code>, the graph packager, the graph-set loader and the Playground's
+pre-run check) compiles both declarations and refuses the model when one is malformed, naming the
+location:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Rejected graph payment - node root - schema.body.properties.amount: unknown keyword 'min' - the vocabulary is type, properties, required, items, enum, minimum, maximum, exclusiveMinimum, exclusiveMaximum, minLength, maxLength, pattern, minItems, maxItems, nullable and additionalProperties (title, description, example and format are documentary)
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>Rejected graph payment - node root - schema.header.properties.X-Count: 'pattern' does not apply to type integer
+</code></pre></div>
+<p>A keyword that cannot apply to the declared type is refused like an unknown one, because a constraint
+the validator would silently ignore teaches that <em>unflagged means safe</em>. A <strong>mismatch</strong> between the
+declaration and the model's data surface - a declared path the model never reads, or a read path the
+declaration lacks - is a WARN at deploy and pack time (<code>Graph payment - input.body.note is declared but
+never referenced by the model</code>), never a refusal: a declaration may describe what a whole-body
+passthrough forwards.</p>
+<h2 id="discovery">Discovery and <code>describe graph</code><a class="headerlink" href="#discovery" title="Permanent link">&para;</a></h2>
+<p>The engine derives the contract from the model in three tiers and merges the declaration over it:</p>
+<ol>
+<li><strong>The path scan</strong> - every <code>input.*</code> and <code>output.*</code> reference in mappings, statements, <code>for_each</code>
+   sources and JSONPath <code>$.input.body...</code> expressions, with nesting and the array markers <code>[]</code>, <code>[*]</code>
+   and <code>[0]</code>.</li>
+<li><strong>Direct evidence</strong> - typed constants and wrappers (<code>int(…)</code>, <code>boolean(…)</code>, <code>text(…)</code>), plugins with
+   a known result (<code>f:now</code> is a string, <code>f:listOfMap</code> a list), <code>for_each</code> sources (lists), <code>graph.math</code>
+   results and operands (arithmetic and ordered comparisons are numbers; a boolean is never a number).</li>
+<li><strong>One hop</strong> through a typed <code>model.*</code> or <code>{node}.result.*</code> variable, and a <code>graph.extension</code>
+   target's declared <code>schema.body</code> as its <code>result</code>.</li>
+</ol>
+<p>The declaration wins: a discovered path the declaration lacks is appended untyped and flagged, and a
+declared path the model never references is kept and flagged. <code>describe graph {graph-id}</code> prints the
+merged surface with its types, <code>[declared]</code> on a path only the declaration knows, every staged
+<code>output.status</code>, and the document's URL:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Input surface:
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  input.body.amount (number)
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  input.body.currency (string)
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  input.body.note (string) [declared]
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  input.header.X-Tenant (string)
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  input.header.X-Retry (integer)
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>Output surface:
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  output.body.charged (number)
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  output.body.currency (string)
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  output.body.status (string)
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>Declared schema: input
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>OpenAPI document: GET /api/openapi/payment
+</code></pre></div>
+<p>The same derivation is what the Schema panel and an agent read as JSON through
+<code>?view=contract</code> (below): <code>input.body.paths[]</code> with <code>path</code>, <code>type</code>, <code>origin</code> (<code>declared</code>,
+<code>discovered</code> or <code>both</code>), <code>required</code> and <code>usedBy</code>, and <code>issues[]</code> with the mismatches. Query
+parameters are not part of a graph's API - <code>/api/graph/{graph-id}</code> is one endpoint URI for every
+graph - so they are neither declared nor derived.</p>
+<h2 id="openapi">The OpenAPI document on demand<a class="headerlink" href="#openapi" title="Permanent link">&para;</a></h2>
+<p>Dev-mode routes (<code>app.env=dev</code>, in the five <code>rest.yaml</code> copies the starter and the examples carry):</p>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Answers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /api/openapi/{graph-id}</code></td>
+<td>the document of a <strong>deployed</strong> graph, as a YAML attachment named <code>{graph-id}.yaml</code></td>
+</tr>
+<tr>
+<td><code>GET /api/openapi/{graph-id}?format=json</code></td>
+<td>the same document as JSON inline</td>
+</tr>
+<tr>
+<td><code>GET /api/openapi/{graph-id}?view=contract</code></td>
+<td>the derived contract with its evidence, as JSON</td>
+</tr>
+<tr>
+<td><code>GET /api/openapi/session/{sessionId}</code></td>
+<td>the same three views for a session's <strong>draft</strong>, named after its root node's <code>name</code> (else <code>draft</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The document is derived from the model each time it is requested and never stored. It holds the graph's
+one endpoint, <code>POST /api/graph/{graph-id}</code>, with the request body schema, the declared or discovered
+<code>input.header.*</code> as header parameters (a declared header carries its <code>required</code> and its schema), the
+<code>200</code> response with its body schema and <code>output.header.*</code> as response headers, every status the model
+stages with <code>int(N) -&gt; output.status</code> as a response code, the engine's error shape
+(<code>{type, status, message}</code>) under <code>default</code>, <code>info</code> from the root node's <code>purpose</code> and the deployed
+set's version (else the application's <code>info.app.version</code>), and <code>servers</code> from the request's Host
+header, so a downloaded file points back at the engine that generated it:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sS<span class="w"> </span>-o<span class="w"> </span>payment.yaml<span class="w"> </span>-D<span class="w"> </span>-<span class="w"> </span>http://127.0.0.1:8085/api/openapi/payment
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1">#   Content-Type: application/yaml; charset=utf-8</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1">#   Content-Disposition: attachment; filename="payment.yaml"</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>curl<span class="w"> </span>-sS<span class="w"> </span><span class="s1">'http://127.0.0.1:8085/api/openapi/payment?view=contract'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">'.issues'</span>
+</code></pre></div>
+<p>An unknown graph or session answers 404; an unknown <code>format</code> or <code>view</code> answers 400.</p>
+<h2 id="validation">Input validation at the root<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h2>
+<p>When the root node carries a <code>schema</code>, <code>input.body</code> and <code>input.header</code> are validated against the root
+node's schema as the first thing at the root on every run, and a failed validation never reaches the
+root's own skill. The step is <strong>assumed</strong> by the engine - the walker sends one request to the
+built-in function <code>graph.schema.validator</code> with <code>{body, header, schema}</code> and nothing is written into
+the node, so there is no validator line to mistype and no second source of truth. A resumed
+traversal (<code>graph.resume</code>) never validates again.</p>
+<ul>
+<li><strong>Success</strong> is one line in the traversal log and on the Playground console:
+  <code>Input validated by graph.schema.validator in 2 ms</code>.</li>
+<li><strong>Failure</strong> is the standard task error path. The deployed endpoint answers <strong>400</strong> with every
+  violation in one message:
+  <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"error"</span><span class="p">,</span><span class="w"> </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="mi">400</span><span class="p">,</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w"> </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Input validation failed - input.body.amount: expected number, got string; input.body.currency: must be one of USD, EUR; input.body.note: must be at most 40 characters; input.header.X-Tenant: required"</span><span class="p">}</span>
+</code></pre></div>
+  The Playground prints <code>Graph traversal aborted: Input validation failed - ... (node root)</code>.</li>
+<li><strong>A root <code>exception=</code> handler</strong> takes over a failed validation with the generic exception context,
+  <code>error.message</code>, <code>error.source</code> (<code>root</code>) and <code>error.code</code> (<code>400</code>), so a graph can answer in its own
+  shape - the shipped test graph answers 422 with a <code>reason</code>.</li>
+<li>The application property <strong><code>graph.schema.validator</code></strong> names a substitute function with the same
+  contract (<a href="../../configuration-reference/#graph-schema-validator">configuration reference</a>); a
+  direct caller gets <code>{valid: true}</code> or a 400 whose error is the message above, and a refused
+  schema <code>Invalid schema - schema.body: unknown keyword 'min' - ...</code>.</li>
+</ul>
+<p>A dry run in the Playground validates the input exactly as a deployed run does: <code>instantiate graph</code>,
+Upload the mock body and headers, <code>run</code>, and the console shows the same line or the same refusal. The
+Upload step's <strong>Headers</strong> rows (<code>POST /api/mock/{sessionId}?namespace=header</code>) are how a dry run
+satisfies a header requirement.</p>
+<p>Validation is a <strong>contract check, not business logic</strong>: it says what a well-formed request is. A rule
+such as "a refund may not exceed the charge" belongs to a <code>graph.math</code> node that stages
+<code>int(400) -&gt; output.status</code>, as before.</p>
+<h2 id="panel">The Schema panel<a class="headerlink" href="#panel" title="Permanent link">&para;</a></h2>
+<p><strong>Tools → Graph schema</strong> - or the "Open the Schema panel…" link in the root or end node editor -
+opens the panel in the console's slot. It has an <strong>Input</strong> tab (the root's <code>schema</code>) and an <strong>Output</strong>
+tab (the end's), each with a body section (one row per path) and a header section (one row per
+header name): the path or name, the type (an array also has an item type), <strong>req</strong>, the description,
+an example, and a chip saying where the row came from:</p>
+<table>
+<thead>
+<tr>
+<th>Chip</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>declared</code></td>
+<td>on the node; the tooltip names the nodes that also reference the path</td>
+</tr>
+<tr>
+<td><code>discovered</code></td>
+<td>referenced by the model, not declared yet</td>
+</tr>
+<tr>
+<td><code>from last run</code></td>
+<td>typed from the instance's actual value</td>
+</tr>
+<tr>
+<td><code>new</code></td>
+<td>added in the panel, saved with the declaration</td>
+</tr>
+</tbody>
+</table>
+<p>A second chip summarizes the keywords the panel does not edit (<code>enum (2) · minimum 0 · pattern</code>);
+they are carried through a Save unchanged and edited in the node editor. The rows are pre-filled from
+the contract view; <strong>Fill from last run</strong> reads the instance's <code>input.body</code>, <code>input.header</code>,
+<code>output.body</code> and <code>output.header</code> after a dry run and fills the gaps - the only way to type a
+<code>graph.task</code>'s or a fetcher's result. <strong>Save</strong> writes the side's declaration through one <code>update node</code>
+command, so every member of a collaborative session sees it and an agent does the same by command;
+<strong>Download YAML</strong> saves the draft's document. What the gate or the grammar would refuse is flagged in
+place before anything is sent, and the engine's declaration-versus-model issues are listed above the
+rows. See <code>help schema</code> in the Playground.</p>
+<h2 id="api-playground">Round trip through the API playground<a class="headerlink" href="#api-playground" title="Permanent link">&para;</a></h2>
+<p>The document is written for the tooling the field already uses - Swagger UI and OpenAPI 3.0
+generators. With the <a href="https://github.com/Accenture/mercury-composable/tree/main/extensions/api-playground">API playground</a>
+(Swagger UI served by a Mercury app) and a MiniGraph application in dev mode:</p>
+<ol>
+<li><strong>Load the engine's URL directly.</strong> Paste <code>http://127.0.0.1:8085/api/openapi/payment</code> into the
+   Swagger UI explore bar. The dev routes carry the wildcard CORS entry, so the browser may read it,
+   and <code>servers</code> points at the engine, so <strong>Try it out</strong> posts the request body and the header
+   parameters to <code>POST /api/graph/payment</code> on the engine - a bad request shows the 400 above.</li>
+<li><strong>Or keep the file.</strong> Download <code>payment.yaml</code> (the attachment, or the Schema panel's <strong>Download
+   YAML</strong>), copy it into the API playground's <code>resources/sample/yaml</code> folder (or the externalized
+   folder its <code>static-locations</code> names), and <code>GET /api/specs</code> lists it beside <code>demo.yaml</code>;
+   <code>http://127.0.0.1:8200/yaml/payment.yaml</code> loads it. A file kept this way is a point-in-time
+   export; the engine's URL is always current.</li>
+<li><strong>Round trip.</strong> Correct the graph in the Playground - a type, a <code>required</code>, a new path - Save in the
+   Schema panel, and reload the explore bar: the document follows the draft at
+   <code>/api/openapi/session/{sessionId}</code>, and the deployed graph's at <code>/api/openapi/{graph-id}</code> after
+   the next deploy.</li>
+</ol>
+<h2 id="design-rules">Design rules<a class="headerlink" href="#design-rules" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Confirm, don't type.</strong> Start from <code>describe graph</code> or the panel's discovery, then declare the
+  types the model does not reveal - a task's or a fetcher's result - from a dry run.</li>
+<li><strong>Declare what you validate.</strong> A declared path the model never reads is a warning for a reason:
+  a contract wider than the model is a promise the graph does not keep.</li>
+<li><strong>Keep the response documentary.</strong> The end node's <code>schema</code> describes; the engine never refuses its
+  own response.</li>
+<li><strong>Money is text.</strong> <code>type: string</code> with a <code>pattern</code>, validated at the root and computed with
+  <code>DECIMAL:</code>.</li>
+<li><strong>Validation is not rules.</strong> A business rule stays a <code>graph.math</code> statement with a staged status;
+  the schema says what a request <em>is</em>, not whether it <em>may</em> proceed.</li>
+</ul>
+<h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../command-reference/#describe">MiniGraph command grammar</a> - <code>describe graph</code> and the node grammar
+  the declaration is written in.</li>
+<li><a href="../ai-agent-guide/#contract-schema">AI agent guide</a> - the recipe an agent follows to declare a
+  contract through the companion endpoint.</li>
+<li><a href="../playground-and-companion/">Playground &amp; AI companion</a> - the Schema panel among the Tools.</li>
+<li><a href="../../configuration-reference/#graph-schema-validator">Configuration reference</a> -
+  <code>graph.schema.validator</code>.</li>
+<li><a href="../skills-reference/#math-decimal">Built-in skills reference</a> - the <code>DECIMAL</code> statement for exact
+  money arithmetic.</li>
+</ul>
 
 
 
 
 
 
-
-  
-  
 
 
 
@@ -3328,7 +3487,7 @@ experiment, on the foundation recorded here.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../distributed-cache-interop/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Interop Test Report — Distributed Cache">
+          <a href="../playground-and-companion/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Playground &amp; AI companion">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3338,20 +3497,20 @@ experiment, on the foundation recorded here.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Interop Test Report — Distributed Cache
+                Playground & AI companion
               </div>
             </div>
           </a>
         
         
           
-          <a href="../otel-dynatrace-certification/" class="md-footer__link md-footer__link--next" aria-label="Next: Test Report — OpenTelemetry forwarder (Dynatrace)">
+          <a href="../property-graph/" class="md-footer__link md-footer__link--next" aria-label="Next: Minimalist Property Graph">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Test Report — OpenTelemetry forwarder (Dynatrace)
+                Minimalist Property Graph
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -3392,10 +3551,10 @@ experiment, on the foundation recorded here.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

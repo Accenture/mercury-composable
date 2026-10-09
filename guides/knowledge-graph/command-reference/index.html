@@ -1259,6 +1259,8 @@
       
         
       
+        
+      
     
     
     
@@ -1845,6 +1847,34 @@
     
   
     Playground & AI companion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../graph-contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The graph contract
   
 
     
@@ -3720,6 +3750,9 @@ block); one-line commands are self-contained.</p>
 <li>A node has <strong>zero or one</strong> skill, set with <code>skill={route}</code>.</li>
 <li><code>{name}</code> is lowercase letters, digits and hyphen (<code>root</code>/<code>end</code> reserved); <code>{type}</code> is a descriptive label,
   conventionally <strong>Capitalized</strong> (<code>Root</code>, <code>Fetcher</code>, <code>Module</code> — see <a href="#lexical">lexical</a>).</li>
+<li>The root node's optional <code>schema</code> property declares the <strong>request contract</strong> and the end node's the
+  response — <code>schema.body.properties.amount.type=number</code>, <code>schema.header.required[]=X-Tenant</code> — in a
+  closed subset of OpenAPI 3.0 that the gate checks; see <a href="../graph-contract/#declare">the graph contract</a>.</li>
 </ul>
 <h3 id="connect">connect<a class="headerlink" href="#connect" title="Permanent link">&para;</a></h3>
 <p>One-line. <strong>Directional</strong> — <code>connect a to b</code> differs from <code>connect b to a</code>.</p>
@@ -3808,7 +3841,11 @@ reads as living documentation. <code>list flows</code> enumerates the Event Scri
 <code>extension=flow://{flow-id}</code>. <strong><code>describe graph {graph-id}</code></strong> then shows a deployed model's
 <strong>contract view</strong> — its purpose, size, and the <code>input.*</code> / <code>output.*</code> data surface derived
 from the model's own mappings — so an agent can wire the delegation's <code>input[]</code>/<code>output[]</code>
-without out-of-band knowledge or trial execution.</p>
+without out-of-band knowledge or trial execution. Since RFC-0007 the view carries <strong>types</strong> where the
+model or the declaration gives them (<code>input.body.amount (number)</code>), <code>[declared]</code> on a path only the
+root's or end's <code>schema</code> knows, every staged <code>output.status</code>, a <code>Declared schema:</code> line and the URL of
+the graph's OpenAPI document (<code>GET /api/openapi/{graph-id}</code>; <code>?view=contract</code> answers the same
+derivation as JSON) — see <a href="../graph-contract/#discovery">the graph contract</a>.</p>
 <h3 id="export">export / import<a class="headerlink" href="#export" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>export graph as {name}
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>import graph from {name}
@@ -4449,6 +4486,10 @@ next scaled addend restores the scale. The decimal plugins run in a mapping too 
 <li>A node is <strong>executed once</strong> per run (loop guard); a <code>graph.math</code> <code>RESET</code> statement is the only
    escape, for advanced re-execution.</li>
 <li><code>instantiate graph</code> must precede <code>run</code> / <code>execute</code> / <code>inspect</code>.</li>
+<li>When the root node carries a <code>schema</code>, every run validates <code>input.body</code> and <code>input.header</code> against
+   it <strong>first</strong> — before the root's own skill — and a failed validation aborts the run with every
+   violation (HTTP 400 when deployed); the gate refuses a <code>schema</code> outside the
+   <a href="../graph-contract/#vocabulary">closed vocabulary</a>.</li>
 </ol>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
