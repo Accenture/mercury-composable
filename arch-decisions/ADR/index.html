@@ -2169,6 +2169,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0029" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0029 — The graph contract: a schema on the root and end nodes, discovered and declared, validated at the root by an assumed step, and served as OpenAPI 3.0 on demand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0028" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3191,6 +3202,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0029" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0029 — The graph contract: a schema on the root and end nodes, discovered and declared, validated at the root by an assumed step, and served as OpenAPI 3.0 on demand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0028" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3546,6 +3568,113 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0029">ADR-0029 — The graph contract: a <code>schema</code> on the root and end nodes, discovered and declared, validated at the root by an assumed step, and served as OpenAPI 3.0 on demand<a class="headerlink" href="#adr-0029" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-10-09 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> graph-contract-by-declaration</p>
+<!-- id: adr-0029 | status: accepted -->
+
+<p><strong>Abstract.</strong> A graph model carries an explicit, machine-readable <strong>contract</strong>: an optional <code>schema</code> property on the root node
+describes the request (<code>schema.body</code> for <code>input.body</code>, <code>schema.header</code> for <code>input.header</code>) and an optional <code>schema</code> on the end node
+describes the response, each in a closed subset of OpenAPI 3.0 keywords and stored through the Playground grammar's composite keys,
+so the contract travels with the graph through export, import, pack and <code>graph.extension</code>. The engine <strong>discovers</strong> the data surface
+the model reads and writes and as much typing as the model gives, and the declaration wins where both speak. A root <code>schema</code> turns
+on <strong>input validation</strong> as a step the engine assumes at the root of every run, through the built-in function
+<code>graph.schema.validator</code>, so a dry run in the Playground and a deployed run refuse the same bad request with the same message. A
+dev-mode endpoint answers a minimal <strong>OpenAPI 3.0 document</strong> derived from the model each time it is requested and never stored, and
+the Playground's <strong>Schema panel</strong> edits the contract as rows. Proposed as RFC-0007 in <a href="../RFC/"><code>RFC.md</code></a> from Eric's design of
+2026-10-08, delivered in four work packages on both engines on 2026-10-09 (the Java engine's PRs #533, #534, #535 and #536; the
+Rust engine's PRs #370 to #373, Increments 171 to 174) and accepted on 2026-10-09, the points left open in the register accepted as
+implemented. The guide page is <code>docs/guides/knowledge-graph/graph-contract.md</code>.</p>
+<p><strong>Context.</strong> A graph is deployed as one endpoint, <code>POST /api/graph/{graph_id}</code>, and until now its request and response shapes
+lived only in the mappings that read and write them: a viability study over the fourteen bundled tutorials found that of 57 output
+mappings 15 carry a type and of 31 input references 2, and none reads a header. A consumer of the endpoint had no document to code
+against, the api-playground had nothing to load, and a bad request failed wherever the first mapping met it, deep in the traversal,
+with a message about a mapping rather than about the request. The Playground's Upload step gained mock request headers the same
+day the design was settled (PR #531; the Rust engine's PR #369, Increment 170), so a dry run could satisfy a header requirement
+before the sprint began. The shared <code>describe graph</code> scanner, byte-identical in both engines, already walked every mapping; the
+graph set work (ADR-0027) had just established the pattern of one shared gate method, shared vector files and a left-slot panel.</p>
+<p><strong>Decision.</strong></p>
+<ul>
+<li><strong>The declaration.</strong> The root node may carry <code>schema</code>, describing the request, and the end node may carry <code>schema</code>, describing
+  the response; the node says which side it is. Each has two optional parts that mirror the state machine's namespaces:
+  <code>schema.body</code>, a schema object for <code>input.body</code> or <code>output.body</code>, and <code>schema.header</code>, an object schema whose properties are
+  header names for <code>input.header</code> or <code>output.header</code>. Both are nested property maps written through the grammar's composite keys
+  (<code>schema.body.type=object</code>, <code>schema.body.required[]=a</code>, <code>schema.body.properties.a.type=number</code>,
+  <code>schema.header.properties.x-api-key.type=string</code>), so <code>edit node</code>, <code>update node</code> and the node editor carry them with no new
+  grammar, and the root and end nodes stay skill-less in the common case. Query parameters are neither declared nor derived:
+  <code>/api/graph/{graph_id}</code> is one endpoint URI for every graph, by design (Eric, 2026-10-08).</li>
+<li><strong>The vocabulary is a closed subset of OpenAPI 3.0 keywords, by their OpenAPI names:</strong> <code>type</code> (object, array, string, number,
+  integer, boolean), <code>properties</code>, <code>required</code>, <code>items</code>, <code>enum</code>, <code>minimum</code>, <code>maximum</code>, <code>exclusiveMinimum</code>, <code>exclusiveMaximum</code>,
+  <code>minLength</code>, <code>maxLength</code>, <code>pattern</code>, <code>minItems</code>, <code>maxItems</code>, <code>nullable</code> and <code>additionalProperties</code>, with <code>title</code>, <code>description</code>,
+  <code>example</code> and <code>format</code> documentary and never validated. <strong>The gate refuses any other keyword, and a keyword that cannot apply to
+  the declared type,</strong> because a constraint the validator silently ignores teaches that unflagged means safe (the partial-gate
+  lesson of 2026-09-18). Types are strict JSON types: a numeric string is not a number, an integral float counts as an integer,
+  and money is <code>type: string</code> with a <code>pattern</code>, as the <code>DECIMAL:</code> guidance already says. <code>additionalProperties</code> keeps OpenAPI's
+  default, so extra fields pass unless the author declares <code>false</code>. A <code>pattern</code> runs after <code>maxLength</code>, is searched with
+  Unicode-aware classes in the regex subset common to Java and the Rust crate, and a textual check refuses lookaround, atomic
+  groups, backreferences and possessive quantifiers on both engines; a pattern comes from the author, never the caller. The values
+  the grammar stores as text (<code>minimum=0</code>, <code>nullable=true</code>) are read as the schema expects. A schema compiles once per compiled
+  model, the end node's by the same rule; a malformed schema fails the gate with its location, at deploy and at pack time.</li>
+<li><strong>Discovery, and the declaration wins.</strong> One contract class per engine, extracted from the shared <code>describe graph</code> scanner,
+  derives the surface from the path scan (names, nesting, arrays from <code>[]</code>, <code>[*]</code> and <code>[0]</code>), direct evidence (typed constants and
+  wrappers, known plugin results, <code>for_each</code> sources, JSONPath star steps) and one-hop propagation through the model namespace (a
+  <code>COMPUTE</code> result is a number, a <code>CONDITION</code> a boolean, a <code>DECIMAL</code> a string, a pass-through from a typed input its type, a
+  <code>graph.extension</code> target's declared output its result), and records which nodes reference each path. A discovered path the
+  declaration lacks is appended untyped and flagged; a declared path the model never references is kept and flagged, because a
+  declaration may describe what a whole-body passthrough forwards. The mismatch is a WARN in the gate at deploy and pack time and
+  an issue in the contract view, never a refusal. <code>describe graph</code> prints the declaration with its types.</li>
+<li><strong>Validation is a step the engine assumes, never a property written into the node</strong> (Eric, 2026-10-08: an assumed property
+  leaves no room for a typo). When the root carries <code>schema</code>, both walkers, the executor and the Playground's traveler, send one
+  synchronous request to <code>graph.schema.validator</code> with <code>{body, header, schema}</code> on the run's first visit to the root, armed when the
+  run begins and never on a resumed traversal; the request and response shape, the staging of a failure under <code>root.*</code> and the
+  error path are exactly a task node's, so a 400 becomes the run's abort status, the root's <code>exception=</code> handler, or the console
+  line of a dry run, and a root node's own skill runs only after a successful validation. The message carries up to ten violations
+  with the rest counted: <code>Input validation failed - input.body.a: expected number; input.body.b: required; input.header.x-api-key:
+  required</code>. Header names match case-insensitively, the engine's rule for <code>input.header.*</code>; a header value is text, so <code>type:
+  integer</code>, <code>number</code> or <code>boolean</code> validates the parsed text. The traversal log and the console record <code>Input validated by
+  graph.schema.validator in N ms</code>. The application property <code>graph.schema.validator</code> names a substitute function with the same
+  contract. The end node's <code>schema</code> is documentary at run time: the response is not validated.</li>
+<li><strong>The OpenAPI document is derived on demand and never stored.</strong> The dev-mode <code>GET /api/openapi/{graph_id}</code> answers a minimal
+  OpenAPI 3.0 document for a deployed graph as a YAML attachment (<code>?format=json</code> for JSON): <code>info</code> from the root node's <code>purpose</code>
+  and the deployed set's version, <code>servers</code> from the request's Host header so a downloaded file points back at the engine that
+  generated it, the one <code>POST</code> path with the request-body schema, the <code>200</code> response schema, every <code>int(N) -&gt; output.status</code>
+  constant as a response code, the declared or discovered <code>output.header.*</code> as response headers, the declared or discovered
+  <code>input.header.*</code> as header parameters, and the standard error shape. <code>GET /api/openapi/session/{sessionId}</code> answers the same for
+  a session's draft, and <code>?view=contract</code> answers the typed path list with its origins, users and issues for the panel. The file
+  drops into <code>extensions/api-playground</code> unchanged.</li>
+<li><strong>The Schema panel edits the contract as rows and saves through the existing command.</strong> A left-slot panel opened from the Tools
+  menu or from the root or end node editor shows Input and Output tabs, a body section with one row per path and a header section
+  with one row per header name, pre-filled from the contract view. It edits a row's path, type, requiredness, description and
+  example only; the other keywords of the subset show as a read-only summary chip and travel through Save unchanged, the node
+  editor being where they are edited. A chip reads <code>declared</code>, <code>discovered</code>, <code>from last run</code> or <code>new</code>; <em>Fill from last run</em> infers
+  types and examples from the instance's actual <code>input</code> and <code>output</code> through the inspect endpoint, the only way to type a task's or
+  a fetcher's result. Save is one <code>update node</code> with the node's other properties re-sent as the node editor sends them, because the
+  engine clears a node's property set on update, so every session member sees the change and an AI agent does the same by command.</li>
+<li><strong>The evidence standard.</strong> Two vector files, byte-identical in both repositories, pin the contract: <code>graph-contract-vectors.json</code>
+  (six models with their discovered contract and document) and <code>graph-schema-vectors.json</code> (56 compile cases with their accept or
+  reject message, 29 validate cases, 2 report cases); the Rust engine matched each on its first run. Five claims per engine pin the
+  normative sentences of the guide page on named tests. A change to the vocabulary, the message shape or the document is a change
+  to those files and to this decision, not a refactor.</li>
+</ul>
+<p><strong>Alternatives.</strong> (b) <em>Discovery only, no declaration:</em> the shape comes free and honestly, but it is never a real contract and
+nothing validates. (c) <em>Validator lines written into the root node at export or by the panel:</em> visible in the file, but two sources
+of truth (a re-imported graph carries them as draft properties, a removed schema leaves a dangling validator, a dry run validates
+only after an export and an import); rejected by Eric on 2026-10-08. (d) <em>A dedicated validation skill:</em> one more built-in skill for a
+step every graph with a contract wants; the assumed step through the task machinery gives the same traversal-log line and error path
+without it. (e) <em>Sample a dry run only:</em> accurate types and examples, but per session and only after an execution; kept as the
+panel's <em>Fill from last run</em>, not as the contract. (f) <em>JSON Schema 2020-12 with OpenAPI 3.1:</em> fuller, but the api-playground's
+Swagger UI and the field's tooling target 3.0; revisit when a 3.1-only keyword is needed. (a), declaration plus discovery with
+validation assumed by the engine, was chosen: the file stays as authored, the dry run and the deployed run behave identically, the
+function stays the atom, and the root keeps a skill of its own.</p>
+<p><strong>Consequences.</strong> Both engines are committed to the two <code>schema</code> properties with their <code>body</code> and <code>header</code> parts, the closed
+vocabulary, validation by declaration at the root as an assumed step, the derived document and the gate rules. The change is opt-in
+per graph: a model without <code>schema</code> runs as before, and a model that declares one now answers a bad request with status 400 at the
+root, before any node runs, on the dry run and in production alike, so a graph certified with a contract is certified against it.
+<code>graph.schema.validator</code> is a reserved route name in every application that deploys graphs, and a substitute named through the
+property must honour the same request and response. The vocabulary grows only by decision: a keyword the field asks for is weighed
+against the partial-gate lesson, added to both engines and to the vectors together. The <code>mercury-python</code> and <code>mercury-nodejs</code>
+language packs are not involved. Deferred, deliberately: response validation at the end node, OpenAPI 3.1, schema reuse across
+graphs, and query parameters, which the one-endpoint design excludes rather than defers.</p>
 <hr />
 <h2 id="adr-0028">ADR-0028 — The MessagePack codec is the engine's own: the zero-dependency <code>minimalist-msgpack</code> module replaces msgpack-core<a class="headerlink" href="#adr-0028" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-10-06 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> minimalist-msgpack-codec</p>

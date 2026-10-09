@@ -3138,8 +3138,8 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 </code></pre></div>
 <hr />
 <h2 id="rfc-0007-the-graph-contract-a-schema-on-the-root-and-end-nodes-discovery-openapi-on-demand-input-validation-and-a-schema-panel">RFC-0007 — The graph contract: a <code>schema</code> on the root and end nodes, discovery, OpenAPI on demand, input validation and a Schema panel<a class="headerlink" href="#rfc-0007-the-graph-contract-a-schema-on-the-root-and-end-nodes-discovery-openapi-on-demand-input-validation-and-a-schema-panel" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-10-08 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>graph-contract-schema</code></p>
-<!-- id: rfc-0007 | status: open | thread: graph-contract-schema -->
+<p><strong>Status:</strong> Promoted → ADR-0029 · <strong>Raised:</strong> 2026-10-08 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>graph-contract-schema</code></p>
+<!-- id: rfc-0007 | status: promoted | thread: graph-contract-schema -->
 
 <p><strong>Proposal.</strong> Give a graph model an explicit, machine-readable contract and put it to three uses, from Eric's design of
 2026-10-08 (the viability study is in the session log <code>memory/sessions/</code> of that date). <strong>(1) Declaration.</strong> An optional <code>schema</code>
@@ -3227,7 +3227,13 @@ function for the body and the headers, the assumed step in both walkers, the gat
 targets); <strong>WP4</strong> the help page, the command reference,
 the AI agent guide recipe, the api-playground round trip and the claims. Promotion follows the implementation, as RFC-0001,
 RFC-0002 and RFC-0005 did.</p>
-<p><strong>Resolution.</strong> (open)</p>
+<p><strong>Resolution.</strong> Promoted → ADR-0029 (2026-10-09, Eric): option (a), the declared schema with discovery and validation assumed by the
+engine. Accepted after all four work packages merged with green CI on both engines (the Java engine's PRs #533, #534, #535 and #536;
+the Rust engine's PRs #370 to #373, Increments 171 to 174), with the shared <code>graph-contract-vectors.json</code> and <code>graph-schema-vectors.json</code>
+passing in both. The points left open above are accepted as implemented: the keyword subset as listed, strict JSON types with an
+integral float as an integer, <code>additionalProperties</code> at OpenAPI's default, ten violations per message with the rest counted, the panel
+editing path, type, requiredness, description and example only, and a Save re-sending the node as the node editor does. The release
+vehicle is the next release (CHANGELOG Unreleased, Added items 2 to 5).</p>
 <hr />
 <h2 id="rfc-0006-an-in-house-messagepack-codec-systemminimalist-msgpack-replaces-orgmsgpackmsgpack-core">RFC-0006 — An in-house MessagePack codec: <code>system/minimalist-msgpack</code> replaces <code>org.msgpack:msgpack-core</code><a class="headerlink" href="#rfc-0006-an-in-house-messagepack-codec-systemminimalist-msgpack-replaces-orgmsgpackmsgpack-core" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Promoted → ADR-0028 · <strong>Raised:</strong> 2026-10-06 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>minimalist-msgpack</code></p>
