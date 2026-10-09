@@ -3608,6 +3608,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#scheduler-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scheduler.environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scheduler-environment-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scheduler.environment.store
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -6327,6 +6349,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#scheduler-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scheduler.environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scheduler-environment-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scheduler.environment.store
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -8899,6 +8943,46 @@ for a setup walkthrough.</p>
 </tbody>
 </table>
 <p>Location(s) of the cron job definition file(s). Multiple files are merged.</p>
+<h3 id="scheduler-environment"><code>scheduler.environment</code><a class="headerlink" href="#scheduler-environment" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code></td>
+<td><code>prod</code></td>
+</tr>
+</tbody>
+</table>
+<p>This instance's environment in an active-active deployment, e.g. <code>scheduler.environment=${ENV_NAME:prod}</code>; one word of letters,
+digits, hyphens and underscores, compared case-insensitively with the <em>active environment</em> - the one whose scheduler runs the jobs,
+<code>prod</code> until the operations team sets another. When this instance's environment is not the active one, the scheduler stands by: a scheduled job is skipped with one log line, and an operator's manual run is still honoured. The operations team moves the active environment through the application's REST endpoint (the example's
+<code>POST /api/scheduler/environment</code>), which writes the store below.</p>
+<h3 id="scheduler-environment-store"><code>scheduler.environment.store</code><a class="headerlink" href="#scheduler-environment-store" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (route)</td>
+<td><code>v1.environment.store</code></td>
+</tr>
+</tbody>
+</table>
+<p>The function that holds the active environment - its source of truth - read at every scheduled point before a job runs and written
+when the active environment moves, so one call moves every instance of every site and a pod restart does not reset the operations
+team's choice. The application implements it against its own data store (header <code>type=get</code> answers the persisted name as text,
+empty when none was set yet; <code>type=set</code> with <code>environment</code> and <code>operator</code> persists it and answers <code>true</code>); the scheduler example's
+<code>EnvironmentStore</code> is the file-backed template. When the route is not registered, the value lives in memory only and the scheduler
+says so at startup.</p>
 <hr />
 <h2 id="postgresql-reactive-postgres-extension">PostgreSQL (<code>reactive-postgres</code> extension)<a class="headerlink" href="#postgresql-reactive-postgres-extension" title="Permanent link">&para;</a></h2>
 <p>These properties configure the optional <code>reactive-postgres</code> extension. <code>postgres.host</code>,

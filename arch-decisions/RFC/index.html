@@ -2219,6 +2219,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0008 — The mini-scheduler's active environment: one site runs the jobs of an active-active deployment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rfc-0007-the-graph-contract-a-schema-on-the-root-and-end-nodes-discovery-openapi-on-demand-input-validation-and-a-schema-panel" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3004,6 +3015,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0008 — The mini-scheduler's active environment: one site runs the jobs of an active-active deployment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rfc-0007-the-graph-contract-a-schema-on-the-root-and-end-nodes-discovery-openapi-on-demand-input-validation-and-a-schema-panel" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3136,6 +3158,42 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>**Options.** The alternatives on the table, with their trade-offs.
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>**Resolution.** Empty while open; `Promoted → ADR-NNNN (date)` or `Withdrawn (date): &lt;reason&gt;`.
 </code></pre></div>
+<hr />
+<h2 id="rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment">RFC-0008 — The mini-scheduler's active environment: one site runs the jobs of an active-active deployment<a class="headerlink" href="#rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-10-09 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>scheduler-active-environment</code></p>
+<!-- id: rfc-0008 | status: open | thread: scheduler-active-environment -->
+
+<p><strong>Proposal.</strong> A field installation deploys the scheduler in Production and DR active-active. The DR scheduler fires the same
+jobs, whose flows publish to the DR Kafka cluster, and the DR applications - which must stay idle while Production is up - consume
+them: unintended side effects (Eric's problem statement, 2026-10-09). The module's existing mechanisms are single-site:
+<code>leader.election</code> picks one instance inside a service mesh and the state resolver dedupes inside one state store; neither spans two
+sites with two Kafka clusters. <strong>(1) A declared environment.</strong> <code>scheduler.environment</code> names this instance's environment (an
+application property, e.g. <code>${ENV_NAME:prod}</code>, default <code>prod</code>); the <em>active environment</em> is the one whose scheduler runs the jobs,
+<code>prod</code> until an operator sets another, so an unconfigured installation behaves as before. Not <code>app.env</code>, which already selects the
+Playground's dev mode (<code>@OptionalService("app.env=dev")</code>, 18 services): a Layer 3 application that also schedules jobs could not be
+in dev mode and count as Production at once. <strong>(2) Standby skips at execution, not at scheduling.</strong> Quartz keeps firing; the job
+executor compares the two values before anything runs and logs one line (<code>Standby: job demo-task skipped - the active environment
+is prod, this instance is DR</code>), so a switch takes effect at the next trigger with no restart. An operator's manual run is explicit
+and is honoured on a standby instance, with a log line saying so. <strong>(3) The value is persisted through a function the application
+implements</strong> (Eric, 2026-10-09: Kubernetes restarts a pod without notice, so an in-memory value would reset): the route named by
+<code>scheduler.environment.store</code> (default <code>v1.environment.store</code>), the contract <code>type=get</code> → the persisted name as text, <code>type=set</code> +
+<code>environment</code> + <code>operator</code> → <code>true</code>; the scheduler example's <code>EnvironmentStore</code> is the file-backed template, in the shape of the
+sample <code>StateResolver</code>, to be replaced by a database such as PostgreSQL or MongoDB. <strong>The store is the source of truth</strong> (Eric,
+2026-10-09, dropping a first <code>scheduler.active.environment</code> property: a startup value has no place beside a store): it is read at
+every scheduled point, before a job runs, so one call moves every instance of every site; the last value read is kept only as the
+fallback for a store that fails to answer; without a registered store the value lives in memory only and the scheduler warns at
+startup. <strong>(4) The switch is the application's REST endpoint</strong>, per the
+rest.yaml rule: the module exposes <code>ActiveEnvironment</code> (status, activate) and the example wires <code>GET</code>/<code>POST
+/api/scheduler/environment</code> (<code>{"active": "DR", "operator": "..."}</code>) through <code>v1.environment.admin</code>; the operations dashboard calls it
+before and after a Production maintenance window. A decision would commit the module to the two properties and their defaults, the
+skip-at-execution semantics, the store as the source of truth read at every scheduled point, its contract and the honoured manual run.</p>
+<p><strong>Options.</strong> <em>(a) Declared environment, skip at execution, persisted through an application function</em> - <strong>recommended</strong>: the
+dashboard's one call reaches every instance through the store, no restart, the field keeps its own data store. <em>(b) Pause the
+Quartz scheduler on standby</em> - no trigger log, and a resume races the first firings. <em>(c) Reuse <code>app.env</code></em> - collides with dev
+mode. <em>(d) Keep the value in memory per instance</em> - the dashboard's call reaches one instance behind a load balancer, and a pod
+restart resets it; rejected by Eric. <em>(e) Extend the state resolver's contract with the environment</em> - changes a contract the field
+has implemented for job state; a separate function keeps the two concerns apart.</p>
+<p><strong>Resolution.</strong> (open)</p>
 <hr />
 <h2 id="rfc-0007-the-graph-contract-a-schema-on-the-root-and-end-nodes-discovery-openapi-on-demand-input-validation-and-a-schema-panel">RFC-0007 — The graph contract: a <code>schema</code> on the root and end nodes, discovery, OpenAPI on demand, input validation and a Schema panel<a class="headerlink" href="#rfc-0007-the-graph-contract-a-schema-on-the-root-and-end-nodes-discovery-openapi-on-demand-input-validation-and-a-schema-panel" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Promoted → ADR-0029 · <strong>Raised:</strong> 2026-10-08 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>graph-contract-schema</code></p>
