@@ -15,7 +15,7 @@
   **Decided (Eric, 2026-10-09):** the two properties as proposed, `scheduler.environment=${ENV_NAME:prod}` and
   `scheduler.active.environment=prod`; the active environment PERSISTED through a function the field implements against its own
   database (a template like the example's `StateResolver`), because a pod restarts without notice. **Delivered 2026-10-09 on
-  `feat/scheduler-active-environment` (`1d116170`; PR for Eric to open):** `ActiveEnvironment` in the module (status, refresh from the
+  `feat/scheduler-active-environment` (`1d116170`; PR #539 opened by Eric, CI running):** `ActiveEnvironment` in the module (status, refresh from the
   store before every scheduled job, activate = persist then memory), the executor's standby skip with one log line and the honoured
   operator run, the startup announcement (a WARN when no store is registered); the example's file-backed `EnvironmentStore`
   (`v1.environment.store`, the `get`/`set` contract) and `EnvironmentAdmin` behind `GET`/`POST /api/scheduler/environment`; the
