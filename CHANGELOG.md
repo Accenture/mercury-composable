@@ -101,6 +101,13 @@ Each change merged to `main` after v4.12.21 is listed here; it moves under its r
    claims pin the prose on both engines: `graph-schema-closed-vocabulary`, `graph-input-validation-at-root`,
    `graph-openapi-on-demand`, `graph-contract-declaration-wins` and `graph-schema-dry-run-parity`. No upgrade action.
 
+6. **RFC-0007, the graph contract, is promoted to ADR-0029.** The decision record states what both engines are now committed to -
+   the two `schema` properties with their `body` and `header` parts, the closed OpenAPI 3.0 keyword subset the gate enforces,
+   validation by declaration at the root as a step the engine assumes, the OpenAPI document derived on demand and the Schema panel's
+   editing rules - and why: a graph deployed as one endpoint had no document to code against and failed a bad request wherever the
+   first mapping met it. The points the register left open are accepted as implemented. The RFC register keeps the proposal with
+   its resolution.
+
 ### Fixed
 
 3. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers

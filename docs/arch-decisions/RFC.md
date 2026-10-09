@@ -40,8 +40,8 @@
 ---
 
 ## RFC-0007 — The graph contract: a `schema` on the root and end nodes, discovery, OpenAPI on demand, input validation and a Schema panel
-**Status:** Open · **Raised:** 2026-10-08 · **Serves:** vision-mercury-composable · **Thread:** `graph-contract-schema`
-<!-- id: rfc-0007 | status: open | thread: graph-contract-schema -->
+**Status:** Promoted → ADR-0029 · **Raised:** 2026-10-08 · **Serves:** vision-mercury-composable · **Thread:** `graph-contract-schema`
+<!-- id: rfc-0007 | status: promoted | thread: graph-contract-schema -->
 
 **Proposal.** Give a graph model an explicit, machine-readable contract and put it to three uses, from Eric's design of
 2026-10-08 (the viability study is in the session log `memory/sessions/` of that date). **(1) Declaration.** An optional `schema`
@@ -132,7 +132,13 @@ targets); **WP4** the help page, the command reference,
 the AI agent guide recipe, the api-playground round trip and the claims. Promotion follows the implementation, as RFC-0001,
 RFC-0002 and RFC-0005 did.
 
-**Resolution.** (open)
+**Resolution.** Promoted → ADR-0029 (2026-10-09, Eric): option (a), the declared schema with discovery and validation assumed by the
+engine. Accepted after all four work packages merged with green CI on both engines (the Java engine's PRs #533, #534, #535 and #536;
+the Rust engine's PRs #370 to #373, Increments 171 to 174), with the shared `graph-contract-vectors.json` and `graph-schema-vectors.json`
+passing in both. The points left open above are accepted as implemented: the keyword subset as listed, strict JSON types with an
+integral float as an integer, `additionalProperties` at OpenAPI's default, ten violations per message with the rest counted, the panel
+editing path, type, requiredness, description and example only, and a Save re-sending the node as the node editor does. The release
+vehicle is the next release (CHANGELOG Unreleased, Added items 2 to 5).
 
 ---
 
