@@ -758,6 +758,8 @@
   DESIGN phase**, with experiments proving the prerequisites — progressive rendering of token
   batches being the one already demonstrated. Sole remaining Blueprint gap, deliberately
   long-horizon: an epic, not a task.
+  **Re-affirmed 2026-10-09 (Eric, at the stalled-thread gate [[close-stalled-threads-20261009]]):** stays open; the sequence is the
+  mini-scheduler's active-environment enhancement ([[scheduler-active-environment]]), then the v4.12.22 release, then this epic resumes.
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
