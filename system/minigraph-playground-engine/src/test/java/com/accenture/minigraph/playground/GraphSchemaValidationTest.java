@@ -104,14 +104,14 @@ class GraphSchemaValidationTest {
             assertFalse(CompiledGraphs.graphExists(id), id + " must be rejected by the quality gate");
             assertEquals(404, post(id, Map.of("amount", 1), Map.of()).getStatus());
         }
-        var ex = assertThrows(IllegalArgumentException.class, () -> GraphModelGate.validate("unit-test-schema-err1",
-                new ConfigReader("classpath:/graph/unit-test-schema-err1.json").getMap()));
+        var err1 = new ConfigReader("classpath:/graph/unit-test-schema-err1.json").getMap();
+        var ex = assertThrows(IllegalArgumentException.class, () -> GraphModelGate.validate("unit-test-schema-err1", err1));
         assertEquals("node root - schema.body.properties.amount: unknown keyword 'min' - the vocabulary is type, " +
                 "properties, required, items, enum, minimum, maximum, exclusiveMinimum, exclusiveMaximum, minLength, " +
                 "maxLength, pattern, minItems, maxItems, nullable and additionalProperties (title, description, " +
                 "example and format are documentary)", ex.getMessage());
-        ex = assertThrows(IllegalArgumentException.class, () -> GraphModelGate.validate("unit-test-schema-err2",
-                new ConfigReader("classpath:/graph/unit-test-schema-err2.json").getMap()));
+        var err2 = new ConfigReader("classpath:/graph/unit-test-schema-err2.json").getMap();
+        ex = assertThrows(IllegalArgumentException.class, () -> GraphModelGate.validate("unit-test-schema-err2", err2));
         assertEquals("node root - schema.header.properties.X-Count: 'pattern' does not apply to type integer",
                 ex.getMessage());
     }

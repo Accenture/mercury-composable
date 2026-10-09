@@ -206,7 +206,7 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     /**
      * A mock-data upload for a dry-run travels like a command: when the uploader is the primary session,
-     * its instance loads the payload and the upload is replayed into every subscriber's instance; a
+     * its instance loads the payload, and the upload is replayed into every subscriber's instance; a
      * subscriber forwards the payload to the primary, which does the same (the subscriber receives it
      * back on the replay). Every member of a collaborative session then runs the graph with the same
      * {@code input.body} (or {@code input.header}, the namespace the upload names), and every member's
@@ -1338,7 +1338,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private record DeployedGraph(String location, String json) { }
 
     /**
-     * Find a deployed model's JSON: the location whose copy compiled (the later manifest's
+     * Find a deployed model's JSON: the location whose copy compiled (the later manifest
      * when two manifests list the id) is searched first, then every deployed location in
      * manifest order.
      */

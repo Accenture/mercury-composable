@@ -154,7 +154,7 @@ public class GraphModelValidator {
      * The second rule is the same defect one step later: a {@code task} paired with a skill that
      * never reads one is equally inert. Only {@link GraphTask}, {@link GraphSuspend} and
      * {@link GraphResume} consume a task route - the latter two are documented supersets of
-     * graph.task whose {@code task} names the pluggable state-store function.
+     * 'graph.task' whose {@code task} names the pluggable state-store function.
      * <p>
      * The rule is <b>bidirectional</b> (Eric, 2026-09-16): those three skills each call a composable
      * function, so each one <em>requires</em> a task route as well. A {@code graph.task} node with no

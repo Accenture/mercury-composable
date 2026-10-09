@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The graph contract (RFC-0007) pinned by the shared vector file {@code graph-contract-vectors.json}: for
- * each case the contract view, the OpenAPI 3.0 document and the describe lines the engine must derive
+ * each case the contract view, the OpenAPI 3.0 document and the 'describe' lines the engine must derive
  * from the model alone. The same file, byte-identical, drives the Rust engine's test; a value compared
  * through the canonical packager is order- and integer-width-insensitive, so the two engines' maps are
  * compared as values.
