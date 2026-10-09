@@ -8,7 +8,7 @@
   cut (Increments 170 to 174; items 4 and 5 had been appended under the 4.12.21 heading by the WP3/WP4 commits and moved into the new
   section), fmt and clippy clean, `cargo test --workspace --no-fail-fast` 136 suites, 707 passed, 0 failed, 9 ignored. The language packs
   have no change since v4.12.21 and stay at it ([[conv-ports-adopt-java-release-number]]: lag, not divergence). PR bodies and release notes
-  drafted in the scratchpad. Next: Eric opens the two PRs, merges, tags `v4.12.22` on each, publishes the crates; then verify the tag
+  drafted in the scratchpad. **PRs opened by Eric 2026-10-09: mercury-composable #542, mercury #374 (titles as the commits; CI running).** Next: Eric merges, tags `v4.12.22` on each, publishes the crates; then verify the tag
   commits, rewrite `latest_release`, close this thread. Then [[bp-agent-orchestration]] resumes.
   → serves: vision-mercury-composable
   <!-- id: release-4-12-22 | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: working | origin: 2026-10-09-222413 -->
