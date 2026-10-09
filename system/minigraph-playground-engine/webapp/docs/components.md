@@ -206,7 +206,7 @@ steps **Instantiate**, **Upload** (optional) and **Run**:
 |---|---|---|---|
 | idle | Instantiate | disabled ("Instantiate the graph first") | disabled ("Instantiate the graph first") |
 | instantiating / outcome-uncertain | Instantiating… / Waiting… (`aria-busy`) | disabled | disabled |
-| ready | Instantiate (enabled: a fresh instance) | Upload (the tooltip says how many `input.body` paths the graph reads, or that uploading is optional) | Run |
+| ready | Instantiate (enabled: a fresh instance) | Upload (the tooltip says how many `input.body` paths and input headers the graph reads, or that uploading is optional) | Run |
 | running | disabled | disabled | Running… |
 
 Upload opens this session's mock-input form locally (`Playground.handleOpenMockUpload`,
@@ -252,10 +252,14 @@ click to dismiss, an optional action button (used for **Undo**). Auto-dismiss (3
 
 Props: `uploadPath` (e.g. `/api/mock/ws-417669-24`), `onSuccess(body, uploadPath)`,
 `onClose(uploadPath)`, `onError(message)`, and the optional `title`, `description`,
-`inputPathHints` and `submitLabel`. `Playground` passes a description (the JSON becomes the
-instance's `input.body`; in a shared session every member's instance receives it) and the
-`input.body.*` paths the graph references as hints, for the toolbar's Upload step and the console
-row's re-open button alike.
+`inputPathHints`, `inputHeaderHints` and `submitLabel`. `Playground` passes a description (the JSON
+becomes the instance's `input.body` and the optional headers its `input.header`; in a shared session
+every member's instance receives them), the `input.body.*` paths the graph references and the input
+header names it references as hints, for the toolbar's Upload step and the console row's re-open
+button alike. Below the JSON editor an optional **Headers** row editor (name and text value, `+ Add
+header`; a value without a name and a duplicate name, case-insensitively, are refused inline) collects
+mock request headers; `useMockUpload` posts the body first, then the header rows to
+`${uploadPath}?namespace=header`, so a failure names the step. Headers alone are a valid upload.
 
 A ribbon with the path and a close button, the hints (first six as `<code>`), a drop zone with a
 hidden `.json` file input and "Browse file…", the textarea (focused on mount), the status line

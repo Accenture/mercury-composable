@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import styles from './MockUploadPanel.module.css';
 import { tryParseJSON } from '../../utils/messageParser';
 import { formatJSON } from '../../utils/validators';
@@ -21,6 +21,8 @@ interface MockUploadPanelProps {
   description?: string;
   /** Derived graph paths shown as non-authoritative input hints. */
   inputPathHints?: string[];
+  /** Derived input header names shown as non-authoritative hints (`*` = the whole map). */
+  inputHeaderHints?: string[];
   /** Submit action label. Defaults to the existing Upload action. */
   submitLabel?: string;
 }
@@ -28,6 +30,42 @@ interface MockUploadPanelProps {
 // Derive macOS status once — no hook needed; navigator APIs are synchronous.
 // navigator.userAgentData?.platform is preferred (Chromium-based browsers);
 // navigator.platform is the deprecated-but-universal fallback (Firefox, Safari).
+/** One mock request header row: a name and a text value. */
+interface HeaderRow {
+  key: string;
+  name: string;
+  value: string;
+}
+
+let headerRowSeq = 0;
+function newHeaderRow(): HeaderRow {
+  headerRowSeq += 1;
+  return { key: `h${headerRowSeq}`, name: '', value: '' };
+}
+
+/**
+ * Issues of the header rows, by row key: a value needs a name, and a name may not repeat
+ * (header names are case-insensitive to the engine). Blank rows are ignored.
+ */
+export function headerRowIssues(rows: HeaderRow[]): Map<string, string> {
+  const issues = new Map<string, string>();
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const name = row.name.trim();
+    if (name === '') {
+      if (row.value.trim() !== '') issues.set(row.key, 'A header value needs a name');
+      continue;
+    }
+    const folded = name.toLowerCase();
+    if (seen.has(folded)) {
+      issues.set(row.key, `Duplicate header name '${name}'`);
+    } else {
+      seen.add(folded);
+    }
+  }
+  return issues;
+}
+
 const isMac =
   ((navigator as Navigator & { userAgentData?: { platform: string } }).userAgentData?.platform
     ?? navigator.platform)
@@ -53,9 +91,11 @@ export default function MockUploadPanel({
   title = '⬆️ Upload Mock Data',
   description,
   inputPathHints = [],
+  inputHeaderHints = [],
   submitLabel = 'Upload',
 }: MockUploadPanelProps) {
   const [json,        setJson]        = useState('');
+  const [headerRows,  setHeaderRows]  = useState<HeaderRow[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [fileError,   setFileError]   = useState<string | null>(null);
   const [isDragOver,  setIsDragOver]  = useState(false);
@@ -69,12 +109,26 @@ export default function MockUploadPanel({
   // is intentional: the endpoint expects an object or array.
   const jsonResult  = tryParseJSON(json);
   const isValidJson = jsonResult.isJSON;
-  const canSubmit   = isValidJson && json.trim() !== '';
+  const hasBody     = json.trim() !== '';
+  const rowIssues   = useMemo(() => headerRowIssues(headerRows), [headerRows]);
+  // the named rows become the mock input.header (names as written: the engine reads them
+  // case-insensitively, exactly as a real request's)
+  const headers = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const row of headerRows) {
+      const name = row.name.trim();
+      if (name !== '' && !rowIssues.has(row.key)) map[name] = row.value;
+    }
+    return map;
+  }, [headerRows, rowIssues]);
+  const headerCount = Object.keys(headers).length;
+  const canSubmit   = (hasBody ? isValidJson : headerCount > 0) && rowIssues.size === 0;
 
   // ── useMockUpload ────────────────────────────────────────────────────────
   const { isUploading, upload, cancel } = useMockUpload({
     uploadPath,
     json,
+    headers,
     onSuccess: (responseBody) => onSuccess(responseBody, uploadPath),
     onError: (msg) => {
       setUploadError(msg);   // inline error banner
@@ -118,6 +172,14 @@ export default function MockUploadPanel({
       }
     }
   }, [canSubmit, isUploading, handleUpload]);
+
+  const addHeaderRow = useCallback(() => setHeaderRows(rows => [...rows, newHeaderRow()]), []);
+  const updateHeaderRow = useCallback((key: string, patch: Partial<HeaderRow>) => {
+    setHeaderRows(rows => rows.map(row => (row.key === key ? { ...row, ...patch } : row)));
+  }, []);
+  const removeHeaderRow = useCallback((key: string) => {
+    setHeaderRows(rows => rows.filter(row => row.key !== key));
+  }, []);
 
   const handleFormat = useCallback(() => {
     if (!isValidJson) return;
@@ -185,7 +247,7 @@ export default function MockUploadPanel({
     e.target.value = '';
   }, [loadFile]);
 
-  const showValidationError = !isValidJson && json.trim() !== '';
+  const showValidationError = !isValidJson && hasBody;
 
   return (
     <div className={styles.root}>
@@ -223,6 +285,21 @@ export default function MockUploadPanel({
                 )}
               </div>
               <span className={styles.inputHintsNote}>Hints are derived from graph references.</span>
+            </div>
+          )}
+
+          {inputHeaderHints.length > 0 && (
+            <div className={styles.inputHints} aria-label="Referenced input headers">
+              <span className={styles.inputHintsLabel}>Referenced input headers</span>
+              <div className={styles.inputHintList}>
+                {inputHeaderHints.slice(0, 6).map(name => (
+                  <code key={name}>{name === '*' ? 'input.header (all)' : name}</code>
+                ))}
+                {inputHeaderHints.length > 6 && (
+                  <span className={styles.moreHints}>+{inputHeaderHints.length - 6} more</span>
+                )}
+              </div>
+              <span className={styles.inputHintsNote}>Header names are case-insensitive to the graph.</span>
             </div>
           )}
 
@@ -293,6 +370,61 @@ export default function MockUploadPanel({
           <span className={styles.keyboardHint}>
             {isMac ? `⌘+Enter to ${submitLabel.toLowerCase()}` : `Ctrl+Enter to ${submitLabel.toLowerCase()}`}
           </span>
+          {/* ── Mock headers (optional) ─────────────────────────────── */}
+          <div className={styles.headers}>
+            <span className={styles.textareaLabel}>Headers (optional)</span>
+            <div className={styles.rows} role="group" aria-label="Mock headers">
+              {headerRows.map(row => {
+                const issue = rowIssues.get(row.key);
+                return (
+                  <div key={row.key} className={styles.rowBlock}>
+                    <div className={styles.row}>
+                      <input
+                        className={`${styles.input} ${styles.rowName}${issue ? ` ${styles.inputInvalid}` : ''}`}
+                        type="text"
+                        value={row.name}
+                        onChange={event => updateHeaderRow(row.key, { name: event.target.value })}
+                        placeholder="name"
+                        aria-label="Header name"
+                        autoComplete="off"
+                        spellCheck={false}
+                        disabled={isUploading}
+                      />
+                      <input
+                        className={`${styles.input} ${styles.rowValue}`}
+                        type="text"
+                        value={row.value}
+                        onChange={event => updateHeaderRow(row.key, { value: event.target.value })}
+                        placeholder="value"
+                        aria-label={`Value of header ${row.name || '(unnamed)'}`}
+                        autoComplete="off"
+                        disabled={isUploading}
+                      />
+                      <button
+                        type="button"
+                        className={styles.entryRemove}
+                        onClick={() => removeHeaderRow(row.key)}
+                        disabled={isUploading}
+                        aria-label={`Remove header ${row.name || '(unnamed)'}`}
+                        title="Remove header"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    {issue && <span className={styles.entryIssue} role="alert">⚠️ {issue}</span>}
+                  </div>
+                );
+              })}
+              <button type="button" className={styles.linkButton} onClick={addHeaderRow} disabled={isUploading}>
+                + Add header
+              </button>
+            </div>
+            <span className={styles.inputHintsNote}>
+              The headers become the instance's input.header, read case-insensitively by the graph, as a real
+              request's are.
+            </span>
+          </div>
+
           {uploadError && (
             <div className={styles.errorBanner} role="alert">
               ❌ Upload failed: {uploadError}

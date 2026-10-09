@@ -391,3 +391,108 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── Mock headers: the row editor of the packaging panel, under the same names ── */
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rowBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rowName {
+  flex: 2 1 0;
+}
+
+.rowValue {
+  flex: 3 1 0;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  font-family: var(--font-mono-terminal);
+  font-size: 0.85rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.inputInvalid {
+  border-color: var(--danger-color);
+}
+
+.entryRemove:hover:not(:disabled) {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+.entryIssue {
+  font-size: 0.75rem;
+  color: var(--warning-color);
+}
+
+.linkButton {
+  appearance: none;
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.15rem 0;
+}
+
+.linkButton:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.linkButton:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.linkButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.headers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.entryRemove {
+  appearance: none;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.15rem 0.5rem;
+  line-height: 1.4;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.entryRemove:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+

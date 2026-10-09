@@ -12,9 +12,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Each change merged to `main` after v4.12.21 is listed here; it moves under its release heading when the version is cut.
 
+### Added
+
+1. **The Playground's mock upload takes request headers.** A graph may read `input.header.*` as it reads `input.body.*` - the
+   executor copies the whole `input` of the invoking flow into the state machine - and the console's `instantiate graph` lines
+   could seed a header, but the toolbar's Instantiate-Upload-Run step could not. `POST /api/mock/{id}?namespace=header` now loads
+   a JSON object of text values as the instance's `input.header` (the names kept as given; the graph reads headers
+   case-insensitively, as a real request's), travelling like a command to every member of a collaborative session with the
+   console line `Mock data loaded into 'input.header' namespace`; the default `namespace=body` is the existing endpoint; another
+   namespace, or a header payload that is not an object of text values, answers HTTP 400. The Upload panel gains an optional
+   **Headers** row editor below the JSON editor and posts the rows after the body (headers alone are a valid upload), its hints
+   list the input header names the graph references beside the `input.body` paths, the Upload tooltip counts both, and the
+   `upload mock data` reply names both endpoints. `help upload` and the Playground guide describe it. Pinned by
+   `SessionManagementTest.mockHeaderUploadLoadsEveryMemberInstanceTest` and the Rust twin. No upgrade action: the body endpoint
+   and its reply are unchanged apart from a `namespace` field in the JSON answer.
+
 ### Fixed
 
-1. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers
+2. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers
    of the Kafka service mesh and comes back to its sender as the same event carrying `final`. The registry applied that echo to
    its own routing table, and because the two echoes of an add followed by an unregister travel the same ten-instance route, they
    can complete out of order on a loaded host: the unregister's echo found nothing to remove and the add's echo re-added the route

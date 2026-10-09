@@ -93,6 +93,7 @@ describe('useGraphRunWorkflow', () => {
 
     expect(result.current.phase).toBe('ready');
     expect(result.current.inputBodyPaths).toEqual(['input.body.user.id']);
+    expect(result.current.inputHeaderNames).toEqual([]);
     expect(result.current.canUpload).toBe(true);
     expect(result.current.canRun).toBe(true);
     expect(sendRawText).toHaveBeenCalledTimes(1);

@@ -32,20 +32,44 @@ import java.util.Map;
 @PreLoad(route = "upload.mock.content", instances = 10)
 public class UploadMockContent implements TypedLambdaFunction<AsyncHttpRequest, Object> {
 
+    private static final String NAMESPACE = "namespace";
+    private static final String BODY = "body";
+    private static final String HEADER = "header";
+
+    /**
+     * Load mock data into the session's graph instance. The {@code namespace} query parameter selects
+     * the target: {@code body} (the default) takes a JSON map or list as {@code input.body};
+     * {@code header} takes a JSON object of text values as {@code input.header} - the shape a real
+     * request delivers, read case-insensitively by the graph, so a dry run can supply the headers a
+     * graph reads. Either namespace travels like a command to every member of a collaborative session.
+     */
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
         var id = input.getPathParameter("id");
         if (id == null) {
             throw new IllegalArgumentException("Missing path parameter: id");
         }
-        if (input.getBody() instanceof Map || input.getBody() instanceof List) {
-            if (GraphCommandService.uploadContent(id, input.getBody())) {
-                return new EventEnvelope().setHeader("Content-Type", "application/json")
-                        .setBody(Map.of("message", "Content uploaded", "type", "upload"));
-            } else {
-                throw new IllegalArgumentException("Session "+id+" is expired or invalid");
-            }
+        var namespace = input.getQueryParameter(NAMESPACE);
+        if (namespace == null || namespace.isBlank()) {
+            namespace = BODY;
         }
-        throw new IllegalArgumentException("Input is not a valid JSON payload that represents a Map or List");
+        var body = input.getBody();
+        if (HEADER.equals(namespace)) {
+            if (!(body instanceof Map<?, ?> map) || !map.values().stream().allMatch(String.class::isInstance)) {
+                throw new IllegalArgumentException("Mock headers must be a JSON object with text values");
+            }
+        } else if (BODY.equals(namespace)) {
+            if (!(body instanceof Map || body instanceof List)) {
+                throw new IllegalArgumentException("Input is not a valid JSON payload that represents a Map or List");
+            }
+        } else {
+            throw new IllegalArgumentException("Unknown mock namespace '" + namespace + "' - use body or header");
+        }
+        if (GraphCommandService.uploadContent(id, body, namespace)) {
+            return new EventEnvelope().setHeader("Content-Type", "application/json")
+                    .setBody(Map.of("message", "Content uploaded", "type", "upload", NAMESPACE, namespace));
+        } else {
+            throw new IllegalArgumentException("Session "+id+" is expired or invalid");
+        }
     }
 }

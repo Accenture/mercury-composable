@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MinigraphGraphData } from '../utils/graphTypes';
 import type { ProtocolBus } from '../protocol/bus';
 import type { ToastType } from './useToast';
-import { collectGraphInputBodyPaths } from '../graphRun/graphInputPaths';
+import { collectGraphInputBodyPaths, collectGraphInputHeaderNames } from '../graphRun/graphInputPaths';
 import {
   GRAPH_RUN_COMMANDS,
   isInstantiateCommandText,
@@ -73,6 +73,8 @@ export interface UseGraphRunWorkflowReturn {
   disabledReason: string;
   /** The `input.body.*` paths the graph references — UI hints only. */
   inputBodyPaths: string[];
+  /** The input header names the graph references — UI hints only. */
+  inputHeaderNames: string[];
   runGraph: () => boolean;
   instantiateGraph: () => boolean;
 }
@@ -100,11 +102,15 @@ export function useGraphRunWorkflow({
   const sendRawTextRef = useRef(sendRawText);
   const addToastRef = useRef(addToast);
   const inputBodyPaths = useMemo(() => collectGraphInputBodyPaths(graphData), [graphData]);
+  const inputHeaderNames = useMemo(() => collectGraphInputHeaderNames(graphData), [graphData]);
+  const needsInput = inputBodyPaths.length > 0 || inputHeaderNames.length > 0;
   const inputBodyPathsRef = useRef(inputBodyPaths);
+  const needsInputRef = useRef(needsInput);
 
   useEffect(() => { sendRawTextRef.current = sendRawText; }, [sendRawText]);
   useEffect(() => { addToastRef.current = addToast; }, [addToast]);
   useEffect(() => { inputBodyPathsRef.current = inputBodyPaths; }, [inputBodyPaths]);
+  useEffect(() => { needsInputRef.current = needsInput; }, [needsInput]);
 
   const transition = useCallback((next: WorkflowState) => {
     stateRef.current = next;
@@ -191,7 +197,7 @@ export function useGraphRunWorkflow({
       // A typed or replayed instantiate is mirrored as Ready without a toast.
       if (!current.ownAction) return;
       addToastRef.current(
-        inputBodyPathsRef.current.length > 0
+        needsInputRef.current
           ? 'Graph instantiated. Upload mock input if the run needs it, then run.'
           : 'Graph instantiated and ready to run.',
         'success',
@@ -309,6 +315,7 @@ export function useGraphRunWorkflow({
     canRun,
     disabledReason,
     inputBodyPaths,
+    inputHeaderNames,
     runGraph,
     instantiateGraph,
   };

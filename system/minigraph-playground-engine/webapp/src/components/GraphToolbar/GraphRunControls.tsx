@@ -11,6 +11,8 @@ export interface GraphRunControlsProps {
   disabledReason: string;
   /** The `input.body.*` paths the graph references — a hint on the Upload action only. */
   inputBodyPaths?: string[];
+  /** The input header names the graph references — a hint on the Upload action only. */
+  inputHeaderNames?: string[];
   onInstantiate: () => void;
   onUpload: () => void;
   onRun: () => void;
@@ -49,10 +51,16 @@ function appendStatus(purpose: string, status: string): string {
   return `${purpose} ${statusSentence}`;
 }
 
-function inputHint(inputBodyPaths: string[]): string {
-  if (inputBodyPaths.length === 0) return 'This graph does not read input.body, so uploading is optional';
-  const noun = inputBodyPaths.length === 1 ? 'path' : 'paths';
-  return `This graph reads ${inputBodyPaths.length} input.body ${noun}`;
+function inputHint(inputBodyPaths: string[], inputHeaderNames: string[]): string {
+  const parts: string[] = [];
+  if (inputBodyPaths.length > 0) {
+    parts.push(`${inputBodyPaths.length} input.body ${inputBodyPaths.length === 1 ? 'path' : 'paths'}`);
+  }
+  if (inputHeaderNames.length > 0) {
+    parts.push(`${inputHeaderNames.length} input ${inputHeaderNames.length === 1 ? 'header' : 'headers'}`);
+  }
+  if (parts.length === 0) return 'This graph reads neither input.body nor input.header, so uploading is optional';
+  return `This graph reads ${parts.join(' and ')}`;
 }
 
 interface ActionTooltipProps {
@@ -104,6 +112,7 @@ export default function GraphRunControls({
   canRun,
   disabledReason,
   inputBodyPaths = [],
+  inputHeaderNames = [],
   onInstantiate,
   onUpload,
   onRun,
@@ -118,7 +127,7 @@ export default function GraphRunControls({
     phase === 'ready' ? 'Instantiating again starts from a fresh instance' : ''
   );
   const uploadStatus = disabledReason || phaseTitle || (
-    !canUpload ? 'Instantiate the graph first' : inputHint(inputBodyPaths)
+    !canUpload ? 'Instantiate the graph first' : inputHint(inputBodyPaths, inputHeaderNames)
   );
   const runStatus = disabledReason || phaseTitle || (!canRun ? 'Instantiate the graph first' : '');
   const instantiateTooltip = appendStatus(
@@ -126,7 +135,7 @@ export default function GraphRunControls({
     instantiateStatus,
   );
   const uploadTooltip = appendStatus(
-    'Upload a JSON payload as the mock input.body of the instance (optional). Only you see the form.',
+    'Upload a JSON payload as the mock input.body of the instance, and optional mock headers as its input.header. Only you see the form.',
     uploadStatus,
   );
   const runTooltip = appendStatus(
