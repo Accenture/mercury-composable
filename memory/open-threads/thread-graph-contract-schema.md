@@ -13,7 +13,8 @@
   mercury #369 (Increment 170); all three MERGED 2026-10-09 (`6c53389c`, `46d19b06`, `c4932455`). **WP1 delivered 2026-10-09:** the contract class, the OpenAPI
   document, `GET /api/openapi/{graph_id}` and `/api/openapi/session/{sessionId}`, `describe graph` with types - Java #533, mercury #370
   (Increment 171), one shared fixture `graph-contract-vectors.json` (six cases; the Rust port matched on its first run); query parameters
-  out by design. Open: the merges of #533/#370, then WP2 with Eric's open points (the subset, strict types,
+  out by design; both MERGED 2026-10-09 (`4dfe3dfb`, `df95e04e`). Open: WP2 with Eric's open points (the keyword subset, strict
+  types, `additionalProperties`, the violation cap) (the subset, strict types,
   `additionalProperties`, the violation cap, the draft route), then WP1 (contract class, discovery, endpoints, both engines, one shared
   fixture), WP2 (validator, assumed step, gate, shared vectors), WP3 (the panel), WP4 (docs, help, AI guide, api-playground, claims).
   Relates [[graph-set-pack-and-deploy]] (the panel and endpoint precedents), [[canonical-packager-wire-contract]] (the shared-vector
