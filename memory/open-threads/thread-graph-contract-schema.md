@@ -27,7 +27,7 @@
   `update node` with the node's other properties re-sent, Download of the draft YAML - Java `66829f57`, the Rust bundle twin
   `4958d62b` (Increment 173); vitest 57 files / 453 tests; a live drive on tutorial-8 confirmed the round trip. Two choices to
   confirm: the panel edits path/type/required/description/example only; a Save re-sends the node as the node editor does.
-  **WP4 delivered 2026-10-09 (branches pushed, PRs for Eric to open):** the guide page *The graph contract*
+  **WP4 delivered 2026-10-09 (PR #536 and mercury #373 opened by Eric, CI running):** the guide page *The graph contract*
   (`docs/guides/knowledge-graph/graph-contract.md`), `help schema`, the command grammar's typed `describe graph` and invariant 7,
   the AI agent guide's recipe *Declare the contract*, `graph.schema.validator` in the configuration reference, the nav/llms/files.list
   entries and five claims on both engines - Java `8877167c`, Rust `9abe0f1a` (Increment 174). Open: promotion of RFC-0007 to an ADR
