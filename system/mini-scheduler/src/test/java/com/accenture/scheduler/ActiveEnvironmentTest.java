@@ -135,10 +135,10 @@ class ActiveEnvironmentTest {
         var env = ActiveEnvironment.getInstance();
         try {
             env.activate("DR", "unit.test");
-            // a pod restart drops the memory: the property default comes back...
+            // a pod restart drops the memory: the built-in default comes back...
             env.reset();
             assertEquals("prod", env.getActive());
-            // ...until the next read of the store, which wins over the property
+            // ...until the next scheduled point reads the store, the source of truth
             assertEquals("DR", env.refresh());
             assertFalse(env.isActiveNow());
         } finally {

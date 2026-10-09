@@ -37,7 +37,7 @@ import java.util.Map;
  * For production, you must implement your own store that persists the active environment name into
  * a data store shared by every instance of the site - a database such as PostgreSQL or MongoDB, or a
  * distributed cache - because Kubernetes restarts a pod without notice and an in-memory value would
- * reset to the {@code scheduler.active.environment} property. Keep the route name
+ * reset. The scheduler reads this store at every scheduled point. Keep the route name
  * {@code v1.environment.store}, or set {@code scheduler.environment.store} to yours.
  * <p>
  * API contract:
