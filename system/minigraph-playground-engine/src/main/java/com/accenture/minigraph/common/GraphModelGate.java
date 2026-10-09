@@ -19,6 +19,7 @@
 package com.accenture.minigraph.common;
 
 import com.accenture.automation.SimpleTypeMatchingConverter;
+import com.accenture.minigraph.contract.GraphContract;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.slf4j.Logger;
@@ -80,6 +81,11 @@ public final class GraphModelGate {
             throw new IllegalArgumentException("graph must have an 'end' node");
         }
         GraphModelValidator.validate(graph);
+        // a mismatch between the declared contract and the model's data surface warns (RFC-0007): a
+        // declared path the model never reads, or a path the model reads that the declaration lacks
+        for (var issue : GraphContract.derive(graphId, model, id -> null).issues()) {
+            log.warn("Graph {} - {}", graphId, issue);
+        }
         return graph;
     }
 
