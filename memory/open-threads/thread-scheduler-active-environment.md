@@ -25,5 +25,7 @@
   required - dropped in `51731690`; the active environment is `prod` until an operator sets one, the store is read at every scheduled
   point (confirmed: `isActiveNow()` → `refresh()` before each scheduled job), the last value read is the fallback for a store
   that fails to answer.
+  **PR #539 MERGED 2026-10-09 as squash `74212b1e`** (identical to `51731690` outside `memory/`; main fast-forwarded, the branch
+  deleted). Open: promotion of RFC-0008 to an ADR on Eric's word, then the v4.12.22 release.
   → serves: vision-mercury-composable
   <!-- id: scheduler-active-environment | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: working | origin: 2026-10-09-045453 -->
