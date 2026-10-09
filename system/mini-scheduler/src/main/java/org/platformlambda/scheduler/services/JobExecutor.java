@@ -27,6 +27,7 @@ import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.scheduler.ActiveEnvironment;
 import org.platformlambda.scheduler.JobLoader;
 import org.platformlambda.scheduler.models.ScheduledJob;
 import org.slf4j.Logger;
@@ -75,11 +76,21 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             if (name != null) {
                 ScheduledJob job = JobLoader.getJob(name);
                 if (job != null) {
+                    var env = ActiveEnvironment.getInstance();
                     if (operator != null) {
-                        log.info("Operator {} runs {} manually", operator, job.name);
+                        // an operator's run is explicit: honoured on a standby instance too, and said so
+                        if (env.isActiveNow()) {
+                            log.info("Operator {} runs {} manually", operator, job.name);
+                        } else {
+                            log.info("Operator {} runs {} manually on a standby instance - the active environment is {}, " +
+                                    "this instance is {}", operator, job.name, env.getActive(), env.getEnvironment());
+                        }
                         executeJob(po, job);
-                    } else {
+                    } else if (env.isActiveNow()) {
                         prepareJob(po, job);
+                    } else {
+                        log.info("Standby: job {} skipped - the active environment is {}, this instance is {}",
+                                job.name, env.getActive(), env.getEnvironment());
                     }
                 }
             }

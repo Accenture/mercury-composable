@@ -84,7 +84,22 @@ public class JobLoader implements EntryPoint {
                 loadConfig(config, i);
             }
         }
+        announceEnvironment();
         startScheduler();
+    }
+
+    /** Say which environment this instance is and whether the active one survives a restart (RFC-0008). */
+    private void announceEnvironment() {
+        var env = ActiveEnvironment.getInstance();
+        if (env.isPersistent()) {
+            env.refresh();
+            log.info("Scheduler environment {} - active environment {} (persisted by {}) - this instance is {}",
+                    env.getEnvironment(), env.getActive(), env.getStore(), env.isActive() ? "active" : "on standby");
+        } else {
+            log.warn("Scheduler environment {} - active environment {} is in memory only: {} is not registered, " +
+                    "so a restart resets it to {} - this instance is {}", env.getEnvironment(), env.getActive(),
+                    env.getStore(), ActiveEnvironment.ACTIVE_ENVIRONMENT, env.isActive() ? "active" : "on standby");
+        }
     }
 
     @SuppressWarnings("unchecked")

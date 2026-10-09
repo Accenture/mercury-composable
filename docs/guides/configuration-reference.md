@@ -1022,6 +1022,37 @@ Enable leader election so that only one instance in a cluster runs each schedule
 
 Location(s) of the cron job definition file(s). Multiple files are merged.
 
+### `scheduler.environment` {#scheduler-environment}
+
+| Type | Default |
+|------|---------|
+| `String` | `prod` |
+
+This instance's environment in an active-active deployment, e.g. `scheduler.environment=${ENV_NAME:prod}`.
+One word of letters, digits, hyphens and underscores; compared case-insensitively with the active environment.
+
+### `scheduler.active.environment` {#scheduler-active-environment}
+
+| Type | Default |
+|------|---------|
+| `String` | `prod` |
+
+The environment whose scheduler runs the jobs at startup. When this instance's environment is not the active one, the scheduler stands by: a scheduled job is skipped with one log line, and an operator's manual run is still honoured. The operations team moves the
+active environment through the application's REST endpoint (the example's `POST /api/scheduler/environment`); a persisted value
+wins over this property.
+
+### `scheduler.environment.store` {#scheduler-environment-store}
+
+| Type | Default |
+|------|---------|
+| `String` (route) | `v1.environment.store` |
+
+The function that persists the active environment, read before every scheduled job and written when the active
+environment moves, so a pod restart does not reset the operations team's choice. The application implements it against its own
+data store (header `type=get` answers the persisted name as text; `type=set` with `environment` and `operator` persists it and
+answers `true`); the scheduler example's `EnvironmentStore` is the file-backed template. When the route is not registered, the
+value lives in memory only and the scheduler says so at startup.
+
 ---
 
 ## PostgreSQL (`reactive-postgres` extension)
