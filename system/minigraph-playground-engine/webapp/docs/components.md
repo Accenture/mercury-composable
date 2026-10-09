@@ -11,7 +11,7 @@ Playground
 │           Navigation ── SessionMenu, NavMenu "Tools", NavMenu "Quick Links",   help toggle (?)
 ├── ClipboardDuplicateDialog               (only while a clip collides)
 └── panel group (react-resizable-panels)
-    ├── left slot:  NodeEditPanel | MockUploadPanel | GraphSetPanel | LeftPanel ── Console (ConsoleMessage*) + CommandInput
+    ├── left slot:  NodeEditPanel | MockUploadPanel | GraphSetPanel | SchemaPanel | LeftPanel ── Console (ConsoleMessage*) + CommandInput
     ├── right:      RightPanel ── tabs: PayloadEditor (+SampleButtons) | GraphView | GraphDataView
     │                             └── vertical split with HelpBrowser when help is open
     └── sidebar:    ClipboardSidebar ── ClipboardItem*, ClipboardItemContextMenu, ClipboardEmptyState
@@ -26,7 +26,7 @@ Playground
   design: `MockUploadPanel` POSTs through `useMockUpload`, and `Navigation` connects and
   disconnects sockets through the WebSocket context. `RightPanel` keeps its help split in
   `sessionStorage`.
-- **In-place editors, not modals.** `NodeEditPanel`, `MockUploadPanel` and `GraphSetPanel` take the console's slot;
+- **In-place editors, not modals.** `NodeEditPanel`, `MockUploadPanel`, `GraphSetPanel` and `SchemaPanel` take the console's slot;
   the parent swaps the slot and the console's open flag is never touched, so closing the editor
   gives the slot back to whatever it held. `ConnectionPopover` is a popover anchored at the gesture.
 - **Escape closes the thing that opened last.** The node editor, the upload panel, the graph-set
@@ -297,11 +297,44 @@ as they are packed on the engine.
   new set** (the set's graphs and caller fields replace the editor's list, to pack it again). `Escape`
   goes back to the editor.
 
+### `SchemaPanel` (`components/SchemaPanel/SchemaPanel.tsx`)
+
+Props: `controller` (the `useSchemaPanel` return value, which owns the state and the transport),
+`graphName` and `supportsFolderPicker`. Opened from the Tools menu's **Graph schema** or from the
+root or end node editor's "Open the Schema panel…" link; the panel for the graph contract
+(RFC-0007): the optional `schema` property on the root node (the request, `input.body` and
+`input.header`) and on the end node (the response), each part a schema object in the closed
+OpenAPI 3.0 subset the engines validate.
+
+- **Ribbon and tabs** (`📐 Graph schema`): the graph name and the node of the current side; the
+  **Input** (`root`) and **Output** (`end`) tabs, a dot on a tab with unsaved rows. The Input
+  text says the request is validated at the root on every run; the Output text says the response
+  schema is documentary.
+- **Rows.** A body section (`input.body`, one row per path) and a header section
+  (`input.header`, one row per header name): the path or name (the node grammar's rule, `[]` after
+  an array), the type (`(any)`, string, number, integer, boolean, and for a body object or array;
+  an array also has an item type), **req**, the description, an example, and the chips -
+  `declared`, `discovered`, `from last run` or `new` (the tooltip names the referencing nodes),
+  `used by <node>`, and a summary of the keywords the row carries unchanged (`enum (2) · minimum
+  0`, edited in the node editor, never here). What the gate or the grammar would refuse is flagged
+  in place (a blank or malformed path, a duplicate, a `[]` path that is not an array, a scalar with
+  nested paths, a header with an object type). The engine's declaration-versus-model issues of the
+  side are listed above the rows; a missing `root` or `end` node is said.
+- **Footer.** **Fill from last run** (types and examples from the instance's `input.body`,
+  `input.header`, `output.body` and `output.header` through `/api/inspect/{sessionId}/…`;
+  "No instance data yet" before a run), **Reload** (discards unsaved rows), **Download YAML** (the
+  draft's OpenAPI document from `GET /api/openapi/session/{sessionId}`), **Cancel** and **Save
+  root schema** / **Save end schema**, enabled once the side has unsaved rows, no flag, the node
+  and a connection. `Escape` closes unless a request is in flight; unsaved rows survive a close.
+
 ### `NodeEditPanel` (`components/NodeEditPanel/NodeEditPanel.tsx`)
 
 Props: `mode` (`'create'` | `'edit'`), `formState` (`alias`, `nodeType`, `properties[{id, key,
 value}]`), `phase` (`'editing'` | `'sending'`), `lockReason` (`null` | `'sending'` |
-`'disconnected'`), `serverMessage`, `validationErrors`, `onFormStateChange`, `onSubmit`, `onClose`.
+`'disconnected'`), `serverMessage`, `validationErrors`, `onFormStateChange`, `onSubmit`, `onClose`,
+and the optional `onOpenSchemaPanel`, given for the `root` and `end` nodes in edit mode: a note
+"This node carries the graph's request/response contract" with an "Open the Schema panel…" link
+(the editor closes).
 
 A form card coloured by the node type's accent (`utils/minigraphNodeTheme.ts`): the ribbon (alias
 input in create mode, text in edit mode; the type badge; close), the server message and validation

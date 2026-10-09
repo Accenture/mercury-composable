@@ -1,0 +1,556 @@
+/*
+ * The Schema panel in the left panel slot - the same in-place "card in the console's space" shell as
+ * GraphSetPanel, NodeEditPanel and MockUploadPanel, with the primary (blue) accent on the ribbon and
+ * the Save action. Rows are compact cards: path, type and required on the first line, description
+ * and example on the second, the evidence chips on the third.
+ */
+
+.root {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  padding: 1rem 0.75rem 1rem 1rem;
+  background: var(--bg-secondary);
+}
+
+.card {
+  background: var(--bg-primary);
+  border: 1.5px solid var(--primary-40);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Header ribbon ───────────────────────────────────────────────────────── */
+.ribbon {
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--primary-color) 8%, transparent);
+  border-bottom: 1px solid var(--primary-20);
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.6rem 0.8rem;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-family: var(--font-mono-terminal);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.ribbonClose {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  line-height: 0;
+  flex-shrink: 0;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.ribbonClose:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.ribbonClose:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.ribbonClose:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ribbonCloseIcon {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem 1.25rem 0;
+  border-bottom: 1px solid var(--border-color);
+  flex: 0 0 auto;
+}
+
+.tab {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  margin-bottom: -1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.tabActive {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tabNode {
+  font-family: var(--font-mono-terminal);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.dirtyDot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--warning-color);
+  flex-shrink: 0;
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
+.body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.description,
+.empty {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.description code,
+.empty code,
+.hint code,
+.sectionTitle code,
+.issueList code {
+  font-family: var(--font-mono-terminal);
+  font-size: 0.8rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xs);
+  padding: 0 3px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.sectionTitle code {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.issueList {
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--warning-color);
+  background: var(--warning-06);
+  border: 1px solid var(--warning-60);
+  border-radius: var(--radius-sm);
+}
+
+.loading {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ── Rows ────────────────────────────────────────────────────────────────── */
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rowCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+}
+
+.rowFlagged {
+  border-color: var(--warning-60);
+  background: var(--warning-06);
+}
+
+.rowLine {
+  display: flex;
+  flex-wrap: wrap;            /* a narrow slot moves the type and required controls under the path */
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.input,
+.select {
+  min-width: 0;
+  box-sizing: border-box;
+  font-family: var(--font-mono-terminal);
+  font-size: 0.8rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.input:focus,
+.select:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
+.input:disabled,
+.select:disabled {
+  opacity: 0.6;
+}
+
+.inputInvalid {
+  border-color: var(--danger-color);
+}
+
+.pathInput {
+  flex: 3 1 9rem;
+  min-width: 9rem;
+}
+
+.typeSelect {
+  flex: 0 0 auto;
+  width: 6.2rem;
+}
+
+.itemSelect {
+  flex: 0 0 auto;
+  width: 5.6rem;
+}
+
+.descriptionInput {
+  flex: 3 1 9rem;
+  font-family: inherit;
+}
+
+.exampleInput {
+  flex: 2 1 6rem;
+}
+
+.requiredLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.requiredLabel input {
+  margin: 0;
+  accent-color: var(--primary-color);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 1.1rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.chipDeclared {
+  border-color: var(--primary-40);
+  color: var(--primary-color);
+}
+
+.chipDiscovered {
+  border-color: var(--grey-30);
+}
+
+.chipRun {
+  border-color: var(--success-color);
+  color: var(--success-strong);
+}
+
+.chipNew {
+  border-style: dashed;
+}
+
+.chipConstraints {
+  font-family: var(--font-mono-terminal);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowIssue {
+  font-size: 0.74rem;
+  color: var(--warning-color);
+}
+
+.removeButton {
+  appearance: none;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.1rem 0.45rem;
+  line-height: 1.4;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.removeButton:hover:not(:disabled) {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+.removeButton:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.removeButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.linkButton {
+  appearance: none;
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.15rem 0;
+}
+
+.linkButton:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.linkButton:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.linkButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.errorBanner {
+  color: var(--danger-color);
+  background: var(--danger-08);
+  border: 1px solid var(--danger-30);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  word-break: break-word;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.warningBanner {
+  color: var(--warning-color);
+  background: var(--warning-06);
+  border: 1px solid var(--warning-60);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--border-color);
+  gap: 0.5rem 0.75rem;
+  flex: 0 0 auto;
+}
+
+.footerTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.footerActions {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.secondaryButton,
+.primaryButton {
+  appearance: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.secondaryButton:focus-visible,
+.primaryButton:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.secondaryButton:disabled,
+.primaryButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+.primaryButton {
+  background: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  color: #fff;
+  font-weight: 600;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.spinner {
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+.spinnerDark {
+  border-color: var(--grey-30);
+  border-top-color: var(--text-secondary);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

@@ -96,7 +96,7 @@ For one `PlaygroundConfig` it creates the `ProtocolBus`, runs the kernel, and wi
   and the connection popover render from its state.
 - `useGraphRunWorkflow` (Instantiate / Run), `useMockUploadPanel` (the upload form in the left
   slot), `useGraphFileImport` (a graph file as the draft), `useGraphSetPanel` (the graph-set panel
-  in the left slot), `useLargePayloadDownload`, `useAutoHelpNavigate`, `useSavedGraphs` +
+  in the left slot), `useSchemaPanel` (the schema panel in the left slot), `useLargePayloadDownload`, `useAutoHelpNavigate`, `useSavedGraphs` +
   `useGraphSaveName` + `useSavedGraphWorkflow`, `useSendToJsonPath`, the clipboard context.
 
 Layout: a horizontal `react-resizable-panels` group — the **left slot** (the node editor, or the

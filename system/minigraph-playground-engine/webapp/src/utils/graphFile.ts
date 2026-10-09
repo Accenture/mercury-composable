@@ -148,6 +148,7 @@ interface SaveFileType {
 
 const GRAPH_FILE_TYPE: SaveFileType = { description: 'MiniGraph model (JSON)', mimeType: 'application/json', extension: '.json' };
 const GRAPH_SET_FILE_TYPE: SaveFileType = { description: 'MiniGraph graph set', mimeType: 'application/octet-stream', extension: '.pack' };
+const OPENAPI_FILE_TYPE: SaveFileType = { description: 'OpenAPI document (YAML)', mimeType: 'application/yaml', extension: '.yaml' };
 
 /**
  * Save text as a file: through the native "save as" dialog where the browser has one (the user
@@ -156,6 +157,11 @@ const GRAPH_SET_FILE_TYPE: SaveFileType = { description: 'MiniGraph graph set', 
  */
 export function saveTextFile(text: string, fileName: string): Promise<SaveOutcome> {
   return saveFile(text, fileName, GRAPH_FILE_TYPE);
+}
+
+/** The YAML twin of {@link saveTextFile}: a graph's OpenAPI document to `<graph-id>.yaml`. */
+export function saveYamlFile(text: string, fileName: string): Promise<SaveOutcome> {
+  return saveFile(text, fileName, OPENAPI_FILE_TYPE);
 }
 
 /**
