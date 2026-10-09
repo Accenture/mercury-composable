@@ -540,7 +540,7 @@ class SessionManagementTest {
             // the subscriber imports a model from a file (POST /api/graph/import/{id}): it is forwarded to
             // the primary, imported there and replayed into every subscriber's draft, each member's
             // console confirming it
-            var model = graphModel("imported-graph");
+            var model = importedGraphModel();
             var imported = postGraphImport(fx.sessionB(), model);
             assertEquals(200, imported.getStatus(), String.valueOf(imported.getBody()));
             assertNotNull(waitForMessage(fx.messagesA(), GRAPH_IMPORTED, 5));
@@ -577,7 +577,8 @@ class SessionManagementTest {
         }
     }
 
-    private Map<String, Object> graphModel(String name) {
+    private Map<String, Object> importedGraphModel() {
+        final String name = "imported-graph";
         return Map.of(
                 "nodes", List.of(
                         Map.of("alias", "root", "types", List.of("Root"), "properties", Map.of("name", name)),
@@ -790,10 +791,10 @@ class SessionManagementTest {
      * Every message up to and including the first one that contains the substring, so a test can
      * assert on the lines a run printed before its terminal line.
      */
-    private List<String> drainUntil(BlockingQueue<String> queue, String substring, int timeoutSeconds)
-            throws InterruptedException {
+    private List<String> drainUntilTraversalEnds(BlockingQueue<String> queue) throws InterruptedException {
+        final String substring = "Graph traversal ";
         var lines = new ArrayList<String>();
-        var deadline = System.currentTimeMillis() + timeoutSeconds * 1000L;
+        var deadline = System.currentTimeMillis() + 5_000L;
         while (System.currentTimeMillis() < deadline) {
             var msg = queue.poll(deadline - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
             if (msg == null) {
@@ -905,7 +906,14 @@ class SessionManagementTest {
             po.send(fx.txPathA(), "upload mock data");
             assertNotNull(waitForMessage(fx.messagesA(), "?namespace=header", 5));
         }
-        // the REST edge: an unknown namespace, then a header payload that is not an object of text values
+    }
+
+    /**
+     * The REST edge of the mock upload refuses an unknown namespace, a header payload that is not an
+     * object of text values, and - after the shape check - an unknown session.
+     */
+    @Test
+    void mockHeaderUploadRestEdgeRefusesBadInputTest() {
         var edge = new UploadMockContent();
         var unknown = new AsyncHttpRequest().setPathParameter("id", "ws-000000-0")
                 .setQueryParameter("namespace", "cookie").setBody(Map.of("a", "b"));
@@ -975,7 +983,7 @@ class SessionManagementTest {
             assertNotNull(waitForMessage(fx.messagesA(), "amount", 5));
             fx.messagesA().clear();
             po.send(fx.txPathA(), "run");
-            var lines = drainUntil(fx.messagesA(), "Graph traversal ", 5);
+            var lines = drainUntilTraversalEnds(fx.messagesA());
             assertTrue(lines.stream().anyMatch(l -> l.startsWith("Input validated by graph.schema.validator in ")),
                     String.valueOf(lines));
             assertTrue(lines.getLast().startsWith("Graph traversal completed in "), String.valueOf(lines));

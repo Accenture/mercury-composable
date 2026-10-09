@@ -104,22 +104,26 @@ public final class GraphSchema {
     private static final String TYPE_NAMES = "object, array, string, number, integer or boolean";
     private static final String HEADER_TYPE_NAMES = "string, number, integer or boolean";
 
-    private final String type;
-    private final Map<String, GraphSchema> properties = new TreeMap<>();
-    private final List<String> required = new ArrayList<>();
-    private final GraphSchema items;
+    private static final String EXPECTED = ": expected ";
+    private static final String MUST_BE_ONE_OF = ": must be one of ";
+    private static final String MUST_BE = ": must be ";
+
+    private final String typeName;
+    private final Map<String, GraphSchema> propertySchemas = new TreeMap<>();
+    private final List<String> requiredNames = new ArrayList<>();
+    private final GraphSchema itemSchema;
     private final List<Object> enumValues;
-    private final BigDecimal minimum;
-    private final BigDecimal maximum;
+    private final BigDecimal lowerBound;
+    private final BigDecimal upperBound;
     private final boolean exclusiveMinimum;
     private final boolean exclusiveMaximum;
     private final Integer minLength;
     private final Integer maxLength;
     private final String patternText;
-    private final Pattern pattern;
+    private final Pattern compiledPattern;
     private final Integer minItems;
     private final Integer maxItems;
-    private final boolean nullable;
+    private final boolean allowsNull;
     private final boolean noAdditional;
     private final GraphSchema additional;
 
@@ -213,10 +217,44 @@ public final class GraphSchema {
 
     private enum Mode { BODY, HEADER_PART, HEADER_PROPERTY }
 
+    /**
+     * Compile one schema object. The checks run in a fixed order, so a schema with several faults is
+     * refused for the same one on both engines: the keywords, the type, the keywords' applicability to
+     * the type, then each keyword's value in vocabulary order.
+     */
     private GraphSchema(String where, Object schema, Mode mode) {
         if (!(schema instanceof Map<?, ?> map)) {
             throw new IllegalArgumentException(where + ": must be an object");
         }
+        checkKeywords(where, map, mode);
+        this.typeName = compileType(where, map, mode);
+        checkApplicability(where, map, typeName);
+        compileProperties(where, map, mode);
+        compileRequired(where, map);
+        this.itemSchema = map.containsKey(ITEMS) ? new GraphSchema(where + "." + ITEMS, map.get(ITEMS), Mode.BODY) : null;
+        this.enumValues = map.containsKey(ENUM) ? compileEnum(where, map.get(ENUM), typeName) : null;
+        this.lowerBound = optionalNumber(where, MINIMUM, map);
+        this.upperBound = optionalNumber(where, MAXIMUM, map);
+        this.exclusiveMinimum = optionalFlag(where, EXCLUSIVE_MINIMUM, map);
+        this.exclusiveMaximum = optionalFlag(where, EXCLUSIVE_MAXIMUM, map);
+        checkBoundsDeclaration(where, map);
+        this.minLength = optionalCount(where, MIN_LENGTH, map);
+        this.maxLength = optionalCount(where, MAX_LENGTH, map);
+        checkOrder(where, MIN_LENGTH, minLength, MAX_LENGTH, maxLength);
+        this.minItems = optionalCount(where, MIN_ITEMS, map);
+        this.maxItems = optionalCount(where, MAX_ITEMS, map);
+        checkOrder(where, MIN_ITEMS, minItems, MAX_ITEMS, maxItems);
+        this.patternText = optionalPatternText(where, map);
+        this.compiledPattern = patternText == null ? null : compilePattern(where, patternText);
+        this.allowsNull = optionalFlag(where, NULLABLE, map);
+        var extras = map.get(ADDITIONAL_PROPERTIES);
+        this.additional = extras instanceof Map<?, ?>
+                ? new GraphSchema(where + "." + ADDITIONAL_PROPERTIES, extras, Mode.BODY) : null;
+        this.noAdditional = additionalRefused(where, extras);
+    }
+
+    /** Every key is a keyword of the vocabulary, and one the part or the header takes. */
+    private static void checkKeywords(String where, Map<?, ?> map, Mode mode) {
         for (var key : map.keySet()) {
             var keyword = String.valueOf(key);
             if (!KEYWORDS.contains(keyword) && !DOCUMENTARY.contains(keyword)) {
@@ -229,85 +267,100 @@ public final class GraphSchema {
                 throw new IllegalArgumentException(where + ": '" + keyword + "' does not apply to a header");
             }
         }
-        this.type = compileType(where, map, mode);
-        if (type != null) {
-            for (var key : map.keySet()) {
-                var keyword = String.valueOf(key);
-                if (!appliesTo(keyword, type)) {
-                    throw new IllegalArgumentException(where + ": '" + keyword + "' does not apply to type " + type);
-                }
+    }
+
+    /** With a declared type, every keyword must apply to it. */
+    private static void checkApplicability(String where, Map<?, ?> map, String type) {
+        if (type == null) {
+            return;
+        }
+        for (var key : map.keySet()) {
+            var keyword = String.valueOf(key);
+            if (!appliesTo(keyword, type)) {
+                throw new IllegalArgumentException(where + ": '" + keyword + "' does not apply to type " + type);
             }
         }
-        if (map.containsKey(PROPERTIES)) {
-            if (!(map.get(PROPERTIES) instanceof Map<?, ?> props)) {
-                throw new IllegalArgumentException(where + "." + PROPERTIES + ": must be an object of schemas");
-            }
-            var childMode = mode == Mode.HEADER_PART ? Mode.HEADER_PROPERTY : Mode.BODY;
-            for (var kv : props.entrySet()) {
-                var name = String.valueOf(kv.getKey());
-                properties.put(name, new GraphSchema(where + "." + PROPERTIES + "." + name, kv.getValue(), childMode));
-            }
+    }
+
+    private void compileProperties(String where, Map<?, ?> map, Mode mode) {
+        if (!map.containsKey(PROPERTIES)) {
+            return;
         }
-        if (map.containsKey(REQUIRED)) {
-            if (!(map.get(REQUIRED) instanceof List<?> names)) {
+        if (!(map.get(PROPERTIES) instanceof Map<?, ?> props)) {
+            throw new IllegalArgumentException(where + "." + PROPERTIES + ": must be an object of schemas");
+        }
+        var childMode = mode == Mode.HEADER_PART ? Mode.HEADER_PROPERTY : Mode.BODY;
+        for (var kv : props.entrySet()) {
+            var name = String.valueOf(kv.getKey());
+            propertySchemas.put(name, new GraphSchema(where + "." + PROPERTIES + "." + name, kv.getValue(), childMode));
+        }
+    }
+
+    private void compileRequired(String where, Map<?, ?> map) {
+        if (!map.containsKey(REQUIRED)) {
+            return;
+        }
+        if (!(map.get(REQUIRED) instanceof List<?> names)) {
+            throw new IllegalArgumentException(where + "." + REQUIRED + ": must be a list of property names");
+        }
+        for (var name : names) {
+            if (!(name instanceof String text) || text.isBlank()) {
                 throw new IllegalArgumentException(where + "." + REQUIRED + ": must be a list of property names");
             }
-            for (var name : names) {
-                if (!(name instanceof String text) || text.isBlank()) {
-                    throw new IllegalArgumentException(where + "." + REQUIRED + ": must be a list of property names");
-                }
-                required.add(text);
-            }
+            requiredNames.add(text);
         }
-        this.items = map.containsKey(ITEMS) ? new GraphSchema(where + "." + ITEMS, map.get(ITEMS), Mode.BODY) : null;
-        this.enumValues = map.containsKey(ENUM) ? compileEnum(where, map.get(ENUM), type) : null;
-        this.minimum = map.containsKey(MINIMUM) ? number(where, MINIMUM, map.get(MINIMUM)) : null;
-        this.maximum = map.containsKey(MAXIMUM) ? number(where, MAXIMUM, map.get(MAXIMUM)) : null;
-        this.exclusiveMinimum = map.containsKey(EXCLUSIVE_MINIMUM) && flag(where, EXCLUSIVE_MINIMUM, map.get(EXCLUSIVE_MINIMUM));
-        this.exclusiveMaximum = map.containsKey(EXCLUSIVE_MAXIMUM) && flag(where, EXCLUSIVE_MAXIMUM, map.get(EXCLUSIVE_MAXIMUM));
-        if (map.containsKey(EXCLUSIVE_MINIMUM) && minimum == null) {
+    }
+
+    /** An exclusive flag needs its bound, and the lower bound may not exceed the upper. */
+    private void checkBoundsDeclaration(String where, Map<?, ?> map) {
+        if (map.containsKey(EXCLUSIVE_MINIMUM) && lowerBound == null) {
             throw new IllegalArgumentException(where + "." + EXCLUSIVE_MINIMUM + ": needs " + MINIMUM);
         }
-        if (map.containsKey(EXCLUSIVE_MAXIMUM) && maximum == null) {
+        if (map.containsKey(EXCLUSIVE_MAXIMUM) && upperBound == null) {
             throw new IllegalArgumentException(where + "." + EXCLUSIVE_MAXIMUM + ": needs " + MAXIMUM);
         }
-        if (minimum != null && maximum != null && minimum.compareTo(maximum) > 0) {
+        if (lowerBound != null && upperBound != null && lowerBound.compareTo(upperBound) > 0) {
             throw new IllegalArgumentException(where + ": " + MINIMUM + " is greater than " + MAXIMUM);
         }
-        this.minLength = map.containsKey(MIN_LENGTH) ? count(where, MIN_LENGTH, map.get(MIN_LENGTH)) : null;
-        this.maxLength = map.containsKey(MAX_LENGTH) ? count(where, MAX_LENGTH, map.get(MAX_LENGTH)) : null;
-        if (minLength != null && maxLength != null && minLength > maxLength) {
-            throw new IllegalArgumentException(where + ": " + MIN_LENGTH + " is greater than " + MAX_LENGTH);
+    }
+
+    private static void checkOrder(String where, String minKeyword, Integer min, String maxKeyword, Integer max) {
+        if (min != null && max != null && min > max) {
+            throw new IllegalArgumentException(where + ": " + minKeyword + " is greater than " + maxKeyword);
         }
-        this.minItems = map.containsKey(MIN_ITEMS) ? count(where, MIN_ITEMS, map.get(MIN_ITEMS)) : null;
-        this.maxItems = map.containsKey(MAX_ITEMS) ? count(where, MAX_ITEMS, map.get(MAX_ITEMS)) : null;
-        if (minItems != null && maxItems != null && minItems > maxItems) {
-            throw new IllegalArgumentException(where + ": " + MIN_ITEMS + " is greater than " + MAX_ITEMS);
+    }
+
+    private static BigDecimal optionalNumber(String where, String keyword, Map<?, ?> map) {
+        return map.containsKey(keyword) ? number(where, keyword, map.get(keyword)) : null;
+    }
+
+    private static Integer optionalCount(String where, String keyword, Map<?, ?> map) {
+        return map.containsKey(keyword) ? count(where, keyword, map.get(keyword)) : null;
+    }
+
+    private static boolean optionalFlag(String where, String keyword, Map<?, ?> map) {
+        return map.containsKey(keyword) && flag(where, keyword, map.get(keyword));
+    }
+
+    private static String optionalPatternText(String where, Map<?, ?> map) {
+        if (!map.containsKey(PATTERN)) {
+            return null;
         }
-        if (map.containsKey(PATTERN)) {
-            if (!(map.get(PATTERN) instanceof String text)) {
-                throw new IllegalArgumentException(where + "." + PATTERN + ": must be text");
-            }
-            this.patternText = text;
-            this.pattern = compilePattern(where, text);
-        } else {
-            this.patternText = null;
-            this.pattern = null;
+        if (!(map.get(PATTERN) instanceof String text)) {
+            throw new IllegalArgumentException(where + "." + PATTERN + ": must be text");
         }
-        this.nullable = map.containsKey(NULLABLE) && flag(where, NULLABLE, map.get(NULLABLE));
-        var extras = map.get(ADDITIONAL_PROPERTIES);
-        if (extras == null) {
-            this.noAdditional = false;
-            this.additional = null;
-        } else if (extras instanceof Map<?, ?>) {
-            this.noAdditional = false;
-            this.additional = new GraphSchema(where + "." + ADDITIONAL_PROPERTIES, extras, Mode.BODY);
-        } else if (isFlag(extras)) {
-            this.noAdditional = !flag(where, ADDITIONAL_PROPERTIES, extras);
-            this.additional = null;
-        } else {
-            throw new IllegalArgumentException(where + "." + ADDITIONAL_PROPERTIES + ": must be true, false or a schema");
+        return text;
+    }
+
+    /** {@code additionalProperties: false} refuses extras; true, absent or a schema does not. */
+    private static boolean additionalRefused(String where, Object extras) {
+        if (extras == null || extras instanceof Map<?, ?>) {
+            return false;
         }
+        if (isFlag(extras)) {
+            return !flag(where, ADDITIONAL_PROPERTIES, extras);
+        }
+        throw new IllegalArgumentException(where + "." + ADDITIONAL_PROPERTIES + ": must be true, false or a schema");
     }
 
     private static String compileType(String where, Map<?, ?> map, Mode mode) {
@@ -356,25 +409,34 @@ public final class GraphSchema {
         }
         List<Object> result = new ArrayList<>();
         for (var entry : entries) {
-            if (NUMBER.equals(type) || INTEGER.equals(type)) {
+            result.add(enumEntry(where, entry, type));
+        }
+        return result;
+    }
+
+    /** An enum entry read as the declared type; an untyped schema keeps the entry as written. */
+    private static Object enumEntry(String where, Object entry, String type) {
+        if (type == null) {
+            return entry;
+        }
+        return switch (type) {
+            case NUMBER, INTEGER -> {
                 var n = toNumber(entry);
                 if (n == null || (INTEGER.equals(type) && !isIntegral(n))) {
                     throw new IllegalArgumentException(where + "." + ENUM + ": '" + entry + "' is not " +
                             (INTEGER.equals(type) ? "an integer" : "a number"));
                 }
-                result.add(n);
-            } else if (BOOLEAN.equals(type)) {
+                yield n;
+            }
+            case BOOLEAN -> {
                 if (!isFlag(entry)) {
                     throw new IllegalArgumentException(where + "." + ENUM + ": '" + entry + "' is not a boolean");
                 }
-                result.add(Boolean.parseBoolean(String.valueOf(entry)));
-            } else if (STRING.equals(type)) {
-                result.add(String.valueOf(entry));
-            } else {
-                result.add(entry);
+                yield Boolean.parseBoolean(String.valueOf(entry));
             }
-        }
-        return result;
+            case STRING -> String.valueOf(entry);
+            default -> entry;
+        };
     }
 
     private static BigDecimal number(String where, String keyword, Object value) {
@@ -453,40 +515,55 @@ public final class GraphSchema {
      */
     static boolean outsideCommonSubset(String p) {
         boolean inClass = false;
-        for (int i = 0; i < p.length(); i++) {
+        int i = 0;
+        while (i < p.length()) {
             char c = p.charAt(i);
             if (c == '\\') {
-                if (i + 1 < p.length()) {
-                    char next = p.charAt(i + 1);
-                    if (!inClass && ((next >= '1' && next <= '9') || next == 'k')) {
-                        return true;
-                    }
-                    i++;
-                }
-                continue;
-            }
-            if (inClass) {
-                if (c == ']') {
-                    inClass = false;
-                }
-                continue;
-            }
-            if (c == '[') {
-                inClass = true;
-            } else if (c == '(' && p.startsWith("(?", i)) {
-                var rest = p.substring(i + 2);
-                if (rest.startsWith("=") || rest.startsWith("!") || rest.startsWith("<=") || rest.startsWith("<!")
-                        || rest.startsWith(">")) {
+                if (!inClass && isBackreference(p, i)) {
                     return true;
                 }
-            } else if (c == '+' && i > 0) {
-                char previous = p.charAt(i - 1);
-                if ((previous == '*' || previous == '+' || previous == '?' || previous == '}') && !escaped(p, i - 1)) {
+                // the escape and the character it escapes
+                i += 2;
+            } else {
+                if (inClass) {
+                    inClass = c != ']';
+                } else if (c == '[') {
+                    inClass = true;
+                } else if (isJavaOnlyGroup(p, i) || isPossessive(p, i)) {
                     return true;
                 }
+                i++;
             }
         }
         return false;
+    }
+
+    /** The backslash at {@code i} starts {@code \1}..{@code \9} or {@code \k<name>}. */
+    private static boolean isBackreference(String p, int i) {
+        if (i + 1 >= p.length()) {
+            return false;
+        }
+        char next = p.charAt(i + 1);
+        return (next >= '1' && next <= '9') || next == 'k';
+    }
+
+    /** The group opening at {@code i} is a lookaround or an atomic group. */
+    private static boolean isJavaOnlyGroup(String p, int i) {
+        if (!p.startsWith("(?", i)) {
+            return false;
+        }
+        var rest = p.substring(i + 2);
+        return rest.startsWith("=") || rest.startsWith("!") || rest.startsWith("<=") || rest.startsWith("<!")
+                || rest.startsWith(">");
+    }
+
+    /** The {@code +} at {@code i} follows an unescaped quantifier, making it possessive. */
+    private static boolean isPossessive(String p, int i) {
+        if (p.charAt(i) != '+' || i == 0) {
+            return false;
+        }
+        char previous = p.charAt(i - 1);
+        return (previous == '*' || previous == '+' || previous == '?' || previous == '}') && !escaped(p, i - 1);
     }
 
     private static boolean escaped(String p, int index) {
@@ -508,25 +585,25 @@ public final class GraphSchema {
      */
     public void validate(String path, Object value, List<String> violations) {
         if (value == null) {
-            if (!nullable && type != null) {
-                violations.add(path + ": expected " + type + ", got " + NULL);
+            if (!allowsNull && typeName != null) {
+                violations.add(path + EXPECTED + typeName + ", got " + NULL);
             }
             return;
         }
         var actual = kindOf(value);
-        if (type != null && !matches(type, value, actual)) {
-            violations.add(path + ": expected " + type + ", got " + actual);
+        if (typeName != null && !matches(typeName, value, actual)) {
+            violations.add(path + EXPECTED + typeName + ", got " + actual);
             return;
         }
-        if (enumValues != null && !inEnum(value, actual)) {
-            violations.add(path + ": must be one of " + renderEnum());
-        }
+        checkEnum(path, value, actual, violations);
         switch (actual) {
             case NUMBER -> checkBounds(path, toNumber(value), violations);
             case STRING -> checkText(path, value instanceof String text ? text : String.valueOf(value), violations);
             case ARRAY -> checkArray(path, (List<?>) value, violations);
             case OBJECT -> checkObject(path, (Map<?, ?>) value, violations);
-            default -> { }
+            default -> {
+                // a boolean has no constraint beyond its type and enum
+            }
         }
     }
 
@@ -539,12 +616,12 @@ public final class GraphSchema {
      * @param violations the collector
      */
     public void validateHeaders(String path, Map<?, ?> headers, List<String> violations) {
-        for (var name : required) {
+        for (var name : requiredNames) {
             if (lookup(headers, name) == null) {
                 violations.add(path + "." + name + ": required");
             }
         }
-        for (var kv : properties.entrySet()) {
+        for (var kv : propertySchemas.entrySet()) {
             var text = lookup(headers, kv.getKey());
             if (text != null) {
                 kv.getValue().validateHeader(path + "." + kv.getKey(), text, violations);
@@ -561,31 +638,34 @@ public final class GraphSchema {
         return null;
     }
 
+    /** A header is text: a number or boolean type validates the parsed text. */
     private void validateHeader(String path, String text, List<String> violations) {
-        if (NUMBER.equals(type) || INTEGER.equals(type)) {
-            var n = toNumber(text);
-            if (n == null || (INTEGER.equals(type) && !isIntegral(n))) {
-                violations.add(path + ": expected " + type);
-                return;
-            }
-            if (enumValues != null && !inEnum(n, NUMBER)) {
-                violations.add(path + ": must be one of " + renderEnum());
-            }
-            checkBounds(path, n, violations);
-        } else if (BOOLEAN.equals(type)) {
-            if (!text.equalsIgnoreCase("true") && !text.equalsIgnoreCase("false")) {
-                violations.add(path + ": expected " + type);
-                return;
-            }
-            if (enumValues != null && !inEnum(Boolean.parseBoolean(text.toLowerCase()), BOOLEAN)) {
-                violations.add(path + ": must be one of " + renderEnum());
-            }
+        if (NUMBER.equals(typeName) || INTEGER.equals(typeName)) {
+            validateNumericHeader(path, text, violations);
+        } else if (BOOLEAN.equals(typeName)) {
+            validateBooleanHeader(path, text, violations);
         } else {
-            if (enumValues != null && !inEnum(text, STRING)) {
-                violations.add(path + ": must be one of " + renderEnum());
-            }
+            checkEnum(path, text, STRING, violations);
             checkText(path, text, violations);
         }
+    }
+
+    private void validateNumericHeader(String path, String text, List<String> violations) {
+        var n = toNumber(text);
+        if (n == null || (INTEGER.equals(typeName) && !isIntegral(n))) {
+            violations.add(path + EXPECTED + typeName);
+            return;
+        }
+        checkEnum(path, n, NUMBER, violations);
+        checkBounds(path, n, violations);
+    }
+
+    private void validateBooleanHeader(String path, String text, List<String> violations) {
+        if (!text.equalsIgnoreCase("true") && !text.equalsIgnoreCase("false")) {
+            violations.add(path + EXPECTED + typeName);
+            return;
+        }
+        checkEnum(path, Boolean.parseBoolean(text.toLowerCase()), BOOLEAN, violations);
     }
 
     private static String kindOf(Object value) {
@@ -615,13 +695,20 @@ public final class GraphSchema {
         return type.equals(actual);
     }
 
-    private boolean inEnum(Object value, String actual) {
+    /** With an {@code enum}, the value must be one of its entries, compared as the actual kind. */
+    private void checkEnum(String path, Object value, String actual, List<String> violations) {
+        if (enumValues != null && outsideEnum(value, actual)) {
+            violations.add(path + MUST_BE_ONE_OF + renderEnum());
+        }
+    }
+
+    private boolean outsideEnum(Object value, String actual) {
         for (var entry : enumValues) {
             if (sameValue(entry, value, actual)) {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     private static boolean sameValue(Object entry, Object value, String actual) {
@@ -654,16 +741,16 @@ public final class GraphSchema {
         if (n == null) {
             return;
         }
-        if (minimum != null) {
-            var cmp = n.compareTo(minimum);
+        if (lowerBound != null) {
+            var cmp = n.compareTo(lowerBound);
             if (exclusiveMinimum ? cmp <= 0 : cmp < 0) {
-                violations.add(path + ": must be " + (exclusiveMinimum ? "more than " : "at least ") + renderNumber(minimum));
+                violations.add(path + MUST_BE + (exclusiveMinimum ? "more than " : "at least ") + renderNumber(lowerBound));
             }
         }
-        if (maximum != null) {
-            var cmp = n.compareTo(maximum);
+        if (upperBound != null) {
+            var cmp = n.compareTo(upperBound);
             if (exclusiveMaximum ? cmp >= 0 : cmp > 0) {
-                violations.add(path + ": must be " + (exclusiveMaximum ? "less than " : "at most ") + renderNumber(maximum));
+                violations.add(path + MUST_BE + (exclusiveMaximum ? "less than " : "at most ") + renderNumber(upperBound));
             }
         }
     }
@@ -671,12 +758,12 @@ public final class GraphSchema {
     private void checkText(String path, String text, List<String> violations) {
         var length = text.codePointCount(0, text.length());
         if (minLength != null && length < minLength) {
-            violations.add(path + ": must be at least " + plural(minLength, "character"));
+            violations.add(path + MUST_BE + "at least " + plural(minLength, "character"));
         }
         if (maxLength != null && length > maxLength) {
-            violations.add(path + ": must be at most " + plural(maxLength, "character"));
+            violations.add(path + MUST_BE + "at most " + plural(maxLength, "character"));
         }
-        if (pattern != null && !pattern.matcher(text).find()) {
+        if (compiledPattern != null && !compiledPattern.matcher(text).find()) {
             violations.add(path + ": does not match pattern " + patternText);
         }
     }
@@ -688,38 +775,43 @@ public final class GraphSchema {
         if (maxItems != null && list.size() > maxItems) {
             violations.add(path + ": must have at most " + plural(maxItems, "item"));
         }
-        if (items != null) {
+        if (itemSchema != null) {
             for (int i = 0; i < list.size(); i++) {
-                items.validate(path + "[" + i + "]", list.get(i), violations);
+                itemSchema.validate(path + "[" + i + "]", list.get(i), violations);
             }
         }
     }
 
     private void checkObject(String path, Map<?, ?> map, List<String> violations) {
-        for (var name : required) {
+        for (var name : requiredNames) {
             if (!map.containsKey(name)) {
                 violations.add(path + "." + name + ": required");
             }
         }
-        for (var kv : properties.entrySet()) {
+        for (var kv : propertySchemas.entrySet()) {
             if (map.containsKey(kv.getKey())) {
                 kv.getValue().validate(path + "." + kv.getKey(), map.get(kv.getKey()), violations);
             }
         }
         if (noAdditional || additional != null) {
-            var extras = new TreeSet<String>();
-            for (var key : map.keySet()) {
-                var name = String.valueOf(key);
-                if (!properties.containsKey(name)) {
-                    extras.add(name);
-                }
+            checkExtras(path, map, violations);
+        }
+    }
+
+    /** The keys the schema does not declare: refused, or validated against the extras' schema. */
+    private void checkExtras(String path, Map<?, ?> map, List<String> violations) {
+        var extras = new TreeSet<String>();
+        for (var key : map.keySet()) {
+            var name = String.valueOf(key);
+            if (!propertySchemas.containsKey(name)) {
+                extras.add(name);
             }
-            for (var name : extras) {
-                if (noAdditional) {
-                    violations.add(path + "." + name + ": not allowed");
-                } else {
-                    additional.validate(path + "." + name, map.get(name), violations);
-                }
+        }
+        for (var name : extras) {
+            if (noAdditional) {
+                violations.add(path + "." + name + ": not allowed");
+            } else {
+                additional.validate(path + "." + name, map.get(name), violations);
             }
         }
     }

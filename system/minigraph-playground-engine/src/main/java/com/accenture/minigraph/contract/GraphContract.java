@@ -26,7 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -83,20 +83,33 @@ public final class GraphContract {
     private static final String MAP_TO = "->";
     private static final String MODEL_PREFIX = "model.";
     private static final String RESULT = "result";
-    private static final String[] MAPPING_PROPERTIES = {"mapping", "input", "output", "for_each", "statement"};
-    private static final Set<String> DESCRIPTIVE = Set.of("description", "question", "purpose");
+    private static final String INPUT = "input";
+    private static final String OUTPUT = "output";
+    private static final String PURPOSE = "purpose";
+    private static final String FOR_EACH = "for_each";
+    private static final String MAPPING = "MAPPING";
+    private static final String COMPUTE = "COMPUTE";
+    private static final String CONDITION = "CONDITION";
+    private static final String DECIMAL = "DECIMAL";
+    private static final String INT = "int";
+    private static final String LONG = "long";
+    private static final String FLOAT = "float";
+    private static final String DOUBLE = "double";
+    private static final String TEXT = "text";
+    private static final String DEFAULT_VALUE = "defaultValue";
+    private static final String[] MAPPING_PROPERTIES = {"mapping", INPUT, OUTPUT, FOR_EACH, "statement"};
     /** The simple plugins whose result type is known from the plugin alone. */
     private static final Map<String, String> PLUGIN_TYPES = Map.ofEntries(
-            Map.entry("int", INTEGER), Map.entry("long", INTEGER), Map.entry("length", INTEGER),
+            Map.entry(INT, INTEGER), Map.entry(LONG, INTEGER), Map.entry("length", INTEGER),
             Map.entry("decimalCompare", INTEGER),
-            Map.entry("float", NUMBER), Map.entry("double", NUMBER), Map.entry("add", NUMBER),
+            Map.entry(FLOAT, NUMBER), Map.entry(DOUBLE, NUMBER), Map.entry("add", NUMBER),
             Map.entry("subtract", NUMBER), Map.entry("multiply", NUMBER), Map.entry("div", NUMBER),
             Map.entry("mod", NUMBER), Map.entry("increment", NUMBER), Map.entry("decrement", NUMBER),
-            Map.entry("boolean", BOOLEAN), Map.entry("eq", BOOLEAN), Map.entry("ne", BOOLEAN),
+            Map.entry(BOOLEAN, BOOLEAN), Map.entry("eq", BOOLEAN), Map.entry("ne", BOOLEAN),
             Map.entry("gt", BOOLEAN), Map.entry("lt", BOOLEAN), Map.entry("and", BOOLEAN),
             Map.entry("or", BOOLEAN), Map.entry("not", BOOLEAN), Map.entry("isNull", BOOLEAN),
             Map.entry("notNull", BOOLEAN),
-            Map.entry("text", STRING), Map.entry("concat", STRING), Map.entry("substring", STRING),
+            Map.entry(TEXT, STRING), Map.entry("concat", STRING), Map.entry("substring", STRING),
             Map.entry("now", STRING), Map.entry("uuid", STRING), Map.entry("dateTime", STRING),
             Map.entry("b64", STRING), Map.entry("lookup", STRING), Map.entry("decimalAdd", STRING),
             Map.entry("decimalSubtract", STRING), Map.entry("decimalMultiply", STRING),
@@ -120,13 +133,11 @@ public final class GraphContract {
 
         Node child(String key, boolean caseInsensitive) {
             var k = caseInsensitive ? key.toLowerCase(Locale.ROOT) : key;
-            var n = children.get(k);
-            if (n == null) {
-                n = new Node();
+            return children.computeIfAbsent(k, ignored -> {
+                var n = new Node();
                 n.name = key;
-                children.put(k, n);
-            }
-            return n;
+                return n;
+            });
         }
     }
 
@@ -160,7 +171,7 @@ public final class GraphContract {
      */
     public static GraphContract derive(String graphId, Map<String, Object> model,
                                        Function<String, Map<String, Object>> otherModels) {
-        var contract = new GraphContract(graphId, rootProperty(model, "purpose"));
+        var contract = new GraphContract(graphId, rootPurpose(model));
         contract.discover(model, otherModels == null ? id -> null : otherModels);
         contract.declare(model);
         contract.reconcile();
@@ -175,7 +186,7 @@ public final class GraphContract {
         return purpose;
     }
 
-    public TreeSet<Integer> getStatusCodes() {
+    public SortedSet<Integer> getStatusCodes() {
         return statusCodes;
     }
 
@@ -199,7 +210,6 @@ public final class GraphContract {
 
     // ---------------------------------------------------------------- discovery
 
-    @SuppressWarnings("unchecked")
     private void discover(Map<String, Object> model, Function<String, Map<String, Object>> otherModels) {
         var nodes = nodeList(model);
         // tier 1: the path scan over every node's properties, in the JSON text form both engines scan
@@ -252,39 +262,41 @@ public final class GraphContract {
             var alias = String.valueOf(node.get(ALIAS));
             if (node.get(PROPERTIES) instanceof Map<?, ?> properties) {
                 for (var property : MAPPING_PROPERTIES) {
-                    var value = properties.get(property);
-                    if (value instanceof String s) {
-                        result.add(new Entry(alias, property, s));
-                    } else if (value instanceof List<?> list) {
-                        for (var item : list) {
-                            if (item instanceof String s) {
-                                result.add(new Entry(alias, property, s));
-                            }
-                        }
-                    }
+                    addEntries(result, alias, property, properties.get(property));
                 }
             }
         }
         return result;
     }
 
-    private static String rootProperty(Map<String, Object> model, String key) {
-        for (var node : nodeList(model)) {
-            if (ROOT.equals(node.get(ALIAS)) && node.get(PROPERTIES) instanceof Map<?, ?> p
-                    && p.get(key) instanceof String s && !s.isBlank()) {
-                return s.trim();
+    /** A mapping property holds one line or a list of lines; anything else carries no mapping. */
+    private static void addEntries(List<Entry> result, String alias, String property, Object value) {
+        if (value instanceof String s) {
+            result.add(new Entry(alias, property, s));
+        } else if (value instanceof List<?> list) {
+            for (var item : list) {
+                if (item instanceof String s) {
+                    result.add(new Entry(alias, property, s));
+                }
             }
+        }
+    }
+
+    private static String rootPurpose(Map<String, Object> model) {
+        if (nodeProperties(model, ROOT).get(PURPOSE) instanceof String s && !s.isBlank()) {
+            return s.trim();
         }
         return null;
     }
 
+    /** The properties of the node with the alias; empty when the model has no such node. */
     private static Map<?, ?> nodeProperties(Map<String, Object> model, String alias) {
         for (var node : nodeList(model)) {
             if (alias.equals(node.get(ALIAS)) && node.get(PROPERTIES) instanceof Map<?, ?> p) {
                 return p;
             }
         }
-        return null;
+        return Map.of();
     }
 
     /** The JSON text of a node's properties - the shape the Rust engine scans too. */
@@ -297,7 +309,7 @@ public final class GraphContract {
     }
 
     /** Collect the dotted-path tokens starting with the prefix from free text. */
-    public static TreeSet<String> collectPathTokens(String text, String prefix) {
+    public static SortedSet<String> collectPathTokens(String text, String prefix) {
         var found = new TreeSet<String>();
         int start = 0;
         while (start != -1) {
@@ -306,7 +318,7 @@ public final class GraphContract {
         return found;
     }
 
-    private static int nextPathToken(String text, String prefix, int start, TreeSet<String> found) {
+    private static int nextPathToken(String text, String prefix, int start, SortedSet<String> found) {
         int begin = text.indexOf(prefix, start);
         if (begin == -1) {
             return -1;
@@ -368,7 +380,7 @@ public final class GraphContract {
     }
 
     /** Record a discovered path token of a namespace, with the node that references it. */
-    private Node recordPath(String namespace, String token, String alias) {
+    private void recordPath(String namespace, String token, String alias) {
         var node = locate(namespace, token, true);
         if (node != null) {
             node.discovered = true;
@@ -376,7 +388,6 @@ public final class GraphContract {
                 node.usedBy.add(alias);
             }
         }
-        return node;
     }
 
     /**
@@ -391,33 +402,41 @@ public final class GraphContract {
         if (!token.startsWith(namespace + ".")) {
             return null;
         }
-        var headers = INPUT_HEADER.equals(namespace) || OUTPUT_HEADER.equals(namespace);
+        var headers = isHeaderNamespace(namespace);
         var node = root;
         for (var segment : token.substring(namespace.length() + 1).split("\\.")) {
-            if (segment.isEmpty()) {
-                continue;
-            }
             var bracket = segment.indexOf('[');
             var key = bracket >= 0 ? segment.substring(0, bracket) : segment;
-            if (key.isEmpty()) {
-                continue;
-            }
-            if (!create && !node.children.containsKey(headers ? key.toLowerCase(Locale.ROOT) : key)) {
-                return null;
-            }
-            node = node.child(key, headers);
-            if (bracket >= 0) {
-                node.array = true;
+            if (!key.isEmpty()) {
+                node = step(node, key, headers, create);
+                if (node == null) {
+                    return null;
+                }
+                if (bracket >= 0) {
+                    node.array = true;
+                }
             }
         }
         return node;
+    }
+
+    /** The child of a node for one path segment; null when it does not exist and may not be created. */
+    private static Node step(Node node, String key, boolean headers, boolean create) {
+        if (!create && !node.children.containsKey(headers ? key.toLowerCase(Locale.ROOT) : key)) {
+            return null;
+        }
+        return node.child(key, headers);
+    }
+
+    private static boolean isHeaderNamespace(String namespace) {
+        return INPUT_HEADER.equals(namespace) || OUTPUT_HEADER.equals(namespace);
     }
 
     private static String tagOf(String text) {
         var colon = text.indexOf(':');
         if (colon > 0) {
             var tag = text.substring(0, colon).trim();
-            if (tag.equals("MAPPING") || tag.equals("COMPUTE") || tag.equals("CONDITION") || tag.equals("DECIMAL")
+            if (tag.equals(MAPPING) || tag.equals(COMPUTE) || tag.equals(CONDITION) || tag.equals(DECIMAL)
                     || tag.equals("IF") || tag.equals("RESET") || tag.equals("NEXT") || tag.equals("DELAY")
                     || tag.equals("THEN") || tag.equals("ELSE")) {
                 return tag;
@@ -431,10 +450,24 @@ public final class GraphContract {
         return tag == null ? text.trim() : text.substring(text.indexOf(':') + 1).trim();
     }
 
+    /** The two sides of a mapping line ({@code lhs -> rhs}); null for a line that is not a mapping. */
+    private static String[] mappingSides(String text) {
+        var tag = tagOf(text);
+        if (tag != null && !MAPPING.equals(tag)) {
+            return null;
+        }
+        var body = afterTag(text);
+        var sep = body.lastIndexOf(MAP_TO);
+        if (sep <= 0) {
+            return null;
+        }
+        return new String[]{body.substring(0, sep).trim(), body.substring(sep + MAP_TO.length()).trim()};
+    }
+
     /** Tier 2: a typed constant, wrapper, plugin, for_each source or graph.math statement. */
     private void directEvidence(String alias, String property, String text) {
         var tag = tagOf(text);
-        if ("COMPUTE".equals(tag) || "CONDITION".equals(tag) || "DECIMAL".equals(tag)) {
+        if (COMPUTE.equals(tag) || CONDITION.equals(tag) || DECIMAL.equals(tag)) {
             mathStatement(alias, tag, afterTag(text));
             return;
         }
@@ -442,23 +475,16 @@ public final class GraphContract {
             comparisonOperands(afterTag(text).split("\n")[0]);
             return;
         }
-        if (tag != null && !"MAPPING".equals(tag)) {
-            return;
+        var sides = mappingSides(text);
+        if (sides != null) {
+            mappingEvidence(property, sides[0], sides[1]);
         }
-        var body = afterTag(text);
-        var sep = body.lastIndexOf(MAP_TO);
-        if (sep <= 0) {
-            return;
-        }
-        var lhs = body.substring(0, sep).trim();
-        var rhs = body.substring(sep + MAP_TO.length()).trim();
-        if ("for_each".equals(property)) {
-            for (var ns : new String[]{INPUT_BODY, OUTPUT_BODY}) {
-                var node = locate(ns, lhs, false);
-                if (node != null && node != roots.get(ns)) {
-                    node.array = true;
-                }
-            }
+    }
+
+    /** A for_each source is an array; a status constant is a response code; a typed source types its target. */
+    private void mappingEvidence(String property, String lhs, String rhs) {
+        if (FOR_EACH.equals(property)) {
+            forEachSource(lhs);
             return;
         }
         var type = typeOf(lhs);
@@ -474,6 +500,15 @@ public final class GraphContract {
         }
     }
 
+    private void forEachSource(String lhs) {
+        for (var ns : new String[]{INPUT_BODY, OUTPUT_BODY}) {
+            var node = locate(ns, lhs, false);
+            if (node != null && node != roots.get(ns)) {
+                node.array = true;
+            }
+        }
+    }
+
     /** COMPUTE a number, CONDITION a boolean, DECIMAL a string, at {alias}.result.{var}. */
     private void mathStatement(String alias, String tag, String body) {
         var sep = body.indexOf(MAP_TO);
@@ -483,22 +518,27 @@ public final class GraphContract {
         var variable = body.substring(0, sep).trim();
         var expression = body.substring(sep + MAP_TO.length()).trim();
         var type = switch (tag) {
-            case "COMPUTE" -> NUMBER;
-            case "CONDITION" -> BOOLEAN;
+            case COMPUTE -> NUMBER;
+            case CONDITION -> BOOLEAN;
             default -> STRING;
         };
         if (!variable.isEmpty()) {
             variables.put(alias + "." + RESULT + "." + variable, type);
         }
-        if ("COMPUTE".equals(tag) && hasArithmetic(expression)) {
+        if (COMPUTE.equals(tag) && hasArithmetic(expression)) {
             // the operands of arithmetic are numbers: a boolean is never a number (4.12.18)
-            for (var ns : new String[]{INPUT_BODY, INPUT_HEADER}) {
-                for (var token : collectPathTokens(expression, ns)) {
-                    typeInput(ns, token, NUMBER);
-                }
-            }
-        } else if ("CONDITION".equals(tag)) {
+            numericOperands(expression);
+        } else if (CONDITION.equals(tag)) {
             comparisonOperands(expression);
+        }
+    }
+
+    /** Every input path an expression references is a number. */
+    private void numericOperands(String expression) {
+        for (var ns : new String[]{INPUT_BODY, INPUT_HEADER}) {
+            for (var token : collectPathTokens(expression, ns)) {
+                typeInputPath(token, NUMBER);
+            }
         }
     }
 
@@ -524,11 +564,7 @@ public final class GraphContract {
                 continue;
             }
             if (clause.contains("<") || clause.contains(">")) {
-                for (var ns : new String[]{INPUT_BODY, INPUT_HEADER}) {
-                    for (var token : collectPathTokens(clause, ns)) {
-                        typeInput(ns, token, NUMBER);
-                    }
-                }
+                numericOperands(clause);
             }
         }
     }
@@ -539,13 +575,6 @@ public final class GraphContract {
             node.array = true;
         } else {
             node.type = type;
-        }
-    }
-
-    private void typeInput(String namespace, String token, String type) {
-        var node = locate(namespace, token, false);
-        if (node != null && node != roots.get(namespace) && node.type == null) {
-            setType(node, type);
         }
     }
 
@@ -566,23 +595,18 @@ public final class GraphContract {
     }
 
     private static boolean isNodeVariable(String selector) {
-        return !selector.startsWith("input.") && !selector.startsWith("output.") && selector.indexOf('.') > 0
-                && !selector.contains("(");
+        return !selector.startsWith("input.") && !selector.startsWith("output.") && !selector.startsWith(".")
+                && selector.contains(".") && !selector.contains("(");
     }
 
     /** Tier 3, first hop: a variable fed by a typed input path takes its type. */
     private void variableFromInput(String alias, String text) {
-        var tag = tagOf(text);
-        if (tag != null && !"MAPPING".equals(tag)) {
+        var sides = mappingSides(text);
+        if (sides == null) {
             return;
         }
-        var body = afterTag(text);
-        var sep = body.lastIndexOf(MAP_TO);
-        if (sep <= 0) {
-            return;
-        }
-        var lhs = body.substring(0, sep).trim();
-        var rhs = body.substring(sep + MAP_TO.length()).trim();
+        var lhs = sides[0];
+        var rhs = sides[1];
         var type = inputType(lhs);
         if (type != null && (rhs.startsWith(MODEL_PREFIX) || isNodeVariable(rhs))) {
             variables.putIfAbsent(qualified(alias, rhs), type);
@@ -597,17 +621,12 @@ public final class GraphContract {
 
     /** Tier 3, second hop: an output path fed by a typed variable or a typed input takes the type. */
     private void outputFromVariable(String alias, String text) {
-        var tag = tagOf(text);
-        if (tag != null && !"MAPPING".equals(tag)) {
+        var sides = mappingSides(text);
+        if (sides == null) {
             return;
         }
-        var body = afterTag(text);
-        var sep = body.lastIndexOf(MAP_TO);
-        if (sep <= 0) {
-            return;
-        }
-        var lhs = body.substring(0, sep).trim();
-        var rhs = body.substring(sep + MAP_TO.length()).trim();
+        var lhs = sides[0];
+        var rhs = sides[1];
         var type = variables.get(lhs);
         if (type == null) {
             type = variables.get(qualified(alias, lhs));
@@ -650,7 +669,7 @@ public final class GraphContract {
             return;
         }
         var end = nodeProperties(model, END);
-        if (end != null && end.get(SCHEMA) instanceof Map<?, ?> schema && schema.get(BODY) instanceof Map<?, ?> body
+        if (end.get(SCHEMA) instanceof Map<?, ?> schema && schema.get(BODY) instanceof Map<?, ?> body
                 && body.get(PROPERTIES) instanceof Map<?, ?> properties) {
             for (var kv : properties.entrySet()) {
                 if (kv.getValue() instanceof Map<?, ?> property && property.get(TYPE) instanceof String type) {
@@ -671,41 +690,56 @@ public final class GraphContract {
         }
         var name = lhs.substring(0, open).trim();
         var args = splitArguments(lhs.substring(open + 1, lhs.length() - 1));
-        var wrapper = switch (name) {
-            case "int", "long" -> INTEGER;
-            case "float", "double" -> NUMBER;
-            case "boolean" -> BOOLEAN;
-            case "text" -> STRING;
-            default -> null;
-        };
+        var wrapper = wrapperType(name);
         if (wrapper != null) {
-            if (args.size() == 1) {
-                typeInputPath(args.getFirst(), wrapper);
-            }
+            typeSingleArgument(args, wrapper);
             return wrapper;
         }
-        if (name.startsWith("f:")) {
-            var plugin = name.substring(2);
-            if (plugin.equals("defaultValue") || plugin.equals("ternary")) {
-                var index = plugin.equals("defaultValue") ? 1 : 1;
-                if (args.size() > index) {
-                    var type = typeOf(args.get(index));
-                    if (type != null && plugin.equals("defaultValue") && !args.isEmpty()) {
-                        typeInputPath(args.getFirst(), type);
-                    }
-                    return type;
-                }
-                return null;
-            }
-            var type = PLUGIN_TYPES.get(plugin);
-            if (type != null && args.size() == 1 && (plugin.equals("int") || plugin.equals("long")
-                    || plugin.equals("float") || plugin.equals("double") || plugin.equals("boolean")
-                    || plugin.equals("text"))) {
-                typeInputPath(args.getFirst(), type);
-            }
-            return type;
+        return name.startsWith("f:") ? pluginType(name.substring(2), args) : null;
+    }
+
+    /** The constant wrappers of a mapping source, which the plugins of the same names mirror. */
+    private static String wrapperType(String name) {
+        return switch (name) {
+            case INT, LONG -> INTEGER;
+            case FLOAT, DOUBLE -> NUMBER;
+            case BOOLEAN -> BOOLEAN;
+            case TEXT -> STRING;
+            default -> null;
+        };
+    }
+
+    /** A wrapper around one input path types the path as well. */
+    private void typeSingleArgument(List<String> args, String type) {
+        if (args.size() == 1) {
+            typeInputPath(args.getFirst(), type);
         }
-        return null;
+    }
+
+    private String pluginType(String plugin, List<String> args) {
+        if (DEFAULT_VALUE.equals(plugin) || "ternary".equals(plugin)) {
+            return secondArgumentType(plugin, args);
+        }
+        var type = PLUGIN_TYPES.get(plugin);
+        if (type != null && wrapperType(plugin) != null) {
+            typeSingleArgument(args, type);
+        }
+        return type;
+    }
+
+    /**
+     * {@code f:defaultValue(path, fallback)} and {@code f:ternary(condition, a, b)} carry the type of their
+     * second argument; a default value types the path it stands in for.
+     */
+    private String secondArgumentType(String plugin, List<String> args) {
+        if (args.size() < 2) {
+            return null;
+        }
+        var type = typeOf(args.get(1));
+        if (type != null && DEFAULT_VALUE.equals(plugin)) {
+            typeInputPath(args.getFirst(), type);
+        }
+        return type;
     }
 
     private void typeInputPath(String argument, String type) {
@@ -762,14 +796,14 @@ public final class GraphContract {
     }
 
     private void declarePart(Map<?, ?> properties, String part, String namespace) {
-        if (properties == null || !(properties.get(SCHEMA) instanceof Map<?, ?> schema)
+        if (!(properties.get(SCHEMA) instanceof Map<?, ?> schema)
                 || !(schema.get(part) instanceof Map<?, ?> declaredSchema)) {
             return;
         }
         declared.put(namespace, true);
         var root = roots.get(namespace);
         root.declared = true;
-        overlay(root, declaredSchema, INPUT_HEADER.equals(namespace) || OUTPUT_HEADER.equals(namespace));
+        overlay(root, declaredSchema, isHeaderNamespace(namespace));
     }
 
     /** Overlay a declared schema object on a node: the declaration wins. */
@@ -777,18 +811,7 @@ public final class GraphContract {
         node.declared = true;
         var type = schema.get(TYPE) instanceof String t ? t : null;
         if (ARRAY.equals(type)) {
-            node.array = true;
-            if (schema.get(ITEMS) instanceof Map<?, ?> items) {
-                var itemType = items.get(TYPE) instanceof String t ? t : null;
-                if (itemType != null && !OBJECT.equals(itemType)) {
-                    node.type = itemType;
-                }
-                if (items.get(PROPERTIES) instanceof Map<?, ?> properties) {
-                    overlayProperties(node, properties, items.get(REQUIRED), headers);
-                }
-                keepFragment(items, node.itemFragment);
-            }
-            keepFragment(schema, node.fragment);
+            overlayArray(node, schema, headers);
             return;
         }
         if (type != null && !OBJECT.equals(type)) {
@@ -796,6 +819,22 @@ public final class GraphContract {
         }
         if (schema.get(PROPERTIES) instanceof Map<?, ?> properties) {
             overlayProperties(node, properties, schema.get(REQUIRED), headers);
+        }
+        keepFragment(schema, node.fragment);
+    }
+
+    /** A declared array: its element's type, properties and fragment land on the path itself. */
+    private void overlayArray(Node node, Map<?, ?> schema, boolean headers) {
+        node.array = true;
+        if (schema.get(ITEMS) instanceof Map<?, ?> items) {
+            var itemType = items.get(TYPE) instanceof String t ? t : null;
+            if (itemType != null && !OBJECT.equals(itemType)) {
+                node.type = itemType;
+            }
+            if (items.get(PROPERTIES) instanceof Map<?, ?> properties) {
+                overlayProperties(node, properties, items.get(REQUIRED), headers);
+            }
+            keepFragment(items, node.itemFragment);
         }
         keepFragment(schema, node.fragment);
     }
@@ -861,11 +900,11 @@ public final class GraphContract {
 
     // ---------------------------------------------------------------- views
 
-    /** The OpenAPI schema object of a namespace (null when nothing is referenced or declared). */
+    /** The OpenAPI schema object of a namespace (empty when nothing is referenced or declared). */
     public Map<String, Object> schema(String namespace) {
         var root = roots.get(namespace);
         if (!has(namespace)) {
-            return null;
+            return new LinkedHashMap<>();
         }
         return schemaOf(root);
     }
@@ -917,17 +956,17 @@ public final class GraphContract {
         var view = new LinkedHashMap<String, Object>();
         view.put("graph", graphId);
         if (purpose != null) {
-            view.put("purpose", purpose);
+            view.put(PURPOSE, purpose);
         }
         var input = new LinkedHashMap<String, Object>();
         input.put(BODY, namespaceView(INPUT_BODY));
         input.put(HEADER, namespaceView(INPUT_HEADER));
-        view.put("input", input);
+        view.put(INPUT, input);
         var output = new LinkedHashMap<String, Object>();
         output.put(BODY, namespaceView(OUTPUT_BODY));
         output.put(HEADER, namespaceView(OUTPUT_HEADER));
         output.put("status", new ArrayList<>(statusCodes));
-        view.put("output", output);
+        view.put(OUTPUT, output);
         view.put("issues", new ArrayList<>(issues));
         return view;
     }
@@ -936,7 +975,7 @@ public final class GraphContract {
         var view = new LinkedHashMap<String, Object>();
         view.put("declared", isDeclared(namespace));
         var schema = schema(namespace);
-        if (schema != null) {
+        if (!schema.isEmpty()) {
             view.put(SCHEMA, schema);
         }
         var paths = new ArrayList<Map<String, Object>>();
@@ -950,7 +989,7 @@ public final class GraphContract {
             } else if (!node.children.isEmpty()) {
                 entry.put(TYPE, OBJECT);
             }
-            entry.put("origin", node.declared && node.discovered ? "both" : node.declared ? "declared" : "discovered");
+            entry.put("origin", originOf(node));
             if (node.required) {
                 entry.put(REQUIRED, true);
             }
@@ -961,6 +1000,13 @@ public final class GraphContract {
         });
         view.put("paths", paths);
         return view;
+    }
+
+    private static String originOf(Node node) {
+        if (node.declared && node.discovered) {
+            return "both";
+        }
+        return node.declared ? "declared" : "discovered";
     }
 
     /** The lines of {@code describe graph}: the surfaces with their types, then the declaration. */
@@ -987,10 +1033,10 @@ public final class GraphContract {
         outputs.forEach(line -> sb.append("  ").append(line).append('\n'));
         var parts = new ArrayList<String>();
         if (isDeclared(INPUT_BODY) || isDeclared(INPUT_HEADER)) {
-            parts.add("input");
+            parts.add(INPUT);
         }
         if (isDeclared(OUTPUT_BODY) || isDeclared(OUTPUT_HEADER)) {
-            parts.add("output");
+            parts.add(OUTPUT);
         }
         sb.append("Declared schema: ").append(parts.isEmpty() ? "none" : String.join(", ", parts)).append('\n');
         return sb.toString();

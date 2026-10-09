@@ -48,6 +48,8 @@ import java.util.Map;
 @EventInterceptor
 @PreLoad(route = GraphTraveler.ROUTE, instances=300)
 public class GraphTraveler extends GraphLambdaFunction {
+    /** Names the node in an abort reason: {@code <message> (node <alias>)}. */
+    private static final String NODE_SUFFIX = " (node ";
     private static final Logger log = LoggerFactory.getLogger(GraphTraveler.class);
     public static final String ROUTE = "graph.traveler";
     private static final String RUN_TIMEOUT = "run_timeout";
@@ -352,7 +354,7 @@ public class GraphTraveler extends GraphLambdaFunction {
             if (claimTerminal(graphInstance)) {
                 var errorMap = getErrorMap(stateMachine.getElement(nodeName + "." + ERROR),
                         stateMachine.getElement(nodeName + "." + TARGET));
-                emitAborted(po, graphInstance, failure.getStatus(), errorMap.get(MESSAGE) + " (node " + nodeName + ")");
+                emitAborted(po, graphInstance, failure.getStatus(), errorMap.get(MESSAGE) + NODE_SUFFIX + nodeName + ")");
             }
         } else {
             stageErrorContext(stateMachine, nodeName);
@@ -496,7 +498,7 @@ public class GraphTraveler extends GraphLambdaFunction {
         }
         // a thrown node error is plain text - name the node so the reader can find it
         var reason = response.getBody() instanceof Map? reasonOf(response.getBody())
-                        : reasonOf(response.getBody()) + " (node " + nodeName + ")";
+                        : reasonOf(response.getBody()) + NODE_SUFFIX + nodeName + ")";
         emitAborted(po, graphInstance, response.getStatus(), reason);
     }
 
@@ -529,7 +531,7 @@ public class GraphTraveler extends GraphLambdaFunction {
         if (body instanceof Map<?, ?> map) {
             var message = String.valueOf(map.get(MESSAGE));
             var target = map.get(TARGET);
-            return target == null? message : message + " (node " + target + ")";
+            return target == null? message : message + NODE_SUFFIX + target + ")";
         }
         return String.valueOf(body);
     }

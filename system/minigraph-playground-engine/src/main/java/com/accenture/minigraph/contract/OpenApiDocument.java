@@ -42,6 +42,8 @@ public final class OpenApiDocument {
     private static final String SCHEMA = "schema";
     private static final String CONTENT = "content";
     private static final String TYPE = "type";
+    private static final String REQUIRED = "required";
+    private static final String STRING = "string";
 
     private OpenApiDocument() {}
 
@@ -50,7 +52,7 @@ public final class OpenApiDocument {
      *
      * @param contract the graph's contract
      * @param version the API version (the deployed set's version, else the application's)
-     * @param serverUrl the base URL of the engine that answers, e.g. http://127.0.0.1:8085; null to omit
+     * @param serverUrl the base URL of the engine that answers, e.g. {@code http://127.0.0.1:8085}; null to omit
      * @return the OpenAPI 3.0 document as an ordered map
      */
     public static Map<String, Object> of(GraphContract contract, String version, String serverUrl) {
@@ -76,9 +78,9 @@ public final class OpenApiDocument {
             operation.put("parameters", parameters);
         }
         var requestSchema = contract.schema(GraphContract.INPUT_BODY);
-        if (requestSchema != null) {
+        if (!requestSchema.isEmpty()) {
             var requestBody = new LinkedHashMap<String, Object>();
-            requestBody.put("required", true);
+            requestBody.put(REQUIRED, true);
             requestBody.put(CONTENT, jsonContent(requestSchema));
             operation.put("requestBody", requestBody);
         }
@@ -100,16 +102,14 @@ public final class OpenApiDocument {
             parameter.put("name", header.name);
             parameter.put("in", "header");
             if (header.required) {
-                parameter.put("required", true);
+                parameter.put(REQUIRED, true);
             }
             var schema = GraphContract.schemaOf(header);
             var description = schema.remove(DESCRIPTION);
             if (description != null) {
                 parameter.put(DESCRIPTION, description);
             }
-            if (!schema.containsKey(TYPE)) {
-                schema.put(TYPE, "string");
-            }
+            schema.putIfAbsent(TYPE, STRING);
             parameter.put(SCHEMA, schema);
             parameters.add(parameter);
         }
@@ -124,8 +124,7 @@ public final class OpenApiDocument {
         if (!headers.isEmpty()) {
             ok.put("headers", headers);
         }
-        var bodySchema = contract.schema(GraphContract.OUTPUT_BODY);
-        ok.put(CONTENT, jsonContent(bodySchema == null ? new LinkedHashMap<>() : bodySchema));
+        ok.put(CONTENT, jsonContent(contract.schema(GraphContract.OUTPUT_BODY)));
         responses.put("200", ok);
         for (var code : contract.getStatusCodes()) {
             if (code == 200) {
@@ -157,9 +156,7 @@ public final class OpenApiDocument {
             if (description != null) {
                 entry.put(DESCRIPTION, description);
             }
-            if (!schema.containsKey(TYPE)) {
-                schema.put(TYPE, "string");
-            }
+            schema.putIfAbsent(TYPE, STRING);
             entry.put(SCHEMA, schema);
             headers.put(header.name, entry);
         }
@@ -176,13 +173,13 @@ public final class OpenApiDocument {
 
     private static Map<String, Object> errorSchema() {
         var properties = new LinkedHashMap<String, Object>();
-        properties.put(TYPE, Map.of(TYPE, "string"));
+        properties.put(TYPE, Map.of(TYPE, STRING));
         properties.put("status", Map.of(TYPE, "integer"));
-        properties.put("message", Map.of(TYPE, "string"));
+        properties.put("message", Map.of(TYPE, STRING));
         var schema = new LinkedHashMap<String, Object>();
         schema.put(TYPE, "object");
         schema.put("properties", properties);
-        schema.put("required", List.of(TYPE, "status", "message"));
+        schema.put(REQUIRED, List.of(TYPE, "status", "message"));
         return schema;
     }
 

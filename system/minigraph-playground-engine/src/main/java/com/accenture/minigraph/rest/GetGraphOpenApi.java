@@ -28,7 +28,6 @@ import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.AppConfigReader;
 
 import java.util.List;
@@ -122,7 +121,8 @@ public class GetGraphOpenApi implements TypedLambdaFunction<AsyncHttpRequest, Ev
         if (host == null || host.isBlank()) {
             return null;
         }
-        return (input.isSecure() ? "https://" : "http://") + host.trim();
+        var scheme = input.isSecure() ? "https" : "http";
+        return scheme + "://" + host.trim();
     }
 
     /** A draft is named after its root node's name, as the download and the export are; else "draft". */
@@ -137,9 +137,5 @@ public class GetGraphOpenApi implements TypedLambdaFunction<AsyncHttpRequest, Ev
             }
         }
         return "draft";
-    }
-
-    static String toJson(Object value) {
-        return SimpleMapper.getInstance().getMapper().writeValueAsString(value);
     }
 }

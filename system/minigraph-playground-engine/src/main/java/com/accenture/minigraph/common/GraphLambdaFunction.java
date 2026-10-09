@@ -697,38 +697,42 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         stateMachine.removeElement(nodeName + "." + ERROR);
         stateMachine.removeElement(nodeName + "." + STACK);
         stateMachine.setElement(nodeName + "." + TARGET, route);
-        EventEnvelope response;
-        if (!po.exists(route) && po.getEventHttpTarget(route) == null) {
-            response = new EventEnvelope().setStatus(500).setBody("Schema validator '" + route + "' does not exist");
-        } else {
-            Map<String, Object> payload = new HashMap<>();
-            payload.put(BODY, stateMachine.getElement(INPUT_BODY));
-            payload.put(HEADER, stateMachine.getElement(INPUT_HEADER_NAMESPACE));
-            payload.put(SCHEMA, root.getProperty(SCHEMA));
-            var request = new EventEnvelope().setTo(route).setCorrelationId(util.getUuid()).setBody(payload);
-            if (parentSpanId != null) {
-                request.setSpanId(parentSpanId);
-            }
-            if (stateMachine.getElement(MODEL_CID) instanceof String businessCid && !businessCid.isBlank()) {
-                request.addTag(EventEmitter.BUSINESS_CID_TAG, businessCid.trim());
-            }
-            try {
-                // a timeout answers 408 as a response, never an exception
-                response = po.eRequest(request, getModelTtl(graphInstance), false).get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                response = new EventEnvelope().setStatus(500).setBody("Schema validation interrupted");
-            } catch (ExecutionException e) {
-                var cause = e.getCause() != null ? e.getCause() : e;
-                response = new EventEnvelope().setStatus(500).setBody(String.valueOf(cause.getMessage()));
-            }
-        }
+        var response = po.exists(route) || po.getEventHttpTarget(route) != null
+                ? requestValidation(po, graphInstance, root, route, parentSpanId)
+                : new EventEnvelope().setStatus(500).setBody("Schema validator '" + route + "' does not exist");
         if (response.hasError()) {
             stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
             stageNodeError(stateMachine, nodeName, response);
             return response;
         }
         return null;
+    }
+
+    /** The one synchronous request to the validator, carrying the run's deadline, trace and business correlation id. */
+    private EventEnvelope requestValidation(PostOffice po, GraphInstance graphInstance, SimpleNode root, String route,
+                                            String parentSpanId) {
+        var stateMachine = graphInstance.stateMachine;
+        Map<String, Object> payload = new HashMap<>();
+        payload.put(BODY, stateMachine.getElement(INPUT_BODY));
+        payload.put(HEADER, stateMachine.getElement(INPUT_HEADER_NAMESPACE));
+        payload.put(SCHEMA, root.getProperty(SCHEMA));
+        var request = new EventEnvelope().setTo(route).setCorrelationId(util.getUuid()).setBody(payload);
+        if (parentSpanId != null) {
+            request.setSpanId(parentSpanId);
+        }
+        if (stateMachine.getElement(MODEL_CID) instanceof String businessCid && !businessCid.isBlank()) {
+            request.addTag(EventEmitter.BUSINESS_CID_TAG, businessCid.trim());
+        }
+        try {
+            // a timeout answers 408 as a response, never an exception
+            return po.eRequest(request, getModelTtl(graphInstance), false).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new EventEnvelope().setStatus(500).setBody("Schema validation interrupted");
+        } catch (ExecutionException e) {
+            var cause = e.getCause() != null ? e.getCause() : e;
+            return new EventEnvelope().setStatus(500).setBody(String.valueOf(cause.getMessage()));
+        }
     }
 
     protected static long getModelTtl(GraphInstance instance) {
