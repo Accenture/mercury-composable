@@ -10,7 +10,10 @@
   RFC-0007 (PR #529, docs only, MERGED 2026-10-08 as squash `c4cfff06`; revised for headers in #532: `schema.body` and
   `schema.header` on both nodes, input headers validated beside the body, names case-insensitive). The Upload step's mock headers
   (`POST /api/mock/{id}?namespace=header`, the panel's Headers rows) shipped ahead of the sprint as the dry-run prerequisite: Java #531,
-  mercury #369 (Increment 170); all three MERGED 2026-10-09 (`6c53389c`, `46d19b06`, `c4932455`). Open: the open points in the entry (the subset, strict types,
+  mercury #369 (Increment 170); all three MERGED 2026-10-09 (`6c53389c`, `46d19b06`, `c4932455`). **WP1 delivered 2026-10-09:** the contract class, the OpenAPI
+  document, `GET /api/openapi/{graph_id}` and `/api/openapi/session/{sessionId}`, `describe graph` with types - Java #533, mercury #370
+  (Increment 171), one shared fixture `graph-contract-vectors.json` (six cases; the Rust port matched on its first run); query parameters
+  out by design. Open: the merges of #533/#370, then WP2 with Eric's open points (the subset, strict types,
   `additionalProperties`, the violation cap, the draft route), then WP1 (contract class, discovery, endpoints, both engines, one shared
   fixture), WP2 (validator, assumed step, gate, shared vectors), WP3 (the panel), WP4 (docs, help, AI guide, api-playground, claims).
   Relates [[graph-set-pack-and-deploy]] (the panel and endpoint precedents), [[canonical-packager-wire-contract]] (the shared-vector
