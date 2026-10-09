@@ -20,7 +20,14 @@
   report cases; the Rust port matched on its first run) - Java #534, mercury #371 (Increment 172), both MERGED 2026-10-09
   (`fd4d39fa`, `867bc56f`); the four open points
   implemented as proposed (the subset, strict types with an integral float as an integer, `additionalProperties` default, cap 10) for
-  Eric to confirm at promotion. Open: WP3 (the Schema panel), WP4 (docs, help, AI guide, api-playground, claims), then promotion.
+  Eric to confirm at promotion. **WP3 delivered 2026-10-09 (branches pushed, PRs for Eric to open):** the Schema panel - Tools →
+  **Graph schema** and a link in the root/end node editor; Input (root) and Output (end) tabs, one row per body path and per header
+  name (path, type, required, description, example, a `declared`/`discovered`/`from last run`/`new` chip, the other keywords a
+  read-only chip carried through Save), pre-filled from the WP1 contract view, Fill from last run through `/api/inspect`, Save as one
+  `update node` with the node's other properties re-sent, Download of the draft YAML - Java `66829f57`, the Rust bundle twin
+  `4958d62b` (Increment 173); vitest 57 files / 453 tests; a live drive on tutorial-8 confirmed the round trip. Two choices to
+  confirm: the panel edits path/type/required/description/example only; a Save re-sends the node as the node editor does.
+  Open: WP4 (docs, help, AI guide, api-playground, claims), then promotion.
   Relates [[graph-set-pack-and-deploy]] (the panel and endpoint precedents), [[canonical-packager-wire-contract]] (the shared-vector
   method), [[clean-knowledge-design-over-engine-coverage]] (why the keyword subset is closed), [[conv-proposals-not-in-adr-ledger]].
   → proposal: RFC-0007
