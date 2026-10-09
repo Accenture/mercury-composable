@@ -356,6 +356,23 @@ which is why `list graphs` shows a set's graphs with their set and version (`tut
 or non-canonical file) is skipped with an ERROR and the other sets still deploy. The graph packager and the
 Playground's **Graph set packaging** panel write the file; a deployment is still a restart.
 
+### `graph.schema.validator` {#graph-schema-validator}
+
+| Type | Default |
+|------|---------|
+| `String` (route name) | `graph.schema.validator` |
+
+The function both walkers call for the **assumed validation step** of [the graph
+contract](knowledge-graph/graph-contract.md#validation): when a root node carries a `schema`
+property, the executor and the Playground's traveler send `{body, header, schema}` to this route as
+the first thing at the root on every run, before the root's own skill, and stage a failure under the
+root as the standard task error path (HTTP 400 with every violation, or the root's `exception=`
+handler). The default is the built-in validator of the closed OpenAPI 3.0 subset; a substitute names
+another function with the same contract — `{valid: true}` on success, a 400 whose error is the
+violation message on failure — for an installation that wants a different vocabulary or an audit hook.
+Nothing is written into the graph for the step, so a substitute applies to every graph of the
+application at once.
+
 ### `location.graph.temp`
 
 | Type | Default |
