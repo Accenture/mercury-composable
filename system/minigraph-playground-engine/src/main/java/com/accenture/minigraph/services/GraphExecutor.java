@@ -159,7 +159,10 @@ public class GraphExecutor extends GraphLambdaFunction {
         // quality gate is the only door to deployed execution) - no per-request
         // structural re-validation; the dry-run walker keeps its own checks because
         // playground drafts never pass the gate
-        walk(po, graphInstance, graph.getRootNode(), null, parentSpanId);
+        var root = graph.getRootNode();
+        // a root with a 'schema' property turns input validation on as the first step at the root
+        armInputValidation(graphInstance, root);
+        walk(po, graphInstance, root, null, parentSpanId);
     }
 
     private void handleSkillResponse(PostOffice po, EventEnvelope response) {
@@ -282,6 +285,12 @@ public class GraphExecutor extends GraphLambdaFunction {
 
     private void walkTo(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node,
                         String from, String parentSpanId) {
+        // the assumed step of a graph with a contract (RFC-0007): validate the input at the root
+        // before the root's own skill, or anything else, runs - a failed validation ends here
+        if (graphInstance.pendingInputValidation.compareAndSet(true, false)
+                && !inputValidated(po, graphInstance, node, parentSpanId)) {
+            return;
+        }
         var graph = graphInstance.graph;
         var endNode = graph.getEndNode();
         if (endNode.getId().equals(node.getId())) {
@@ -299,6 +308,43 @@ public class GraphExecutor extends GraphLambdaFunction {
                 walkNext(po, graphInstance, node, parentSpanId, false);
             }
         }
+    }
+
+    /**
+     * Run the assumed validation step at the root and apply its outcome the way a failing task node's
+     * is applied: no handler, the run aborts with the validator's status and its error map; a root
+     * {@code exception=} handler, the generic exception context is staged and the handler takes over
+     * (the root's own skill is skipped). GraphTraveler keeps identical semantics.
+     *
+     * @return true when the input passed and the walk may continue
+     */
+    private boolean inputValidated(PostOffice po, GraphInstance graphInstance, SimpleNode root, String parentSpanId) {
+        var started = System.currentTimeMillis();
+        var failure = validateInput(po, graphInstance, root, parentSpanId);
+        if (failure == null) {
+            if (traversalLog && log.isInfoEnabled()) {
+                log.info("{}", traversalRecord("Input validated by " + getSchemaValidatorRoute() + " in " +
+                        (System.currentTimeMillis() - started) + " ms", graphInstance));
+            }
+            return true;
+        }
+        var stateMachine = graphInstance.stateMachine;
+        var nodeName = root.getAlias();
+        var errorHandler = root.getProperty(EXCEPTION);
+        if (errorHandler == null) {
+            var errorMap = getErrorMap(stateMachine.getElement(nodeName + "." + ERROR),
+                    stateMachine.getElement(nodeName + "." + TARGET));
+            var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
+                    .setCorrelationId(graphInstance.getCorrelationId()).setBody(errorMap)
+                    .setStatus(failure.getStatus()).setSpanId(parentSpanId);
+            po.send(error);
+            graphInstance.complete.set(true);
+            logAborted(graphInstance, String.valueOf(errorMap.get(MESSAGE)));
+        } else {
+            stageErrorContext(stateMachine, nodeName);
+            nextOrJump(po, graphInstance, root, String.valueOf(errorHandler), parentSpanId);
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")

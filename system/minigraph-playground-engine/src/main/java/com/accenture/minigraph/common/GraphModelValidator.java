@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.common;
 
+import com.accenture.minigraph.contract.GraphSchema;
 import com.accenture.minigraph.skills.GraphApiFetcher;
 import com.accenture.minigraph.skills.GraphExtension;
 import com.accenture.minigraph.skills.GraphIsland;
@@ -69,6 +70,9 @@ public class GraphModelValidator {
     private static final String MODEL_PREFIX = "model";
     private static final String STATEMENT = "statement";
     private static final String MAP_TO = "->";
+    private static final String SCHEMA = "schema";
+    // the nodes whose 'schema' property is the graph contract: the root (request) and the end (response)
+    private static final List<String> SCHEMA_NODES = List.of("root", "end");
     // the skills that CONSUME a 'task' route. graph.suspend and graph.resume are documented
     // supersets of graph.task - their 'task' names the pluggable state-store function - so all
     // three legitimately carry one, and no other skill does.
@@ -102,6 +106,31 @@ public class GraphModelValidator {
         validateSuspendResume(graph);
         validateNodeTtl(graph);
         validateModelMetadataImmutability(graph);
+        validateSchemas(graph);
+    }
+
+    /**
+     * The graph contract's declarations compile (RFC-0007): a {@code schema} property on the root node
+     * (the request) or the end node (the response) must be an object of a {@code body} part and/or a
+     * {@code header} part written in the closed OpenAPI 3.0 subset of {@link GraphSchema}. A malformed
+     * schema or an unknown keyword fails the gate, because a constraint the validator would silently
+     * ignore teaches that unflagged means safe; the end node's schema is documentary but compiles by the
+     * same rule.
+     *
+     * @param graph an imported MiniGraph
+     * @throws IllegalArgumentException naming the node and the offending location
+     */
+    private static void validateSchemas(MiniGraph graph) {
+        for (var alias : SCHEMA_NODES) {
+            var node = graph.findNodeByAlias(alias);
+            if (node != null && node.getProperty(SCHEMA) != null) {
+                try {
+                    GraphSchema.compileContract(node.getProperty(SCHEMA));
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException(NODE_NAME + alias + " - " + e.getMessage());
+                }
+            }
+        }
     }
 
     /**

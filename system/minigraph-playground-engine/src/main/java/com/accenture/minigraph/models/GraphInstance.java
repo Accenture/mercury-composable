@@ -41,6 +41,12 @@ public class GraphInstance {
     public final ConcurrentMap<String, Boolean> nodeSeen = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Boolean> skillRun = new ConcurrentHashMap<>();
     public final AtomicBoolean complete = new AtomicBoolean(false);
+    /**
+     * Armed when a run begins at a root node that carries a {@code schema} property: the walker takes
+     * it on its first visit to the root and validates the input before anything else runs (RFC-0007).
+     * A resumed traversal never arms it.
+     */
+    public final AtomicBoolean pendingInputValidation = new AtomicBoolean(false);
     private final ConcurrentMap<String, Object> metadata = new ConcurrentHashMap<>();
 
     public GraphInstance(String graphId) {

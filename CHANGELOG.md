@@ -48,6 +48,30 @@ Each change merged to `main` after v4.12.21 is listed here; it moves under its r
    `GraphOpenApiEndpointTest`. No upgrade action: a Layer 3 application that wants the endpoint adds the two `rest.yaml`
    entries.
 
+3. **Input validation by declaration at the root of a graph (RFC-0007, WP2).** When a root node carries a `schema` property, the
+   engine validates the request before anything runs - `input.body` against `schema.body` and `input.header` against
+   `schema.header`, header names case-insensitively - as the first step at the root of every run, a step the engine assumes with
+   nothing written into the node. It invokes the new built-in function `graph.schema.validator` with `{body, header, schema}` the
+   way a task node invokes a function: a bad request answers HTTP 400 with every violation in one message (`Input validation failed
+   - input.body.amount: expected number, got string; input.header.X-Api-Key: required`, ten violations and the rest counted), a root
+   `exception=` handler takes over a failed validation with the generic exception context (`error.source=root`, `error.code`,
+   `error.message`), the root's own skill runs only after a successful validation, the traversal log and the dry run's console say
+   `Input validated by graph.schema.validator in N ms`, and the application property `graph.schema.validator` names a substitute
+   function with the same contract. The vocabulary is a closed OpenAPI 3.0 subset - `type`, `properties`, `required`, `items`,
+   `enum`, `minimum`, `maximum`, `exclusiveMinimum`, `exclusiveMaximum`, `minLength`, `maxLength`, `pattern`, `minItems`,
+   `maxItems`, `nullable`, `additionalProperties`; `title`, `description`, `example` and `format` documentary - and the gate
+   (CompileGraph, the packager, the Playground's pre-run check) refuses any other keyword, a keyword that cannot apply to the
+   declared type and a malformed schema, naming the location (`node root - schema.body.properties.amount: unknown keyword 'min'
+   - ...`), on the end node too, and warns at deploy and pack time about a declared path the model never reads or a read path the
+   declaration lacks. Types are strict JSON types (a numeric string is not a number; an integral float is an integer), a number or
+   boolean header validates the parsed text, a `pattern` is searched with Unicode-aware classes and must stay in the subset common
+   to both engines (no lookaround, atomic group, backreference or possessive quantifier), and the values the Playground grammar
+   stores as text (`minimum=0`, `nullable=true`) are read as the schema expects. Pinned by the shared vector file
+   `graph-schema-vectors.json` (56 compile, 29 validate and 2 report cases, byte-identical with the Rust repository),
+   `GraphSchemaValidationTest`, `SessionManagementTest.dryRunValidatesTheInputAtTheRootTest` and the Rust twins. **Upgrade note:** a
+   deployed graph whose root already carries a `schema` property - none ships in this repository - is validated from this release
+   on, and refused at the gate when the property is not the contract's shape.
+
 ### Fixed
 
 3. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers

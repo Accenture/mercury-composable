@@ -18,12 +18,15 @@
 
 package com.accenture.minigraph.common;
 
+import com.accenture.minigraph.contract.GraphSchemaValidator;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.GraphSession;
 import com.accenture.util.DataMappingHelper;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.system.EventEmitter;
+import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
@@ -35,7 +38,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEnvelope, Object> {
@@ -157,6 +162,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String FOR_EACH = "for_each";
     protected static final String CONCURRENCY = "concurrency";
     protected static final String PURPOSE = "purpose";
+    protected static final String SCHEMA = "schema";
+    private static final String SCHEMA_VALIDATOR_CONFIG = "graph.schema.validator";
     protected static final String TASK = "task";
     protected static final String MAPPING_TAG = "mapping:";
     protected static final String COMPUTE_TAG = "compute:";
@@ -201,6 +208,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final Set<String> RESERVED_MODEL_METADATA =
             Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none", "run",
                     ITERATION_INDEX);
+    private static final AtomicReference<String> schemaValidator = new AtomicReference<>();
     private static final AtomicLong loopInterval = new AtomicLong(-1);
     private static final AtomicLong highFrequency = new AtomicLong(-1);
 
@@ -632,6 +640,95 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             stateMachine.removeElement(ERROR_MESSAGE);
             stateMachine.removeElement(ERROR_STACK);
         }
+    }
+
+    /**
+     * The route of the input validator: the built-in {@code graph.schema.validator}, or the substitute
+     * the application property of the same name points at.
+     *
+     * @return the validator's route
+     */
+    protected static String getSchemaValidatorRoute() {
+        var route = schemaValidator.get();
+        if (route == null) {
+            route = AppConfigReader.getInstance().getProperty(SCHEMA_VALIDATOR_CONFIG, GraphSchemaValidator.ROUTE).trim();
+            if (route.isEmpty()) {
+                route = GraphSchemaValidator.ROUTE;
+            }
+            schemaValidator.set(route);
+        }
+        return route;
+    }
+
+    /**
+     * Arm the assumed validation step of a run that begins at this root: the walker takes the flag on its
+     * first visit to the root and validates the input before the root's own skill, or anything else, runs.
+     * A root without a {@code schema} property arms nothing.
+     *
+     * @param graphInstance the run
+     * @param root the root node
+     */
+    protected void armInputValidation(GraphInstance graphInstance, SimpleNode root) {
+        graphInstance.pendingInputValidation.set(root.getProperty(SCHEMA) instanceof Map);
+    }
+
+    /**
+     * The assumed step at the root of a graph with a contract (RFC-0007): validate the run's
+     * {@code input.body} and {@code input.header} against the root's {@code schema} by invoking the
+     * validator function the way a task node invokes a composable function - a request carrying
+     * {@code {body, header, schema}}, the run's deadline, its trace and its business correlation id.
+     * A failing response (400 with every violation in one message; 500 for a validator that does not
+     * exist or fails) is staged under the root's {@code status}, {@code error} and {@code target}, so the
+     * standard error path - the run's abort status, the root's {@code exception=} handler, the console
+     * line of a dry run - applies as it does to a failing task.
+     *
+     * @param po the walker's post office
+     * @param graphInstance the run
+     * @param root the root node
+     * @param parentSpanId the parent span of the step, or null
+     * @return null when the input passed; otherwise the failing response
+     */
+    protected EventEnvelope validateInput(PostOffice po, GraphInstance graphInstance, SimpleNode root, String parentSpanId) {
+        var stateMachine = graphInstance.stateMachine;
+        var nodeName = root.getAlias();
+        var route = getSchemaValidatorRoute();
+        // a re-run of the same instance must not carry the previous validation's outcome
+        stateMachine.removeElement(nodeName + "." + STATUS);
+        stateMachine.removeElement(nodeName + "." + ERROR);
+        stateMachine.removeElement(nodeName + "." + STACK);
+        stateMachine.setElement(nodeName + "." + TARGET, route);
+        EventEnvelope response;
+        if (!po.exists(route) && po.getEventHttpTarget(route) == null) {
+            response = new EventEnvelope().setStatus(500).setBody("Schema validator '" + route + "' does not exist");
+        } else {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put(BODY, stateMachine.getElement(INPUT_BODY));
+            payload.put(HEADER, stateMachine.getElement(INPUT_HEADER_NAMESPACE));
+            payload.put(SCHEMA, root.getProperty(SCHEMA));
+            var request = new EventEnvelope().setTo(route).setCorrelationId(util.getUuid()).setBody(payload);
+            if (parentSpanId != null) {
+                request.setSpanId(parentSpanId);
+            }
+            if (stateMachine.getElement(MODEL_CID) instanceof String businessCid && !businessCid.isBlank()) {
+                request.addTag(EventEmitter.BUSINESS_CID_TAG, businessCid.trim());
+            }
+            try {
+                // a timeout answers 408 as a response, never an exception
+                response = po.eRequest(request, getModelTtl(graphInstance), false).get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                response = new EventEnvelope().setStatus(500).setBody("Schema validation interrupted");
+            } catch (ExecutionException e) {
+                var cause = e.getCause() != null ? e.getCause() : e;
+                response = new EventEnvelope().setStatus(500).setBody(String.valueOf(cause.getMessage()));
+            }
+        }
+        if (response.hasError()) {
+            stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
+            stageNodeError(stateMachine, nodeName, response);
+            return response;
+        }
+        return null;
     }
 
     protected static long getModelTtl(GraphInstance instance) {

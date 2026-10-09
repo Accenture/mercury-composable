@@ -112,6 +112,8 @@ public class GraphTraveler extends GraphLambdaFunction {
             throw new IllegalArgumentException("End node does not exist");
         }
         armRunWatcher(po, graphInstance);
+        // a root with a 'schema' property turns input validation on as the first step at the root
+        armInputValidation(graphInstance, root);
         walk(po, graphInstance, root, null);
     }
 
@@ -302,6 +304,12 @@ public class GraphTraveler extends GraphLambdaFunction {
     }
 
     private void walkTo(PostOffice po, String skill, GraphInstance graphInstance, SimpleNode node, String from) {
+        // the assumed step of a graph with a contract (RFC-0007): validate the input at the root
+        // before the root's own skill, or anything else, runs - a failed validation ends here
+        if (graphInstance.pendingInputValidation.compareAndSet(true, false)
+                && !inputValidated(po, graphInstance, node)) {
+            return;
+        }
         var graph = graphInstance.graph;
         var endNode = graph.getEndNode();
         if (endNode.getId().equals(node.getId())) {
@@ -319,6 +327,38 @@ public class GraphTraveler extends GraphLambdaFunction {
                 walkNext(po, graphInstance, node, false);
             }
         }
+    }
+
+    /**
+     * Run the assumed validation step at the root and apply its outcome the way a failing task node's
+     * is applied: no handler, the run aborts with the validator's status and the reason on the console;
+     * a root {@code exception=} handler, the generic exception context is staged and the handler takes
+     * over (the root's own skill is skipped). GraphExecutor keeps identical semantics.
+     *
+     * @return true when the input passed and the walk may continue
+     */
+    private boolean inputValidated(PostOffice po, GraphInstance graphInstance, SimpleNode root) {
+        var started = System.currentTimeMillis();
+        var failure = validateInput(po, graphInstance, root, null);
+        if (failure == null) {
+            po.send(new EventEnvelope().setTo(graphInstance.getReplyTo()).setBody("Input validated by " +
+                    getSchemaValidatorRoute() + " in " + (System.currentTimeMillis() - started) + " ms"));
+            return true;
+        }
+        var stateMachine = graphInstance.stateMachine;
+        var nodeName = root.getAlias();
+        var errorHandler = root.getProperty(EXCEPTION);
+        if (errorHandler == null) {
+            if (claimTerminal(graphInstance)) {
+                var errorMap = getErrorMap(stateMachine.getElement(nodeName + "." + ERROR),
+                        stateMachine.getElement(nodeName + "." + TARGET));
+                emitAborted(po, graphInstance, failure.getStatus(), errorMap.get(MESSAGE) + " (node " + nodeName + ")");
+            }
+        } else {
+            stageErrorContext(stateMachine, nodeName);
+            nextOrJump(po, graphInstance, root, String.valueOf(errorHandler));
+        }
+        return false;
     }
 
     private void executionComplete(PostOffice po, GraphInstance graphInstance) {

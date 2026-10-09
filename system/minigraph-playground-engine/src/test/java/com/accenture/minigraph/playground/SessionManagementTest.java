@@ -33,6 +33,7 @@ import org.platformlambda.core.websocket.client.PersistentWsClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -785,6 +786,28 @@ class SessionManagementTest {
                 "Expected message containing: " + substring);
     }
 
+    /**
+     * Every message up to and including the first one that contains the substring, so a test can
+     * assert on the lines a run printed before its terminal line.
+     */
+    private List<String> drainUntil(BlockingQueue<String> queue, String substring, int timeoutSeconds)
+            throws InterruptedException {
+        var lines = new ArrayList<String>();
+        var deadline = System.currentTimeMillis() + timeoutSeconds * 1000L;
+        while (System.currentTimeMillis() < deadline) {
+            var msg = queue.poll(deadline - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+            if (msg == null) {
+                break;
+            }
+            lines.add(msg);
+            if (msg.contains(substring)) {
+                return lines;
+            }
+        }
+        log.info("Timeout waiting for substring: {} after {}", substring, lines);
+        return lines;
+    }
+
     private String waitForMessage(BlockingQueue<String> queue, String substring, int timeoutSeconds)
             throws InterruptedException {
         var deadline = System.currentTimeMillis() + timeoutSeconds * 1000L;
@@ -901,5 +924,86 @@ class SessionManagementTest {
                 .setQueryParameter("namespace", "header").setBody(Map.of("a", "b"));
         ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(Map.of(), expired, 1));
         assertEquals("Session ws-000000-0 is expired or invalid", ex.getMessage());
+    }
+
+    /**
+     * Input validation in a dry run (RFC-0007, WP2): a root 'schema' turns the assumed step on, the
+     * traveler validates whatever the instance holds as input.body and input.header before anything
+     * runs, names every violation on the console, reports the step when the input passes, and the
+     * pre-run gate refuses a schema outside the vocabulary before the traveler starts.
+     */
+    @Test
+    void dryRunValidatesTheInputAtTheRootTest() throws InterruptedException {
+        SessionFixture fx = createFixture();
+        if (fx == null) {
+            return;
+        }
+        try (fx) {
+            po.send(fx.txPathA(), """
+                    create node root
+                    with type Root
+                    with properties
+                    name=schema-draft
+                    purpose=A root schema in a dry run
+                    schema.body.type=object
+                    schema.body.required[]=amount
+                    schema.body.properties.amount.type=number
+                    schema.body.properties.amount.minimum=0
+                    schema.header.required[]=X-Tenant
+                    schema.header.properties.X-Tenant.type=string""");
+            assertNotNull(waitForMessage(fx.messagesA(), "node root created", 5));
+            po.send(fx.txPathA(), "create node end");
+            assertNotNull(waitForMessage(fx.messagesA(), "node end created", 5));
+            po.send(fx.txPathA(), "connect root to end with next");
+            assertNotNull(waitForMessage(fx.messagesA(), "node root connected to end", 5));
+            po.send(fx.txPathA(), "instantiate graph");
+            assertNotNull(waitForMessage(fx.messagesA(), "Graph instance created", 5));
+            // without mock data the request is empty (an instance starts with an empty input.body and
+            // no headers): the run is refused at the root with every violation
+            fx.messagesA().clear();
+            po.send(fx.txPathA(), "run");
+            assertNotNull(waitForMessage(fx.messagesA(), "Graph traversal aborted: Input validation failed - " +
+                    "input.body.amount: required; input.header.X-Tenant: required (node root)", 5));
+            // mock body and headers satisfy the contract: the step reports itself and the run completes
+            assertTrue(GraphCommandService.uploadContent(fx.sessionA(), Map.of("amount", 5)));
+            assertNotNull(waitForMessage(fx.messagesA(), MOCK_DATA_LOADED, 5));
+            assertTrue(GraphCommandService.uploadContent(fx.sessionA(), Map.of("x-tenant", "k"), "header"));
+            assertNotNull(waitForMessage(fx.messagesA(), "Mock data loaded into 'input.header' namespace", 5));
+            // (the console drops a command identical to the previous one as a double-submit, so each
+            // run is preceded by a look at the input)
+            po.send(fx.txPathA(), "inspect input.body");
+            assertNotNull(waitForMessage(fx.messagesA(), "amount", 5));
+            fx.messagesA().clear();
+            po.send(fx.txPathA(), "run");
+            var lines = drainUntil(fx.messagesA(), "Graph traversal ", 5);
+            assertTrue(lines.stream().anyMatch(l -> l.startsWith("Input validated by graph.schema.validator in ")),
+                    String.valueOf(lines));
+            assertTrue(lines.getLast().startsWith("Graph traversal completed in "), String.valueOf(lines));
+            // a bad value is refused with the reason
+            assertTrue(GraphCommandService.uploadContent(fx.sessionA(), Map.of("amount", -1)));
+            assertNotNull(waitForMessage(fx.messagesA(), MOCK_DATA_LOADED, 5));
+            po.send(fx.txPathA(), "inspect input.header");
+            assertNotNull(waitForMessage(fx.messagesA(), "x-tenant", 5));
+            fx.messagesA().clear();
+            po.send(fx.txPathA(), "run");
+            assertNotNull(waitForMessage(fx.messagesA(), "Graph traversal aborted: Input validation failed - " +
+                    "input.body.amount: must be at least 0 (node root)", 5));
+            // the pre-run gate refuses a schema outside the vocabulary before the traveler starts
+            po.send(fx.txPathA(), """
+                    update node root
+                    with type Root
+                    with properties
+                    name=schema-draft
+                    purpose=A root schema in a dry run
+                    schema.body.type=object
+                    schema.body.properties.amount.min=0""");
+            assertNotNull(waitForMessage(fx.messagesA(), "node root updated", 5));
+            po.send(fx.txPathA(), "instantiate graph");
+            assertNotNull(waitForMessage(fx.messagesA(), "Graph instance created", 5));
+            fx.messagesA().clear();
+            po.send(fx.txPathA(), "run");
+            assertNotNull(waitForMessage(fx.messagesA(), "Graph traversal aborted: Unable to run - node root - " +
+                    "schema.body.properties.amount: unknown keyword 'min'", 5));
+        }
     }
 }
