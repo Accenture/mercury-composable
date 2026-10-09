@@ -44,6 +44,7 @@ import LeftPanel from './LeftPanel/LeftPanel';
 import NodeEditPanel from './NodeEditPanel/NodeEditPanel';
 import MockUploadPanel from './MockUploadPanel/MockUploadPanel';
 import GraphSetPanel from './GraphSetPanel/GraphSetPanel';
+import SchemaPanel from './SchemaPanel/SchemaPanel';
 import ConnectionPopover from './ConnectionPopover/ConnectionPopover';
 import { useGraphAuthoring } from './GraphAuthoring/useGraphAuthoring';
 import { useSessionCollaboration } from '../session/useSessionCollaboration';
@@ -54,6 +55,8 @@ import { GraphDownloadDialog } from './GraphFileDialogs/GraphDownloadDialog';
 import { GraphImportConfirmDialog } from './GraphFileDialogs/GraphImportConfirmDialog';
 import { useGraphFileImport } from '../hooks/useGraphFileImport';
 import { useGraphSetPanel } from '../hooks/useGraphSetPanel';
+import { useSchemaPanel } from '../hooks/useSchemaPanel';
+import { SCHEMA_NODE_ALIAS, type SchemaSide } from '../utils/graphSchema';
 import { buildGraphFileText, graphFileName, saveTextFile, suggestGraphId, supportsSaveFilePicker } from '../utils/graphFile';
 import { type PlaygroundConfig } from '../config/playgrounds';
 import { resolveBundledHelpTopic } from '../utils/localHelpCommand';
@@ -73,10 +76,10 @@ interface PlaygroundProps {
 
 /**
  * What currently occupies the left panel slot. The node editor, the
- * mock-upload form and the graph-set panel take the console's space in
- * turn; the console itself is the resting state.
+ * mock-upload form, the graph-set panel and the schema panel take the
+ * console's space in turn; the console itself is the resting state.
  */
-type LeftPanelMode = 'console' | 'node-edit' | 'upload' | 'package';
+type LeftPanelMode = 'console' | 'node-edit' | 'upload' | 'package' | 'schema';
 
 /**
  * Default left-panel widths per slot content, as percentages of the
@@ -91,6 +94,8 @@ const LEFT_PANEL_DEFAULT_PERCENT: Record<LeftPanelMode, number> = {
   'node-edit': 30,
   'upload':    30,
   'package':   30,
+  // the schema rows carry path, type, required and description side by side
+  'schema':    38,
 };
 
 /** Default width of the clipboard sidebar, as a percentage of the playground width. */
@@ -559,6 +564,23 @@ export default function Playground({ config }: PlaygroundProps) {
     graphName: graphDisplayName,
   });
 
+  // ── Schema panel (left slot) ─────────────────────────────────────────────
+  // "Graph schema" in the Tools menu, or the root/end node editor: the graph
+  // contract of RFC-0007 as rows, pre-filled from the engine's contract view
+  // of the draft (GET /api/openapi/session/{id}?view=contract), typed from
+  // the instance's last run (/api/inspect/{id}/…), and saved through the
+  // existing `update node` command so every member sees it. Unsaved rows
+  // survive a close.
+  const schemaPanel = useSchemaPanel({
+    addToast,
+    sessionId: sessionCollaboration.state.sessionId,
+    connected: ws.connected,
+    graphData,
+    graphName: graphDisplayName,
+    bus,
+    sendRawText: ws.sendRawText,
+  });
+
   // ── Graph authoring ───────────────────────────────────────────────────────
   const graphAuthoringExecutor = useMemo(
     () => createGraphAuthoringExecutor(ws.sendRawText),
@@ -663,7 +685,7 @@ export default function Playground({ config }: PlaygroundProps) {
   // only fires on new messages, so an unchanged backlog would otherwise
   // reappear scrolled to the top.
   const consoleRef = ws.consoleRef;
-  const consoleVisible = consoleOpen && nodeEditSession === null && uploadPanelPath === null && !graphSet.isOpen;
+  const consoleVisible = consoleOpen && nodeEditSession === null && uploadPanelPath === null && !graphSet.isOpen && !schemaPanel.isOpen;
   useEffect(() => {
     if (consoleVisible && consoleRef.current) {
       consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
@@ -728,13 +750,16 @@ export default function Playground({ config }: PlaygroundProps) {
 
   // ── Left panel slot mode + default widths ─────────────────────────────────
   // Priority: the node editor wins the slot, then the upload form, then the
-  // graph-set panel, then the console. Each content type opens at its own
-  // default width (console one third, the in-place cards 30%); a manual
-  // separator drag holds until the slot content changes again.
+  // graph-set panel, then the schema panel, then the console. Each content
+  // type opens at its own default width (console one third, the in-place
+  // cards 30%, the schema rows 38%); a manual separator drag holds until the
+  // slot content changes again. The two Tools panels never coexist: opening
+  // one closes the other.
   const leftPanelMode: LeftPanelMode | null =
     nodeEditSession !== null ? 'node-edit'
     : uploadPanelPath !== null ? 'upload'
     : graphSet.isOpen ? 'package'
+    : schemaPanel.isOpen ? 'schema'
     : consoleOpen ? 'console' : null;
 
   const leftPanelRef = useRef<PanelImperativeHandle | null>(null);
@@ -802,8 +827,45 @@ export default function Playground({ config }: PlaygroundProps) {
     if (uploadPanelPath !== null) {
       handleCloseUploadPanel();
     }
+    if (schemaPanel.isOpen) {
+      schemaPanel.close();
+    }
     graphSet.open();
-  }, [nodeEditSession, uploadPanelPath, handleCloseUploadPanel, graphSet.open, addToast]);
+  }, [nodeEditSession, uploadPanelPath, handleCloseUploadPanel, graphSet.open, schemaPanel, addToast]);
+
+  // The Tools menu's "Graph schema" opens the schema panel in the console's
+  // slot on the Input tab; the root or end node editor opens it on its own
+  // side and closes itself first (the user chose the panel over the editor).
+  // An open upload form or graph-set panel is closed, as the Console button
+  // closes them.
+  const handleOpenSchemaPanel = useCallback((side: SchemaSide = 'input', fromEditor = false) => {
+    if (nodeEditSession !== null) {
+      if (!fromEditor) {
+        addToast('Close the node editor first.', 'info');
+        return;
+      }
+      if (nodeEditSession.phase === 'sending') return;
+      graphAuthoring.close();
+    }
+    if (uploadPanelPath !== null) {
+      handleCloseUploadPanel();
+    }
+    if (graphSet.isOpen) {
+      if (graphSet.busy) {
+        addToast('Wait for the graph set to finish packing.', 'info');
+        return;
+      }
+      graphSet.close();
+    }
+    schemaPanel.open(side);
+  }, [nodeEditSession, graphAuthoring, uploadPanelPath, handleCloseUploadPanel, graphSet, schemaPanel, addToast]);
+  const handleOpenSchemaPanelFromMenu = useCallback(() => handleOpenSchemaPanel('input'), [handleOpenSchemaPanel]);
+
+  // The root and end node editors offer the panel for their own side.
+  const nodeEditSchemaSide: SchemaSide | null =
+    nodeEditSession !== null && nodeEditSession.action === 'edit-node'
+      ? (Object.keys(SCHEMA_NODE_ALIAS) as SchemaSide[]).find(side => SCHEMA_NODE_ALIAS[side] === nodeEditSession.formState.alias.trim()) ?? null
+      : null;
 
   return (
     <div className={styles.wrapper}>
@@ -892,6 +954,13 @@ export default function Playground({ config }: PlaygroundProps) {
                 }
                 return;
               }
+              if (schemaPanel.isOpen) {
+                if (!schemaPanel.busy) {
+                  schemaPanel.close();
+                  setConsoleOpen(true);
+                }
+                return;
+              }
               setConsoleOpen(prev => !prev);
             }}
             aria-label={nodeEditSession !== null
@@ -900,12 +969,15 @@ export default function Playground({ config }: PlaygroundProps) {
                 ? 'Show console panel and close the upload form'
                 : graphSet.isOpen
                   ? 'Show console panel and close the graph-set panel'
-                  : consoleOpen ? 'Hide console panel' : 'Show console panel'}
+                  : schemaPanel.isOpen
+                    ? 'Show console panel and close the schema panel'
+                    : consoleOpen ? 'Hide console panel' : 'Show console panel'}
             aria-pressed={consoleVisible}
             title={nodeEditSession !== null
               ? 'Closes the node editor'
               : uploadPanelPath !== null ? 'Closes the upload form'
-              : graphSet.isOpen ? 'Closes the graph-set panel' : undefined}
+              : graphSet.isOpen ? 'Closes the graph-set panel'
+              : schemaPanel.isOpen ? 'Closes the schema panel' : undefined}
           >
             Console
           </button>
@@ -923,6 +995,7 @@ export default function Playground({ config }: PlaygroundProps) {
             addToast={addToast}
             sessionCollaboration={supportsSessionCollaboration ? sessionCollaboration : null}
             onPackageGraphs={supportsAuthoring ? handleOpenPackagePanel : undefined}
+            onEditSchema={supportsAuthoring ? handleOpenSchemaPanelFromMenu : undefined}
           />
           {supportsHelp && (
             <div className={styles.helpButtonWrapper}>
@@ -999,6 +1072,9 @@ export default function Playground({ config }: PlaygroundProps) {
                   onFormStateChange={graphAuthoring.updateFormState}
                   onSubmit={graphAuthoring.submit}
                   onClose={graphAuthoring.close}
+                  onOpenSchemaPanel={nodeEditSchemaSide !== null
+                    ? () => handleOpenSchemaPanel(nodeEditSchemaSide, true)
+                    : undefined}
                 />
               ) : uploadPanelPath !== null ? (
                 <MockUploadPanel
@@ -1014,6 +1090,12 @@ export default function Playground({ config }: PlaygroundProps) {
               ) : graphSet.isOpen ? (
                 <GraphSetPanel
                   controller={graphSet}
+                  supportsFolderPicker={supportsSaveFilePicker()}
+                />
+              ) : schemaPanel.isOpen ? (
+                <SchemaPanel
+                  controller={schemaPanel}
+                  graphName={graphDisplayName}
                   supportsFolderPicker={supportsSaveFilePicker()}
                 />
               ) : (

@@ -72,6 +72,24 @@ Each change merged to `main` after v4.12.21 is listed here; it moves under its r
    deployed graph whose root already carries a `schema` property - none ships in this repository - is validated from this release
    on, and refused at the gate when the property is not the contract's shape.
 
+4. **The Playground's Schema panel: the graph contract as rows (RFC-0007, WP3).** The Tools menu gains **Graph schema**, and the
+   root and end node editors a link to it: a panel in the console's slot with an **Input** tab (the root node's `schema`, the
+   request) and an **Output** tab (the end node's, the response), each a body section with one row per path and a header section
+   with one row per header name - path or name, type, required, description, example, and a chip saying where the row came from
+   (`declared`, `discovered`, `from last run`, `new`; the tooltip names the referencing nodes). The rows are pre-filled from the
+   engine's contract view of the draft (`GET /api/openapi/session/{sessionId}?view=contract`, discovery merged with the
+   declaration), **Fill from last run** types them from the instance's actual `input.body`, `input.header`, `output.body` and
+   `output.header` through the inspect endpoint (the only way to type a task's or a fetcher's result), **Save** writes the
+   declaration through one `update node` command - the node's other properties re-sent as the node editor sends them, the
+   `schema.*` rows replaced - so every member of a collaborative session sees it and an agent does the same by command, and
+   **Download YAML** saves the draft's OpenAPI document. What the gate or the node grammar would refuse is flagged in place (a
+   blank or malformed path, a duplicate, a `[]` path that is not an array, a scalar with nested paths, a header with an object
+   type); the engine's declaration-versus-model issues are listed above the rows. The panel edits a row's path, type,
+   requiredness, description and example; the other keywords of the subset (`enum`, `minimum`, `pattern`, …) are shown as a
+   summary chip and carried through Save unchanged - the node editor edits them. Webapp only, deployed to both engines from the
+   one source (the bundle in `public/assets/` and `template/playground.html`); the webapp's vitest suite grows to 57 files and
+   453 tests. No upgrade action: no engine change, no new route.
+
 ### Fixed
 
 3. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers

@@ -176,6 +176,41 @@ can be put away while a graph is edited), `mode` (`assemble` | `inspect`) and `b
   `editInspectedSet()` loads the graphs and the caller fields (`manifestRowsOf`, without `set`,
   `format` and `format_version`) into the editor under the set's name; `leaveInspect()` returns.
 
+## The graph contract (`hooks/useSchemaPanel.ts`, `utils/graphSchema.ts`, `graphActions/schemaCommand.ts`)
+
+**`useSchemaPanel({ addToast, sessionId, connected, graphData, graphName, bus, sendRawText })`**
+owns the Schema panel (RFC-0007): `isOpen` / `open(side)` / `close` (unsaved rows survive a close),
+`side` (`input` | `output`), `busy`, and the rows of the four parts keyed `input.body`,
+`input.header`, `output.body`, `output.header`.
+
+- **Load.** `open` (when nothing is unsaved), `reload` and a `graph.mutation` (when nothing is
+  unsaved and no save is pending) read `GET /api/openapi/session/{sessionId}?view=contract` -
+  the engine's contract view, discovery merged with the declaration - and `rowsFromContractPart`
+  turns each part into rows: the type, requiredness, origin and `usedBy` from the view; the
+  description, the example and the carried constraints from the node's own `schema` property only
+  (`declaredSchemaOf`), never the view's "Referenced by …" text. A reload answer that arrives after
+  the user edited a row is dropped; an explicit Reload discards the edits by design.
+- **Rows.** `updateRow` / `addRow` / `removeRow` mark the side dirty; `issues` is
+  `schemaRowIssues` per part (what the gate or the node grammar would refuse); `issuesOf(side)`
+  filters the engine's declaration-versus-model issues; `nodeOf(side)` finds `root` or `end`.
+- **Fill from last run.** `fillFromRun` reads the four namespaces through
+  `GET /api/inspect/{sessionId}/{key}` (404 = no instance), infers rows with `rowsFromValue`
+  (strict JSON types, an integral number is an integer, `name[]` for an array with its element
+  type or the union of its objects' keys, a scalar's text as the example) and `mergeRunRows`
+  fills the gaps: an untyped row gains the run's type (its chip becomes `from last run`), a row
+  without an example gains the value, a path the contract never saw is appended.
+- **Save.** `save` builds the side's two parts (`buildPartSchema`: nested `properties` and
+  `items`, `required` per level, each row's description, example and carried constraints) into
+  the `schema` property (`buildSchemaProperty`; no rows = no property) and sends ONE `update node
+  <alias>` through `buildSchemaUpdateCommand` - the node's other properties re-sent as the node
+  editor would send them, since the engine clears the property set on update, and the `schema.*`
+  rows replaced by `schemaToPropertyRows` (the grammar's composite keys, lists with `[]`). The
+  engine's `node <alias> updated` closes the save (`minigraph.nodeAction.textResult`; a rejection
+  or a generic `ERROR:` becomes `saveError`; no reply within 10 s is reported) and reloads the
+  rows. Every member of the session sees the result, and an agent does the same by command.
+- **Download.** `download` fetches `GET /api/openapi/session/{sessionId}` and saves the YAML under
+  the engine's file name (`saveYamlFile`).
+
 ## Saved graphs and naming
 
 - **`useSavedGraphs(storageKey)`** — a `localStorage` map `name → { name, savedAt }` (only the

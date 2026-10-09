@@ -102,7 +102,7 @@ references the new chunk (`curl -s http://127.0.0.1:8085/ | grep index-`); older
 
 ## Testing
 
-`npm test` runs Vitest once (53 files, 416 tests as of 2026-10-06). Conventions:
+`npm test` runs Vitest once (57 files, 453 tests as of 2026-10-09). Conventions:
 
 - The default environment is `node` (`vitest.config.ts`); component and hook tests that need a DOM
   declare `// @vitest-environment happy-dom` at the top of the file.

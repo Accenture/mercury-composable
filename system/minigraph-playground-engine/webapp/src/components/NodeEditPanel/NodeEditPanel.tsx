@@ -17,6 +17,8 @@ interface NodeEditPanelProps {
   onFormStateChange: (formState: NodeFormState) => void;
   onSubmit: () => void;
   onClose: () => void;
+  /** Given for the root and end nodes in edit mode: opens the Schema panel for this node's declaration (the editor closes). */
+  onOpenSchemaPanel?: () => void;
 }
 
 const MIN_TEXTAREA_ROWS = 1;
@@ -54,6 +56,7 @@ export default function NodeEditPanel({
   onFormStateChange,
   onSubmit,
   onClose,
+  onOpenSchemaPanel,
 }: NodeEditPanelProps) {
   const aliasRef = useRef<HTMLInputElement>(null);
   const nodeTypeRef = useRef<HTMLInputElement>(null);
@@ -245,6 +248,20 @@ export default function NodeEditPanel({
           {disconnected && (
             <div className={styles.warningMessage} role="status">
               {serverMessage ?? disconnectedMessage}
+            </div>
+          )}
+          {onOpenSchemaPanel && (
+            <div className={styles.message} role="note">
+              This node carries the graph's {formState.alias.trim() === 'root' ? 'request' : 'response'} contract (<code>schema</code>).{' '}
+              <button
+                type="button"
+                className={styles.schemaLink}
+                onClick={onOpenSchemaPanel}
+                disabled={sending}
+                title="Edit the contract as rows in the Schema panel; this editor closes"
+              >
+                Open the Schema panel…
+              </button>
             </div>
           )}
 

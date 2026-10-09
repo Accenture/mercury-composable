@@ -58,9 +58,11 @@ interface NavigationProps {
   sessionCollaboration?: SessionCollaborationController | null;
   /** When provided, the Tools menu ends with "Graph set packaging", which opens the graph-set panel. */
   onPackageGraphs?: () => void;
+  /** When provided, the Tools menu offers "Graph schema", which opens the schema panel (RFC-0007). */
+  onEditSchema?: () => void;
 }
 
-export default function Navigation({ addToast, sessionCollaboration, onPackageGraphs }: NavigationProps) {
+export default function Navigation({ addToast, sessionCollaboration, onPackageGraphs, onEditSchema }: NavigationProps) {
   const ctx = useWebSocketContext();
 
   // Collect live phases for the aggregate dot on the Tools menu
@@ -159,9 +161,23 @@ export default function Navigation({ addToast, sessionCollaboration, onPackageGr
           })}
         </ul>
 
-        {/* ── Graph set packaging (the graph-set panel, ADR-0027) ── */}
-        {onPackageGraphs && (
+        {/* ── Graph schema (the schema panel, RFC-0007) and graph set packaging (ADR-0027) ── */}
+        {(onEditSchema || onPackageGraphs) && (
           <ul className={`${styles.menuList} ${styles.menuSection}`} role="none">
+            {onEditSchema && (
+              <li role="none">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`${styles.menuItem} ${styles.menuButton}`}
+                  onClick={() => { close(); onEditSchema(); }}
+                  title="Declare the graph's request and response contract - the schema on the root and end nodes"
+                >
+                  📐 Graph schema
+                </button>
+              </li>
+            )}
+            {onPackageGraphs && (
             <li role="none">
               <button
                 type="button"
@@ -173,6 +189,7 @@ export default function Navigation({ addToast, sessionCollaboration, onPackageGr
                 📦 Graph set packaging
               </button>
             </li>
+            )}
           </ul>
         )}
         </>)}
