@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>platform-core</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.21</version>
+    <version>4.12.22</version>
     <name>Mercury platform-core module</name>
 
     <parent>
@@ -111,7 +111,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minimalist-msgpack</artifactId>
-            <version>4.12.21</version>
+            <version>4.12.22</version>
         </dependency>
 
         <dependency>
