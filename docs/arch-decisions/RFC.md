@@ -40,8 +40,8 @@
 ---
 
 ## RFC-0008 — The mini-scheduler's active environment: one site runs the jobs of an active-active deployment
-**Status:** Open · **Raised:** 2026-10-09 · **Serves:** vision-mercury-composable · **Thread:** `scheduler-active-environment`
-<!-- id: rfc-0008 | status: open | thread: scheduler-active-environment -->
+**Status:** Promoted → ADR-0030 · **Raised:** 2026-10-09 · **Serves:** vision-mercury-composable · **Thread:** `scheduler-active-environment`
+<!-- id: rfc-0008 | status: promoted | thread: scheduler-active-environment -->
 
 **Proposal.** A field installation deploys the scheduler in Production and DR active-active. The DR scheduler fires the same
 jobs, whose flows publish to the DR Kafka cluster, and the DR applications - which must stay idle while Production is up - consume
@@ -75,7 +75,11 @@ mode. *(d) Keep the value in memory per instance* - the dashboard's call reaches
 restart resets it; rejected by Eric. *(e) Extend the state resolver's contract with the environment* - changes a contract the field
 has implemented for job state; a separate function keeps the two concerns apart.
 
-**Resolution.** (open)
+**Resolution.** Promoted → ADR-0030 (2026-10-09, Eric): option (a), the declared environment with the store as the source of truth,
+read at every scheduled point. Accepted after PR #539 (squash `74212b1e`) merged with green CI: `ActiveEnvironment` and the executor's
+standby path in the module, the example's `EnvironmentStore` template and `GET`/`POST /api/scheduler/environment`, the configuration
+reference, the claim `scheduler-active-environment-standby`; the `scheduler.active.environment` property of the first draft dropped at
+Eric's review. The release vehicle is the next release (CHANGELOG Unreleased, Added item 7).
 
 ---
 

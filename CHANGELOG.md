@@ -119,6 +119,12 @@ Each change merged to `main` after v4.12.21 is listed here; it moves under its r
    scheduler says so at startup. Claim `scheduler-active-environment-standby`. No upgrade action: a scheduler that sets no
    environment runs as before.
 
+8. **RFC-0008, the mini-scheduler's active environment, is promoted to ADR-0030.** The decision record states what the module is
+   now committed to - the `scheduler.environment` property, the store as the active environment's source of truth read at every
+   scheduled point and its two-message contract, standby that skips at execution, the honoured manual run - and why: a scheduler
+   deployed active-active in two sites fired every job in both, and the module's single-site mechanisms could not decide between
+   them. The RFC register keeps the proposal with its resolution.
+
 ### Fixed
 
 3. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers
