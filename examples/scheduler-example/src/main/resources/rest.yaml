@@ -19,6 +19,15 @@ rest:
     cors: cors_1
     headers: header_1
     tracing: true
+
+  # the active-environment switch of an active-active deployment (RFC-0008)
+  - service: "v1.environment.admin"
+    methods: ['GET', 'POST']
+    url: "/api/scheduler/environment"
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
 #
 # CORS HEADERS for pre-flight (HTTP OPTIONS) and normal responses
 #

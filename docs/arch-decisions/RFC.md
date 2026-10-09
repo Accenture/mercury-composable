@@ -39,6 +39,46 @@
 
 ---
 
+## RFC-0008 — The mini-scheduler's active environment: one site runs the jobs of an active-active deployment
+**Status:** Open · **Raised:** 2026-10-09 · **Serves:** vision-mercury-composable · **Thread:** `scheduler-active-environment`
+<!-- id: rfc-0008 | status: open | thread: scheduler-active-environment -->
+
+**Proposal.** A field installation deploys the scheduler in Production and DR active-active. The DR scheduler fires the same
+jobs, whose flows publish to the DR Kafka cluster, and the DR applications - which must stay idle while Production is up - consume
+them: unintended side effects (Eric's problem statement, 2026-10-09). The module's existing mechanisms are single-site:
+`leader.election` picks one instance inside a service mesh and the state resolver dedupes inside one state store; neither spans two
+sites with two Kafka clusters. **(1) A declared environment.** `scheduler.environment` names this instance's environment (an
+application property, e.g. `${ENV_NAME:prod}`, default `prod`); the *active environment* is the one whose scheduler runs the jobs,
+`prod` until an operator sets another, so an unconfigured installation behaves as before. Not `app.env`, which already selects the
+Playground's dev mode (`@OptionalService("app.env=dev")`, 18 services): a Layer 3 application that also schedules jobs could not be
+in dev mode and count as Production at once. **(2) Standby skips at execution, not at scheduling.** Quartz keeps firing; the job
+executor compares the two values before anything runs and logs one line (`Standby: job demo-task skipped - the active environment
+is prod, this instance is DR`), so a switch takes effect at the next trigger with no restart. An operator's manual run is explicit
+and is honoured on a standby instance, with a log line saying so. **(3) The value is persisted through a function the application
+implements** (Eric, 2026-10-09: Kubernetes restarts a pod without notice, so an in-memory value would reset): the route named by
+`scheduler.environment.store` (default `v1.environment.store`), the contract `type=get` → the persisted name as text, `type=set` +
+`environment` + `operator` → `true`; the scheduler example's `EnvironmentStore` is the file-backed template, in the shape of the
+sample `StateResolver`, to be replaced by a database such as PostgreSQL or MongoDB. **The store is the source of truth** (Eric,
+2026-10-09, dropping a first `scheduler.active.environment` property: a startup value has no place beside a store): it is read at
+every scheduled point, before a job runs, so one call moves every instance of every site; the last value read is kept only as the
+fallback for a store that fails to answer; without a registered store the value lives in memory only and the scheduler warns at
+startup. **(4) The switch is the application's REST endpoint**, per the
+rest.yaml rule: the module exposes `ActiveEnvironment` (status, activate) and the example wires `GET`/`POST
+/api/scheduler/environment` (`{"active": "DR", "operator": "..."}`) through `v1.environment.admin`; the operations dashboard calls it
+before and after a Production maintenance window. A decision would commit the module to the two properties and their defaults, the
+skip-at-execution semantics, the store as the source of truth read at every scheduled point, its contract and the honoured manual run.
+
+**Options.** *(a) Declared environment, skip at execution, persisted through an application function* - **recommended**: the
+dashboard's one call reaches every instance through the store, no restart, the field keeps its own data store. *(b) Pause the
+Quartz scheduler on standby* - no trigger log, and a resume races the first firings. *(c) Reuse `app.env`* - collides with dev
+mode. *(d) Keep the value in memory per instance* - the dashboard's call reaches one instance behind a load balancer, and a pod
+restart resets it; rejected by Eric. *(e) Extend the state resolver's contract with the environment* - changes a contract the field
+has implemented for job state; a separate function keeps the two concerns apart.
+
+**Resolution.** (open)
+
+---
+
 ## RFC-0007 — The graph contract: a `schema` on the root and end nodes, discovery, OpenAPI on demand, input validation and a Schema panel
 **Status:** Promoted → ADR-0029 · **Raised:** 2026-10-08 · **Serves:** vision-mercury-composable · **Thread:** `graph-contract-schema`
 <!-- id: rfc-0007 | status: promoted | thread: graph-contract-schema -->

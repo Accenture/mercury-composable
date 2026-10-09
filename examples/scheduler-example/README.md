@@ -21,6 +21,31 @@ set "leader.election" to true.
 
 (Alternatively, you may also turn on Quartz's cluster mode and configure the database accordingly.)
 
+## Active-active sites: one environment runs the jobs
+
+A scheduler deployed in two sites (Production and DR) active-active fires every job in both; a job that
+publishes to the site's Kafka cluster then wakes the DR applications that must stay idle while Production
+is up. One property names this instance's environment:
+
+```
+scheduler.environment=${ENV_NAME:prod}
+```
+
+The scheduler is **active** when its environment is the *active environment* and on **standby** otherwise:
+a scheduled job is skipped with one log line (`Standby: job demo-task skipped - the active environment is
+prod, this instance is DR`), and an operator's manual run is still honoured. Both default to `prod`, so an
+unconfigured installation behaves as before.
+
+The active environment's **source of truth is a data store**, not a property: the function named by
+`scheduler.environment.store` (default `v1.environment.store`), which the application implements against
+its own database - the example's `EnvironmentStore` writes a file; replace it with PostgreSQL, MongoDB or a
+distributed cache - because Kubernetes restarts a pod without notice. The scheduler reads it **at every
+scheduled point**, before a job runs, so one call moves every instance of every site. The operations team
+makes that call around a Production maintenance window - to `DR` before, back to `prod` after - through the
+application's REST endpoint (`GET`/`POST /api/scheduler/environment` in the example,
+`{"active": "DR", "operator": "..."}`). Until an operator sets a value the active environment is `prod`.
+Without a registered store the value lives in memory only, and the scheduler says so at startup.
+
 ## cron schedules
 
 Cron jobs can be defined in a "cron.yaml" file.

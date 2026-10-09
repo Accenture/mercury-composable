@@ -108,6 +108,17 @@ Each change merged to `main` after v4.12.21 is listed here; it moves under its r
    first mapping met it. The points the register left open are accepted as implemented. The RFC register keeps the proposal with
    its resolution.
 
+7. **The mini-scheduler runs its jobs in one environment of an active-active deployment (RFC-0008).** `scheduler.environment`
+   names this instance's environment (e.g. `${ENV_NAME:prod}`, default `prod`); the scheduler is active when it is the active
+   environment and on standby otherwise: a scheduled job is skipped with one log line, an operator's manual run is still
+   honoured. The active environment's source of truth is a data store, not a property: the function named by
+   `scheduler.environment.store` (default `v1.environment.store`), which the application implements against its own database -
+   the example's `EnvironmentStore` is the file-backed template - read at every scheduled point, so one call from the operations
+   team's dashboard (the example's `GET`/`POST /api/scheduler/environment`) moves every instance of every site and a pod restart
+   does not reset it; until an operator sets a value it is `prod`. Without a registered store the value is in memory only and the
+   scheduler says so at startup. Claim `scheduler-active-environment-standby`. No upgrade action: a scheduler that sets no
+   environment runs as before.
+
 ### Fixed
 
 3. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers

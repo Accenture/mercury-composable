@@ -370,6 +370,16 @@
       "quote": "A dry run in the Playground validates the input exactly as a deployed run does",
       "test": "system/minigraph-playground-engine::SessionManagementTest#dryRunValidatesTheInputAtTheRootTest",
       "since": "4.12.21+"
+    },
+    {
+      "id": "scheduler-active-environment-standby",
+      "claim": "A mini-scheduler instance whose environment is not the active one stands by: scheduled jobs are skipped, manual runs honoured.",
+      "pages": [
+        "docs/guides/configuration-reference.md"
+      ],
+      "quote": "When this instance's environment is not the active one, the scheduler stands by: a scheduled job is skipped with one log line, and an operator's manual run is still honoured.",
+      "test": "system/mini-scheduler::ActiveEnvironmentTest#standbySkipsAScheduledJobAndHonoursAnOperatorRun",
+      "since": "4.12.22+"
     }
   ]
 }
