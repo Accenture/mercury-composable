@@ -135,6 +135,7 @@ nav:
     - AI agent guide: guides/knowledge-graph/ai-agent-guide.md
     - Composing the layers: guides/knowledge-graph/composing-the-layers.md
     - Playground & AI companion: guides/knowledge-graph/playground-and-companion.md
+    - The graph contract: guides/knowledge-graph/graph-contract.md
     - Minimalist Property Graph: guides/knowledge-graph/property-graph.md
 
   - Operate & integrate:

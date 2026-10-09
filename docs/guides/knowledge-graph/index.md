@@ -187,7 +187,9 @@ To keep this honest — the engine is real, the enterprise lifecycle is partly a
 
 **Available now:** interactive model authoring; instance creation (`instantiate graph` with mock
 data); execution (`run`, or single-node `execute`); state-machine inspection; JSON `export`/`import`;
-**dry-run** in the Playground; collaborative multi-user sessions; loop detection.
+**dry-run** in the Playground; collaborative multi-user sessions; loop detection; a declared
+[graph contract](graph-contract.md) — a `schema` on the root and end nodes that the engine validates
+at the root and renders as an OpenAPI 3.0 document on demand.
 
 **On the roadmap (not yet in code):** the governance lifecycle (certify → stage → approve → promote)
 described as the target operating model; graph versioning; access control on the dev endpoints; and
@@ -198,6 +200,7 @@ persistence of sessions across restarts. Where this Part describes those, it mar
 
 - [Build your first Active Knowledge Graph](build-your-first-graph.md) — a hands-on walkthrough: model a service, dry-run it, deploy it, and call it over REST.
 - [Built-in skills reference](skills-reference.md) — the ten `graph.*` skills with syntax and worked examples.
+- [The graph contract](graph-contract.md) — declare the request and response as a `schema`, validate at the root, get an OpenAPI 3.0 document on demand, and fill it in from the Playground's Schema panel.
 - [Composing the layers](composing-the-layers.md) — external APIs, sub-graph/flow extension, and REST exposure.
 - [Playground & AI companion](playground-and-companion.md) — the interactive workbench and user–AI collaboration.
 - [Minimalist Property Graph](property-graph.md) — the underlying graph data structures and API.

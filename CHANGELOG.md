@@ -90,6 +90,17 @@ Each change merged to `main` after v4.12.21 is listed here; it moves under its r
    one source (the bundle in `public/assets/` and `template/playground.html`); the webapp's vitest suite grows to 57 files and
    453 tests. No upgrade action: no engine change, no new route.
 
+5. **The graph contract is documented (RFC-0007, WP4).** A new guide page, *The graph contract*
+   (`docs/guides/knowledge-graph/graph-contract.md`): the `schema` declaration on the root and end nodes and its two parts, the
+   closed vocabulary with the gate's messages, discovery and `describe graph`, the OpenAPI document on demand and its routes,
+   input validation at the root (the assumed step, the 400 shape, the handler path, the `graph.schema.validator` property), the
+   Schema panel, the round trip through the API playground's Swagger UI, and the design rules. `help schema` in the Playground
+   (compiled into the bundle, mirrored to the Rust engine); the command grammar's `describe graph` section and a seventh
+   invariant; the AI agent guide's recipe *Declare the contract*; the Playground guide's command table; the overview's
+   maturity list; `graph.schema.validator` in the configuration reference; the page in the docs nav and `llms.txt`. Five
+   claims pin the prose on both engines: `graph-schema-closed-vocabulary`, `graph-input-validation-at-root`,
+   `graph-openapi-on-demand`, `graph-contract-declaration-wins` and `graph-schema-dry-run-parity`. No upgrade action.
+
 ### Fixed
 
 3. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers
