@@ -10,7 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Nothing yet. Each change merged to `main` after v4.12.22 is listed here; it moves under its release heading when the version is cut.
+Each change merged to `main` after v4.12.22 is listed here; it moves under its release heading when the version is cut.
+
+### Added
+
+1. **The API playground fetches Swagger UI instead of carrying a copy.** `extensions/api-playground` used to ask the developer to
+   clone swagger-ui and copy its `dist` folder into `src/main/resources/public` by hand. Two equivalent scripts now do it -
+   `scripts/fetch-swagger-ui.py` (Python 3.8+) and `scripts/fetch-swagger-ui.js` (Node.js 18+), standard library only: they
+   resolve the latest release of github.com/swagger-api/swagger-ui (`--version vX.Y.Z` pins one), download the tag's source
+   tarball, extract the `dist` files and nothing else, point `swagger-initializer.js` at the sample `demo.yaml` instead of the
+   Petstore demo, and record the fetch in `swagger-ui-version.txt`. The `public` folder is in the module's `.gitignore`, so the
+   third-party code cannot be committed and never goes stale in this repository, and `mvn clean package` fails at its first
+   step with the fetch instruction when the folder is empty (maven-enforcer `requireFilesExist`). No upgrade action for
+   applications; a developer building the playground runs the script once before the first build.
 
 ---
 ## Version 4.12.22, 10/9/2026

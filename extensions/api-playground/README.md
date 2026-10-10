@@ -6,9 +6,33 @@ This application is designed as a convenient tool for API design and tests.
 
 ## Before you start
 
-1. Clone the latest version from https://github.com/swagger-api/swagger-ui
-2. Copy content from the swagger-ui `dist` folder to the "resources/public" folder
-3. Perform `mvn clean package` to generate the executable JAR
+Swagger UI is third-party code that goes stale quickly, so it is not committed here: the
+`src/main/resources/public` folder is in `.gitignore`, and a script fetches the latest release into
+it. Run one of the two (they do the same thing; Python 3.8+ or Node.js 18+, no dependencies):
+
+```shell
+python3 scripts/fetch-swagger-ui.py
+# or
+node scripts/fetch-swagger-ui.js
+```
+
+Then build the executable JAR:
+
+```shell
+mvn clean package
+```
+
+The script resolves the latest release of https://github.com/swagger-api/swagger-ui, downloads the
+tag's source tarball, extracts the files of its `dist` folder into `src/main/resources/public`,
+points `swagger-initializer.js` at the sample `demo.yaml` below (upstream points at the Petstore
+demo), and records what it fetched in `swagger-ui-version.txt`. `--version v5.33.1` pins a release
+and `--target DIR` names another folder. Run it again to upgrade: the script empties the target
+folder before it writes, so a fetch never leaves files of two releases side by side (a non-empty
+folder that holds no previous fetch is refused rather than emptied, in case `--target` was
+mistyped). The build fails at the start with the same instruction when the folder has not been
+fetched. A release tarball carries the 17 `dist`
+files and not the six `.map` source maps (the upstream project marks them `export-ignore`); the
+application does not need them.
 
 ## OpenAPI specs file folder
 
@@ -20,14 +44,15 @@ This file is a sample for illustration purpose only.
 ## Sample REST endpoints
 
 To support the demo.yaml config file, two REST endpoints are created in the resources/rest.yaml file.
+They are served by REST automation on port 8222 (Swagger UI itself is served by Spring on port 8200):
 
 ```text
-GET http://127.0.0.1:8200/specs
+GET http://127.0.0.1:8222/api/specs
 
 # this endpoint returns a list of swagger files
 # under the resources/sample/yaml folder.
 
-GET http://127.0.0.1:8200/specs/demo.yaml
+GET http://127.0.0.1:8222/api/specs/demo.yaml
 
 # this endpoint returns content of the demo.yaml file.
 ```
@@ -38,7 +63,7 @@ The two endpoints are served by their corresponding functions in the package und
 
 To run this application:
 ```
-java -jar api-playground-4.0.9.jar
+java -jar target/api-playground-x.y.z.jar
 ```
 
 You will see it starting a Reactive HTTP server at port 8222.
@@ -48,7 +73,9 @@ The port 8222 illustrates that you can use swagger-ui to connect to another host
 
 Please visit http://127.0.0.1:8200 to see the swagger-ui home page.
 
-Then enter "http://127.0.0.1:8200/yaml/demo.yaml" to load the sample swagger demo.yaml file.
+The page opens on the sample demo.yaml. To load another file, enter its URL in the explore bar,
+for example "http://127.0.0.1:8200/yaml/demo.yaml", or a MiniGraph engine's
+"http://127.0.0.1:8085/api/openapi/{graph-id}" (see the graph contract guide).
 
 ## Loading your own swagger files
 
@@ -70,8 +97,6 @@ your own swagger files from file:/your/local/folder.
 
 ## Acknowledgements
 
-This application use the following open sources:
-1. Accenture mercury under Apache 2.0 license - https://github.com/Accenture/mercury/blob/master/LICENSE
-2. Swagger UI under Apache 2.0 license - https://swagger.io/license/
-3. Jquery under MIT license - https://jquery.org/license/
-4. Bootstrap under MIT license - https://github.com/twbs/bootstrap/blob/master/LICENSE
+This application uses the following open source software:
+1. Mercury Composable under the Apache 2.0 license - https://github.com/Accenture/mercury-composable/blob/main/LICENSE
+2. Swagger UI under the Apache 2.0 license, fetched at build time and not redistributed here - https://swagger.io/license/

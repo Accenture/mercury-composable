@@ -75,6 +75,30 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.6.3</version>
+                <executions>
+                    <execution>
+                        <!-- Swagger UI is fetched, never committed: fail fast with the fix when it is absent -->
+                        <id>swagger-ui-fetched</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireFilesExist>
+                                    <files>
+                                        <file>${project.basedir}/src/main/resources/public/swagger-ui-bundle.js</file>
+                                    </files>
+                                    <message>Swagger UI is not in src/main/resources/public - run "python3 scripts/fetch-swagger-ui.py" or "node scripts/fetch-swagger-ui.js" first (see README.md)</message>
+                                </requireFilesExist>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.16.0</version>
                 <configuration>
