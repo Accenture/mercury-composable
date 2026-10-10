@@ -52,38 +52,49 @@ The header offers four sources; the status line under it says what is loaded.
 
 1. **URL** - enter the URL of an OpenAPI document and press Load. `http://127.0.0.1:8200/?url=...`
    opens the page on that document.
-2. **MiniGraph...** - a dialog for a MiniGraph application running in dev mode: host (default
+2. **MiniGraph** - a dialog for a MiniGraph application running in dev mode: host (default
    `127.0.0.1`), port (default `8085`) and either a graph ID (a deployed graph,
    `GET /api/openapi/{graph-id}`) or a session ID (a Playground session's draft,
    `GET /api/openapi/session/{session-id}`). The dialog shows the URL it will load and remembers
    the last values in this browser. The engine's dev routes carry the wildcard CORS entry, so the
    browser may read the document, and its `servers` entry points at the engine, so **Try it out**
    posts to the graph.
-3. **Bundled...** - the documents this application serves itself: the example `demo.yaml` and the
-   files of the optional folder below.
-4. **Open file**, or **drag and drop** a `.yaml`, `.yml` or `.json` file anywhere on the page. A
+3. **Specs** - the documents this application serves itself: the files of the specs folder below
+   and the bundled example `demo.yaml`.
+4. **Browse**, or **drag and drop** a `.yaml`, `.yml` or `.json` file anywhere on the page. A
    file is a point-in-time copy; a URL is always current.
 
-## Your own documents without a rebuild
+**Deploy** saves whatever is loaded - a MiniGraph document, a URL's document, a dropped file - into
+the specs folder under a name it suggests from the source (`tutorial-3.yaml` for the graph
+`tutorial-3`), so the document is served by this application from then on. An existing name is
+replaced only after you confirm.
 
-Copy OpenAPI files (yaml, yml or json) into the folder named by `api.playground.apps` in
-`application.properties` (default `/tmp/api-playground`). They appear in the **Bundled...** list and
-at `GET /api/specs/{filename}`. A file name must be a plain name - letters, digits, dot, dash and
-underscore.
+## The specs folder
+
+`api.playground.specs` in `application.properties` names the folder (default `/tmp/api-playground`;
+created on the first Deploy). Its yaml, yml and json files appear in the **Specs** list and at
+`GET /api/specs/{filename}`, and you may copy files into it by hand as well. A `demo.yaml` in the
+folder replaces the bundled example. A file name must be a plain name - letters, digits, dot, dash
+and underscore.
 
 ## Sample REST endpoints
 
-The example `demo.yaml` documents the application's own two endpoints, declared in `resources/rest.yaml`
+The example `demo.yaml` documents the application's own endpoints, declared in `resources/rest.yaml`
 and served by the functions in `com.accenture.examples.services`:
 
 ```text
 GET http://127.0.0.1:8200/api/specs
 
-# the documents this application offers: the example and the folder's files
+# the documents this application offers: the specs folder's files and the example
 
 GET http://127.0.0.1:8200/api/specs/demo.yaml
 
 # one document, as application/yaml or application/json
+
+PUT http://127.0.0.1:8200/api/specs/demo.yaml
+Content-Type: text/plain
+
+# deploy a document into the specs folder; 409 when the name exists, unless ?overwrite=true
 ```
 
 Because the page and the endpoints share one origin, **Try it out** on the example works as is.

@@ -23,14 +23,15 @@
       <label class="mp-visually-hidden" for="spec-url">OpenAPI document URL</label>
       <input id="spec-url" type="url" placeholder="https://host:port/openapi.yaml - or drop a YAML or JSON file anywhere on this page" spellcheck="false">
       <button type="submit" class="mp-button mp-primary">Load</button>
-      <button type="button" class="mp-button" id="minigraph-button">MiniGraph&hellip;</button>
+      <button type="button" class="mp-button" id="minigraph-button">MiniGraph</button>
       <label class="mp-select-label">
-        <span class="mp-visually-hidden">Bundled documents</span>
-        <select id="bundled-select" aria-label="Bundled documents">
-          <option value="">Bundled&hellip;</option>
+        <span class="mp-visually-hidden">Specs</span>
+        <select id="bundled-select" aria-label="Specs">
+          <option value="">Specs</option>
         </select>
       </label>
-      <button type="button" class="mp-button" id="file-button">Open file</button>
+      <button type="button" class="mp-button" id="file-button">Browse</button>
+      <button type="button" class="mp-button" id="deploy-button" title="Save the current document into the specs folder">Deploy</button>
       <input id="file-input" type="file" accept=".yaml,.yml,.json,application/yaml,application/json" hidden>
     </form>
   </header>

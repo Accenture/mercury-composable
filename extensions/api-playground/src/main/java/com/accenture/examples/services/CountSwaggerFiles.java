@@ -29,7 +29,7 @@ import java.util.Map;
 
 /**
  * Lists the OpenAPI documents this application offers: the bundled example demo.yaml and the files
- * of the optional folder named by {@code api.playground.apps}. See {@link SpecFiles}.
+ * of the specs folder named by {@code api.playground.specs}. See {@link SpecFiles}.
  */
 @PreLoad(route = "v1.list.swagger.files", instances=10)
 public class CountSwaggerFiles implements LambdaFunction {
