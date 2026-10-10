@@ -10,7 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Each change merged to `main` after v4.12.21 is listed here; it moves under its release heading when the version is cut.
+Nothing yet. Each change merged to `main` after v4.12.22 is listed here; it moves under its release heading when the version is cut.
+
+---
+## Version 4.12.22, 10/9/2026
+
+The graph contract on both engines, and the mini-scheduler's active environment, in lock-step (Rust 4.12.22, Increments 170 to
+174). A graph model may now carry its contract as a `schema` property on the root node (the request: `schema.body` and
+`schema.header`) and on the end node (the response), in a closed OpenAPI 3.0 vocabulary the gate enforces (ADR-0029): the engine
+discovers the data surface the model reads and writes, the declaration wins, a dev-mode `GET /api/openapi/{graph_id}` answers the
+OpenAPI 3.0 document on demand, a root `schema` turns on input validation at the root as a step the engine assumes
+(`graph.schema.validator`, HTTP 400 with every violation), the Playground's new **Schema panel** edits the contract as rows and its
+Upload step takes mock request headers, and the lane is documented with five pinned claims. The mini-scheduler runs its jobs in one
+environment of an active-active deployment (ADR-0030): `scheduler.environment` names the instance's environment, the active
+environment lives in a data store the application provides and is read at every scheduled point, a standby instance skips a
+scheduled job and honours an operator's run. The Kafka service registry ignores its own broadcast echoes. **Upgrade action: read
+item 3.** A deployed graph whose root already carries a `schema` property is validated from this release on and refused at the
+gate when the property is not the contract's shape; everything else is opt-in - a graph without `schema` and a scheduler without
+`scheduler.environment` run as before, and a Layer 3 application that wants the OpenAPI endpoint adds its two `rest.yaml` entries.
 
 ### Added
 
@@ -127,7 +144,7 @@ Each change merged to `main` after v4.12.21 is listed here; it moves under its r
 
 ### Fixed
 
-3. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers
+9. **The service registry ignores its own broadcast echoes.** A local `add` or `unregister` of a route is broadcast to the peers
    of the Kafka service mesh and comes back to its sender as the same event carrying `final`. The registry applied that echo to
    its own routing table, and because the two echoes of an add followed by an unregister travel the same ten-instance route, they
    can complete out of order on a loaded host: the unregister's echo found nothing to remove and the add's echo re-added the route

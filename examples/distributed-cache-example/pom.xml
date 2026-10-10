@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>distributed-cache-example</artifactId>
-    <version>4.12.21</version>
+    <version>4.12.22</version>
     <packaging>jar</packaging>
     <name>Worked example: distributed cache across all three layers</name>
     <description>
@@ -59,7 +59,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minigraph-playground-engine</artifactId>
-            <version>4.12.21</version>
+            <version>4.12.22</version>
         </dependency>
 
         <!-- The distributed cache: registers the v1.cache.redis action function and redis.health when
@@ -67,7 +67,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>distributed-cache</artifactId>
-            <version>4.12.21</version>
+            <version>4.12.22</version>
         </dependency>
 
         <!-- Embedded Redis (real redis-server binary, incl. arm64 macOS) for the end-to-end test.
