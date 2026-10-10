@@ -24,6 +24,13 @@ Each change merged to `main` after v4.12.22 is listed here; it moves under its r
    step with the fetch instruction when the folder is empty (maven-enforcer `requireFilesExist`). No upgrade action for
    applications; a developer building the playground runs the script once before the first build.
 
+### Fixed
+
+2. **The API playground's `GET /api/specs` lists the bundled files from the executable jar.** `v1.list.swagger.files` read the classpath
+   folder `/sample/yaml` as a stream, which lists the folder from an IDE's exploded classpath and nothing from inside a jar, so the
+   packaged application answered `total: 0`. The function now enumerates `classpath*:sample/yaml/*` with Spring's resource pattern
+   resolver (the module is a Spring Boot application) and sorts the names; `GET /api/specs/{filename}` is unchanged. No upgrade action.
+
 ---
 ## Version 4.12.22, 10/9/2026
 
