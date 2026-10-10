@@ -21,6 +21,8 @@ package org.platformlambda.discovery;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.discovery.services.SkillSnapshot;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -112,6 +114,68 @@ class SkillSnapshotTest {
             var e = assertThrows(AppException.class, () -> snapshot.readFile(attempt));
             assertEquals(404, e.getStatus());
         }
+    }
+
+    /**
+     * Every documentation page's YAML front matter must parse. MkDocs renders a page whose front
+     * matter fails to parse WITH the metadata as body text, and {@code mkdocs build --strict} says
+     * nothing about it - the graph-contract page shipped so in 4.12.22, over one colon-space inside
+     * an unquoted summary. The rule: a page that opens with {@code ---} closes the block with
+     * {@code ---} or {@code ...}, the block is a YAML map with a non-blank {@code title}, and every
+     * page under docs/guides (the pages the contract serves) carries such a block.
+     */
+    @Test
+    void everyDocumentationPageFrontMatterParses() throws IOException {
+        var docs = reactorRoot().resolve("docs");
+        var pages = new ArrayList<Path>();
+        try (var paths = Files.walk(docs)) {
+            paths.filter(p -> p.toString().endsWith(".md")).sorted().forEach(pages::add);
+        }
+        var problems = new ArrayList<String>();
+        var parsed = 0;
+        for (var page : pages) {
+            var rel = docs.relativize(page).toString().replace('\\', '/');
+            var problem = frontMatterProblem(page, rel.startsWith("guides/"));
+            if (problem == null) {
+                parsed++;
+            } else {
+                problems.add(rel + ": " + problem);
+            }
+        }
+        assertEquals(List.of(), problems, "front matter must parse as YAML (see the method javadoc)");
+        assertTrue(parsed >= 50, "the walk must have seen the documentation tree, saw " + parsed);
+    }
+
+    /** null when the page is fine; otherwise one line naming what is wrong. */
+    static String frontMatterProblem(Path page, boolean required) throws IOException {
+        var lines = Files.readAllLines(page, StandardCharsets.UTF_8);
+        if (lines.isEmpty() || !lines.getFirst().strip().equals("---")) {
+            return required ? "a guide page needs YAML front matter" : null;
+        }
+        var end = -1;
+        for (int i = 1; i < lines.size(); i++) {
+            var line = lines.get(i).strip();
+            if (line.equals("---") || line.equals("...")) {
+                end = i;
+                break;
+            }
+        }
+        if (end < 0) {
+            return "the front matter never closes";
+        }
+        Object meta;
+        try {
+            meta = new Yaml().load(String.join("\n", lines.subList(1, end)));
+        } catch (YAMLException e) {
+            return "invalid YAML - " + String.valueOf(e.getMessage()).lines().findFirst().orElse("");
+        }
+        if (!(meta instanceof Map<?, ?> map)) {
+            return "the front matter is not a map";
+        }
+        if (!(map.get("title") instanceof String title) || title.isBlank()) {
+            return "the front matter has no title";
+        }
+        return null;
     }
 
     static Path reactorRoot() {
