@@ -20,28 +20,42 @@ package com.accenture.examples.services;
 
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.LambdaFunction;
-import org.platformlambda.core.util.Utility;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
-import java.io.InputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Lists the OpenAPI files bundled under resources/sample/yaml. The files are enumerated with a
+ * classpath pattern because a classpath directory has no listing inside a packaged jar - reading
+ * {@code /sample/yaml} as a stream works from an IDE's exploded classpath and returns nothing
+ * from the executable jar.
+ */
 @PreLoad(route = "v1.list.swagger.files", instances=10)
 public class CountSwaggerFiles implements LambdaFunction {
 
-    private static final String SWAGGER_LOCATION = "/sample/yaml";
+    private static final String SWAGGER_FILES = "classpath*:sample/yaml/*";
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
-
-        Utility util = Utility.getInstance();
-        InputStream in = this.getClass().getResourceAsStream(SWAGGER_LOCATION);
-        if (in == null) {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws IOException {
+        Resource[] resources = new PathMatchingResourcePatternResolver().getResources(SWAGGER_FILES);
+        List<String> fileList = new ArrayList<>();
+        for (Resource resource : resources) {
+            String filename = resource.getFilename();
+            if (filename != null && !filename.isEmpty() && resource.isReadable()) {
+                fileList.add(filename);
+            }
+        }
+        if (fileList.isEmpty()) {
             throw new IllegalArgumentException("Missing swagger files in resources/sample/yaml");
         }
-        List<String> fileList = util.split(util.stream2str(in), "\r\n");
+        Collections.sort(fileList);
         Map<String, Object> result = new HashMap<>();
         result.put("time", new Date());
         result.put("total", fileList.size());
