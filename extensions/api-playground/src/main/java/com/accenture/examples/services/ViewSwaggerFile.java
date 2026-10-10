@@ -21,28 +21,33 @@ package com.accenture.examples.services;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
+import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.util.Utility;
 
-import java.io.InputStream;
+import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Serves one OpenAPI document by name - the bundled example demo.yaml or a file of the optional
+ * {@code api.playground.apps} folder - as text with a content type Swagger UI accepts.
+ */
 @PreLoad(route = "v1.view.swagger.file", instances=10)
-public class ViewSwaggerFile implements TypedLambdaFunction<AsyncHttpRequest, String> {
+public class ViewSwaggerFile implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
 
-    private static final String SWAGGER_LOCATION = "/sample/yaml";
+    private static final String CONTENT_TYPE = "Content-Type";
 
     @Override
-    public String handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws AppException {
+    public EventEnvelope handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance)
+            throws AppException, IOException {
         String filename = input.getPathParameter("filename");
         if (filename == null) {
             throw new IllegalArgumentException("Missing filename in path parameter");
         }
-        Utility util = Utility.getInstance();
-        InputStream in = this.getClass().getResourceAsStream(SWAGGER_LOCATION + "/" +filename);
-        if (in == null) {
+        SpecFiles files = SpecFiles.getInstance();
+        String content = files.read(filename);
+        if (content == null) {
             throw new AppException(404, "File not found");
         }
-        return util.stream2str(in);
+        return new EventEnvelope().setHeader(CONTENT_TYPE, files.contentType(filename)).setBody(content);
     }
 }
