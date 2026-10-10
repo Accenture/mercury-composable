@@ -22,3 +22,6 @@ logs
 .idea
 .history
 *.iml
+
+# Swagger UI is third-party code fetched by scripts/fetch-swagger-ui.py or .js - never committed
+/src/main/resources/public/
