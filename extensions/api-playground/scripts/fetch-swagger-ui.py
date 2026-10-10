@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Fetch the Swagger UI distribution into src/main/resources/public.
+"""Fetch the Swagger UI distribution into src/main/resources/public/swagger-ui.
 
-The API playground serves Swagger UI from its classpath, but the Swagger UI files are third-party
-code that goes stale quickly, so they are not committed (the folder is in .gitignore). Run this
-script before `mvn clean package`:
+The API playground's page (src/main/resources/public/index.html, ours) loads the Swagger UI assets
+from the swagger-ui subfolder. Those assets are third-party code that goes stale quickly, so they
+are not committed (the subfolder is in .gitignore). Run this script before `mvn clean package`:
 
     python3 scripts/fetch-swagger-ui.py                 # the latest GitHub release
     python3 scripts/fetch-swagger-ui.py --version v5.33.1
@@ -11,9 +11,9 @@ script before `mvn clean package`:
 
 What it does: resolves the latest release tag of github.com/swagger-api/swagger-ui (unless
 --version names one), downloads that tag's source tarball from codeload.github.com, extracts the
-files of its `dist` folder (and nothing else) into the target folder, points the bundled
-`swagger-initializer.js` at this application's sample `demo.yaml` instead of the Petstore demo,
-and writes `swagger-ui-version.txt` recording what was fetched. The target folder is emptied
+files of its `dist` folder into the target folder - all but upstream's own page (`index.html`,
+`index.css`, `swagger-initializer.js`), which this application replaces - and writes
+`swagger-ui-version.txt` recording what was fetched. The target folder is emptied
 first; as a guard against a mistyped --target, a non-empty folder is emptied only when it holds a
 previous fetch (the version file or swagger-ui-bundle.js).
 
@@ -37,12 +37,10 @@ LATEST_RELEASE_URL = f"https://api.github.com/repos/{REPO}/releases/latest"
 TARBALL_URL = f"https://codeload.github.com/{REPO}/tar.gz/refs/tags/{{tag}}"
 USER_AGENT = "mercury-api-playground-fetch-swagger-ui"
 DIST_MEMBER = re.compile(r"^[^/]+/dist/([^/]+)$")
-PETSTORE_URL = "https://petstore.swagger.io/v2/swagger.json"
-LOCAL_SPEC_URL = "./yaml/demo.yaml"
-INITIALIZER = "swagger-initializer.js"
+UPSTREAM_PAGE = {"index.html", "index.css", "swagger-initializer.js"}
 VERSION_FILE = "swagger-ui-version.txt"
 MARKERS = (VERSION_FILE, "swagger-ui-bundle.js")
-DEFAULT_TARGET = Path(__file__).resolve().parent.parent / "src" / "main" / "resources" / "public"
+DEFAULT_TARGET = Path(__file__).resolve().parent.parent / "src" / "main" / "resources" / "public" / "swagger-ui"
 
 
 def fetch(url: str, accept: str) -> bytes:
@@ -68,7 +66,7 @@ def dist_files(tarball: bytes) -> dict:
     with tarfile.open(fileobj=io.BytesIO(tarball), mode="r:gz") as tar:
         for member in tar:
             match = DIST_MEMBER.match(member.name)
-            if match and member.isfile():
+            if match and member.isfile() and match.group(1) not in UPSTREAM_PAGE:
                 extracted = tar.extractfile(member)
                 if extracted is not None:
                     files[match.group(1)] = extracted.read()
@@ -92,16 +90,6 @@ def prepare_target(target: Path) -> None:
     target.mkdir(parents=True, exist_ok=True)
 
 
-def point_initializer_at_local_spec(files: dict) -> bool:
-    initializer = files.get(INITIALIZER)
-    if initializer is None:
-        return False
-    text = initializer.decode("utf-8")
-    if PETSTORE_URL not in text:
-        return False
-    files[INITIALIZER] = text.replace(PETSTORE_URL, LOCAL_SPEC_URL).encode("utf-8")
-    return True
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fetch Swagger UI into src/main/resources/public")
@@ -122,23 +110,15 @@ def main() -> None:
         sys.exit(f"Download failed ({e.code}) - is {tag} a release tag of {REPO}?")
 
     files = dist_files(tarball)
-    localized = point_initializer_at_local_spec(files)
     target = args.target.resolve()
     prepare_target(target)
     for name, content in sorted(files.items()):
         (target / name).write_bytes(content)
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    (target / VERSION_FILE).write_text(
-        f"swagger-ui {tag}\nfetched {stamp}\nfrom {url}\n"
-        f"{INITIALIZER} points at {LOCAL_SPEC_URL}\n" if localized else
-        f"swagger-ui {tag}\nfetched {stamp}\nfrom {url}\n", encoding="utf-8")
+    (target / VERSION_FILE).write_text(f"swagger-ui {tag}\nfetched {stamp}\nfrom {url}\n", encoding="utf-8")
 
     total = sum(len(content) for content in files.values())
     print(f"Wrote {len(files)} files ({total:,} bytes) to {target}")
-    if localized:
-        print(f"{INITIALIZER} now loads {LOCAL_SPEC_URL} (was the Petstore demo)")
-    else:
-        print(f"WARNING: {INITIALIZER} was not localized - the Petstore URL was not found in it")
     print("Next: mvn clean package")
 
 

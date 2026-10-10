@@ -1,14 +1,19 @@
 # API playground
 
-This is a standalone application that uses swagger UI for the rendering of OpenAPI 3.0 YAML files.
+A standalone Mercury application that renders OpenAPI 3.0 documents with Swagger UI, wrapped in a
+Mercury-branded page. It is a convenient tool for API design and tests, and the natural companion
+of a MiniGraph application: a graph that declares its contract answers an OpenAPI document on
+demand, and this page loads it in one dialog.
 
-This application is designed as a convenient tool for API design and tests.
+The application has no Spring Boot dependency: the Reactive HTTP server of `platform-core` serves
+the page as static content and the two REST endpoints below through REST automation, on one port.
 
 ## Before you start
 
 Swagger UI is third-party code that goes stale quickly, so it is not committed here: the
-`src/main/resources/public` folder is in `.gitignore`, and a script fetches the latest release into
-it. Run one of the two (they do the same thing; Python 3.8+ or Node.js 18+, no dependencies):
+`src/main/resources/public/swagger-ui` folder is in `.gitignore`, and a script fetches the latest
+release into it. Run one of the two (they do the same thing; Python 3.8+ or Node.js 18+, no
+dependencies):
 
 ```shell
 python3 scripts/fetch-swagger-ui.py
@@ -23,80 +28,69 @@ mvn clean package
 ```
 
 The script resolves the latest release of https://github.com/swagger-api/swagger-ui, downloads the
-tag's source tarball, extracts the files of its `dist` folder into `src/main/resources/public`,
-points `swagger-initializer.js` at the sample `demo.yaml` below (upstream points at the Petstore
-demo), and records what it fetched in `swagger-ui-version.txt`. `--version v5.33.1` pins a release
-and `--target DIR` names another folder. Run it again to upgrade: the script empties the target
-folder before it writes, so a fetch never leaves files of two releases side by side (a non-empty
-folder that holds no previous fetch is refused rather than emptied, in case `--target` was
-mistyped). The build fails at the start with the same instruction when the folder has not been
-fetched. A release tarball carries the 17 `dist`
-files and not the six `.map` source maps (the upstream project marks them `export-ignore`); the
-application does not need them.
-
-## OpenAPI specs file folder
-
-The default directory is `resources/sample/yaml`
-
-In this folder, you will find the demo.yaml swagger config file.
-This file is a sample for illustration purpose only.
-
-## Sample REST endpoints
-
-To support the demo.yaml config file, two REST endpoints are created in the resources/rest.yaml file.
-They are served by REST automation on port 8222 (Swagger UI itself is served by Spring on port 8200):
-
-```text
-GET http://127.0.0.1:8222/api/specs
-
-# this endpoint returns a list of swagger files
-# under the resources/sample/yaml folder.
-
-GET http://127.0.0.1:8222/api/specs/demo.yaml
-
-# this endpoint returns content of the demo.yaml file.
-```
-
-The two endpoints are served by their corresponding functions in the package under com.accenture.examples.services.
+tag's source tarball and extracts the assets of its `dist` folder into `src/main/resources/public/swagger-ui`
+- all but upstream's own page (`index.html`, `index.css`, `swagger-initializer.js`), which this
+application replaces with its own - and records what it fetched in `swagger-ui-version.txt`.
+`--version v5.33.1` pins a release and `--target DIR` names another folder. Run it again to
+upgrade: the script empties the target folder before it writes, so a fetch never leaves files of
+two releases side by side (a non-empty folder that holds no previous fetch is refused rather than
+emptied, in case `--target` was mistyped). The build fails at the start with the same instruction
+when the folder has not been fetched. A release tarball carries the `dist` files and not the
+`.map` source maps (the upstream project marks them `export-ignore`); the page does not need them.
 
 ## Running this application
 
-To run this application:
-```
+```shell
 java -jar target/api-playground-x.y.z.jar
 ```
 
-You will see it starting a Reactive HTTP server at port 8222.
-Then it will run as a Spring Boot app using port-8200.
+Then visit http://127.0.0.1:8200 - the page opens on the bundled example `demo.yaml`.
 
-The port 8222 illustrates that you can use swagger-ui to connect to another host.
+## Loading a document
 
-Please visit http://127.0.0.1:8200 to see the swagger-ui home page.
+The header offers four sources; the status line under it says what is loaded.
 
-The page opens on the sample demo.yaml. To load another file, enter its URL in the explore bar,
-for example "http://127.0.0.1:8200/yaml/demo.yaml", or a MiniGraph engine's
-"http://127.0.0.1:8085/api/openapi/{graph-id}" (see the graph contract guide).
+1. **URL** - enter the URL of an OpenAPI document and press Load. `http://127.0.0.1:8200/?url=...`
+   opens the page on that document.
+2. **MiniGraph...** - a dialog for a MiniGraph application running in dev mode: host (default
+   `127.0.0.1`), port (default `8085`) and either a graph ID (a deployed graph,
+   `GET /api/openapi/{graph-id}`) or a session ID (a Playground session's draft,
+   `GET /api/openapi/session/{session-id}`). The dialog shows the URL it will load and remembers
+   the last values in this browser. The engine's dev routes carry the wildcard CORS entry, so the
+   browser may read the document, and its `servers` entry points at the engine, so **Try it out**
+   posts to the graph.
+3. **Bundled...** - the documents this application serves itself: the example `demo.yaml` and the
+   files of the optional folder below.
+4. **Open file**, or **drag and drop** a `.yaml`, `.yml` or `.json` file anywhere on the page. A
+   file is a point-in-time copy; a URL is always current.
 
-## Loading your own swagger files
+## Your own documents without a rebuild
 
-You can copy them into the resources/sample/yaml folder and rebuild this app.
+Copy OpenAPI files (yaml, yml or json) into the folder named by `api.playground.apps` in
+`application.properties` (default `/tmp/api-playground`). They appear in the **Bundled...** list and
+at `GET /api/specs/{filename}`. A file name must be a plain name - letters, digits, dot, dash and
+underscore.
 
-Alternatively, you can externalize the swagger folder in the local file system.
+## Sample REST endpoints
 
-You would need to update application.properties and replace "classpath:/sample" with
-"file:/your/local/folder":
+The example `demo.yaml` documents the application's own two endpoints, declared in `resources/rest.yaml`
+and served by the functions in `com.accenture.examples.services`:
 
-```properties
-spring.web.resources.static-locations=classpath:/public/,classpath:/sample/
+```text
+GET http://127.0.0.1:8200/api/specs
+
+# the documents this application offers: the example and the folder's files
+
+GET http://127.0.0.1:8200/api/specs/demo.yaml
+
+# one document, as application/yaml or application/json
 ```
 
-Note that you must keep the "classpath:/public/" in the static-locations parameter above.
-
-This allows the app to serve the swagger-ui from classpath:/public/ and
-your own swagger files from file:/your/local/folder.
+Because the page and the endpoints share one origin, **Try it out** on the example works as is.
 
 ## Acknowledgements
 
 This application uses the following open source software:
 1. Mercury Composable under the Apache 2.0 license - https://github.com/Accenture/mercury-composable/blob/main/LICENSE
 2. Swagger UI under the Apache 2.0 license, fetched at build time and not redistributed here - https://swagger.io/license/
+3. The "atom" icon of the page header, from Material Design Icons under the Apache 2.0 license - https://pictogrammers.com/library/mdi/
