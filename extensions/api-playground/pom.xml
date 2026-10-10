@@ -51,7 +51,7 @@
     <dependencies>
         <dependency>
             <groupId>org.platformlambda</groupId>
-            <artifactId>rest-spring-4</artifactId>
+            <artifactId>platform-core</artifactId>
             <version>4.12.22</version>
         </dependency>
 
@@ -88,9 +88,9 @@
                             <rules>
                                 <requireFilesExist>
                                     <files>
-                                        <file>${project.basedir}/src/main/resources/public/swagger-ui-bundle.js</file>
+                                        <file>${project.basedir}/src/main/resources/public/swagger-ui/swagger-ui-bundle.js</file>
                                     </files>
-                                    <message>Swagger UI is not in src/main/resources/public - run "python3 scripts/fetch-swagger-ui.py" or "node scripts/fetch-swagger-ui.js" first (see README.md)</message>
+                                    <message>Swagger UI is not in src/main/resources/public/swagger-ui - run "python3 scripts/fetch-swagger-ui.py" or "node scripts/fetch-swagger-ui.js" first (see README.md)</message>
                                 </requireFilesExist>
                             </rules>
                         </configuration>

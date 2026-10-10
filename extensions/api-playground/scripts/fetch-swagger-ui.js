@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /*
- * Fetch the Swagger UI distribution into src/main/resources/public.
+ * Fetch the Swagger UI distribution into src/main/resources/public/swagger-ui.
  *
- * The API playground serves Swagger UI from its classpath, but the Swagger UI files are third-party
- * code that goes stale quickly, so they are not committed (the folder is in .gitignore). Run this
- * script before `mvn clean package`:
+ * The API playground's page (src/main/resources/public/index.html, ours) loads the Swagger UI assets
+ * from the swagger-ui subfolder. Those assets are third-party code that goes stale quickly, so they
+ * are not committed (the subfolder is in .gitignore). Run this script before `mvn clean package`:
  *
  *     node scripts/fetch-swagger-ui.js                 # the latest GitHub release
  *     node scripts/fetch-swagger-ui.js --version v5.33.1
@@ -12,9 +12,9 @@
  *
  * What it does: resolves the latest release tag of github.com/swagger-api/swagger-ui (unless
  * --version names one), downloads that tag's source tarball from codeload.github.com, extracts the
- * files of its `dist` folder (and nothing else) into the target folder, points the bundled
- * `swagger-initializer.js` at this application's sample `demo.yaml` instead of the Petstore demo,
- * and writes `swagger-ui-version.txt` recording what was fetched. The target folder is emptied
+ * files of its `dist` folder into the target folder - all but upstream's own page (`index.html`,
+ * `index.css`, `swagger-initializer.js`), which this application replaces - and writes
+ * `swagger-ui-version.txt` recording what was fetched. The target folder is emptied
  * first; as a guard against a mistyped --target, a non-empty folder is emptied only when it holds a
  * previous fetch (the version file or swagger-ui-bundle.js).
  *
@@ -33,12 +33,10 @@ const LATEST_RELEASE_URL = `https://api.github.com/repos/${REPO}/releases/latest
 const TARBALL_URL = (tag) => `https://codeload.github.com/${REPO}/tar.gz/refs/tags/${tag}`;
 const USER_AGENT = 'mercury-api-playground-fetch-swagger-ui';
 const DIST_MEMBER = /^[^/]+\/dist\/([^/]+)$/;
-const PETSTORE_URL = 'https://petstore.swagger.io/v2/swagger.json';
-const LOCAL_SPEC_URL = './yaml/demo.yaml';
-const INITIALIZER = 'swagger-initializer.js';
+const UPSTREAM_PAGE = new Set(['index.html', 'index.css', 'swagger-initializer.js']);
 const VERSION_FILE = 'swagger-ui-version.txt';
 const MARKERS = [VERSION_FILE, 'swagger-ui-bundle.js'];
-const DEFAULT_TARGET = path.resolve(__dirname, '..', 'src', 'main', 'resources', 'public');
+const DEFAULT_TARGET = path.resolve(__dirname, '..', 'src', 'main', 'resources', 'public', 'swagger-ui');
 
 function fail(message) {
   console.error(message);
@@ -130,7 +128,7 @@ function distFiles(tarball) {
   const files = new Map();
   for (const entry of tarEntries(zlib.gunzipSync(tarball))) {
     const match = DIST_MEMBER.exec(entry.name);
-    if (match && (entry.type === '0' || entry.type === '')) {
+    if (match && (entry.type === '0' || entry.type === '') && !UPSTREAM_PAGE.has(match[1])) {
       files.set(match[1], Buffer.from(entry.data));
     }
   }
@@ -156,18 +154,6 @@ function prepareTarget(target) {
   fs.mkdirSync(target, { recursive: true });
 }
 
-function pointInitializerAtLocalSpec(files) {
-  const initializer = files.get(INITIALIZER);
-  if (!initializer) {
-    return false;
-  }
-  const text = initializer.toString('utf8');
-  if (!text.includes(PETSTORE_URL)) {
-    return false;
-  }
-  files.set(INITIALIZER, Buffer.from(text.split(PETSTORE_URL).join(LOCAL_SPEC_URL), 'utf8'));
-  return true;
-}
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
@@ -185,7 +171,6 @@ async function main() {
   }
 
   const files = distFiles(tarball);
-  const localized = pointInitializerAtLocalSpec(files);
   prepareTarget(args.target);
   let total = 0;
   for (const name of [...files.keys()].sort()) {
@@ -194,16 +179,10 @@ async function main() {
     total += content.length;
   }
   const stamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-  const record = `swagger-ui ${tag}\nfetched ${stamp}\nfrom ${url}\n` +
-    (localized ? `${INITIALIZER} points at ${LOCAL_SPEC_URL}\n` : '');
+  const record = `swagger-ui ${tag}\nfetched ${stamp}\nfrom ${url}\n`;
   fs.writeFileSync(path.join(args.target, VERSION_FILE), record, 'utf8');
 
   console.log(`Wrote ${files.size} files (${total.toLocaleString('en-US')} bytes) to ${args.target}`);
-  if (localized) {
-    console.log(`${INITIALIZER} now loads ${LOCAL_SPEC_URL} (was the Petstore demo)`);
-  } else {
-    console.log(`WARNING: ${INITIALIZER} was not localized - the Petstore URL was not found in it`);
-  }
   console.log('Next: mvn clean package');
 }
 
