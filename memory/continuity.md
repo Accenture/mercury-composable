@@ -19,29 +19,32 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.21 (2026-10-07 02:35:00Z — **graph sets on both engines and the engine's own MessagePack codec, lock-step
-  with the Rust port and the two language packs**: release PR #528 squash `b76db298`, tag `v4.12.21` → `87dd9e78` (two memory-only
-  commits past the squash; the non-memory diff is empty), pom verified at the tag; the GitHub release is published (not a draft).
-  **Content:** graph sets end to end (ADR-0027: the packager #508, the loader #515, the endpoints #524/#525, the Playground's "Graph set
-  packaging" panel #526, the docs with five claims #527 — [[graph-set-pack-and-deploy]]), the in-house codec `minimalist-msgpack` #517
-  (ADR-0028, [[minimalist-msgpack-codec]]) and the decoder hardening pinned by shared vectors (#514 the 64-level limit, #519/#520/#521 —
-  [[msgpack-nesting-limit-64]], [[msgpack-hostile-header-vectors]]), the Playground's file import and download #500, three-step run
-  controls #498, single-source webapp #496, the LLM helper pointer #488, the dependency bumps #513, the temp-file housekeeping #516.
-  **READ:** `org.msgpack.*` is no longer transitive and every decoding failure is an `IOException`; a payload nested deeper than 64
-  levels, or followed by extra bytes, answers HTTP 400 at the Event API; a Layer 3 app that wants the new Playground features adds the
-  `import.graph.content`, `pack.graph.set` and `unpack.graph.set` routes. Sweep BUILD FILES ONLY 45 / 102 (two files more than
-  4.12.20: the `minimalist-msgpack` and `graph-packager` poms). Readiness: full reactor `mvn -o clean install` BUILD SUCCESS, 239
-  suites, 1778 tests, 0 failures, 3 skipped (4.12.20 had 1587). **Lockstep:** Rust v4.12.21 the same minute (mercury #368 → merge
-  `28457ccf`, tag → `9f524fa3`, release 02:36:06Z; Increments 148–169; 134 suites / 702 tests / 0 failed), and the packs catching up
-  from 4.12.15 with the LLM helper app: mercury-nodejs #110 → merge `80d4889`, tag → `279e784`, release 02:36:40Z (182 tests);
-  mercury-python #42 → merge `acb1f78`, tag → `fe43380`, release 02:37:17Z (187 tests). Main CI green on all four tag commits; the
-  Java post-merge Gradle job needed one re-run (a one-off "could not find artifact" from Maven Central for the Boot parent POM).
-  **Published and VERIFIED 2026-10-07:** the twelve crates on crates.io at 4.12.21 (created 02:40:03Z–02:40:17Z, none yanked, all in
-  the sparse index; the published platform-core tarball identical to the tag), npm `mercury-composable` 4.12.21 as `latest`
-  (02:43:40Z; the 41 compiled files identical to a build of the tag, the two runtime dependencies and no LLM SDK), PyPI
-  `mercury-composable` 4.12.21 (wheel 02:45:59Z, sdist 02:46:00Z; the sdist's 20 modules identical to the tag). The Java artifacts
-  are the tag and the GitHub release, as always (not on Maven Central). **FIELD-ACCEPTED 2026-10-08 (Eric):** the field's CI
-  pipeline passed with the Snyk and Sonar scans clean, and 4.12.21 is deployed to the field. Origin 2026-10-07-013257.md.
+- **latest_release:** v4.12.22 (2026-10-10 01:24:53Z — **the graph contract on both engines and the mini-scheduler's active environment,
+  lock-step with the Rust port**: release PR #542 squash `67e573e8`, tag `v4.12.22` → the same commit (the branch head `1ceefa20` squashed;
+  the non-memory diff is empty), pom verified at the tag; the GitHub release is published (not a draft); CI and agent-memory green on the tag
+  commit. **Content:** the graph contract (ADR-0029, [[graph-contract-by-declaration]]: WP1 the contract and OpenAPI on demand #533, WP2
+  input validation at the root #534, WP3 the Schema panel #535, WP4 the docs with five claims #536; the Upload step's mock request headers
+  #531; RFC-0007 #529/#532, promoted #537; the Sonar round #538), the mini-scheduler's active environment (ADR-0030,
+  [[scheduler-active-environment-store]]: #539, promoted #540, the Sonar round #541), and the service registry ignoring its own broadcast
+  echoes #530. **READ:** a deployed graph whose root already carries a `schema` property is validated from this release on and refused at
+  the gate when the property is not the contract's shape; `graph.schema.validator` is a reserved route; a Layer 3 app that wants the
+  OpenAPI endpoint adds its two `rest.yaml` entries; a scheduler without `scheduler.environment` runs as before. Sweep BUILD FILES ONLY
+  45 / 102 (the same shape as 4.12.21). Readiness: full reactor `mvn -o clean install` BUILD SUCCESS, 37 modules, 245 suites, 1801 tests,
+  0 failures, 3 skipped (4.12.21 had 1778). **Lockstep:** Rust v4.12.22 one minute later (mercury #374 → merge `e39b5597`, tag → the same
+  commit, release 01:25:48Z; Increments 170–174; 136 suites / 707 tests / 0 failed; `rust`, `docs` and agent-memory CI green on the tag);
+  the language packs have no change since v4.12.21 and stay at it ([[conv-ports-adopt-java-release-number]]: lag, not divergence).
+  **Published and VERIFIED 2026-10-10:** the twelve crates on crates.io at 4.12.22 (created 01:30:03Z–01:30:16Z by Eric's
+  `cargo publish --workspace` from the tag, none yanked, in the sparse index; the published platform-core tarball's 33 source files are the
+  tag's set, with `lib.rs`, `serializer.rs` and `canonical_packager.rs` SHA-256 identical). The Java artifacts are the tag and the GitHub
+  release, as always (not on Maven Central). Field acceptance not yet reported. Origin 2026-10-10-021202.md.
+  Prior: v4.12.21 (2026-10-07 02:35:00Z — graph sets on both engines and the engine's own MessagePack codec, lock-step with Rust and the
+  two language packs; #528 squash `b76db298`, tag → `87dd9e78`; graph sets end to end (ADR-0027, [[graph-set-pack-and-deploy]]), the
+  in-house codec `minimalist-msgpack` #517 (ADR-0028, [[minimalist-msgpack-codec]]), the decoder hardening pinned by shared vectors
+  ([[msgpack-nesting-limit-64]], [[msgpack-hostile-header-vectors]]), the Playground's file import and download #500 and three-step run
+  controls #498; READ: `org.msgpack.*` no longer transitive, every decoding failure an `IOException`, HTTP 400 for a payload nested deeper
+  than 64 levels or followed by extra bytes; 1778 tests; Rust #368 → `28457ccf`, tag → `9f524fa3`, crates 12/12; the packs caught up from
+  4.12.15 (mercury-nodejs #110, mercury-python #42); FIELD-ACCEPTED 2026-10-08 — the field's CI, Snyk and Sonar clean, deployed. Origin
+  2026-10-07-013257.md.)
   Prior: v4.12.20 (2026-10-01 03:11:27Z — exact decimal arithmetic for money and the deterministic package format, lock-step with
   Rust; #485 squash `9e515825`, tag → `fc940bea`; the `DECIMAL` statement #471 ([[decimal-statement-exact-arithmetic]], ADR-0025),
   the `f:decimal*` plugins #475, `round` half-up #472, the `CanonicalPackager` #481 ([[canonical-packager-wire-contract]], ADR-0026);
