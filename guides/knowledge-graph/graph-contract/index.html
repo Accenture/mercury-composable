@@ -3393,20 +3393,22 @@ place before anything is sent, and the engine's declaration-versus-model issues 
 rows. See <code>help schema</code> in the Playground.</p>
 <h2 id="api-playground">Round trip through the API playground<a class="headerlink" href="#api-playground" title="Permanent link">&para;</a></h2>
 <p>The document is written for the tooling the field already uses - Swagger UI and OpenAPI 3.0
-generators. With the <a href="https://github.com/Accenture/mercury-composable/tree/main/extensions/api-playground">API playground</a>
-(Swagger UI served by a Mercury app) and a MiniGraph application in dev mode:</p>
+generators. The <a href="https://github.com/Accenture/mercury-composable/tree/main/extensions/api-playground">API playground</a>
+is Swagger UI in a Mercury page, served by a Mercury app on port 8200. With a MiniGraph application
+in dev mode:</p>
 <ol>
-<li><strong>Load the engine's URL directly.</strong> Paste <code>http://127.0.0.1:8085/api/openapi/payment</code> into the
-   Swagger UI explore bar. The dev routes carry the wildcard CORS entry, so the browser may read it,
-   and <code>servers</code> points at the engine, so <strong>Try it out</strong> posts the request body and the header
-   parameters to <code>POST /api/graph/payment</code> on the engine - a bad request shows the 400 above.</li>
+<li><strong>Load the engine's document directly.</strong> Press <strong>MiniGraph...</strong>, keep host <code>127.0.0.1</code> and port
+   <code>8085</code>, enter the graph ID <code>payment</code> (or a Playground session ID for the draft) and Load. The
+   dev routes carry the wildcard CORS entry, so the browser may read it, and <code>servers</code> points at the
+   engine, so <strong>Try it out</strong> posts the request body and the header parameters to
+   <code>POST /api/graph/payment</code> on the engine - a bad request shows the 400 above. The URL field takes
+   any OpenAPI document URL the same way.</li>
 <li><strong>Or keep the file.</strong> Download <code>payment.yaml</code> (the attachment, or the Schema panel's <strong>Download
-   YAML</strong>), copy it into the API playground's <code>resources/sample/yaml</code> folder (or the externalized
-   folder its <code>static-locations</code> names), and <code>GET /api/specs</code> lists it beside <code>demo.yaml</code>;
-   <code>http://127.0.0.1:8200/yaml/payment.yaml</code> loads it. A file kept this way is a point-in-time
-   export; the engine's URL is always current.</li>
+   YAML</strong>) and drop it on the page, or copy it into the playground's <code>api.playground.apps</code> folder
+   and pick it from <strong>Bundled...</strong>. A file kept this way is a point-in-time export; the engine's
+   URL is always current.</li>
 <li><strong>Round trip.</strong> Correct the graph in the Playground - a type, a <code>required</code>, a new path - Save in the
-   Schema panel, and reload the explore bar: the document follows the draft at
+   Schema panel, and Load again in the dialog: the document follows the draft at
    <code>/api/openapi/session/{sessionId}</code>, and the deployed graph's at <code>/api/openapi/{graph-id}</code> after
    the next deploy.</li>
 </ol>
