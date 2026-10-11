@@ -3666,7 +3666,7 @@ entries and the output mapping of <code>graph.task</code>, <code>graph.extension
 or extension <code>input[]</code> parameter mapped from a null source is simply not supplied. A default for a
 model variable therefore comes from the <strong>source</strong> side: <code>f:defaultValue(input.body.flag,
 boolean(false)) -&gt; model.flag</code>, or a plugin's own default such as <code>f:lookup(table, value,
-text(unknown))</code> or <code>f:rangeLookup(table, value, text(unknown))</code>. Do not write a default into <code>model.*</code> first and overlay it with a possibly-null
+text(unknown))</code> or <code>f:rangeLookup(table, value, text(unknown))</code>, or <code>f:minRange(range, int(0))</code> for the open end of a range. Do not write a default into <code>model.*</code> first and overlay it with a possibly-null
 source — the overlay removes the default.</p>
 <h3 id="dynamic-keys">Dynamic keys and values in a source<a class="headerlink" href="#dynamic-keys" title="Permanent link">&para;</a></h3>
 <p>A <code>{namespace.key}</code> reference inside a mapping source resolves before the source is read, and its
