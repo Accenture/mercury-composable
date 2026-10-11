@@ -64,7 +64,7 @@ import java.util.Map;
  * <p>
  * The result is the matching band name; when no band contains the value, or the value is null,
  * the optional third argument is returned as the default (typically a text(...) constant), or null
- * when there is none. A non-numeric value against numeric bands fails by name, as graph.math does.
+ * when there is none. A non-numeric value against numeric bands fails by name, as 'graph.math' does.
  */
 @SimplePlugin
 public class SimpleRangeLookup implements PluginFunction {
@@ -151,7 +151,7 @@ public class SimpleRangeLookup implements PluginFunction {
     }
 
     private String resolveText(List<Band> bands, String value, boolean ignoreCase) {
-        String v = fold(value, ignoreCase);
+        String v = ignoreCase ? value.toLowerCase(Locale.ROOT) : value;
         for (Band band : bands) {
             String lower = fold(band.range.lower, ignoreCase);
             String upper = fold(band.range.upper, ignoreCase);
@@ -162,8 +162,9 @@ public class SimpleRangeLookup implements PluginFunction {
         return null;
     }
 
-    private static String fold(String text, boolean ignoreCase) {
-        return text == null || !ignoreCase ? text : text.toLowerCase(Locale.ROOT);
+    /** A bound folded for the comparison - null for an open end. */
+    private static String fold(String bound, boolean ignoreCase) {
+        return bound == null || !ignoreCase ? bound : bound.toLowerCase(Locale.ROOT);
     }
 
     /**

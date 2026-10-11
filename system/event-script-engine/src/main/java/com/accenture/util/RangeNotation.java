@@ -226,8 +226,11 @@ public final class RangeNotation {
     /** One bound while parsing: its value (null when open), its kind (null when open) and the unread rest. */
     private record Bound(String value, Kind kind, String rest) {
         static Bound unquoted(String value, String rest) {
-            return value.isEmpty() ? new Bound(null, null, rest)
-                    : new Bound(value, isNumeric(value) ? Kind.NUMBER : Kind.TEXT, rest);
+            if (value.isEmpty()) {
+                return new Bound(null, null, rest);
+            }
+            Kind kind = isNumeric(value) ? Kind.NUMBER : Kind.TEXT;
+            return new Bound(value, kind, rest);
         }
 
         static Bound quoted(String value, String rest, String subject, String range) {
