@@ -33,8 +33,8 @@ import com.accenture.util.RangeNotation;
  * null when there is none, so the null-source rule of a data mapping leaves the target unset.
  * <p>
  * A malformed range, a band given as a list, a range mixing kinds (a number and text, or quoted and unquoted
- * text), and an empty range (its lower bound not below its upper bound) are refused by name, exactly as 'rangeLookup'
- * refuses such a band in a table.
+ * text), and an empty range (its lower bound not below its upper bound) are refused by name. This is exactly
+ * how 'rangeLookup' refuses such a band in a table.
  */
 @SimplePlugin
 public class SimpleMinRange implements PluginFunction {

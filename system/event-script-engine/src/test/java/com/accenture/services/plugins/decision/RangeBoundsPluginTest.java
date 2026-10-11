@@ -95,7 +95,7 @@ class RangeBoundsPluginTest {
     }
 
     @Test
-    void shouldRefuseWhatRangeLookupRefuses() {
+    void shouldRefuseTheWrongNumberOfArgumentsAndANonRange() {
         assertStartsWith("Expected one or two input values - actual=0", failure(min));
         assertStartsWith("Expected one or two input values - actual=3", failure(max, "1..2", 0, 0));
         assertEquals("Range must be written as min..max, min.. or ..max (the upper bound is excluded) - got null",
@@ -106,7 +106,37 @@ class RangeBoundsPluginTest {
         assertStartsWith("Range must be written as", failure(min, "1..<2"));
         // a number is not a range
         assertStartsWith("Range must be written as", failure(min, 5));
+    }
+
+    @Test
+    void shouldRefuseAListOrAMapAndASecondSeparator() {
+        // a band is one range, never a list or a map - as a value or as its text
+        assertEquals("Range must be one range, not a list or a map - got '[10000..25000]'",
+                failure(min, java.util.List.of("10000..25000")).getMessage());
+        assertStartsWith("Range must be one range, not a list or a map", failure(max, java.util.Map.of("a", "1..2")));
+        assertStartsWith("Range must be one range, not a list or a map", failure(min, "[a..h]"));
+        // an unquoted bound never contains the separator
+        assertStartsWith("Range must be written as", failure(min, "a..b..c"));
+        assertStartsWith("Range must be written as", failure(max, "1...2"));
+    }
+
+    @Test
+    void shouldRefuseBadQuoting() {
+        // a quote must be closed and end the bound; an open end is written by omission; quoting is all or nothing
+        assertStartsWith("Range must be written as", failure(min, "'a..b"));
+        assertStartsWith("Range must be written as", failure(max, "'a' x..'b'"));
+        assertEquals("Range has an empty quoted bound - an open end is written by omission: '''..'m''",
+                failure(min, "''..'m'").getMessage());
+        assertEquals("Range mixes a quoted and an unquoted bound - quote both bounds or neither: ''a'..b'",
+                failure(min, "'a'..b").getMessage());
+    }
+
+    @Test
+    void shouldRefuseAMixedOrEmptyRange() {
         assertStartsWith("Range mixes a numeric and a text bound - got '1..x'", failure(min, "1..x"));
+        assertEquals("Range mixes a numeric and a text bound - got '00501..10000'"
+                + " (a bound with a leading zero is text; quote both bounds to compare them as text)",
+                failure(max, "00501..10000").getMessage());
         // an empty range holds nothing, so neither bound is meaningful
         assertEquals("Range is empty - its lower bound is not below its upper bound: '3 .. 3'",
                 failure(max, "3 .. 3").getMessage());
@@ -114,23 +144,6 @@ class RangeBoundsPluginTest {
         assertStartsWith("Range is empty", failure(max, "h..a"));
         // quoted bounds compare as written: 'a' is above 'B'
         assertStartsWith("Range is empty", failure(max, "'a'..'B'"));
-        // a band is one range, never a list or a map - as a value or as its text
-        assertEquals("Range must be one range, not a list or a map - got '[10000..25000]'",
-                failure(min, java.util.List.of("10000..25000")).getMessage());
-        assertStartsWith("Range must be one range, not a list or a map", failure(max, java.util.Map.of("a", "1..2")));
-        assertStartsWith("Range must be one range, not a list or a map", failure(min, "[a..h]"));
-        // an unquoted bound never contains the separator; a quote must be closed and end the bound
-        assertStartsWith("Range must be written as", failure(min, "a..b..c"));
-        assertStartsWith("Range must be written as", failure(max, "1...2"));
-        assertStartsWith("Range must be written as", failure(min, "'a..b"));
-        assertStartsWith("Range must be written as", failure(max, "'a' x..'b'"));
-        assertEquals("Range has an empty quoted bound - an open end is written by omission: '''..'m''",
-                failure(min, "''..'m'").getMessage());
-        assertEquals("Range mixes a quoted and an unquoted bound - quote both bounds or neither: ''a'..b'",
-                failure(min, "'a'..b").getMessage());
-        assertEquals("Range mixes a numeric and a text bound - got '00501..10000'"
-                + " (a bound with a leading zero is text; quote both bounds to compare them as text)",
-                failure(max, "00501..10000").getMessage());
     }
 
     /** The plugin's refusal of the given arguments; the arguments are built before the lambda runs. */

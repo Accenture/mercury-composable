@@ -63,7 +63,8 @@ class RangeBoundsVectorsTest {
 
     /**
      * A vector value typed by its JSON literal, as the Rust twin reads it: a whole-number literal within the 64-bit
-     * range is a Long, any other number (a fraction part, an exponent, beyond 64 bits) a Double, a string text, null null.
+     * range is a Long, any other number (a fraction part, an exponent, beyond 64 bits) is a Double, a string is text,
+     * a JSON null is null.
      */
     private static Object typed(JsonElement element) {
         if (element == null || element.isJsonNull()) {
