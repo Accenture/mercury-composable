@@ -400,7 +400,7 @@
   `graph.task` function; `BigDecimal` never enters the dialect"); the rest of that ruling stands. **Method note:** RFC first,
   implement on one branch, promote to ADR only after review and green CI — the ledger recorded a decision, never a proposal
   ([[conv-proposals-not-in-adr-ledger]]). Delivered on both engines (Rust twin: mercury #335 + #336, one shared core) and released in v4.12.20; the field-acceptance wait is [[decimal-ports-and-release]] (the python/node packs need no change — they are Event-over-HTTP function hosts; closes [[decimal-mode]]). (ADR-0025)
-  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-10-08 | uses: 3 | tier: archive-candidate | origin: 2026-09-30-221603 -->
+  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-10-11 | uses: 4 | tier: active | origin: 2026-09-30-221603 -->
 
 - **A deterministic MsgPack packager: keys sorted by UTF-8 bytes at every depth, `{manifest, maps}`, one canonical profile, integrity left to the
   application (Eric's rulings, 2026-10-01; RFC-0002 promoted to ADR-0026 in PR #484; Java `CanonicalPackager` #481/#482/#483 and the Rust
