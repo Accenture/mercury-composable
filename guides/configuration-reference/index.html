@@ -3636,6 +3636,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#api-playground" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Playground (api-playground extension)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Playground (api-playground extension)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-playground-specs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        api.playground.specs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#postgresql-reactive-postgres-extension" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6377,6 +6405,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#api-playground" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Playground (api-playground extension)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Playground (api-playground extension)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-playground-specs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        api.playground.specs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#postgresql-reactive-postgres-extension" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -8983,6 +9039,32 @@ team's choice. The application implements it against its own data store (header 
 empty when none was set yet; <code>type=set</code> with <code>environment</code> and <code>operator</code> persists it and answers <code>true</code>); the scheduler example's
 <code>EnvironmentStore</code> is the file-backed template. When the route is not registered, the value lives in memory only and the scheduler
 says so at startup.</p>
+<hr />
+<h2 id="api-playground">API Playground (<code>api-playground</code> extension)<a class="headerlink" href="#api-playground" title="Permanent link">&para;</a></h2>
+<p>The API playground (<code>extensions/api-playground</code>) is a standalone application: Swagger UI in a Mercury-branded page that loads a
+graph's OpenAPI document from a MiniGraph application (the <strong>MiniGraph</strong> dialog), a URL, a dropped file or its own specs folder. See
+the <a href="../knowledge-graph/graph-contract/#api-playground">graph contract</a> round trip.</p>
+<h3 id="api-playground-specs"><code>api.playground.specs</code><a class="headerlink" href="#api-playground-specs" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (folder path)</td>
+<td><code>/tmp/api-playground</code></td>
+</tr>
+</tbody>
+</table>
+<p>The specs folder: the specs documents (yaml, yml or json) the playground serves itself. <code>GET /api/specs</code> lists the folder's files
+beside the sample document <code>demo.yaml</code>, the page's <strong>Specs</strong> list offers them, <code>GET /api/specs/{filename}</code> serves one as
+<code>application/yaml</code> or <code>application/json</code>, and the page's <strong>Deploy</strong> button writes the loaded document into the folder through
+<code>PUT /api/specs/{filename}</code> (an existing name answers 409 unless <code>?overwrite=true</code>, so the page asks first). The folder is created on
+the first Deploy; a <code>demo.yaml</code> in it replaces the sample document. A file name must be a plain name - letters, digits, dot, dash and
+underscore. When the property is unset, the sample document is the only one and Deploy answers 503.</p>
 <hr />
 <h2 id="postgresql-reactive-postgres-extension">PostgreSQL (<code>reactive-postgres</code> extension)<a class="headerlink" href="#postgresql-reactive-postgres-extension" title="Permanent link">&para;</a></h2>
 <p>These properties configure the optional <code>reactive-postgres</code> extension. <code>postgres.host</code>,
