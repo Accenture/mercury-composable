@@ -30,14 +30,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Runs the shared conformance vectors of the minRange and maxRange simple plugins - byte-identical in the Rust
+ * Runs the shared conformance vectors of the minRange and maxRange simple plugins. It is byte-identical in the Rust
  * repository, where the same file drives the Rust twins, so the two engines type a bound the same way and refuse
  * the same ranges.
  */

@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
  */
 public final class RangeNotation {
     public static final String SEPARATOR = "..";
-    private static final Pattern NUMERIC = Pattern.compile("-?(0|[1-9]\\d*)(\\.\\d+)?");
+    private static final Pattern CANONICAL_NUMBER = Pattern.compile("-?(0|[1-9]\\d*)(\\.\\d+)?");
     private static final String NOTATION = " must be written as min..max, min.. or ..max (the upper bound is excluded) - got ";
 
     /** the range as written, trimmed */
@@ -67,29 +67,47 @@ public final class RangeNotation {
         String range = text.trim();
         int at = range.indexOf(SEPARATOR);
         if (at < 0) {
-            throw new IllegalArgumentException(subject + NOTATION + "'" + range + "'");
+            throw malformed(subject, range);
         }
         String lower = range.substring(0, at).trim();
         String upper = range.substring(at + SEPARATOR.length()).trim();
-        if ((lower.isEmpty() && upper.isEmpty()) || upper.startsWith("<") || upper.startsWith("=")
-                || lower.endsWith(">") || lower.endsWith("=")) {
-            throw new IllegalArgumentException(subject + NOTATION + "'" + range + "'");
+        if ((lower.isEmpty() && upper.isEmpty()) || hasMarker(lower, upper)) {
+            throw malformed(subject, range);
         }
         boolean lowerNumeric = !lower.isEmpty() && isNumeric(lower);
         boolean upperNumeric = !upper.isEmpty() && isNumeric(upper);
         if (!lower.isEmpty() && !upper.isEmpty()) {
-            if (lowerNumeric != upperNumeric) {
-                throw new IllegalArgumentException(subject + " mixes a numeric and a text bound - got '" + range + "'");
-            }
-            int order = lowerNumeric ? new BigDecimal(lower).compareTo(new BigDecimal(upper))
-                    : lower.toLowerCase(Locale.ROOT).compareTo(upper.toLowerCase(Locale.ROOT));
-            if (order >= 0) {
-                throw new IllegalArgumentException(subject +
-                        " is empty - its lower bound is not below its upper bound: '" + range + "'");
-            }
+            checkBounds(range, subject, lower, upper, lowerNumeric, upperNumeric);
         }
-        return new RangeNotation(range, lower.isEmpty() ? null : lower, upper.isEmpty() ? null : upper,
-                lowerNumeric || upperNumeric);
+        return new RangeNotation(range, open(lower), open(upper), lowerNumeric || upperNumeric);
+    }
+
+    private static IllegalArgumentException malformed(String subject, String range) {
+        return new IllegalArgumentException(subject + NOTATION + "'" + range + "'");
+    }
+
+    /** The inclusive or exclusive markers of a first draft ({@code 1..<2}, {@code 1..=2}) are refused, never read. */
+    private static boolean hasMarker(String lower, String upper) {
+        return upper.startsWith("<") || upper.startsWith("=") || lower.endsWith(">") || lower.endsWith("=");
+    }
+
+    /** A range with two bounds has them of one kind, and its lower bound below its upper bound. */
+    private static void checkBounds(String range, String subject, String lower, String upper,
+                                    boolean lowerNumeric, boolean upperNumeric) {
+        if (lowerNumeric != upperNumeric) {
+            throw new IllegalArgumentException(subject + " mixes a numeric and a text bound - got '" + range + "'");
+        }
+        int order = lowerNumeric ? new BigDecimal(lower).compareTo(new BigDecimal(upper))
+                : lower.toLowerCase(Locale.ROOT).compareTo(upper.toLowerCase(Locale.ROOT));
+        if (order >= 0) {
+            throw new IllegalArgumentException(subject +
+                    " is empty - its lower bound is not below its upper bound: '" + range + "'");
+        }
+    }
+
+    /** An empty bound is an open end, kept as null. */
+    private static String open(String bound) {
+        return bound.isEmpty() ? null : bound;
     }
 
     /**
@@ -97,7 +115,7 @@ public final class RangeNotation {
      * @return true when it is a canonical number, which is how a numeric range table is recognized
      */
     public static boolean isNumeric(String bound) {
-        return NUMERIC.matcher(bound).matches();
+        return CANONICAL_NUMBER.matcher(bound).matches();
     }
 
     /**
