@@ -8,8 +8,8 @@
   manifests (the new crate takes the workspace version), `Cargo.lock` refreshed (54 lines), the CHANGELOG cut (Increment 175 + the
   front-matter fix as item 2), fmt and clippy clean, `cargo test --workspace --no-fail-fast` 137 suites, 712 passed, 0 failed, 9
   ignored. The language packs have no change since v4.12.21 and stay at it. Release notes drafted in the scratchpad
-  (`release-notes-java-4.12.23.md`, `release-notes-rust-4.12.23.md`). **PRs opened by Eric 2026-10-11: mercury-composable #551, mercury #378 (titles as the commits; CI running).** Next: Eric
-  merges, tags `v4.12.23` on each, publishes the twelve crates; then verify the tag commits, rewrite `latest_release`, close this thread. Then [[bp-agent-orchestration]]
+  (`release-notes-java-4.12.23.md`, `release-notes-rust-4.12.23.md`). **MERGED 2026-10-11 01:25Z: #551 squash `79995691`, mercury #378 merge `da6ba2c3` - no non-memory difference from the branch
+  heads; both release branches deleted.** Next: Eric tags `v4.12.23` on each and publishes the twelve crates; then verify the tag commits, rewrite `latest_release`, close this thread. Then [[bp-agent-orchestration]]
   resumes.
   → serves: vision-mercury-composable
   <!-- id: release-4-12-23 | created: 2026-10-11 | last_used: 2026-10-11 | uses: 1 | tier: working | origin: 2026-10-11-011444 -->
