@@ -3397,16 +3397,16 @@ generators. The <a href="https://github.com/Accenture/mercury-composable/tree/ma
 is Swagger UI in a Mercury page, served by a Mercury app on port 8200. With a MiniGraph application
 in dev mode:</p>
 <ol>
-<li><strong>Load the engine's document directly.</strong> Press <strong>MiniGraph...</strong>, keep host <code>127.0.0.1</code> and port
+<li><strong>Load the engine's document directly.</strong> Press <strong>MiniGraph</strong>, keep host <code>127.0.0.1</code> and port
    <code>8085</code>, enter the graph ID <code>payment</code> (or a Playground session ID for the draft) and Load. The
    dev routes carry the wildcard CORS entry, so the browser may read it, and <code>servers</code> points at the
    engine, so <strong>Try it out</strong> posts the request body and the header parameters to
    <code>POST /api/graph/payment</code> on the engine - a bad request shows the 400 above. The URL field takes
    any OpenAPI document URL the same way.</li>
-<li><strong>Or keep the file.</strong> Download <code>payment.yaml</code> (the attachment, or the Schema panel's <strong>Download
-   YAML</strong>) and drop it on the page, or copy it into the playground's <code>api.playground.apps</code> folder
-   and pick it from <strong>Bundled...</strong>. A file kept this way is a point-in-time export; the engine's
-   URL is always current.</li>
+<li><strong>Or keep the file.</strong> Press <strong>Deploy</strong> to save the loaded document into the playground's specs
+   folder (<code>api.playground.specs</code>), where <strong>Specs</strong> offers it from then on; or download
+   <code>payment.yaml</code> (the attachment, or the Schema panel's <strong>Download YAML</strong>) and drop it on the
+   page. A file kept this way is a point-in-time export; the engine's URL is always current.</li>
 <li><strong>Round trip.</strong> Correct the graph in the Playground - a type, a <code>required</code>, a new path - Save in the
    Schema panel, and Load again in the dialog: the document follows the draft at
    <code>/api/openapi/session/{sessionId}</code>, and the deployed graph's at <code>/api/openapi/{graph-id}</code> after
