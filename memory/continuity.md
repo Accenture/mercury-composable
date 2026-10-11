@@ -19,24 +19,30 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.22 (2026-10-10 01:24:53Z — **the graph contract on both engines and the mini-scheduler's active environment,
-  lock-step with the Rust port**: release PR #542 squash `67e573e8`, tag `v4.12.22` → the same commit (the branch head `1ceefa20` squashed;
-  the non-memory diff is empty), pom verified at the tag; the GitHub release is published (not a draft); CI and agent-memory green on the tag
-  commit. **Content:** the graph contract (ADR-0029, [[graph-contract-by-declaration]]: WP1 the contract and OpenAPI on demand #533, WP2
-  input validation at the root #534, WP3 the Schema panel #535, WP4 the docs with five claims #536; the Upload step's mock request headers
-  #531; RFC-0007 #529/#532, promoted #537; the Sonar round #538), the mini-scheduler's active environment (ADR-0030,
-  [[scheduler-active-environment-store]]: #539, promoted #540, the Sonar round #541), and the service registry ignoring its own broadcast
-  echoes #530. **READ:** a deployed graph whose root already carries a `schema` property is validated from this release on and refused at
-  the gate when the property is not the contract's shape; `graph.schema.validator` is a reserved route; a Layer 3 app that wants the
-  OpenAPI endpoint adds its two `rest.yaml` entries; a scheduler without `scheduler.environment` runs as before. Sweep BUILD FILES ONLY
-  45 / 102 (the same shape as 4.12.21). Readiness: full reactor `mvn -o clean install` BUILD SUCCESS, 37 modules, 245 suites, 1801 tests,
-  0 failures, 3 skipped (4.12.21 had 1778). **Lockstep:** Rust v4.12.22 one minute later (mercury #374 → merge `e39b5597`, tag → the same
-  commit, release 01:25:48Z; Increments 170–174; 136 suites / 707 tests / 0 failed; `rust`, `docs` and agent-memory CI green on the tag);
-  the language packs have no change since v4.12.21 and stay at it ([[conv-ports-adopt-java-release-number]]: lag, not divergence).
-  **Published and VERIFIED 2026-10-10:** the twelve crates on crates.io at 4.12.22 (created 01:30:03Z–01:30:16Z by Eric's
-  `cargo publish --workspace` from the tag, none yanked, in the sparse index; the published platform-core tarball's 33 source files are the
-  tag's set, with `lib.rs`, `serializer.rs` and `canonical_packager.rs` SHA-256 identical). The Java artifacts are the tag and the GitHub
-  release, as always (not on Maven Central). Field acceptance not yet reported. Origin 2026-10-10-021202.md.
+- **latest_release:** v4.12.23 (2026-10-11 03:35:56Z — **the API playground and `f:rangeLookup`, lock-step with the Rust port**: release PR
+  #551 squash `79995691` plus two feature commits before the tag (#552 `361fac1a` the range lookup, #553 `f20f830f` its test
+  touch-up), tag `v4.12.23` → `14cbae7a` (the main head, one memory commit past #553); pom verified at the tag; the GitHub release is
+  published (not a draft) and its notes name `f:rangeLookup`; CI and agent-memory green on the tag commit. **Content:** the API
+  playground round - Swagger UI fetched by script and never committed (#545), the specs list from the jar (#546), a Mercury-branded page
+  on the Reactive HTTP server with no Spring Boot (#547), Deploy with confirm-before-overwrite, the specs folder `api.playground.specs`
+  and the sample/specs-document terminology (#548, #549, #550) - and `f:rangeLookup`, a decision table of bands (`min..max`, the upper
+  bound excluded; numeric or text, the table decides; #552, [[static-decision-table-is-graph-data]]); the graph contract guide page's
+  front matter fixed (#543) with a guard test on every page's front matter (#544). **READ:** no action for applications; a developer of
+  the playground reads item 3 of the CHANGELOG (port 8200, `api.playground.specs`, the fetch script). Sweep BUILD FILES ONLY 45 / 102.
+  Readiness: full reactor `mvn -o clean install` BUILD SUCCESS, 245 suites, 1802 tests, 0 failures, 3 skipped at the release cut (the
+  range lookup added its tests after; CI green). **Lockstep:** Rust v4.12.23 (mercury #378 → merge `da6ba2c3`, then #379 `77b35662` the
+  range lookup twin, tag → `f542261d`, release 03:37:08Z; Increments 175–176; 137 suites / 712 tests / 0 failed at the cut; `rust` and
+  agent-memory CI green on the tag); the language packs have no change since v4.12.21 and stay at it ([[conv-ports-adopt-java-release-number]]).
+  **Published and VERIFIED 2026-10-11:** the twelve crates on crates.io at 4.12.23 (created 03:39:20Z–03:39:34Z by Eric's
+  `cargo publish --workspace` from the tag, none yanked; the platform-core tarball's 33 source files the tag's set with `lib.rs`,
+  `serializer.rs` and `canonical_packager.rs` SHA-256 identical; the event-script tarball carries `rangeLookup`). The Java artifacts are
+  the tag and the GitHub release, as always. Field acceptance not yet reported (4.12.22's was never reported separately; 4.12.23 goes to
+  the field). Origin 2026-10-11-034330.md.
+  Prior: v4.12.22 (2026-10-10 01:24:53Z — the graph contract on both engines and the mini-scheduler's active environment; #542 squash
+  `67e573e8` = tag; the graph contract (ADR-0029, [[graph-contract-by-declaration]]: #533–#536, the mock request headers #531), the
+  scheduler's active environment (ADR-0030, [[scheduler-active-environment-store]]: #539), the service registry's echo fix #530; READ: a
+  root `schema` is validated from this release on, `graph.schema.validator` is reserved; 1801 tests; Rust #374 → `e39b5597` = tag,
+  Increments 170–174, crates 12/12 at 01:30Z. Origin 2026-10-10-021202.md.)
   Prior: v4.12.21 (2026-10-07 02:35:00Z — graph sets on both engines and the engine's own MessagePack codec, lock-step with Rust and the
   two language packs; #528 squash `b76db298`, tag → `87dd9e78`; graph sets end to end (ADR-0027, [[graph-set-pack-and-deploy]]), the
   in-house codec `minimalist-msgpack` #517 (ADR-0028, [[minimalist-msgpack-codec]]), the decoder hardening pinned by shared vectors
