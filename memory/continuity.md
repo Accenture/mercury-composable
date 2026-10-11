@@ -366,6 +366,17 @@
   (`ALLOWED_PACKAGES` holds `SimplePluginUtils`, `DecimalPluginUtils`, now `RangeNotation`), not packages - a plugin referencing a
   helper outside the list is skipped with a WARN and every mapping naming it answers 400; add the class to the list and name the plugin
   in `SimplePluginGateTest`. Pinned by the shared `range-bounds-vectors.json` (34 vectors) and the fixture `unit-test-range-bounds-1`.
+  **Refined 2026-10-11 after an independent review (Eric's rulings; Java #555, Rust mercury #381 - Increment 178, both OPEN):** a bound
+  is one of THREE KINDS - a canonical number (compared exactly as a decimal), QUOTED text in single or double quotes (`'0020'`,
+  `"2026-11-15"`: compared as written and case-sensitively; the quotes keep a zero-padded code or a case-sensitive band as text, and a
+  quoted bound may contain `..`) or unquoted text (without case, as before - v4.12.23 tables unchanged); one kind per range and per
+  table, a mix refused with the leading-zero hint. A list or map band, a second `..` outside quotes, an unmatched quote and an empty
+  quoted bound are refused by name (the review found a list band read as text, a silently matched `["a..h"]`). `f:minRange`/`f:maxRange`
+  answer a decimal bound as its EXACT TEXT (`2500.50` - the DECIMAL convention; a double would round it; `f:double` converts it in a
+  second mapping for a floating-point output value), a whole number as a long. Text compares as written, so a value must be shaped like
+  the bounds (dates and times in ISO-8601 order, zero-padded; `9:30` is not `09:30`) - DECLARED in the guides, no shape gate: a gate
+  for one text shape would teach that the others are safe. Vectors 52 + 48; the fixture gained a decimal fee-band table and a quoted
+  product-code table.
   <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-10-11 | uses: 7 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
