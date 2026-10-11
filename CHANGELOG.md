@@ -22,7 +22,8 @@ page on the Reactive HTTP server alone - no Spring Boot - that loads a graph's d
 loaded document into that folder, asking before an existing file is replaced. The Swagger UI assets are fetched by a script instead
 of being carried in the repository, and the page and the sample document are mirrored into the Rust port. The guide page that
 documents the contract renders its front matter correctly again, and a test now guards every documentation page's front matter.
-**No upgrade action** for applications. A developer of the playground reads item 3: the page and its endpoints are on port 8200,
+A field request closes the round: `f:rangeLookup`, the band-matching twin of `f:lookup`, for eligibility thresholds, tiers and time
+windows on both engines (item 4). **No upgrade action** for applications. A developer of the playground reads item 3: the page and its endpoints are on port 8200,
 `spring.web.resources.static-locations` is no longer read, the specs folder is `api.playground.specs`, and the Swagger UI assets are
 fetched once with the script in the module's README (`mvn clean package` fails at its first step with that instruction until then).
 
@@ -61,9 +62,22 @@ fetched once with the script in the module's README (`mvn clean package` fails a
    answered `total: 0` from the executable jar; the sample document is a known file and the folder is listed from disk, so nothing
    is scanned.
 
+4. **`f:rangeLookup` - a decision table of bands, for eligibility rules, tiers and time windows (both engines).** `f:lookup` answers which
+   rule lists a value; `f:rangeLookup(table, value, default)` answers which band contains it. The table has the decision-table shape, but
+   each band field is ONE range written as text: `min..max` runs from `min` inclusive up to but excluding `max`, and an omitted end is
+   open, so adjacent bands tile a scale with no gap and no overlap (`gold=10000..25000`, `silver=2500..10000`; the top band
+   `platinum=25000..`). The table decides how values compare: when every bound is a number the value must be a number or a numeric
+   string and is compared exactly as a decimal (money written as text works; `true` or `abc` fails by name, as `graph.math` does); when
+   the bounds are text, values compare as text without case, which is how ISO-8601 dates and times (`same_day=00:00..16:00`) and
+   alphabetic bands work; a table mixing the two is refused. A null value, or a miss, takes the optional default. The contract knows the
+   plugin's result as a string. Pinned by 37 shared vectors (`range-lookup-vectors.json`, byte-identical in the Rust repository), a
+   unit test, and the graph fixture `unit-test-range-lookup-1` on both engines; documented in the Event Script syntax guide, the flow
+   schema reference, the skills reference (*Range tables*), the AI agent guide and `help graph-data-mapper` (bundle rebuilt). No
+   upgrade action.
+
 ### Fixed
 
-4. **The graph contract guide page's front matter renders again, and a test guards every page's.** The published page
+5. **The graph contract guide page's front matter renders again, and a test guards every page's.** The published page
    `guides/knowledge-graph/graph-contract/` showed its title, summary, audience and keywords as body text: one colon-space inside the
    unquoted YAML `summary` scalar made the front matter unparseable, and MkDocs keeps unparseable front matter in the document while
    `mkdocs build --strict` says nothing. The summary is rephrased, and `SkillSnapshotTest` gains

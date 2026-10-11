@@ -290,6 +290,32 @@ class GraphTaskTest {
     }
 
     @Test
+    void rangeLookupPlacesAValueInABandFromADataMapperDecisionNode() throws Exception {
+        // unit-test-range-lookup-1: f:rangeLookup(loyalty-tiers, input.body.annual_spend, text(unknown)) places a
+        // spend in a money band (exact decimals; the upper bound belongs to the next band) and
+        // f:rangeLookup(cut-off, input.body.instructed_at) a
+        // time in a window (ISO-8601 text); both tables are skill-less nodes, no composable function is involved
+        var response = runGraph("unit-test-range-lookup-1",
+                Map.of("annual_spend", "12500.75", "instructed_at", "15:30"), Map.of());
+        assertEquals(200, response.getStatus());
+        var mm = bodyMap(response);
+        assertEquals("gold", mm.getElement("tier"));
+        assertEquals("same_day", mm.getElement("processing"));
+        assertEquals("12500.75", mm.getElement("annual_spend"));
+        response = runGraph("unit-test-range-lookup-1", Map.of("annual_spend", 2499.99, "instructed_at", "16:00"), Map.of());
+        assertEquals(200, response.getStatus());
+        mm = bodyMap(response);
+        assertEquals("standard", mm.getElement("tier"));
+        assertEquals("next_day", mm.getElement("processing"));
+        // a miss without a default is a null source: the output.body target is left unset
+        response = runGraph("unit-test-range-lookup-1", Map.of("annual_spend", 0, "instructed_at", ""), Map.of());
+        assertEquals(200, response.getStatus());
+        mm = bodyMap(response);
+        assertEquals("standard", mm.getElement("tier"));
+        assertNull(mm.getElement("processing"));
+    }
+
+    @Test
     void mappingSourceResolvesDynamicVariablesVerbatim() throws TimeoutException {
         // unit-test-mapping-1: a {namespace.key} reference inside a mapping source resolves before the
         // source is read - a key segment of a keyed table, a list index, text in a constant and a plugin
