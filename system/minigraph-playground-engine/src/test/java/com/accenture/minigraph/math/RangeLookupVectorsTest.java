@@ -77,7 +77,8 @@ class RangeLookupVectorsTest {
                 var code = (String) v.get("error");
                 var pattern = ERRORS.get(code);
                 assertNotNull(pattern, "unknown error code " + code + " in " + id);
-                var e = assertThrows(RuntimeException.class, () -> PLUGIN.calculate(args(v)), id + " must fail with " + code);
+                var args = args(v);
+                var e = assertThrows(RuntimeException.class, () -> PLUGIN.calculate(args), id + " must fail with " + code);
                 assertTrue(Pattern.compile(pattern).matcher(String.valueOf(e.getMessage())).find(),
                         id + ": " + e.getMessage());
             } else {

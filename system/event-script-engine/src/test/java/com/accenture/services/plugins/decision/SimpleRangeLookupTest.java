@@ -105,31 +105,34 @@ class SimpleRangeLookupTest {
 
     @Test
     void shouldFailByNameOnABadTableOrValue() {
-        var e = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(SCORE_BANDS));
-        assertTrue(e.getMessage().startsWith("Expected two or three input values"));
-        e = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(Map.of("a", "1..2"), 1));
-        assertEquals("Missing keys in input", e.getMessage());
-        e = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(Map.of("keys", List.of("a", "b"), "a", "1..2"), 1));
-        assertEquals("Missing key in input: b", e.getMessage());
-        e = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(Map.of("keys", List.of("a"), "a", "1-2"), 1));
-        assertTrue(e.getMessage().startsWith("Range of 'a' must be written as"), e.getMessage());
-        e = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(Map.of("keys", List.of("a"), "a", ".."), 1));
-        assertTrue(e.getMessage().startsWith("Range of 'a' must be written as"), e.getMessage());
+        assertTrue(failure(SCORE_BANDS).getMessage().startsWith("Expected two or three input values"));
+        assertEquals("Missing keys in input", failure(Map.of("a", "1..2"), 1).getMessage());
+        assertEquals("Missing key in input: b", failure(Map.of("keys", List.of("a", "b"), "a", "1..2"), 1).getMessage());
+        assertStartsWith("Range of 'a' must be written as", failure(oneBand("1-2"), 1));
+        assertStartsWith("Range of 'a' must be written as", failure(oneBand(".."), 1));
         // the exclusive-upper notation of a first draft is refused rather than silently accepted
-        e = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(Map.of("keys", List.of("a"), "a", "1..<2"), 1));
-        assertTrue(e.getMessage().startsWith("Range of 'a' must be written as"), e.getMessage());
+        assertStartsWith("Range of 'a' must be written as", failure(oneBand("1..<2"), 1));
         // a band whose bounds are equal holds nothing
-        e = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(Map.of("keys", List.of("a"), "a", "2..2"), 2));
-        assertTrue(e.getMessage().startsWith("Range of 'a' is empty"), e.getMessage());
-        e = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(Map.of("keys", List.of("a"), "a", "5..1"), 3));
-        assertTrue(e.getMessage().startsWith("Range of 'a' is empty"), e.getMessage());
-        e = assertThrows(IllegalArgumentException.class,
-                () -> plugin.calculate(Map.of("keys", List.of("a", "b"), "a", "1..2", "b", "x..y"), 1));
-        assertTrue(e.getMessage().startsWith("Range table mixes numeric and text bounds"), e.getMessage());
+        assertStartsWith("Range of 'a' is empty", failure(oneBand("2..2"), 2));
+        assertStartsWith("Range of 'a' is empty", failure(oneBand("5..1"), 3));
+        var mixed = Map.of("keys", List.of("a", "b"), "a", "1..2", "b", "x..y");
+        assertStartsWith("Range table mixes numeric and text bounds", failure(mixed, 1));
         // numeric bands, non-numeric value: fails by name, as graph.math does
-        e = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(SCORE_BANDS, "abc"));
-        assertTrue(e.getMessage().contains("Expected a decimal number in rangeLookup"), e.getMessage());
-        e = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(SCORE_BANDS, true));
-        assertTrue(e.getMessage().startsWith("Boolean operand in rangeLookup"), e.getMessage());
+        assertTrue(failure(SCORE_BANDS, "abc").getMessage().contains("Expected a decimal number in rangeLookup"));
+        assertStartsWith("Boolean operand in rangeLookup", failure(SCORE_BANDS, true));
+    }
+
+    /** A table with one band named 'a'. */
+    private static Map<String, Object> oneBand(String range) {
+        return Map.of("keys", List.of("a"), "a", range);
+    }
+
+    /** The plugin's refusal of the given arguments; the arguments are built before the lambda runs. */
+    private IllegalArgumentException failure(Object... input) {
+        return assertThrows(IllegalArgumentException.class, () -> plugin.calculate(input));
+    }
+
+    private static void assertStartsWith(String prefix, Exception e) {
+        assertTrue(e.getMessage().startsWith(prefix), e.getMessage());
     }
 }
