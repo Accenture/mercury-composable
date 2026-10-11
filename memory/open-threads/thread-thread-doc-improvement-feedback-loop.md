@@ -70,4 +70,4 @@
   **Sweep at the 2026-10-09 review (20 logs since 2026-10-06-012541):** 1 carries `## Doc Gaps`, 0 record a gap - the window was the
   v4.12.21 release and the RFC-0007 sprint, whose guide page was written with the feature. Open queue: (none). Still pending: the
   re-measure with a fresh question set (not run at this review).
-  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-10-05 | uses: 8 | tier: working | origin: 2026-09-01-032130 -->
+  <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-10-09 | uses: 9 | tier: working | origin: 2026-09-01-032130 -->

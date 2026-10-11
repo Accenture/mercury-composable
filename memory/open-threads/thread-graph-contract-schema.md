@@ -4,4 +4,4 @@
   delivered in four work packages on both engines (Java #533–#536, Rust #370–#373, Increments 171–174) and documented
   (`docs/guides/knowledge-graph/graph-contract.md`). Lesson: a gate that fires on one engine names a file to check on the twin before
   the push (the skill inventory, mercury #373). Fact: [[graph-contract-by-declaration]] (ADR-0029). origin: 2026-10-08-190305.
-  <!-- id: graph-contract-schema | created: 2026-10-08 | last_used: 2026-10-09 | uses: 6 | tier: working | origin: 2026-10-08-190305 -->
+  <!-- id: graph-contract-schema | created: 2026-10-08 | last_used: 2026-10-09 | uses: 7 | tier: archive-candidate | origin: 2026-10-08-190305 -->

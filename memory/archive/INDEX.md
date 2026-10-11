@@ -235,3 +235,15 @@
 - playground-session-broker — Playground session broker: an AI agent can HOST a Playground session (2026-09-03, Eric's — faded — 2026-Q4.md
 - graph-js-deprecated-removal — `graph.js` is deprecated and its module will be removed once field installations finish mi… — faded — 2026-Q4.md
 - mapping-source-verbatim-substitution — A mapping source inserts its `{namespace.key}` values verbatim, never quoted; a JSONPath f… — faded — 2026-Q4.md
+- graph-manifest-list-later-wins — `graph.model.automation` accepts a comma-separated list of manifests, and the later manife… — faded — 2026-Q4.md
+- msgpack-nesting-limit-64 — A MsgPack payload may nest at most 64 maps and lists in both engines, the outermost contai… — faded — 2026-Q4.md
+- minimalist-msgpack-codec — A zero-dependency MessagePack codec of this repository, `system/minimalist-msgpack`, repla… — faded — 2026-Q4.md
+- msgpack-hostile-header-vectors — One shared hostile-header vector file pins the MsgPack decoders of both engines (Eric's as… — faded — 2026-Q4.md
+- conv-boot-managed-version-overrides — Under the Spring Boot parent, a bump of a Boot-managed library goes through Boot's version… — faded — 2026-Q4.md
+- conv-tests-remove-temp-files — Unit tests remove the temporary files they write when they complete, and that is verified… — faded — 2026-Q4.md
+- decimal-ports-and-release — v4.12.20 post-release: field acceptance — CLOSED 2026-10-08, accepted with v4.12.21. Outco… — faded — 2026-Q4.md
+- graph-set-packaging — Graph set packaging and deployment (ADR-0027) — CLOSED 2026-10-07. Outcome: the sprint's s… — faded — 2026-Q4.md
+- minimalist-msgpack — minimalist-msgpack: the in-house MessagePack codec replaces msgpack-core - CLOSED 2026-10-… — faded — 2026-Q4.md
+- msgpack-core-cve-upgrade — Bump `msgpack-core` to 0.9.13 once published - CLOSED 2026-10-06 as moot. PR #517 (squash… — faded — 2026-Q4.md
+- release-4-12-21 — v4.12.21 on the four repositories — CLOSED 2026-10-07, released and verified. Outcome: pre… — faded — 2026-Q4.md
+- test-temp-file-housekeeping — Unit tests leave no temporary files behind (Eric, 2026-10-06) - DONE: #516 squash `fd02ca6… — faded — 2026-Q4.md

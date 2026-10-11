@@ -5,4 +5,4 @@
   release's heading — derive the section from `git log <tag>..HEAD`, never from the Unreleased block alone ([[conv-changelog-from-tag-range]]).
   Next: [[bp-agent-orchestration]] resumes (Eric's sequence); field acceptance to be recorded when reported. origin: 2026-10-09-222413; close 2026-10-10-021202.
   → serves: vision-mercury-composable
-  <!-- id: release-4-12-22 | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: working | origin: 2026-10-09-222413 -->
+  <!-- id: release-4-12-22 | created: 2026-10-09 | last_used: 2026-10-10 | uses: 2 | tier: archive-candidate | origin: 2026-10-09-222413 -->

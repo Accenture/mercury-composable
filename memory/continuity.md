@@ -82,7 +82,18 @@
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-10-09 | through 2026-10-09-032243.md (CADENCE + SIZE — 20 sessions since the 2026-10-06 review and 41 decay-eligible facts
+- **last_review:** 2026-10-11 | through 2026-10-11-034330.md (ON COMMAND, CADENCE + SIZE — 16 sessions since the 2026-10-09 review and 37
+  decay-eligible facts against a cap of 35: `refresh-metadata` refreshed 24 footers, tier changes 16 (2 → active, 14 → archive-candidate);
+  archived 6 faded facts, `graph-manifest-list-later-wins` (sslu 31), `msgpack-nesting-limit-64` (27), `minimalist-msgpack-codec` (26),
+  `msgpack-hostile-header-vectors` (27), `conv-boot-managed-version-overrides` (33) and `conv-tests-remove-temp-files` (29), after step 6
+  found the window's commits on their paths to be the two release sweeps and unrelated doc edits, and no reliance in the window's logs
+  (ADR-0028 and the claims hold the codec rules); KEPT `decimal-statement-exact-arithmetic` as a declaration gap — the range-lookup
+  design (2026-10-11-020411) relied on the exact-decimal ruling without declaring it, re-affirmed in the review's log; swept 6 completed
+  threads (`decimal-ports-and-release`, `graph-set-packaging`, `minimalist-msgpack`, `msgpack-core-cve-upgrade`, `release-4-12-21`,
+  `test-temp-file-housekeeping`); reactivated 0, superseded 0, archive-verify pass (lint twice, no change between passes); invariants not
+  due (12 of 40); stalled threads none; contradictions none; Doc Gaps: no window log carries the section; live facts 58 → 46,
+  lines 865 → 741. Smoke test not run.)
+  Prior: 2026-10-09 | through 2026-10-09-032243.md (CADENCE + SIZE — 20 sessions since the 2026-10-06 review and 41 decay-eligible facts
   against a cap of 35: `refresh-metadata` refreshed 35 footers, tier changes 28 (14 → active, 14 → archive-candidate); archived 5 faded
   facts, `llm-helper-certification-java` (sslu 26), `graph-null-property-filtered` (21), `playground-session-broker` (34),
   `graph-js-deprecated-removal` (40) and `mapping-source-verbatim-substitution` (33), after step 6 found the window's commits on their
@@ -214,7 +225,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-10-06 | uses: 16 | tier: archive-candidate | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-10-10 | uses: 19 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -244,7 +255,7 @@
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-10-09 | uses: 18 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-10-11 | uses: 22 | tier: active | origin: 2026-09-18-174943 -->
 
 - **A Layer 3 application is one graph endpoint plus dev mode, and its home page is dev-mode wiring too (2026-09-15, Eric's
   polish round on the starter template + the cache example; P10 ruling 2026-09-22, SHIPPED in v4.12.15).** Three shape
@@ -267,7 +278,7 @@
   `/` in dev too — add the route; an app with no `app.env` gets the plain page. Documented in
   `playground-and-companion.md` (#enabling) and `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]];
   applies to [[ot-distributed-cache]]'s worked example.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-10-09 | uses: 24 | tier: active | origin: 2026-09-15-221451 -->
+  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-10-10 | uses: 26 | tier: active | origin: 2026-09-15-221451 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -343,7 +354,7 @@
   Pinned by 37 shared vectors (`range-lookup-vectors.json`, byte-identical on both engines) and the fixture `unit-test-range-lookup-1`;
   documented beside `f:lookup` (skills reference *Range tables*). Examples stay neutral: a loyalty tier by spend, credit score bands, a
   same-day cut-off by time ([[conv-compartment-downstream-secrets]]).
-  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-10-08 | uses: 6 | tier: active | origin: 2026-09-20-152704 -->
+  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-10-11 | uses: 7 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
@@ -373,25 +384,7 @@
   [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]]. **Partly superseded 2026-09-30 by
   [[decimal-statement-exact-arithmetic]]:** the "exact-decimal money belongs in a `graph.task` function, `BigDecimal` is never
   added to the dialect" ruling no longer holds — `DECIMAL:` is that statement; the typed/finite `COMPUTE` rules stand.
-  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-10-09 | uses: 10 | tier: active | origin: 2026-09-25-183540 -->
-
-- **`graph.model.automation` accepts a comma-separated list of manifests, and the later manifest wins (Eric, 2026-09-25;
-  PR #465 squash `40ce30a7` MERGED 2026-09-25, Rust twin mercury #332 merge `d3d82a3f`, Increment 142; SHIPPED in
-  v4.12.19 on both engines).** Born at the leadership demo's deploy step: an
-  exported graph went live in the running example with `-Dgraph.model.automation=file:/tmp/graph/deploy/graphs.yaml` and no
-  rebuild — but the one manifest REPLACED the bundled set, so a prototype delegating through `graph.extension` to a bundled
-  graph could not run. Now the `yaml.flow.automation` convention (CompileFlows precedent): each manifest carries its own
-  `location`, they compile in order, one that fails to load is skipped with a warning, `CompiledGraphs` records each graph's
-  source location, and `list graphs` / the `import graph from` fallback span every location. **Rule:** the later manifest OWNS
-  a duplicate id — its copy replaces the earlier one (`WARN Graph X from B replaces the copy from A`) and a rejected later copy
-  leaves the id not executable (404), never a silent fallback to the copy the operator meant to replace. **Why (Eric):** the
-  prototyping loop is `import graph from` a deployed graph → correct → dry-run → export → stage in the deploy folder with its
-  manifest → restart with BOTH manifests → curl the deployed behaviour → bundle. Entries are manifests, never bare folders (a
-  manifest is the gate's allowlist). Proven live: the deploy copy of `tutorial-1` answered over curl while `tutorial-2` kept
-  serving from the jar. Docs: `ai-agent-guide.md#deploy-without-rebuild`, the config reference, the walkthrough; claim
-  `graph-manifest-list-later-wins` on both engines; the Rust override is a `-D` program argument
-  (`cargo run -p minigraph-playground -- -D…`). Extends ADR-0011 without changing its rule. Relates [[eric-code-changes-via-pr]].
-  <!-- id: graph-manifest-list-later-wins | created: 2026-09-25 | last_used: 2026-10-06 | uses: 11 | tier: archive-candidate | origin: 2026-09-25-223633 -->
+  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-10-09 | uses: 10 | tier: archive-candidate | origin: 2026-09-25-183540 -->
 
 - **Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math` — the high-precision `COMPUTE:`, strings at rest, no graph-level
   mode (Eric's rulings, 2026-09-30; RFC-0001 promoted to ADR-0025 in PR #473; implemented in PR #471, squash `3b4cad82`; SHIPPED in
@@ -407,7 +400,7 @@
   `graph.task` function; `BigDecimal` never enters the dialect"); the rest of that ruling stands. **Method note:** RFC first,
   implement on one branch, promote to ADR only after review and green CI — the ledger recorded a decision, never a proposal
   ([[conv-proposals-not-in-adr-ledger]]). Delivered on both engines (Rust twin: mercury #335 + #336, one shared core) and released in v4.12.20; the field-acceptance wait is [[decimal-ports-and-release]] (the python/node packs need no change — they are Event-over-HTTP function hosts; closes [[decimal-mode]]). (ADR-0025)
-  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-10-08 | uses: 3 | tier: active | origin: 2026-09-30-221603 -->
+  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-10-08 | uses: 3 | tier: archive-candidate | origin: 2026-09-30-221603 -->
 
 - **A deterministic MsgPack packager: keys sorted by UTF-8 bytes at every depth, `{manifest, maps}`, one canonical profile, integrity left to the
   application (Eric's rulings, 2026-10-01; RFC-0002 promoted to ADR-0026 in PR #484; Java `CanonicalPackager` #481/#482/#483 and the Rust
@@ -424,7 +417,7 @@
   hosts). Deferred: trusted timestamps and per-entry manifest records. The folder `pack`/`unpack` tooling and the graph-set loader, deferred
   here at first, became RFC-0005 and then ADR-0027 ([[graph-set-pack-and-deploy]]; the command line shipped in #508). Relates
   [[graph-manifest-list-later-wins]] (the loader's precedence). (ADR-0026)
-  <!-- id: canonical-packager-wire-contract | created: 2026-10-01 | last_used: 2026-10-09 | uses: 14 | tier: active | origin: 2026-09-30-221603 -->
+  <!-- id: canonical-packager-wire-contract | created: 2026-10-01 | last_used: 2026-10-11 | uses: 16 | tier: active | origin: 2026-09-30-221603 -->
 
 - **The Playground webapp has one source and two deploy targets, and the help pages are one consolidated set (Eric, 2026-10-02; PR #496 squash `a6dc9ce5`, the Rust twin mercury #347 merge `781fae43`, both MERGED 2026-10-02).** The webapp "graduated": its scoped
   memory bank, steering files and pre-graduation specs under `system/minigraph-playground-engine/webapp/` are retired, its technical documentation is regenerated from the code in `webapp/docs/` (README,
@@ -439,7 +432,7 @@
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-09 | uses: 11 | tier: active | origin: 2026-10-02-175751 -->
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-11 | uses: 12 | tier: active | origin: 2026-10-02-175751 -->
 
 - **The Playground's dry-run lifecycle is three explicit steps - Instantiate, Upload (optional), Run - and a mock-data upload loads every member's instance (Eric's design, 2026-10-02;
   PR #498 squash `ce0e7155` and the Rust twin mercury #349 merge `278bb023`, Increment 154; both MERGED 2026-10-03 06:00Z).** In a shared session one member's Instantiate used to open the "Upload Mock Data" form on every member's screen: the UI sent
@@ -452,7 +445,7 @@
   instance had aborted without the data. The multi-select hint left the canvas in the same PR. Pinned by `SessionManagementTest.mockUploadLoadsEveryMemberInstanceTest` and the Rust
   `mock_upload_loads_every_member_instance`. Extends [[playground-session-broker]] (equal partners); applies [[help-edit-needs-bundle-release]] and
   [[playground-webapp-single-source]] (one bundle, deployed to both engines).
-  <!-- id: playground-three-step-run-controls | created: 2026-10-02 | last_used: 2026-10-09 | uses: 6 | tier: active | origin: 2026-10-02-232248 -->
+  <!-- id: playground-three-step-run-controls | created: 2026-10-02 | last_used: 2026-10-09 | uses: 6 | tier: archive-candidate | origin: 2026-10-02-232248 -->
 
 - **A graph file becomes the session draft through `POST /api/graph/import/{id}`, which travels like a command, and the Playground downloads the model as `<graph-id>.json` with the root
   node named after the id (Eric's usability sprint, 2026-10-03; PR #500 squash `856e084b`, the Rust twin mercury #350 merge `dae6377d`, Increment 155; both MERGED 2026-10-03 16:03Z).** The Graph view's Import Graph button (toolbar and empty canvas) and a
@@ -466,7 +459,7 @@
   from`). A dev-route addition touches five Java `rest.yaml` copies, three Rust ones and the guide excerpt ([[minigraph-dev-mode-app-shape]]). Extends
   [[playground-three-step-run-controls]] (the broadcast shape); applies [[playground-webapp-single-source]] and [[help-edit-needs-bundle-release]] (bundle `index-Cv2pdvxg`) and
   [[clean-knowledge-design-over-engine-coverage]]. Pinned by `SessionManagementTest.graphImportLoadsEveryMemberDraftTest` and the Rust `graph_import_loads_every_member_draft`.
-  <!-- id: playground-file-import-download | created: 2026-10-03 | last_used: 2026-10-09 | uses: 6 | tier: active | origin: 2026-10-03-153654 -->
+  <!-- id: playground-file-import-download | created: 2026-10-03 | last_used: 2026-10-09 | uses: 6 | tier: archive-candidate | origin: 2026-10-03-153654 -->
 
 - **A graph set is one or more graphs in a canonical `<set>.pack`, checked by the gate when packed and deployed all or none through a
   generated manifest; a set of one graph is how one graph is signed (Eric: decided 2026-10-03, accepted as ADR-0027 on 2026-10-06; PR #510
@@ -492,78 +485,7 @@
   (merge `daa493ba`, Increment 169), both MERGED 2026-10-07. The sprint is complete and [[graph-set-packaging]] is closed; signing
   and verifying a set stay outside the engine (the seams of ADR-0027). Extends
   [[canonical-packager-wire-contract]] and [[graph-manifest-list-later-wins]]. (ADR-0027)
-  <!-- id: graph-set-pack-and-deploy | created: 2026-10-06 | last_used: 2026-10-09 | uses: 10 | tier: active | origin: 2026-10-06-012206 -->
-
-- **A MsgPack payload may nest at most 64 maps and lists in both engines, the outermost container being level 1 (Eric, 2026-10-06;
-  Java #514 squash `15f26aac` and the Rust twin mercury #358 merge `49d599a0`, Increment 160, both MERGED 2026-10-06).** Found answering the field scanners' finding on
-  `msgpack-core` 0.9.12 (CVE-2026-90472, deep nesting in the library's `unpackValue()`; CVE-2026-90473, a MAP32 count overflow in
-  `skipValue()`). The engine reaches neither method: platform-core's `MsgPack` walks maps and lists itself and calls `skipValue()` only on
-  an extension value, and `CanonicalPackager` calls neither. But its own reader recursed with no bound, so about 100 KB of nested arrays
-  ended in `StackOverflowError`, which the Event API's `catch (Exception e)` misses. Eric approved 1,024 first, then asked for "a smaller
-  and realistic nesting level for both engines": 64, the canonical packager's bound. **The rule:** `MsgPack.MAX_DEPTH` and Rust
-  `serializer::MAX_DEPTH` are 64; a 65th level is refused with `Nesting deeper than 64 levels` (Java `IOException`, which `EventEnvelope`
-  reports as `IllegalArgumentException`; Rust `serializer::from_msgpack`), and the Event API answers HTTP 400 in both. The envelope map
-  is level 1, so a body nests at most 63. **Rust lesson, measured with a throwaway test:** rmp-serde's default of 1,024 (it counts the
-  outermost container, so 1,023 decode) is no guard in a debug build: a 2 MiB thread stack overflowed between 500 and 600 nested arrays
-  and aborted the process. Measure a library's depth limit against the stack, not against its documentation. Pinned by the claim
-  `msgpack-nesting-limit` (both registries; the wire format's rule 8 and both envelope references) and twin tests; a negative control
-  showed the Java tests failing on the old reader. Relates [[canonical-packager-wire-contract]], [[msgpack-core-cve-upgrade]].
-  <!-- id: msgpack-nesting-limit-64 | created: 2026-10-06 | last_used: 2026-10-06 | uses: 4 | tier: archive-candidate | origin: 2026-10-06-025608 -->
-
-- **A zero-dependency MessagePack codec of this repository, `system/minimalist-msgpack`, replaces `org.msgpack:msgpack-core` under
-  platform-core (built 2026-10-06 at Eric's investigation ask; RFC-0006 Open; PR #517 squash `527ac5eb` MERGED 2026-10-06, head
-  `488c826e`, the full reactor green with 1,767 tests; RFC-0006 promoted to ADR-0028 in PR #518, squash `ed1f8136`, 2026-10-06).**
-  Eric's criteria - at par or faster, virtual-thread friendly, no deprecated libraries, no unsafe operations - and his
-  "minimalist" rule, no custom (extension) types. The module (`org.platformlambda.mini.msgpack`, `java.base` only) is a streaming
-  `MsgPackWriter`/`MsgPackReader` written from the published specification for nil, bool, int, float, str, bin, array and map;
-  big-endian fields through `VarHandle` byte-array views, no `Unsafe`, no `synchronized`/`ThreadLocal`/lock, one reader or
-  writer per call. The value layer stays in platform-core (`MsgPack`, `CanonicalPackager`; `_T`/`_D`, null transport and
-  [[msgpack-nesting-limit-64]] unchanged). **Reader rules:** every length and count is 32-bit unsigned and checked against the
-  remaining bytes before anything is allocated (N elements need N bytes, N entries 2N - the CVE-2026-90473 header is refused at
-  the header); `0xc1` refused; `skipValue()` iterative; a failed read leaves the position unchanged; one checked
-  `MsgPackException extends IOException`. **Evidence:** the canonical vectors ([[canonical-packager-wire-contract]]) pass
-  unchanged; a 20,000-document seeded corpus packs BYTE-IDENTICAL on both backends and cross-decodes with 0 mismatches
-  (`benchmark/msgpack-codec-harness/`, outside the reactor so msgpack-core never enters a manifest); benchmark best of 3
-  interleaved runs: the 395-byte envelope packs in 0.54 and unpacks in 0.55 of msgpack-core's time, the 8 KB payload 0.39/0.72,
-  the 7 KB record list at par (`docs/test-reports/minimalist-msgpack-benchmark.md`). **Three behaviour changes, each pinned:**
-  `org.msgpack.*` no longer transitive; every decoding failure is an IOException (EventEnvelope -> IllegalArgumentException,
-  where msgpack-core also threw unchecked exceptions); a uint64 above Long.MAX_VALUE reads as BigInteger (the Rust engine's
-  `rmpv` keeps a u64). Home ruling (Eric): `system/`, because platform-core must depend on it. **Method:** the differential's
-  first pass reported 9,124 mismatches from the harness's own expectation model - a comparison must be shown able to fail
-  ([[otel-optional-service-and-negative-control]]). Supersedes nothing; [[msgpack-core-cve-upgrade]] closed as moot at the
-  merge; [[minimalist-msgpack]] closed when both PRs merged. (ADR-0028)
-  <!-- id: minimalist-msgpack-codec | created: 2026-10-06 | last_used: 2026-10-06 | uses: 3 | tier: archive-candidate | origin: 2026-10-06-164045 -->
-
-- **One shared hostile-header vector file pins the MsgPack decoders of both engines (Eric's ask, 2026-10-06; Java branch
-  PR #519 squash `3543a65a` and the Rust twin mercury #361 merge `59c964ab`, both MERGED
-  2026-10-06).**
-  `msgpack-hostile-header-vectors.json` - 22 inputs every decoder must refuse (a str, bin or ext length or an array or map count
-  beyond the remaining bytes, the CVE-2026-90473 `map 32` shape among them; fixed-width values cut short; the never-used `0xc1`;
-  65-level nesting) and 9 controls that must decode to exactly their JSON value, so a decoder that refuses everything fails -
-  byte-identical in both repositories, every input a top-level container so it reaches the decoders as an event payload would.
-  Java runs it through `MsgPack.unpack`, `EventEnvelope` and `CanonicalPackager.decode`; Rust through `serializer::from_msgpack`,
-  `EventEnvelope::from_bytes` and `canonical_packager::decode`; the claim `msgpack-hostile-header` (wire-format rule 9, both
-  envelope references) sits beside `msgpack-nesting-limit`. **The first run found a divergence:** `rmpv` reads `0xc1` as nil, so
-  the Rust canonical decoder accepted `91 c1` while `rmp-serde` and the Java reader refuse it; the Rust canonical decoder now walks
-  the markers before decoding (`check_markers`, iterative, allocation-free) and refuses `0xc1` and any header that promises more
-  than the input holds, the Java reader's rule, with `rmp` declared for its `Marker` table. **The empty-input disparity, RULED (Eric, 2026-10-06): Java is the reference implementation and the Rust port follows** -
-  `MsgPack.unpack` reads empty input as an empty map and `new EventEnvelope(new byte[0])` is an empty envelope, while the canonical
-  decoder refuses it (a package is never empty); Java states it (wire-format rule 10, claim `msgpack-empty-input`, PR #520 squash
-  `d755888d`, MERGED 2026-10-06) and Rust changed to match (Increment 164, mercury #362 merge `12702cc9`, MERGED 2026-10-06:
-  `from_msgpack` reads empty input as `{}` and `EventEnvelope` gained a struct-level serde default, so a missing key takes the
-  constructor's value, the id a fresh uuid, as on Java); the shared file carries it as the first `canonical: reject` control.
-  Lesson: parity believed is not parity tested - the shared-file method ([[canonical-packager-wire-contract]],
-  [[msgpack-nesting-limit-64]]) caught a divergence the first time it ran. Extends [[minimalist-msgpack-codec]] (ADR-0028's
-  reader rules, now pinned on both sides). **Exactly one value (2026-10-06; Java PR #521 squash `5141330a` and the Rust twin mercury #363
-  merge `3cae9f63`, Increment 165, both MERGED 2026-10-06):** an independent correctness review of the codec (a Copilot assessment
-  Eric shared) found the one gap the vectors had not pinned - both engines' event codecs read one value and ignored what followed
-  (`80 c1` decoded as an empty map) while both canonical decoders refused it, a standing behaviour msgpack-core shared. The rule is
-  now the canonical decoder's everywhere: bytes after the top-level container, well-formed or not, are `Unexpected bytes after the
-  value at offset N` (IOException; `IllegalArgumentException` at `EventEnvelope`; HTTP 400 at the Event API); Rust probes for a `u8`
-  after the value, since rmp-serde's zero-copy reader keeps its cursor private; the shared file gains `80 c1` and `80 c0` (24
-  rejects), wire-format rule 11, claim `msgpack-exactly-one-value`. Blast radius measured before the change: every production caller
-  passes exact byte arrays, and the full reactor (1,771 tests) is green.
-  <!-- id: msgpack-hostile-header-vectors | created: 2026-10-06 | last_used: 2026-10-06 | uses: 2 | tier: archive-candidate | origin: 2026-10-06-164045 -->
+  <!-- id: graph-set-pack-and-deploy | created: 2026-10-06 | last_used: 2026-10-09 | uses: 11 | tier: archive-candidate | origin: 2026-10-06-012206 -->
 
 - **A graph carries its contract as a `schema` on the root and end nodes, the engine discovers the rest, validates the request at the
   root by an assumed step and serves OpenAPI 3.0 on demand (Eric's design 2026-10-08; RFC-0007 promoted to ADR-0029 on 2026-10-09 after the
@@ -586,7 +508,7 @@
   answers 400 at the root for a bad request; `graph.schema.validator` is a reserved route. Guide: `docs/guides/knowledge-graph/graph-contract.md`.
   Extends [[graph-set-pack-and-deploy]] (the shared gate, the panel precedent) and [[canonical-packager-wire-contract]] (the
   shared-vector method). (ADR-0029)
-  <!-- id: graph-contract-by-declaration | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: working | origin: 2026-10-09-041751 -->
+  <!-- id: graph-contract-by-declaration | created: 2026-10-09 | last_used: 2026-10-10 | uses: 2 | tier: active | origin: 2026-10-09-041751 -->
 
 - **The mini-scheduler runs its jobs in one site of an active-active deployment, and the active environment's source of truth is a
   data store read at every scheduled point (Eric's problem statement and rulings, 2026-10-09; RFC-0008 promoted to ADR-0030 the same
@@ -604,7 +526,7 @@
   and state resolver are single-site and unchanged. Claim `scheduler-active-environment-standby`; no Rust twin (the port has no
   scheduler). Relates [[kafka-mesh-opt-in]] (the leader election is in-cluster), [[event-script-over-code]] (the REST edge through
   rest.yaml). (ADR-0030)
-  <!-- id: scheduler-active-environment-store | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: working | origin: 2026-10-09-045453 -->
+  <!-- id: scheduler-active-environment-store | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: archive-candidate | origin: 2026-10-09-045453 -->
 
 ## Conventions
 
@@ -619,7 +541,7 @@
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-09 | uses: 82 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-11 | uses: 85 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -639,7 +561,7 @@
   PR). Both errors came from writing out of recollection of my own work instead of out of the
   repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-07 | uses: 22 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-11 | uses: 28 | tier: active | origin: 2026-09-17-183008 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -648,7 +570,7 @@
   `examples/rest-spring-3-example/` (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-10-07 | uses: 26 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-10-11 | uses: 28 | tier: active | origin: 2026-09-01-022524 -->
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
   identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
@@ -661,7 +583,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-10-07 | uses: 30 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-10-11 | uses: 35 | tier: active | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -675,7 +597,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-07 | uses: 24 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-11 | uses: 26 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast — the in-house codec writes the smallest integer width, so it holds since
   ADR-0028; use `util.str2int/str2long`). (Wording refreshed 2026-10-09 at invariant re-verify — substance unchanged.)
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -747,27 +669,7 @@
   ([[playground-webapp-single-source]]): `npm run release:rust` or `release:all` also deploys the bundle and a mirror of the help pages into the sibling Rust repo, so a help edit is done when BOTH repos
   carry the result. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout: only the entry
   page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-09 | uses: 14 | tier: active | origin: 2026-10-02-015208 -->
-
-- **Under the Spring Boot parent, a bump of a Boot-managed library goes through Boot's version property, and a version sweep is
-  verified by what resolves, not by the pom text (2026-10-06, #513).** The poms declare `junit-bom` as a plain test dependency
-  (`<type>pom</type>`), which manages nothing, so bumping it from 6.0.3 to 6.1.3 left every test on Boot 4.1.1's JUnit 6.0.3, as
-  `mvn dependency:list` showed. `<junit-jupiter.version>` (37 poms, beside `<tomcat.version>`) moved it. Likewise a module that never pins a
-  Maven plugin builds with Boot's pluginManagement version (8 modules: compiler 3.14.1, surefire 3.5.4) or Maven's default (the Kotlin
-  example); the build log's `--- plugin:version` lines show which ran. Replace versions by artifact, never by bare string: 3.3.1 is both
-  maven-source-plugin and maven-resources-plugin. Relates [[conv-template-version-sweep]] (the templates' Gradle builds pin `junit-bom` too).
-  <!-- id: conv-boot-managed-version-overrides | created: 2026-10-06 | last_used: 2026-10-06 | uses: 1 | tier: archive-candidate | origin: 2026-10-06-025608 -->
-
-- **Unit tests remove the temporary files they write when they complete, and that is verified by measuring, not by reading the code
-  (Eric, 2026-10-06; applied in #516 squash `fd02ca6e` and mercury #360 merge `acf767d7`).** Prefer a folder the framework removes (JUnit's `@TempDir`, a Rust drop guard), and remove in `finally` whatever a
-  test writes elsewhere: a test that opens a Playground session closes it (the engine then removes its draft from `location.graph.temp`),
-  a test whose graph ends suspended removes its record, and an embedded server removes its data folder once it has stopped. A Rust test
-  binary has no after-all hook: it uses `mercury-test-support` (`temp_path` for per-process files, `run_at_exit` for a cleanup the code
-  under test owns, such as `elastic_queue::shutdown_cleanup`), and a starter template, which cannot depend on it, a drop guard. Verify with a
-  marker file: run the suite, then list what in the temp folders (`$TMPDIR`, `/tmp/*`) is newer than the marker, module by module. A file
-  created and deleted during the run does not show, so whatever shows was left behind; an empty folder does not show in a files-only
-  listing, so look for folders too. Thread: [[test-temp-file-housekeeping]].
-  <!-- id: conv-tests-remove-temp-files | created: 2026-10-06 | last_used: 2026-10-06 | uses: 3 | tier: archive-candidate | origin: 2026-10-06-045656 -->
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-11 | uses: 15 | tier: active | origin: 2026-10-02-015208 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -811,7 +713,7 @@
   stays LLM/vendor-free with adapters as functions ON the wrappers: the gateway/MCP edge is where
   vendor specifics live, never in the engine.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-10-02 | uses: 20 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-10-11 | uses: 23 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;
