@@ -23,7 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * minRange and maxRange read one range in the notation of rangeLookup's bands and answer its bound typed by the
- * notation: a number for a numeric bound, text for a text bound, the optional default (or null) for an open end.
+ * notation: a long for a whole number, the exact decimal text for any other number, text as written for a text or
+ * quoted bound, the optional default (or null) for an open end.
  */
 class RangeBoundsPluginTest {
 
@@ -37,18 +38,18 @@ class RangeBoundsPluginTest {
     }
 
     @Test
-    void shouldAnswerANumericBoundAsANumber() {
+    void shouldAnswerAWholeNumberAsALongAndADecimalAsItsExactText() {
         // a whole number is a long
         assertEquals(10000L, min.calculate("10000..25000"));
         assertEquals(25000L, max.calculate("10000..25000"));
         assertEquals(-5L, min.calculate("-5..5"));
         assertEquals(0L, max.calculate("-1..0"));
-        // any other number is a double
-        assertEquals(2500.5, min.calculate("2500.50..10000"));
-        assertEquals(0.1, max.calculate("..0.1"));
-        assertEquals(2.0, max.calculate("1.0..2.0"));
-        // a whole number beyond the 64-bit range is a double too
-        assertEquals(1.0e20, min.calculate("100000000000000000000.."));
+        // any other number is its exact decimal text - the DECIMAL convention; f:double converts it when wanted
+        assertEquals("2500.50", min.calculate("2500.50..10000"));
+        assertEquals("0.1", max.calculate("..0.1"));
+        assertEquals("2.0", max.calculate("1.0..2.0"));
+        // a whole number beyond the 64-bit range is its exact text too
+        assertEquals("100000000000000000000", min.calculate("100000000000000000000.."));
         // spaces around the bounds are not part of them
         assertEquals(10L, min.calculate(" 10 .. 20 "));
         assertEquals(20L, max.calculate(" 10 .. 20 "));
@@ -63,6 +64,20 @@ class RangeBoundsPluginTest {
         // the case is kept - only the lookup's comparison ignores it
         assertEquals("A", min.calculate("A..H"));
         assertEquals("H", max.calculate("A..H"));
+    }
+
+    @Test
+    void shouldAnswerAQuotedBoundWithoutItsQuotes() {
+        // quotes keep a zero-padded code as text, and either quote style works
+        assertEquals("0020", min.calculate("'0020'..'0030'"));
+        assertEquals("0030", max.calculate("\"0020\"..\"0030\""));
+        assertEquals("2026-11-15", min.calculate("\"2026-11-15\"..\"2027-01-01\""));
+        // quoted bounds compare as written, so 'A' sits below 'h'
+        assertEquals("h", max.calculate("'A'..'h'"));
+        // a quoted bound may contain the separator, and a quoted number is text
+        assertEquals("a..b", min.calculate("'a..b'..'c'"));
+        assertEquals("1000", min.calculate("'1000'.."));
+        assertEquals("m", max.calculate("..'m'", "none"));
     }
 
     @Test
@@ -91,12 +106,31 @@ class RangeBoundsPluginTest {
         assertStartsWith("Range must be written as", failure(min, "1..<2"));
         // a number is not a range
         assertStartsWith("Range must be written as", failure(min, 5));
-        assertEquals("Range mixes a numeric and a text bound - got '1..x'", failure(min, "1..x").getMessage());
+        assertStartsWith("Range mixes a numeric and a text bound - got '1..x'", failure(min, "1..x"));
         // an empty range holds nothing, so neither bound is meaningful
         assertEquals("Range is empty - its lower bound is not below its upper bound: '3 .. 3'",
                 failure(max, "3 .. 3").getMessage());
         assertStartsWith("Range is empty", failure(min, "5..1"));
         assertStartsWith("Range is empty", failure(max, "h..a"));
+        // quoted bounds compare as written: 'a' is above 'B'
+        assertStartsWith("Range is empty", failure(max, "'a'..'B'"));
+        // a band is one range, never a list or a map - as a value or as its text
+        assertEquals("Range must be one range, not a list or a map - got '[10000..25000]'",
+                failure(min, java.util.List.of("10000..25000")).getMessage());
+        assertStartsWith("Range must be one range, not a list or a map", failure(max, java.util.Map.of("a", "1..2")));
+        assertStartsWith("Range must be one range, not a list or a map", failure(min, "[a..h]"));
+        // an unquoted bound never contains the separator; a quote must be closed and end the bound
+        assertStartsWith("Range must be written as", failure(min, "a..b..c"));
+        assertStartsWith("Range must be written as", failure(max, "1...2"));
+        assertStartsWith("Range must be written as", failure(min, "'a..b"));
+        assertStartsWith("Range must be written as", failure(max, "'a' x..'b'"));
+        assertEquals("Range has an empty quoted bound - an open end is written by omission: '''..'m''",
+                failure(min, "''..'m'").getMessage());
+        assertEquals("Range mixes a quoted and an unquoted bound - quote both bounds or neither: ''a'..b'",
+                failure(min, "'a'..b").getMessage());
+        assertEquals("Range mixes a numeric and a text bound - got '00501..10000'"
+                + " (a bound with a leading zero is text; quote both bounds to compare them as text)",
+                failure(max, "00501..10000").getMessage());
     }
 
     /** The plugin's refusal of the given arguments; the arguments are built before the lambda runs. */

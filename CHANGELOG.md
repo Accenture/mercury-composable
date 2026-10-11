@@ -12,24 +12,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-1. **`f:minRange` and `f:maxRange` - the bounds of a range, typed by the notation; `f:rangeLookup` checks every band when it
-   reads a table.** A band of a range table is one range written as text (`min..max`, the upper bound excluded; `min..` or `..max`
-   leaves an end open), and until now a flow or a graph could place a value in a band but not read the band's bounds back.
-   `f:minRange(range, default)` and `f:maxRange(range, default)` return the lower or upper bound, typed by the notation: a numeric
-   bound is a number - a whole number within the 64-bit range a long, any other number a double - and a text bound is text as
-   written (`16:00`, `2026-11-15`); an open end answers the optional default, or null when there is none, so the null-source rule
-   leaves a mapping target unset. The three plugins read the notation through one class (`RangeNotation`), so a range is refused
-   by one of them exactly when the others refuse it: malformed, mixing a numeric and a text bound, or empty - `3..3` holds
-   nothing, because the upper bound is excluded. `f:rangeLookup` now checks every band when it reads the table, whatever the
-   value (a null value included), where it used to check a band only when the walk reached it, so a table holding a band that
-   could never match is refused by name on its first use. In a knowledge graph a dynamic key reads the band the lookup chose -
-   `f:maxRange(loyalty-tiers.{model.tier}) -> model.tier_to` - and a `graph.math` node computes with it
+1. **`f:minRange` and `f:maxRange` - the bounds of a range, typed by the notation; quoted text bounds; `f:rangeLookup` checks every
+   band when it reads a table.** A band of a range table is one range written as text (`min..max`, the upper bound excluded; `min..`
+   or `..max` leaves an end open), and until now a flow or a graph could place a value in a band but not read the band's bounds back.
+   `f:minRange(range, default)` and `f:maxRange(range, default)` return the lower or upper bound, typed by the notation: a whole
+   number within the 64-bit range is a long, any other number is its exact decimal as text (`2500.50` - the high-precision rule of
+   `DECIMAL`, where a double would round it; `f:double` converts it when a floating-point output value is wanted), a text bound is
+   text as written, and an open end answers the optional default, or null when there is none, so the null-source rule leaves a
+   mapping target unset. A bound is now one of three kinds: a canonical number, quoted text in single or double quotes (`'0020'`,
+   `"2026-11-15"` - compared as written and case-sensitively, the quotes keeping a zero-padded code or a case-sensitive band as
+   text) or unquoted text, compared without case as before, so every table of v4.12.23 behaves the same. The three plugins read the
+   notation through one class (`RangeNotation`), so a range is refused by one of them exactly when the others refuse it: malformed
+   (a second `..` outside quotes included), given as a list, mixing kinds, or empty - `3..3` holds nothing, because the upper bound
+   is excluded. `f:rangeLookup` checks every band when it reads the table, whatever the value (a null value included), where it
+   used to check a band only when the walk reached it. Text compares as written, so a value must be shaped like the bounds - dates
+   and times in ISO-8601 order and zero-padded - which the guides now state. In a knowledge graph a dynamic key reads the band the
+   lookup chose - `f:maxRange(loyalty-tiers.{model.tier}) -> model.tier_to` - and a `graph.math` node computes with it
    (`DECIMAL: to_next_tier -> {model.tier_to} - {input.body.annual_spend}`). Pinned by the shared `range-bounds-vectors.json`
-   (34 vectors, byte-identical with the Rust repository, whose twin is Increment 177), three new entries of
-   `range-lookup-vectors.json`, the fixture `unit-test-range-bounds-1` and the plugin tests. Docs: the syntax guide's plugin table
-   and *The bounds of a band*, the flow schema reference, the skills reference's *Range tables*, the command reference, the AI
-   agent guide and `help graph-data-mapper` (bundle rebuilt). **Upgrade note:** a range table holding an empty or mixed band
-   beyond the bands a run reached was accepted before and is refused now - fix the band; no other action.
+   (52 vectors, byte-identical with the Rust repository, whose twins are Increments 177 and 178), eleven new entries of
+   `range-lookup-vectors.json`, the fixture `unit-test-range-bounds-1` and the plugin and gate tests. Docs: the syntax guide's
+   plugin table, *Range table lookup* and *The bounds of a band*, the flow schema reference, the skills reference's *Range tables*,
+   the command reference, the AI agent guide and `help graph-data-mapper` (bundle rebuilt). Shaped by an independent review of the
+   first cut (a list band read as text, zero-padded codes, decimal precision). **Upgrade note:** a range table holding an empty,
+   mixed or list band beyond the bands a run reached was accepted before and is refused now - fix the band; no other action.
 
 ---
 ## Version 4.12.23, 10/11/2026
