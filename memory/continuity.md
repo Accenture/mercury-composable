@@ -328,6 +328,15 @@
   code change, and the function stays generic by reading rule names from `table.keys`. In `skills-reference.md`
   (graph.task), the in-Playground help and the AI agent guide's checklist; pinned by `unit-test-task-9` on both engines.
   Applies [[event-script-over-code]] to DATA and [[clean-knowledge-design-over-engine-coverage]].
+  **Extended 2026-10-11 (a field request, Eric's rulings; Java branch `9ce0a2b0`, Rust `1ac7068e`, both for v4.12.23):** when the rules
+  are BANDS - eligibility thresholds, tiers by amount, time windows - `f:rangeLookup(table, value, default)` answers which band contains
+  the value. One notation, Eric's ruling: `min..max` runs from `min` inclusive up to but EXCLUDING `max`, an omitted end is open (no
+  `..<` marker - it reads the same for numbers, dates and text, and adjacent bands tile a scale with no gap). The TABLE decides the
+  comparison: every bound numeric → the value compared exactly as a decimal (a non-number fails by name, as graph.math does); every
+  bound text → lowercased text (ISO-8601 dates and times, alphabetic bands); a mix → refused. A null value or a miss takes the default.
+  Pinned by 37 shared vectors (`range-lookup-vectors.json`, byte-identical on both engines) and the fixture `unit-test-range-lookup-1`;
+  documented beside `f:lookup` (skills reference *Range tables*). Examples stay neutral: a loyalty tier by spend, credit score bands, a
+  same-day cut-off by time ([[conv-compartment-downstream-secrets]]).
   <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-10-08 | uses: 6 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
