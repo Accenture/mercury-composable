@@ -111,7 +111,8 @@ public final class GraphContract {
             Map.entry("notNull", BOOLEAN),
             Map.entry(TEXT, STRING), Map.entry("concat", STRING), Map.entry("substring", STRING),
             Map.entry("now", STRING), Map.entry("uuid", STRING), Map.entry("dateTime", STRING),
-            Map.entry("b64", STRING), Map.entry("lookup", STRING), Map.entry("decimalAdd", STRING),
+            Map.entry("b64", STRING), Map.entry("lookup", STRING), Map.entry("rangeLookup", STRING),
+            Map.entry("decimalAdd", STRING),
             Map.entry("decimalSubtract", STRING), Map.entry("decimalMultiply", STRING),
             Map.entry("decimalDiv", STRING), Map.entry("decimalMod", STRING), Map.entry("decimalRound", STRING),
             Map.entry("listOfMap", ARRAY), Map.entry("updateListOfMap", ARRAY));
