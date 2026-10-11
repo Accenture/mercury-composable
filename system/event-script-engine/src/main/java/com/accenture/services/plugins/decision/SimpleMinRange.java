@@ -25,13 +25,16 @@ import com.accenture.util.RangeNotation;
  * The lower bound of one range - 'f:minRange(range)' - typed by the notation.
  * <p>
  * The range is written as the bands of 'rangeLookup' are: {@code min..max} runs from {@code min} inclusive up to
- * but excluding {@code max}, and {@code min..} or {@code ..max} leaves an end open. A numeric bound is returned as
- * a number - a whole number within the 64-bit range as a long, any other number as a double - and a text bound as
- * text, exactly as written. An open end has no bound: {@code ..2500} answers the optional second argument, or
+ * but excluding {@code max}, and {@code min..} or {@code ..max} leaves an end open. A whole number within the
+ * 64-bit range is returned as a long and any other number as its exact decimal text ({@code 2500.50} - the
+ * high-precision rule of DECIMAL; f:double converts it when a floating-point output value is wanted); a text
+ * bound is returned as written, a quoted one without its quotes. An open end has no bound: {@code ..2500}
+ * answers the optional second argument, or
  * null when there is none, so the null-source rule of a data mapping leaves the target unset.
  * <p>
- * A malformed range, a range that mixes a numeric and a text bound, and an empty range (its lower bound not below
- * its upper bound) are refused by name, exactly as 'rangeLookup' refuses such a band in a table.
+ * A malformed range, a band given as a list, a range mixing kinds (a number and text, or quoted and unquoted
+ * text), and an empty range (its lower bound not below its upper bound) are refused by name, exactly as 'rangeLookup'
+ * refuses such a band in a table.
  */
 @SimplePlugin
 public class SimpleMinRange implements PluginFunction {

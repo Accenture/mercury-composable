@@ -35,16 +35,19 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class RangeLookupVectorsTest {
     private static final SimpleRangeLookup PLUGIN = new SimpleRangeLookup();
-    private static final Map<String, String> ERRORS = Map.of(
-            "arity", "Expected two or three input values",
-            "missing-keys", "Missing keys in input",
-            "missing-key", "Missing key in input",
-            "bad-range", "must be written as min\\.\\.max",
-            "empty-range", "is empty",
-            "mixed-table", "mixes numeric and text bounds",
-            "mixed-band", "mixes a numeric and a text bound",
-            "not-a-number", "Expected a decimal number in rangeLookup|Cannot convert",
-            "boolean-operand", "Boolean operand in rangeLookup");
+    private static final Map<String, String> ERRORS = Map.ofEntries(
+            Map.entry("arity", "Expected two or three input values"),
+            Map.entry("missing-keys", "Missing keys in input"),
+            Map.entry("missing-key", "Missing key in input"),
+            Map.entry("bad-range", "must be written as min\\.\\.max"),
+            Map.entry("empty-range", "is empty"),
+            Map.entry("mixed-table", "mixes numeric and text bounds"),
+            Map.entry("mixed-band", "mixes a numeric and a text bound"),
+            Map.entry("mixed-quoting", "mixes quoted and unquoted bounds"),
+            Map.entry("mixed-band-quoting", "mixes a quoted and an unquoted bound"),
+            Map.entry("list-band", "not a list or a map"),
+            Map.entry("not-a-number", "Expected a decimal number in rangeLookup|Cannot convert"),
+            Map.entry("boolean-operand", "Boolean operand in rangeLookup"));
 
     @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> vectors() throws IOException {

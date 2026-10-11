@@ -135,6 +135,31 @@ class SimpleRangeLookupTest {
         assertStartsWith("Range table mixes numeric and text bounds", failure(mixedTable, null));
     }
 
+    @Test
+    void shouldCompareQuotedBoundsAsWritten() {
+        // quotes make a table case-sensitive: a lowercase m sorts above the uppercase M
+        var initials = Map.of("keys", List.of("a", "b"), "a", "'A'..'M'", "b", "'M'..");
+        assertEquals("b", plugin.calculate(initials, "m"));
+        assertEquals("a", plugin.calculate(initials, "B"));
+        // and keep a zero-padded code as text, where 0000..1000 would mix a text and a numeric bound
+        var codes = Map.of("keys", List.of("legacy", "current"), "legacy", "'0000'..'1000'", "current", "'1000'..");
+        assertEquals("legacy", plugin.calculate(codes, "0450"));
+        assertEquals("current", plugin.calculate(codes, "1000"));
+        assertStartsWith("Range table mixes quoted and unquoted bounds",
+                failure(Map.of("keys", List.of("a", "b"), "a", "'x'..'y'", "b", "1..2"), 1));
+        assertStartsWith("Range of 'a' mixes a quoted and an unquoted bound", failure(oneBand("'x'..y"), 1));
+    }
+
+    @Test
+    void shouldRefuseABandThatIsAListOrHoldsASecondSeparator() {
+        // a key[]= list or a JSON list written as text is not a range
+        assertStartsWith("Range of 'a' must be one range, not a list or a map",
+                failure(Map.of("keys", List.of("a"), "a", List.of("1..2")), 1));
+        assertStartsWith("Range of 'a' must be one range, not a list or a map", failure(oneBand("[ \"a..h\" ]"), "h"));
+        assertStartsWith("Range of 'a' must be written as", failure(oneBand("a..b..c"), "b"));
+        assertStartsWith("Range of 'a' must be written as", failure(oneBand("1...2"), 1));
+    }
+
     /** A table with one band named 'a'. */
     private static Map<String, Object> oneBand(String range) {
         return Map.of("keys", List.of("a"), "a", range);

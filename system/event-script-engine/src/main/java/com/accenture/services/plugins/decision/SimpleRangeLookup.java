@@ -44,17 +44,20 @@ import java.util.Map;
  * and each band field is ONE range written as text: {@code min..max} runs from {@code min}
  * inclusive up to but EXCLUDING {@code max}, and an omitted end is open - so adjacent bands
  * ({@code 2500..10000}, {@code 10000..25000}) tile a scale with no gap and no overlap, and a band
- * that ends at a value is written with the next value as its upper bound. The table decides how
- * values compare: when every bound is a number ({@code 25000}, {@code 2500.50}, {@code -1}), the
- * bands are numeric and the value must be a number or a numeric string, compared exactly as a
- * decimal; when the bounds are text, values compare as text, case-insensitively, which is how
- * ISO-8601 dates and times ({@code 2026-11-15..2027-01-01}, {@code 08:00..16:00}) and alphabetic
- * bands ({@code a..h}) work. A table that mixes numeric and text bounds is refused. As with 'lookup',
- * the 'keys' field may be a list or a JSON list written as text, and the table itself may be JSON
- * text.
+ * that ends at a value is written with the next value as its upper bound. A bound is a canonical
+ * number ({@code 25000}, {@code 2500.50}, {@code -1}), text in single or double quotes
+ * ({@code '0020'}, {@code "2026-11-15"}) or unquoted text ({@code 16:00}, {@code h}), and the
+ * table decides how values compare: numeric bounds compare the value exactly as a decimal (it must
+ * be a number or a numeric string), quoted bounds compare it as written and case-sensitively -
+ * the quotes keep a zero-padded code or a case-sensitive band as text - and unquoted text bounds
+ * compare it as text without case, which is how ISO-8601 dates and times and alphabetic bands
+ * work. Text compares as written, so a value must be shaped like the bounds (zero-padded, the same
+ * parts). A table that mixes kinds is refused. As with 'lookup', the 'keys' field may be a list or
+ * a JSON list written as text, and the table itself may be JSON text; a band, though, is one range
+ * and never a list.
  * <p>
  * Every band is checked when the table is read, whatever the value (a null value included): a
- * malformed range, a band mixing a numeric and a text bound, and an empty band - its lower bound
+ * malformed range, a band given as a list, a band mixing kinds, and an empty band - its lower bound
  * not below its upper bound ({@code 3..3}), which no value could ever match - are refused by name,
  * so a table that could never answer one of its bands never reaches a run silently. The same
  * notation is read by 'minRange' and 'maxRange' through {@link RangeNotation}.
@@ -93,12 +96,15 @@ public class SimpleRangeLookup implements PluginFunction {
         }
         // every band is parsed and checked before any value is placed, so a bad band is refused whatever the value
         List<Band> bands = parseBands(SimplePluginUtils.normalizeDecisionTableEntry(keys), table);
-        boolean numeric = isNumericTable(bands);
+        RangeNotation.Kind kind = tableKind(bands);
         if (input[1] == null) {
             return defaultValue;
         }
-        String band = numeric ? resolveNumeric(bands, DecimalPluginUtils.operand(input[1], NAME))
-                              : resolveText(bands, String.valueOf(input[1]));
+        String band = switch (kind) {
+            case NUMBER -> resolveNumeric(bands, DecimalPluginUtils.operand(input[1], NAME));
+            case QUOTED -> resolveText(bands, String.valueOf(input[1]), false);
+            case TEXT -> resolveText(bands, String.valueOf(input[1]), true);
+        };
         return band == null ? defaultValue : band;
     }
 
@@ -109,49 +115,55 @@ public class SimpleRangeLookup implements PluginFunction {
             if (entry == null) {
                 throw new IllegalArgumentException("Missing key in input: " + key);
             }
-            var range = RangeNotation.parse(String.valueOf(entry), "Range of '" + key + "'");
-            bands.add(new Band(key, range.lower, range.upper, range.numeric));
+            bands.add(new Band(key, RangeNotation.parse(String.valueOf(entry), "Range of '" + key + "'")));
         }
         return bands;
     }
 
-    private boolean isNumericTable(List<Band> bands) {
-        int numeric = 0;
-        int text = 0;
+    /** The kind every band shares; a table with no bands reads as text and matches nothing. */
+    private RangeNotation.Kind tableKind(List<Band> bands) {
+        RangeNotation.Kind kind = null;
         for (Band band : bands) {
-            if (band.numeric) {
-                numeric++;
-            } else {
-                text++;
+            var k = band.range.kind;
+            if (kind == null) {
+                kind = k;
+            } else if (k != kind) {
+                if (k == RangeNotation.Kind.QUOTED || kind == RangeNotation.Kind.QUOTED) {
+                    throw new IllegalArgumentException(
+                            "Range table mixes quoted and unquoted bounds - quote every bound or none");
+                }
+                throw new IllegalArgumentException(
+                        "Range table mixes numeric and text bounds - a table is one or the other");
             }
         }
-        if (numeric > 0 && text > 0) {
-            throw new IllegalArgumentException("Range table mixes numeric and text bounds - a table is one or the other");
-        }
-        return numeric > 0;
+        return kind == null ? RangeNotation.Kind.TEXT : kind;
     }
 
     private String resolveNumeric(List<Band> bands, BigDecimal value) {
         for (Band band : bands) {
-            BigDecimal lower = band.lower == null ? null : new BigDecimal(band.lower);
-            BigDecimal upper = band.upper == null ? null : new BigDecimal(band.upper);
-            if (contains(lower == null ? null : lower.compareTo(value), upper == null ? null : value.compareTo(upper))) {
+            var r = band.range;
+            if (contains(r.lowerNumber == null ? null : r.lowerNumber.compareTo(value),
+                         r.upperNumber == null ? null : value.compareTo(r.upperNumber))) {
                 return band.key;
             }
         }
         return null;
     }
 
-    private String resolveText(List<Band> bands, String value) {
-        String v = value.toLowerCase(Locale.ROOT);
+    private String resolveText(List<Band> bands, String value, boolean ignoreCase) {
+        String v = fold(value, ignoreCase);
         for (Band band : bands) {
-            String lower = band.lower == null ? null : band.lower.toLowerCase(Locale.ROOT);
-            String upper = band.upper == null ? null : band.upper.toLowerCase(Locale.ROOT);
+            String lower = fold(band.range.lower, ignoreCase);
+            String upper = fold(band.range.upper, ignoreCase);
             if (contains(lower == null ? null : lower.compareTo(v), upper == null ? null : v.compareTo(upper))) {
                 return band.key;
             }
         }
         return null;
+    }
+
+    private static String fold(String text, boolean ignoreCase) {
+        return text == null || !ignoreCase ? text : text.toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -164,6 +176,6 @@ public class SimpleRangeLookup implements PluginFunction {
         return atOrAboveLower && belowUpper;
     }
 
-    /** A band: its name, its bounds as written (null for an open end) and whether they are numeric. */
-    private record Band(String key, String lower, String upper, boolean numeric) { }
+    /** A band: its name and its range, checked when the table was read. */
+    private record Band(String key, RangeNotation range) { }
 }

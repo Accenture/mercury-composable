@@ -319,9 +319,10 @@ class GraphTaskTest {
     void rangeBoundsAreTypedByTheNotation() throws TimeoutException {
         // unit-test-range-bounds-1: the band the lookup chose is read back through a dynamic key -
         // f:minRange(loyalty-tiers.{model.tier}, int(0)) and f:maxRange(loyalty-tiers.{model.tier}) - and its
-        // bounds are typed by the notation: whole numbers for a money band, text for a time; a graph.math node
-        // computes the distance to the next tier from the upper bound when there is one
-        var response = runGraph("unit-test-range-bounds-1", Map.of("annual_spend", "12500.75"), Map.of());
+        // bounds are typed by the notation: whole numbers for a money band, exact decimal text for a fee band, text
+        // for a time or a quoted code; a graph.math node computes the distance to the next tier from the upper bound
+        // when there is one
+        var response = runGraph("unit-test-range-bounds-1", Map.of("annual_spend", "12500.75", "product_code", "0450"), Map.of());
         assertEquals(200, response.getStatus());
         var mm = bodyMap(response);
         assertEquals("gold", mm.getElement("tier"));
@@ -329,6 +330,12 @@ class GraphTaskTest {
         assertEquals(25000L, ((Number) mm.getElement("tier_to")).longValue());
         assertEquals("16:00", mm.getElement("same_day_until"));
         assertEquals("12499.25", mm.getElement("to_next_tier"));
+        // a quoted zero-padded code table compares as written and its bound stays text; a decimal bound is its exact
+        // text, and f:double converts it for a floating-point output value
+        assertEquals("legacy", mm.getElement("product_line"));
+        assertEquals("1000", mm.getElement("current_from"));
+        assertEquals("7.5", mm.getElement("mid_to_text"));
+        assertEquals(7.5, mm.getElement("mid_to"));
         // the lower end of the standard band is open: the default 0 answers
         response = runGraph("unit-test-range-bounds-1", Map.of("annual_spend", 100), Map.of());
         assertEquals(200, response.getStatus());
