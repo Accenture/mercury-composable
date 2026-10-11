@@ -46,7 +46,7 @@ Each change merged to `main` after v4.12.22 is listed here; it moves under its r
    guide's round trip describes the dialog instead of the explore bar. No upgrade action for applications.
 
 4. **The API playground runs on the Reactive HTTP server alone - the Spring Boot dependency is gone.** The module depends on `platform-core`
-   instead of `rest-spring-4`: REST automation serves the page as static content (`static.html.folder=classpath:/public`) and the two
+   instead of `rest-spring-4`: REST automation serves the page as static content (`static.html.folder=classpath:/public`) and the
    `/api/specs` endpoints on the one port 8200 (Spring's port 8200 and the former REST port 8222 collapse into it). The specs folder
    `api.playground.specs` (the previously unused `api.playground.apps`, renamed) holds a developer's own documents: `GET /api/specs` lists
    its yaml, yml and json files and the bundled example `demo.yaml` (no classpath scanning - the example is a known file), a folder file

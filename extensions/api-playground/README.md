@@ -6,7 +6,7 @@ of a MiniGraph application: a graph that declares its contract answers an OpenAP
 demand, and this page loads it in one dialog.
 
 The application has no Spring Boot dependency: the Reactive HTTP server of `platform-core` serves
-the page as static content and the two REST endpoints below through REST automation, on one port.
+the page as static content and the three REST endpoints below through REST automation, on one port.
 
 ## Before you start
 
