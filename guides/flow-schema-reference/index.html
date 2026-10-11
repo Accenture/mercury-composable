@@ -6429,12 +6429,12 @@ else, a boolean or a <code>null</code> included, is an error naming the plugin. 
 </tr>
 <tr>
 <td><code>f:rangeLookup(table, value, default)</code></td>
-<td>Name of the first band of a range table whose range contains the value; the optional default on a miss or a null value, null when omitted. Each band field is one range as text: <code>min..max</code> from <code>min</code> inclusive up to but excluding <code>max</code>, an open end omitted. Numeric bounds compare the value exactly as a decimal (a non-number fails by name); text bounds compare as text without case (ISO-8601 dates and times); a table mixing the two is refused</td>
+<td>Name of the first band of a range table whose range contains the value; the optional default on a miss or a null value, null when omitted. Each band field is one range as text: <code>min..max</code> from <code>min</code> inclusive up to but excluding <code>max</code>, an open end omitted. A bound is a canonical number, quoted text (single or double quotes, compared as written and case-sensitively) or unquoted text (compared without case); numeric bounds compare the value exactly as a decimal (a non-number fails by name); a table mixing kinds, or a band given as a list, is refused</td>
 <td><code>f:rangeLookup(model.tiers, input.body.annual_spend, text(unknown)) -&gt; tier</code></td>
 </tr>
 <tr>
 <td><code>f:minRange(range, default)</code></td>
-<td>Lower bound of one range written as <code>min..max</code>, <code>min..</code> or <code>..max</code>, typed by the notation: a numeric bound is a number (a whole number within the 64-bit range a long, any other number a double), a text bound is text as written; an open end answers the optional default, null when omitted. A malformed, mixed or empty range is refused as <code>f:rangeLookup</code> refuses the band</td>
+<td>Lower bound of one range written as <code>min..max</code>, <code>min..</code> or <code>..max</code>, typed by the notation: a whole number within the 64-bit range a long, any other number its exact decimal as text (<code>f:double</code> converts it for a floating-point output), a text bound as written, a quoted one without its quotes; an open end answers the optional default, null when omitted. A malformed, list, mixed or empty range is refused as <code>f:rangeLookup</code> refuses the band</td>
 <td><code>f:minRange(model.tiers.gold) -&gt; gold_from</code></td>
 </tr>
 <tr>
