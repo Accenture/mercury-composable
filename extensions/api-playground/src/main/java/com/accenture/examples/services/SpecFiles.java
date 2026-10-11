@@ -18,6 +18,7 @@
 
 package com.accenture.examples.services;
 
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 
@@ -31,18 +32,19 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 /**
- * The OpenAPI documents this application offers by name: the bundled example
- * {@code resources/sample/yaml/demo.yaml} and the files of the optional folder named by the
- * {@code api.playground.apps} property, so a developer can add documents without rebuilding.
- * The example wins over a folder file of the same name. Only yaml, yml and json files are
- * offered, and a requested name must be a plain file name (no path separators).
+ * The OpenAPI documents this application offers by name: the files of the specs folder named by
+ * the {@code api.playground.specs} property and the bundled example
+ * {@code resources/sample/yaml/demo.yaml}. A folder file wins over the example of the same name,
+ * so a deployed {@code demo.yaml} replaces the sample. Only yaml, yml and json files are offered,
+ * and a name must be a plain file name (letters, digits, dot, dash, underscore). The Deploy button
+ * writes the current document into the folder through {@link #write}.
  */
 public final class SpecFiles {
 
     private static final SpecFiles INSTANCE = new SpecFiles();
     private static final String EXAMPLE = "demo.yaml";
     private static final String EXAMPLE_RESOURCE = "/sample/yaml/" + EXAMPLE;
-    private static final String APPS_FOLDER = "api.playground.apps";
+    private static final String SPECS_FOLDER = "api.playground.specs";
     private static final Pattern SAFE_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*");
     private static final String YAML = "application/yaml";
     private static final String JSON = "application/json";
@@ -53,11 +55,11 @@ public final class SpecFiles {
         return INSTANCE;
     }
 
-    /** The document names, sorted: the example and the folder's files. */
+    /** The document names, sorted: the folder's files and the example. */
     public TreeSet<String> list() {
         TreeSet<String> names = new TreeSet<>();
         names.add(EXAMPLE);
-        File folder = appsFolder();
+        File folder = specsFolder();
         File[] files = folder == null ? null : folder.listFiles();
         if (files != null) {
             for (File f : files) {
@@ -74,19 +76,59 @@ public final class SpecFiles {
         if (!offered(filename)) {
             return null;
         }
-        if (EXAMPLE.equals(filename)) {
-            try (InputStream in = this.getClass().getResourceAsStream(EXAMPLE_RESOURCE)) {
-                return in == null ? null : Utility.getInstance().stream2str(in);
-            }
-        }
-        File folder = appsFolder();
+        File folder = specsFolder();
         if (folder != null) {
             File f = new File(folder, filename);
             if (f.isFile()) {
                 return Files.readString(f.toPath(), StandardCharsets.UTF_8);
             }
         }
+        if (EXAMPLE.equals(filename)) {
+            try (InputStream in = this.getClass().getResourceAsStream(EXAMPLE_RESOURCE)) {
+                return in == null ? null : Utility.getInstance().stream2str(in);
+            }
+        }
         return null;
+    }
+
+    /**
+     * Write a document into the specs folder.
+     *
+     * @param filename a plain yaml, yml or json file name
+     * @param content the document's text
+     * @param overwrite true to replace an existing file of that name
+     * @return true when an existing file was replaced
+     * @throws AppException 400 for a bad name or empty content, 409 when the file exists and
+     *                      overwrite is false, 503 when no specs folder is configured
+     */
+    public boolean write(String filename, String content, boolean overwrite) throws AppException, IOException {
+        if (!offered(filename)) {
+            throw new AppException(400, "File name must be a plain name ending with .yaml, .yml or .json");
+        }
+        if (content == null || content.isBlank()) {
+            throw new AppException(400, "Nothing to deploy - the document is empty");
+        }
+        String path = AppConfigReader.getInstance().getProperty(SPECS_FOLDER);
+        if (path == null || path.isBlank()) {
+            throw new AppException(503, "No specs folder - set " + SPECS_FOLDER + " in application.properties");
+        }
+        File folder = new File(path.trim());
+        if (!folder.isDirectory() && !folder.mkdirs()) {
+            throw new AppException(503, "Cannot create the specs folder " + folder);
+        }
+        File target = new File(folder, filename);
+        boolean exists = target.isFile();
+        if (exists && !overwrite) {
+            throw new AppException(409, filename + " exists in the specs folder - confirm to overwrite");
+        }
+        Files.writeString(target.toPath(), content, StandardCharsets.UTF_8);
+        return exists;
+    }
+
+    /** The configured folder path, for messages; null when not configured. */
+    public String folderPath() {
+        String path = AppConfigReader.getInstance().getProperty(SPECS_FOLDER);
+        return path == null || path.isBlank() ? null : path.trim();
     }
 
     public String contentType(String filename) {
@@ -94,15 +136,15 @@ public final class SpecFiles {
     }
 
     private static boolean offered(String name) {
-        if (!SAFE_NAME.matcher(name).matches()) {
+        if (name == null || !SAFE_NAME.matcher(name).matches()) {
             return false;
         }
         String lower = name.toLowerCase(Locale.ROOT);
         return lower.endsWith(".yaml") || lower.endsWith(".yml") || lower.endsWith(".json");
     }
 
-    private static File appsFolder() {
-        String path = AppConfigReader.getInstance().getProperty(APPS_FOLDER);
+    private static File specsFolder() {
+        String path = AppConfigReader.getInstance().getProperty(SPECS_FOLDER);
         if (path == null || path.isBlank()) {
             return null;
         }

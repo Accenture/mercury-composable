@@ -259,16 +259,16 @@ generators. The [API playground](https://github.com/Accenture/mercury-composable
 is Swagger UI in a Mercury page, served by a Mercury app on port 8200. With a MiniGraph application
 in dev mode:
 
-1. **Load the engine's document directly.** Press **MiniGraph...**, keep host `127.0.0.1` and port
+1. **Load the engine's document directly.** Press **MiniGraph**, keep host `127.0.0.1` and port
    `8085`, enter the graph ID `payment` (or a Playground session ID for the draft) and Load. The
    dev routes carry the wildcard CORS entry, so the browser may read it, and `servers` points at the
    engine, so **Try it out** posts the request body and the header parameters to
    `POST /api/graph/payment` on the engine - a bad request shows the 400 above. The URL field takes
    any OpenAPI document URL the same way.
-2. **Or keep the file.** Download `payment.yaml` (the attachment, or the Schema panel's **Download
-   YAML**) and drop it on the page, or copy it into the playground's `api.playground.apps` folder
-   and pick it from **Bundled...**. A file kept this way is a point-in-time export; the engine's
-   URL is always current.
+2. **Or keep the file.** Press **Deploy** to save the loaded document into the playground's specs
+   folder (`api.playground.specs`), where **Specs** offers it from then on; or download
+   `payment.yaml` (the attachment, or the Schema panel's **Download YAML**) and drop it on the
+   page. A file kept this way is a point-in-time export; the engine's URL is always current.
 3. **Round trip.** Correct the graph in the Playground - a type, a `required`, a new path - Save in the
    Schema panel, and Load again in the dialog: the document follows the draft at
    `/api/openapi/session/{sessionId}`, and the deployed graph's at `/api/openapi/{graph-id}` after

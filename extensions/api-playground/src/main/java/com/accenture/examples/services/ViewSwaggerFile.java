@@ -28,8 +28,8 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Serves one OpenAPI document by name - the bundled example demo.yaml or a file of the optional
- * {@code api.playground.apps} folder - as text with a content type Swagger UI accepts.
+ * Serves one OpenAPI document by name - a file of the specs folder or the bundled example demo.yaml (the folder wins) - from the
+ * {@code api.playground.specs} folder - as text with a content type Swagger UI accepts.
  */
 @PreLoad(route = "v1.view.swagger.file", instances=10)
 public class ViewSwaggerFile implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
