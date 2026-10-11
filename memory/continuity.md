@@ -354,7 +354,8 @@
   Pinned by 37 shared vectors (`range-lookup-vectors.json`, byte-identical on both engines) and the fixture `unit-test-range-lookup-1`;
   documented beside `f:lookup` (skills reference *Range tables*). Examples stay neutral: a loyalty tier by spend, credit score bands, a
   same-day cut-off by time ([[conv-compartment-downstream-secrets]]).
-  **Extended again 2026-10-11 (Eric's follow-up; Java #554, Rust mercury #380 - Increment 177, both OPEN):** a band's bounds are data a
+  **Extended again 2026-10-11 (Eric's follow-up; Java #554 squash `6326f286`, Rust mercury #380 merge `62239b44` - Increment 177, both
+  MERGED 2026-10-11):** a band's bounds are data a
   mapper or a `graph.math` node reads back - `f:minRange(range, default)` and `f:maxRange(range, default)` return the lower or upper
   bound TYPED BY THE NOTATION (a numeric bound a number: a whole number a long, any other a double; a text bound text as written; an
   open end `..2500`/`25000..` the optional default or null), and a dynamic key reads the band the lookup chose
