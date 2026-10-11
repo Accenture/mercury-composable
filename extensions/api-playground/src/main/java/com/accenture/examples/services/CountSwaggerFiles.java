@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Lists the OpenAPI documents this application offers: the bundled example demo.yaml and the files
+ * Lists the specs documents this application offers: the sample document demo.yaml and the files
  * of the specs folder named by {@code api.playground.specs}. See {@link SpecFiles}.
  */
 @PreLoad(route = "v1.list.swagger.files", instances=10)

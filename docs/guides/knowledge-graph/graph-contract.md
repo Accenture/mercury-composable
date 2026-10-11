@@ -266,7 +266,7 @@ in dev mode:
    `POST /api/graph/payment` on the engine - a bad request shows the 400 above. The URL field takes
    any OpenAPI document URL the same way.
 2. **Or keep the file.** Press **Deploy** to save the loaded document into the playground's specs
-   folder (`api.playground.specs`), where **Specs** offers it from then on; or download
+   folder ([`api.playground.specs`](../configuration-reference.md#api-playground-specs)), where **Specs** offers it from then on; or download
    `payment.yaml` (the attachment, or the Schema panel's **Download YAML**) and drop it on the
    page. A file kept this way is a point-in-time export; the engine's URL is always current.
 3. **Round trip.** Correct the graph in the Playground - a type, a `required`, a new path - Save in the

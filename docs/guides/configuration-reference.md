@@ -1048,6 +1048,27 @@ says so at startup.
 
 ---
 
+## API Playground (`api-playground` extension) {#api-playground}
+
+The API playground (`extensions/api-playground`) is a standalone application: Swagger UI in a Mercury-branded page that loads a
+graph's OpenAPI document from a MiniGraph application (the **MiniGraph** dialog), a URL, a dropped file or its own specs folder. See
+the [graph contract](knowledge-graph/graph-contract.md#api-playground) round trip.
+
+### `api.playground.specs` {#api-playground-specs}
+
+| Type | Default |
+|------|---------|
+| `String` (folder path) | `/tmp/api-playground` |
+
+The specs folder: the specs documents (yaml, yml or json) the playground serves itself. `GET /api/specs` lists the folder's files
+beside the sample document `demo.yaml`, the page's **Specs** list offers them, `GET /api/specs/{filename}` serves one as
+`application/yaml` or `application/json`, and the page's **Deploy** button writes the loaded document into the folder through
+`PUT /api/specs/{filename}` (an existing name answers 409 unless `?overwrite=true`, so the page asks first). The folder is created on
+the first Deploy; a `demo.yaml` in it replaces the sample document. A file name must be a plain name - letters, digits, dot, dash and
+underscore. When the property is unset, the sample document is the only one and Deploy answers 503.
+
+---
+
 ## PostgreSQL (`reactive-postgres` extension)
 
 These properties configure the optional `reactive-postgres` extension. `postgres.host`,

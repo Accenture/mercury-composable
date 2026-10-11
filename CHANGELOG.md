@@ -39,18 +39,18 @@ Each change merged to `main` after v4.12.22 is listed here; it moves under its r
    live in the ignored `public/swagger-ui` subfolder, so the fetch scripts take upstream's `dist` assets and skip its page) offer: a
    **URL** field (and `?url=` on the page's address); a **MiniGraph** dialog with host, port (default 8085) and a graph ID or a session
    ID, which loads `GET /api/openapi/{graph-id}` or `/api/openapi/session/{session-id}` from a MiniGraph application in dev mode and
-   remembers the last values in the browser; a **Specs** list of the documents the application serves itself; **Browse** or
+   remembers the last values in the browser; a **Specs** list of the specs documents the application serves itself; **Browse** or
    drag-and-drop of a `.yaml`, `.yml` or `.json` file anywhere on the page, parsed by Swagger UI itself; and **Deploy**, which saves the
    loaded document into the specs folder through the new `PUT /api/specs/{filename}` under a name suggested from its source, asking
-   before an existing file is replaced (the server answers 409 unless `?overwrite=true`). A status line names the loaded source. The example `demo.yaml` now points at the application's own port, so **Try it out** works on it as is. The graph contract
+   before an existing file is replaced (the server answers 409 unless `?overwrite=true`). A status line names the loaded source. The sample document `demo.yaml` now points at the application's own port, so **Try it out** works on it as is. The graph contract
    guide's round trip describes the dialog instead of the explore bar. No upgrade action for applications.
 
 4. **The API playground runs on the Reactive HTTP server alone - the Spring Boot dependency is gone.** The module depends on `platform-core`
    instead of `rest-spring-4`: REST automation serves the page as static content (`static.html.folder=classpath:/public`) and the
    `/api/specs` endpoints on the one port 8200 (Spring's port 8200 and the former REST port 8222 collapse into it). The specs folder
    `api.playground.specs` (the previously unused `api.playground.apps`, renamed) holds a developer's own documents: `GET /api/specs` lists
-   its yaml, yml and json files and the bundled example `demo.yaml` (no classpath scanning - the example is a known file), a folder file
-   wins over the example of the same name, `GET /api/specs/{filename}` serves either as `application/yaml` or `application/json`, and a
+   its yaml, yml and json files (the specs documents) and the sample document `demo.yaml` (no classpath scanning - the sample is a known
+   file), a folder file wins over the sample document of the same name, `GET /api/specs/{filename}` serves either as `application/yaml` or `application/json`, and a
    name must be a plain file name. **Action for a developer who ran the playground before:** the page and the endpoints are now on port
    8200; `spring.web.resources.static-locations` is no longer read - put your own documents in the `api.playground.specs` folder, or
    press Deploy.
