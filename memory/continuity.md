@@ -354,6 +354,17 @@
   Pinned by 37 shared vectors (`range-lookup-vectors.json`, byte-identical on both engines) and the fixture `unit-test-range-lookup-1`;
   documented beside `f:lookup` (skills reference *Range tables*). Examples stay neutral: a loyalty tier by spend, credit score bands, a
   same-day cut-off by time ([[conv-compartment-downstream-secrets]]).
+  **Extended again 2026-10-11 (Eric's follow-up; Java #554, Rust mercury #380 - Increment 177, both OPEN):** a band's bounds are data a
+  mapper or a `graph.math` node reads back - `f:minRange(range, default)` and `f:maxRange(range, default)` return the lower or upper
+  bound TYPED BY THE NOTATION (a numeric bound a number: a whole number a long, any other a double; a text bound text as written; an
+  open end `..2500`/`25000..` the optional default or null), and a dynamic key reads the band the lookup chose
+  (`f:maxRange(loyalty-tiers.{model.tier})`). One notation reader per engine (`RangeNotation`; Rust `Range::parse`) serves the three
+  plugins, so a malformed, mixed or empty range (`3..3` - the upper bound is excluded, so it can never match; Eric's ask) is refused by
+  every one of them, and the lookup checks EVERY band when it reads the table, whatever the value, where it used to check a band only
+  when the walk reached it. **Trap (3), the gate again:** the loader allow-lists the engine's helper CLASSES by name
+  (`ALLOWED_PACKAGES` holds `SimplePluginUtils`, `DecimalPluginUtils`, now `RangeNotation`), not packages - a plugin referencing a
+  helper outside the list is skipped with a WARN and every mapping naming it answers 400; add the class to the list and name the plugin
+  in `SimplePluginGateTest`. Pinned by the shared `range-bounds-vectors.json` (34 vectors) and the fixture `unit-test-range-bounds-1`.
   <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-10-11 | uses: 7 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
