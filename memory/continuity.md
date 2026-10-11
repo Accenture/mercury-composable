@@ -36,8 +36,8 @@
   **Published and VERIFIED 2026-10-11:** the twelve crates on crates.io at 4.12.23 (created 03:39:20Z–03:39:34Z by Eric's
   `cargo publish --workspace` from the tag, none yanked; the platform-core tarball's 33 source files the tag's set with `lib.rs`,
   `serializer.rs` and `canonical_packager.rs` SHA-256 identical; the event-script tarball carries `rangeLookup`). The Java artifacts are
-  the tag and the GitHub release, as always. Field acceptance not yet reported (4.12.22's was never reported separately; 4.12.23 goes to
-  the field). Origin 2026-10-11-034330.md.
+  the tag and the GitHub release, as always. **Field rollout planned 2026-10-12 (Eric, 2026-10-11)**; acceptance to be recorded when
+  reported (4.12.22's was never reported separately; 4.12.23 goes to the field). Origin 2026-10-11-034330.md.
   Prior: v4.12.22 (2026-10-10 01:24:53Z — the graph contract on both engines and the mini-scheduler's active environment; #542 squash
   `67e573e8` = tag; the graph contract (ADR-0029, [[graph-contract-by-declaration]]: #533–#536, the mock request headers #531), the
   scheduler's active environment (ADR-0030, [[scheduler-active-environment-store]]: #539), the service registry's echo fix #530; READ: a
@@ -701,6 +701,10 @@
   long-horizon: an epic, not a task.
   **Re-affirmed 2026-10-09 (Eric, at the stalled-thread gate [[close-stalled-threads-20261009]]):** stays open; the sequence is the
   mini-scheduler's active-environment enhancement ([[scheduler-active-environment]]), then the v4.12.22 release, then this epic resumes.
+  **Resuming 2026-10-12 or later, on AWS Bedrock (Eric, 2026-10-11):** the AI SDLC work uses Bedrock, not a vendor API key, for enterprise
+  security compliance - the platform-mediated access the concept doc's Q2 anticipated (the Anthropic SDK covers Bedrock, so the switch is
+  client construction, not a new helper). The session resumes on a different dev machine that has the AWS environment access; this
+  machine has none, so nothing here was tried against Bedrock. The two v4.12.2x releases and the API playground round are done.
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
