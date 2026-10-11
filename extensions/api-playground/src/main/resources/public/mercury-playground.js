@@ -4,7 +4,7 @@
  * Sources of an OpenAPI document, in the order the header offers them:
  *   - a URL typed into the field (also ?url=... on this page's address),
  *   - a MiniGraph application in dev mode (host, port, graph id or session id -> /api/openapi/...),
- *   - a document of the Specs list: the bundled example and the files of the specs folder
+ *   - a document of the Specs list: the sample document and the specs documents of the specs folder
  *     (api.playground.specs; GET /api/specs lists them, GET /api/specs/{name} serves one),
  *   - a YAML or JSON file chosen with Browse or dropped anywhere on the page.
  *
@@ -86,9 +86,10 @@
     loadUrl(url);
   });
 
-  // --- the Specs list: the example and the specs folder --------------------------------------
+  // --- the Specs list: the sample document and the specs documents -------------------------
   function loadBundled(name) {
-    loadUrl(absolute(SPECS_FILE + encodeURIComponent(name)), 'the spec ' + name, name);
+    var kindOfDocument = name === DEFAULT_DOCUMENT ? 'the sample document ' : 'the specs document ';
+    loadUrl(absolute(SPECS_FILE + encodeURIComponent(name)), kindOfDocument + name, name);
   }
 
   // Fill the Specs list; select `selected` when given. Resolves with the names.
@@ -123,7 +124,7 @@
         bundledSelect.value = names[0];
         loadBundled(names[0]);
       } else {
-        setStatus('No spec yet - enter a URL, open the MiniGraph dialog or drop a file');
+        setStatus('No specs document yet - enter a URL, open the MiniGraph dialog or drop a file');
       }
     })
     .catch(function () {

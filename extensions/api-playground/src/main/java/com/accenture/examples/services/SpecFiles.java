@@ -33,10 +33,10 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 /**
- * The OpenAPI documents this application offers by name: the files of the specs folder named by
- * the {@code api.playground.specs} property and the bundled example
- * {@code resources/sample/yaml/demo.yaml}. A folder file wins over the example of the same name,
- * so a deployed {@code demo.yaml} replaces the sample. Only YAML and JSON files are offered
+ * The specs documents this application offers by name: the files of the specs folder named by
+ * the {@code api.playground.specs} property and the sample document
+ * {@code resources/sample/yaml/demo.yaml}. A folder file wins over the sample document of the same
+ * name, so a deployed {@code demo.yaml} replaces it. Only YAML and JSON files are offered
  * ({@code .yaml}, {@code .yml} or {@code .json}), and a name must be a plain file name (letters,
  * digits, dot, dash, underscore). Deploying from the page writes the current document into the
  * folder through {@link #write}.
@@ -57,7 +57,7 @@ public final class SpecFiles {
         return INSTANCE;
     }
 
-    /** The document names, sorted: the folder's files and the example. */
+    /** The specs document names, sorted: the folder's files and the sample document. */
     public SortedSet<String> list() {
         TreeSet<String> names = new TreeSet<>();
         names.add(EXAMPLE);
@@ -73,7 +73,7 @@ public final class SpecFiles {
         return names;
     }
 
-    /** The document's text, or null when no such document is offered. */
+    /** The specs document's text, or null when no such document is offered. */
     public String read(String filename) throws IOException {
         if (!offered(filename)) {
             return null;
