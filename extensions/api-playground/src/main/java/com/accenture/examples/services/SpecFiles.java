@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Locale;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
@@ -35,9 +36,10 @@ import java.util.regex.Pattern;
  * The OpenAPI documents this application offers by name: the files of the specs folder named by
  * the {@code api.playground.specs} property and the bundled example
  * {@code resources/sample/yaml/demo.yaml}. A folder file wins over the example of the same name,
- * so a deployed {@code demo.yaml} replaces the sample. Only yaml, yml and json files are offered,
- * and a name must be a plain file name (letters, digits, dot, dash, underscore). The Deploy button
- * writes the current document into the folder through {@link #write}.
+ * so a deployed {@code demo.yaml} replaces the sample. Only YAML and JSON files are offered
+ * ({@code .yaml}, {@code .yml} or {@code .json}), and a name must be a plain file name (letters,
+ * digits, dot, dash, underscore). Deploying from the page writes the current document into the
+ * folder through {@link #write}.
  */
 public final class SpecFiles {
 
@@ -56,7 +58,7 @@ public final class SpecFiles {
     }
 
     /** The document names, sorted: the folder's files and the example. */
-    public TreeSet<String> list() {
+    public SortedSet<String> list() {
         TreeSet<String> names = new TreeSet<>();
         names.add(EXAMPLE);
         File folder = specsFolder();
@@ -94,8 +96,8 @@ public final class SpecFiles {
     /**
      * Write a document into the specs folder.
      *
-     * @param filename a plain yaml, yml or json file name
-     * @param content the document's text
+     * @param filename a plain file name ending with {@code .yaml}, {@code .yml} or {@code .json}
+     * @param content the text of the document
      * @param overwrite true to replace an existing file of that name
      * @return true when an existing file was replaced
      * @throws AppException 400 for a bad name or empty content, 409 when the file exists and
