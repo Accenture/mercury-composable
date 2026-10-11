@@ -52,6 +52,10 @@ class SimplePluginGateTest extends TestBase {
         // the decision-table lookup reaches the serializer only through the allowlisted
         // SimplePluginUtils - a direct SimpleMapper reference would be gated out silently
         assertTrue(SimplePluginLoader.containsSimplePlugin("lookup"));
+        // the range plugins share the RangeNotation helper, which the gate allow-lists by name
+        for (var name : new String[]{"rangeLookup", "minRange", "maxRange"}) {
+            assertTrue(SimplePluginLoader.containsSimplePlugin(name), name);
+        }
         // the decimal family reaches its arithmetic only through the allowlisted DecimalPluginUtils
         for (var name : new String[]{"decimalAdd", "decimalSubtract", "decimalMultiply", "decimalDiv", "decimalMod",
                 "decimalRound", "decimalCompare"}) {

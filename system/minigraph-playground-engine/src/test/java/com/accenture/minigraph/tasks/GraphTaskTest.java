@@ -316,6 +316,38 @@ class GraphTaskTest {
     }
 
     @Test
+    void rangeBoundsAreTypedByTheNotation() throws TimeoutException {
+        // unit-test-range-bounds-1: the band the lookup chose is read back through a dynamic key -
+        // f:minRange(loyalty-tiers.{model.tier}, int(0)) and f:maxRange(loyalty-tiers.{model.tier}) - and its
+        // bounds are typed by the notation: whole numbers for a money band, text for a time; a graph.math node
+        // computes the distance to the next tier from the upper bound when there is one
+        var response = runGraph("unit-test-range-bounds-1", Map.of("annual_spend", "12500.75"), Map.of());
+        assertEquals(200, response.getStatus());
+        var mm = bodyMap(response);
+        assertEquals("gold", mm.getElement("tier"));
+        assertEquals(10000L, ((Number) mm.getElement("tier_from")).longValue());
+        assertEquals(25000L, ((Number) mm.getElement("tier_to")).longValue());
+        assertEquals("16:00", mm.getElement("same_day_until"));
+        assertEquals("12499.25", mm.getElement("to_next_tier"));
+        // the lower end of the standard band is open: the default 0 answers
+        response = runGraph("unit-test-range-bounds-1", Map.of("annual_spend", 100), Map.of());
+        assertEquals(200, response.getStatus());
+        mm = bodyMap(response);
+        assertEquals("standard", mm.getElement("tier"));
+        assertEquals(0L, ((Number) mm.getElement("tier_from")).longValue());
+        assertEquals(2500L, ((Number) mm.getElement("tier_to")).longValue());
+        assertEquals("2400", mm.getElement("to_next_tier"));
+        // the upper end of the platinum band is open: no bound, no distance - the math node took its ELSE path
+        response = runGraph("unit-test-range-bounds-1", Map.of("annual_spend", 30000), Map.of());
+        assertEquals(200, response.getStatus());
+        mm = bodyMap(response);
+        assertEquals("platinum", mm.getElement("tier"));
+        assertEquals(25000L, ((Number) mm.getElement("tier_from")).longValue());
+        assertFalse(mm.exists("tier_to"));
+        assertFalse(mm.exists("to_next_tier"));
+    }
+
+    @Test
     void mappingSourceResolvesDynamicVariablesVerbatim() throws TimeoutException {
         // unit-test-mapping-1: a {namespace.key} reference inside a mapping source resolves before the
         // source is read - a key segment of a keyed table, a list index, text in a constant and a plugin

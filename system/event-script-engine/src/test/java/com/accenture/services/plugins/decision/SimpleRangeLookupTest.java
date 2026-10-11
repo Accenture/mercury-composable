@@ -122,6 +122,19 @@ class SimpleRangeLookupTest {
         assertStartsWith("Boolean operand in rangeLookup", failure(SCORE_BANDS, true));
     }
 
+    @Test
+    void shouldCheckEveryBandWhenTheTableIsRead() {
+        // a band that could never match - its bounds equal - is refused whatever the value, even when an earlier
+        // band would have answered and even when the value is null; so is a band that mixes a number and text
+        var table = Map.of("keys", List.of("a", "b"), "a", "1..2", "b", "3 .. 3");
+        assertStartsWith("Range of 'b' is empty - its lower bound is not below its upper bound: '3 .. 3'",
+                failure(table, 1));
+        assertStartsWith("Range of 'b' is empty", failure(table, null));
+        assertStartsWith("Range of 'a' mixes a numeric and a text bound - got '1..x'", failure(oneBand("1..x"), 1));
+        var mixedTable = Map.of("keys", List.of("a", "b"), "a", "1..2", "b", "x..y");
+        assertStartsWith("Range table mixes numeric and text bounds", failure(mixedTable, null));
+    }
+
     /** A table with one band named 'a'. */
     private static Map<String, Object> oneBand(String range) {
         return Map.of("keys", List.of("a"), "a", range);
