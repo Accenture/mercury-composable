@@ -10,7 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Each change merged to `main` after v4.12.22 is listed here; it moves under its release heading when the version is cut.
+Nothing yet. Each change merged to `main` after v4.12.23 is listed here; it moves under its release heading when the version is cut.
+
+---
+## Version 4.12.23, 10/11/2026
+
+The API playground, in lock-step with Rust 4.12.23 (Increment 175). The graph contract of 4.12.22 gave every graph an OpenAPI 3.0
+document on demand; this release adds the tool that makes it useful. `extensions/api-playground` is now a Mercury-branded Swagger UI
+page on the Reactive HTTP server alone - no Spring Boot - that loads a graph's document from a MiniGraph application in one dialog
+(host, port, graph ID or session ID), from a URL, from a dropped YAML or JSON file or from its own specs folder, and deploys the
+loaded document into that folder, asking before an existing file is replaced. The Swagger UI assets are fetched by a script instead
+of being carried in the repository, and the page and the sample document are mirrored into the Rust port. The guide page that
+documents the contract renders its front matter correctly again, and a test now guards every documentation page's front matter.
+**No upgrade action** for applications. A developer of the playground reads item 3: the page and its endpoints are on port 8200,
+`spring.web.resources.static-locations` is no longer read, the specs folder is `api.playground.specs`, and the Swagger UI assets are
+fetched once with the script in the module's README (`mvn clean package` fails at its first step with that instruction until then).
 
 ### Added
 
@@ -24,17 +38,7 @@ Each change merged to `main` after v4.12.22 is listed here; it moves under its r
    step with the fetch instruction when the folder is empty (maven-enforcer `requireFilesExist`). No upgrade action for
    applications; a developer building the playground runs the script once before the first build.
 
-### Fixed
-
-2. **The API playground's `GET /api/specs` lists the bundled files from the executable jar.** `v1.list.swagger.files` read the classpath
-   folder `/sample/yaml` as a stream, which lists the folder from an IDE's exploded classpath and nothing from inside a jar, so the
-   packaged application answered `total: 0`. The function now enumerates `classpath*:sample/yaml/*` with Spring's resource pattern
-   resolver (the module is a Spring Boot application) and sorts the names; `GET /api/specs/{filename}` is unchanged. No upgrade action.
-   (Superseded in the same release by item 4: the application no longer scans the classpath at all.)
-
-### Added
-
-3. **The API playground is a Mercury-branded page around Swagger UI, with four ways to load a document.** Upstream's page asked the user
+2. **The API playground is a Mercury-branded page around Swagger UI, with four ways to load a document.** Upstream's page asked the user
    to type a URL into its explore bar. The application's own `index.html`, stylesheet and script (tracked; the fetched Swagger UI assets
    live in the ignored `public/swagger-ui` subfolder, so the fetch scripts take upstream's `dist` assets and skip its page) offer: a
    **URL** field (and `?url=` on the page's address); a **MiniGraph** dialog with host, port (default 8085) and a graph ID or a session
@@ -45,7 +49,7 @@ Each change merged to `main` after v4.12.22 is listed here; it moves under its r
    before an existing file is replaced (the server answers 409 unless `?overwrite=true`). A status line names the loaded source. The sample document `demo.yaml` now points at the application's own port, so **Try it out** works on it as is. The graph contract
    guide's round trip describes the dialog instead of the explore bar. No upgrade action for applications.
 
-4. **The API playground runs on the Reactive HTTP server alone - the Spring Boot dependency is gone.** The module depends on `platform-core`
+3. **The API playground runs on the Reactive HTTP server alone - the Spring Boot dependency is gone.** The module depends on `platform-core`
    instead of `rest-spring-4`: REST automation serves the page as static content (`static.html.folder=classpath:/public`) and the
    `/api/specs` endpoints on the one port 8200 (Spring's port 8200 and the former REST port 8222 collapse into it). The specs folder
    `api.playground.specs` (the previously unused `api.playground.apps`, renamed) holds a developer's own documents: `GET /api/specs` lists
@@ -53,7 +57,19 @@ Each change merged to `main` after v4.12.22 is listed here; it moves under its r
    file), a folder file wins over the sample document of the same name, `GET /api/specs/{filename}` serves either as `application/yaml` or `application/json`, and a
    name must be a plain file name. **Action for a developer who ran the playground before:** the page and the endpoints are now on port
    8200; `spring.web.resources.static-locations` is no longer read - put your own documents in the `api.playground.specs` folder, or
-   press Deploy.
+   press Deploy. The same change retires a defect of 4.12.22's module: `GET /api/specs` read the classpath folder as a stream and
+   answered `total: 0` from the executable jar; the sample document is a known file and the folder is listed from disk, so nothing
+   is scanned.
+
+### Fixed
+
+4. **The graph contract guide page's front matter renders again, and a test guards every page's.** The published page
+   `guides/knowledge-graph/graph-contract/` showed its title, summary, audience and keywords as body text: one colon-space inside the
+   unquoted YAML `summary` scalar made the front matter unparseable, and MkDocs keeps unparseable front matter in the document while
+   `mkdocs build --strict` says nothing. The summary is rephrased, and `SkillSnapshotTest` gains
+   `everyDocumentationPageFrontMatterParses`: every page under `docs/` that opens with `---` must close the block and the block must
+   parse as a YAML map with a title, and every page under `docs/guides` must carry one; the Rust port carries the same guard. No
+   upgrade action.
 
 ---
 ## Version 4.12.22, 10/9/2026

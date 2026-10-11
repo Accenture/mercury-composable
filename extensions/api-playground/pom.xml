@@ -6,7 +6,7 @@
     <groupId>com.accenture</groupId>
     <artifactId>api-playground</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.22</version>
+    <version>4.12.23</version>
     <name>API playground using OpenAPI</name>
 
     <parent>
@@ -52,7 +52,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.12.22</version>
+            <version>4.12.23</version>
         </dependency>
 
         <dependency>
