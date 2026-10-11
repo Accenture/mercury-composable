@@ -6427,6 +6427,11 @@ else, a boolean or a <code>null</code> included, is an error naming the plugin. 
 <td>Name of the first rule of a decision table whose list contains the value (text comparison, case-insensitive); the optional default on a miss, null when omitted. <code>table.keys</code> lists the rules in priority order, each rule field lists its values — lists or JSON arrays as text, or the whole table as JSON text</td>
 <td><code>f:lookup(model.rules, input.body.state, text(unknown)) -&gt; rule</code></td>
 </tr>
+<tr>
+<td><code>f:rangeLookup(table, value, default)</code></td>
+<td>Name of the first band of a range table whose range contains the value; the optional default on a miss or a null value, null when omitted. Each band field is one range as text: <code>min..max</code> from <code>min</code> inclusive up to but excluding <code>max</code>, an open end omitted. Numeric bounds compare the value exactly as a decimal (a non-number fails by name); text bounds compare as text without case (ISO-8601 dates and times); a table mixing the two is refused</td>
+<td><code>f:rangeLookup(model.tiers, input.body.annual_spend, text(unknown)) -&gt; tier</code></td>
+</tr>
 </tbody>
 </table>
 <h3 id="string-operations">String operations<a class="headerlink" href="#string-operations" title="Permanent link">&para;</a></h3>
