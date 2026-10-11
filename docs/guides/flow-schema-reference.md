@@ -1019,6 +1019,8 @@ else, a boolean or a `null` included, is an error naming the plugin. The `f:add`
 |----------|-------------|---------|
 | `f:lookup(table, value, default)` | Name of the first rule of a decision table whose list contains the value (text comparison, case-insensitive); the optional default on a miss, null when omitted. `table.keys` lists the rules in priority order, each rule field lists its values — lists or JSON arrays as text, or the whole table as JSON text | `f:lookup(model.rules, input.body.state, text(unknown)) -> rule` |
 | `f:rangeLookup(table, value, default)` | Name of the first band of a range table whose range contains the value; the optional default on a miss or a null value, null when omitted. Each band field is one range as text: `min..max` from `min` inclusive up to but excluding `max`, an open end omitted. Numeric bounds compare the value exactly as a decimal (a non-number fails by name); text bounds compare as text without case (ISO-8601 dates and times); a table mixing the two is refused | `f:rangeLookup(model.tiers, input.body.annual_spend, text(unknown)) -> tier` |
+| `f:minRange(range, default)` | Lower bound of one range written as `min..max`, `min..` or `..max`, typed by the notation: a numeric bound is a number (a whole number within the 64-bit range a long, any other number a double), a text bound is text as written; an open end answers the optional default, null when omitted. A malformed, mixed or empty range is refused as `f:rangeLookup` refuses the band | `f:minRange(model.tiers.gold) -> gold_from` |
+| `f:maxRange(range, default)` | Upper bound of one range — the first value the range leaves out — otherwise as `f:minRange` | `f:maxRange(model.tiers.gold) -> gold_to` |
 
 ### String operations
 

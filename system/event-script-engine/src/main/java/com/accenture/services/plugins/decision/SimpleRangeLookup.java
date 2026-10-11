@@ -20,6 +20,7 @@ package com.accenture.services.plugins.decision;
 import com.accenture.models.PluginFunction;
 import com.accenture.models.SimplePlugin;
 import com.accenture.util.DecimalPluginUtils;
+import com.accenture.util.RangeNotation;
 import com.accenture.util.SimplePluginUtils;
 
 import java.math.BigDecimal;
@@ -27,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * Range lookup of a decision table - 'f:rangeLookup(table, value)' returns the name of the first
@@ -53,6 +53,12 @@ import java.util.regex.Pattern;
  * the 'keys' field may be a list or a JSON list written as text, and the table itself may be JSON
  * text.
  * <p>
+ * Every band is checked when the table is read, whatever the value (a null value included): a
+ * malformed range, a band mixing a numeric and a text bound, and an empty band - its lower bound
+ * not below its upper bound ({@code 3..3}), which no value could ever match - are refused by name,
+ * so a table that could never answer one of its bands never reaches a run silently. The same
+ * notation is read by 'minRange' and 'maxRange' through {@link RangeNotation}.
+ * <p>
  * The result is the matching band name; when no band contains the value, or the value is null,
  * the optional third argument is returned as the default (typically a text(...) constant), or null
  * when there is none. A non-numeric value against numeric bands fails by name, as graph.math does.
@@ -60,8 +66,6 @@ import java.util.regex.Pattern;
 @SimplePlugin
 public class SimpleRangeLookup implements PluginFunction {
     private static final String NAME = "rangeLookup";
-    private static final String SEPARATOR = "..";
-    private static final Pattern NUMERIC = Pattern.compile("-?(0|[1-9]\\d*)(\\.\\d+)?");
 
     @Override
     public String getName() {
@@ -87,11 +91,12 @@ public class SimpleRangeLookup implements PluginFunction {
         if (keys == null) {
             throw new IllegalArgumentException("Missing keys in input");
         }
+        // every band is parsed and checked before any value is placed, so a bad band is refused whatever the value
         List<Band> bands = parseBands(SimplePluginUtils.normalizeDecisionTableEntry(keys), table);
+        boolean numeric = isNumericTable(bands);
         if (input[1] == null) {
             return defaultValue;
         }
-        boolean numeric = isNumericTable(bands);
         String band = numeric ? resolveNumeric(bands, DecimalPluginUtils.operand(input[1], NAME))
                               : resolveText(bands, String.valueOf(input[1]));
         return band == null ? defaultValue : band;
@@ -104,42 +109,20 @@ public class SimpleRangeLookup implements PluginFunction {
             if (entry == null) {
                 throw new IllegalArgumentException("Missing key in input: " + key);
             }
-            bands.add(parseBand(key, String.valueOf(entry).trim()));
+            var range = RangeNotation.parse(String.valueOf(entry), "Range of '" + key + "'");
+            bands.add(new Band(key, range.lower, range.upper, range.numeric));
         }
         return bands;
-    }
-
-    private Band parseBand(String key, String text) {
-        int at = text.indexOf(SEPARATOR);
-        if (at < 0) {
-            throw new IllegalArgumentException(badRange(key, text));
-        }
-        String lower = text.substring(0, at).trim();
-        String upper = text.substring(at + SEPARATOR.length()).trim();
-        if ((lower.isEmpty() && upper.isEmpty()) || upper.startsWith("<") || upper.startsWith("=")
-                || lower.endsWith(">") || lower.endsWith("=")) {
-            throw new IllegalArgumentException(badRange(key, text));
-        }
-        return new Band(key, text, lower.isEmpty() ? null : lower, upper.isEmpty() ? null : upper);
-    }
-
-    private static String badRange(String key, String text) {
-        return "Range of '" + key + "' must be written as min..max, min.. or ..max (the upper bound is excluded) - got '"
-                + text + "'";
     }
 
     private boolean isNumericTable(List<Band> bands) {
         int numeric = 0;
         int text = 0;
         for (Band band : bands) {
-            for (String bound : new String[]{band.lower, band.upper}) {
-                if (bound != null) {
-                    if (NUMERIC.matcher(bound).matches()) {
-                        numeric++;
-                    } else {
-                        text++;
-                    }
-                }
+            if (band.numeric) {
+                numeric++;
+            } else {
+                text++;
             }
         }
         if (numeric > 0 && text > 0) {
@@ -152,9 +135,6 @@ public class SimpleRangeLookup implements PluginFunction {
         for (Band band : bands) {
             BigDecimal lower = band.lower == null ? null : new BigDecimal(band.lower);
             BigDecimal upper = band.upper == null ? null : new BigDecimal(band.upper);
-            if (lower != null && upper != null && lower.compareTo(upper) >= 0) {
-                throw new IllegalArgumentException(emptyRange(band));
-            }
             if (contains(lower == null ? null : lower.compareTo(value), upper == null ? null : value.compareTo(upper))) {
                 return band.key;
             }
@@ -167,9 +147,6 @@ public class SimpleRangeLookup implements PluginFunction {
         for (Band band : bands) {
             String lower = band.lower == null ? null : band.lower.toLowerCase(Locale.ROOT);
             String upper = band.upper == null ? null : band.upper.toLowerCase(Locale.ROOT);
-            if (lower != null && upper != null && lower.compareTo(upper) >= 0) {
-                throw new IllegalArgumentException(emptyRange(band));
-            }
             if (contains(lower == null ? null : lower.compareTo(v), upper == null ? null : v.compareTo(upper))) {
                 return band.key;
             }
@@ -187,9 +164,6 @@ public class SimpleRangeLookup implements PluginFunction {
         return atOrAboveLower && belowUpper;
     }
 
-    private static String emptyRange(Band band) {
-        return "Range of '" + band.key + "' is empty - its lower bound is not below its upper bound: '" + band.text + "'";
-    }
-
-    private record Band(String key, String text, String lower, String upper) { }
+    /** A band: its name, its bounds as written (null for an open end) and whether they are numeric. */
+    private record Band(String key, String lower, String upper, boolean numeric) { }
 }

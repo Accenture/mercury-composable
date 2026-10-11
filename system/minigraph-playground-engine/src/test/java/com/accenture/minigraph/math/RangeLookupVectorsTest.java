@@ -42,6 +42,7 @@ class RangeLookupVectorsTest {
             "bad-range", "must be written as min\\.\\.max",
             "empty-range", "is empty",
             "mixed-table", "mixes numeric and text bounds",
+            "mixed-band", "mixes a numeric and a text bound",
             "not-a-number", "Expected a decimal number in rangeLookup|Cannot convert",
             "boolean-operand", "Boolean operand in rangeLookup");
 

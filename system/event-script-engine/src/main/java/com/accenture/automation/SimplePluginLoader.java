@@ -22,6 +22,7 @@ import com.accenture.models.SimplePlugin;
 import com.accenture.util.KeyNormalizationUtils;
 import com.accenture.util.RecursiveClassTypeExaminer;
 import com.accenture.util.DecimalPluginUtils;
+import com.accenture.util.RangeNotation;
 import com.accenture.util.SimplePluginUtils;
 import com.accenture.util.TypeConversionUtils;
 import io.github.classgraph.ClassInfo;
@@ -65,6 +66,7 @@ public class SimplePluginLoader implements EntryPoint {
                                                             MultiLevelMap.class.getName(),
                                                             SimplePluginUtils.class.getName(),
                                                             DecimalPluginUtils.class.getName(),
+                                                            RangeNotation.class.getName(),
                                                             TypeConversionUtils.class.getName(),
                                                             KeyNormalizationUtils.class.getName());
     /**
