@@ -19,27 +19,28 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.23 (2026-10-11 03:35:56Z — **the API playground and `f:rangeLookup`, lock-step with the Rust port**: release PR
-  #551 squash `79995691` plus two feature commits before the tag (#552 `361fac1a` the range lookup, #553 `f20f830f` its test
-  touch-up), tag `v4.12.23` → `14cbae7a` (the main head, one memory commit past #553); pom verified at the tag; the GitHub release is
-  published (not a draft) and its notes name `f:rangeLookup`; CI and agent-memory green on the tag commit. **Content:** the API
-  playground round - Swagger UI fetched by script and never committed (#545), the specs list from the jar (#546), a Mercury-branded page
-  on the Reactive HTTP server with no Spring Boot (#547), Deploy with confirm-before-overwrite, the specs folder `api.playground.specs`
-  and the sample/specs-document terminology (#548, #549, #550) - and `f:rangeLookup`, a decision table of bands (`min..max`, the upper
-  bound excluded; numeric or text, the table decides; #552, [[static-decision-table-is-graph-data]]); the graph contract guide page's
-  front matter fixed (#543) with a guard test on every page's front matter (#544). **READ:** no action for applications; a developer of
-  the playground reads item 3 of the CHANGELOG (port 8200, `api.playground.specs`, the fetch script). Sweep BUILD FILES ONLY 45 / 102.
-  Readiness: full reactor `mvn -o clean install` BUILD SUCCESS, 245 suites, 1802 tests, 0 failures, 3 skipped at the release cut (the
-  range lookup added its tests after; CI green). **Lockstep:** Rust v4.12.23 (mercury #378 → merge `da6ba2c3`, then #379 `77b35662` the
-  range lookup twin, tag → `f542261d`, release 03:37:08Z; Increments 175–176; 137 suites / 712 tests / 0 failed at the cut; `rust` and
-  agent-memory CI green on the tag); the language packs have no change since v4.12.21 and stay at it ([[conv-ports-adopt-java-release-number]]).
-  **Published and VERIFIED 2026-10-11:** the twelve crates on crates.io at 4.12.23 (created 03:39:20Z–03:39:34Z by Eric's
-  `cargo publish --workspace` from the tag, none yanked; the platform-core tarball's 33 source files the tag's set with `lib.rs`,
-  `serializer.rs` and `canonical_packager.rs` SHA-256 identical; the event-script tarball carries `rangeLookup`). The Java artifacts are
-  the tag and the GitHub release, as always. **REJECTED by the field's Snyk gate 2026-10-12:** Guava resolved to 32.0.1-jre through
-  Confluent's serializers in every consumer of `minimalist-kafka`, because the 4.12.23 pin sat in `dependencyManagement`
-  ([[conv-library-pins-are-direct-dependencies]]); **v4.12.24 carries the fix** ([[release-4-12-24]], prepared 2026-10-12). 4.12.22's
-  acceptance was never reported separately. Origin 2026-10-11-034330.md.
+- **latest_release:** v4.12.24 (2026-10-12 22:33:21Z — **the Guava resolution the field's Snyk gate rejected in 4.12.23, plus the range
+  plugins' bounds and refinements, lock-step with the Rust port**: release PR #559 squash `e1940a4d`, tag `v4.12.24` → `c571e9c3` (the
+  main head, one memory commit past the squash); pom verified at the tag; the GitHub release is published (not a draft) and its notes
+  name Guava and the Snyk gate; agent-memory green on the tag commit, the CI build still running at verification (22:40Z). **Content:** Guava 33.7.2-jre, `failureaccess` 1.0.3 and
+  Tink 1.23.0 as DIRECT dependencies of `minimalist-kafka` with Confluent 8.3.2, and Guava removed from `platform-core`
+  ([[conv-library-pins-are-direct-dependencies]] - Eric's pom edits, reviewed); `f:minRange` and `f:maxRange`, quoted bounds and the
+  stricter `f:rangeLookup` (#554–#558, [[static-decision-table-is-graph-data]]). **READ:** no action for the dependency change unless an
+  application pinned Guava itself to pass its gate (drop it) or used Guava only through `platform-core` (declare it); a range table
+  written for 4.12.23 reads the CHANGELOG item 1's upgrade note. Sweep BUILD FILES ONLY 45 / 102. Readiness: `mvn -o clean install`
+  BUILD SUCCESS 6:57, 249 suites, 1830 tests, 0 failures, 3 skipped. **Lockstep:** Rust v4.12.24 (mercury #383 merge `de283537`, tag →
+  `aa67a429`, release 22:29:09Z; no dependency change there, Increments 177–179; 139 suites / 719 passed / 0 failed; `rust`, `docs` and
+  agent-memory CI green on the tag); the packs stay at 4.12.21 ([[conv-ports-adopt-java-release-number]]). **Published and VERIFIED
+  2026-10-12:** the twelve crates on crates.io at 4.12.24 (created 22:31:11Z–22:31:23Z by Eric's `cargo publish --workspace` from the
+  tag, none yanked; the platform-core tarball's 33 source files SHA-256 identical to the tag's). **Field acceptance PENDING:** the
+  field's Snyk gate on 4.12.24 is the acceptance to record (4.12.23 was REJECTED there on 2026-10-12; 4.12.22's was never reported
+  separately). Origin 2026-10-12-223627.md.
+  Prior: v4.12.23 (2026-10-11 03:35:56Z — the API playground and `f:rangeLookup`, lock-step with Rust; #551 squash `79995691` plus #552
+  and #553 before the tag, tag → `14cbae7a`; the API playground round #545–#550 (Swagger UI fetched by script, a Mercury-branded page on
+  the Reactive HTTP server without Spring Boot, Deploy and `api.playground.specs`), `f:rangeLookup` #552, the front-matter fix and guard
+  #543/#544; 1802 tests; Rust #378 → `da6ba2c3`, #379, tag → `f542261d`, Increments 175–176, crates 12/12; **REJECTED by the field's
+  Snyk gate 2026-10-12** — Guava 32.0.1-jre through Confluent's serializers in every consumer of `minimalist-kafka`, fixed in 4.12.24.
+  Origin 2026-10-11-034330.md.)
   Prior: v4.12.22 (2026-10-10 01:24:53Z — the graph contract on both engines and the mini-scheduler's active environment; #542 squash
   `67e573e8` = tag; the graph contract (ADR-0029, [[graph-contract-by-declaration]]: #533–#536, the mock request headers #531), the
   scheduler's active environment (ADR-0030, [[scheduler-active-environment-store]]: #539), the service registry's echo fix #530; READ: a
