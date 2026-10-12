@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>sync-over-async</artifactId>
-    <version>4.12.23</version>
+    <version>4.12.24</version>
     <packaging>jar</packaging>
     <name>Sync-over-async (request/reply and streaming for async backends)</name>
     <description>
@@ -52,14 +52,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Converge Guava to platform-core's version: Confluent's serdes (via the test-scoped
-                 minimalist-kafka) otherwise win with an older 32.0.1 on the test classpath, leaving
-                 the tests on a different Guava (and failureaccess) than the runtime. -->
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>33.7.2-jre</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -78,7 +70,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.12.23</version>
+            <version>4.12.24</version>
         </dependency>
 
         <!-- The shared Redis client layer (standalone/cluster seam, config, auth, health probe). This
@@ -88,7 +80,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>redis-connection</artifactId>
-            <version>4.12.23</version>
+            <version>4.12.24</version>
         </dependency>
 
         <!-- Kafka building blocks for the end-to-end regression only (notification function + flow
@@ -97,14 +89,15 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minimalist-kafka</artifactId>
-            <version>4.12.23</version>
+            <version>4.12.24</version>
             <scope>test</scope>
         </dependency>
 
-        <!-- Guava's failureaccess companion is required at runtime by Guava itself (arriving with
-             platform-core; Confluent's serdes exercise the same Guava LocalCache path on the test
-             classpath). Declared explicitly so it is a first-class classpath entry and cannot be
-             dropped by strict/curated dependency resolution in the field. -->
+        <!-- Guava's failureaccess companion, at the version Guava 33.7.2-jre itself declares. Guava
+             reaches this module only through the test-scoped minimalist-kafka (Confluent's serdes use
+             Guava's LocalCache, which needs InternalFutureFailureAccess). Declared explicitly so it is
+             a first-class classpath entry that a strict or curated resolver in the field cannot drop
+             (NoClassDefFoundError, 2026-07). Keep it in step with minimalist-kafka's Guava. -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>failureaccess</artifactId>

@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
+Nothing yet. Each change merged to `main` after v4.12.24 is listed here; it moves under its release heading when the version is cut.
+
+---
+## Version 4.12.24, 10/12/2026
+
+The field's Snyk gate rejected 4.12.23: Google Guava still resolved to 32.0.1-jre through Confluent's Schema Registry serializers in
+every module and application that carries `minimalist-kafka`, because the 4.12.23 pin sat in a `dependencyManagement` section, which
+governs one module's own build and never reaches a consumer. This release makes the versions that matter direct dependencies of
+`minimalist-kafka` - Guava 33.7.2-jre with its `failureaccess` companion and Tink 1.23.0 - moves to Confluent 8.3.2, and removes Guava
+from `platform-core`, which does not use it (item 2). It also carries the range plugins' bounds and refinements that landed after the
+4.12.23 tag (item 1), in lock-step with Rust 4.12.24 (Increments 177 to 179). **Upgrade note:** no action for the dependency change
+unless an application pinned Guava itself to pass its own gate (the pin may go) or used Guava through `platform-core`'s transitive
+dependency (declare it); an application with a range table reads item 1's upgrade note.
+
 ### Added
 
 1. **`f:minRange` and `f:maxRange` - the bounds of a range, typed by the notation; quoted text bounds; `f:rangeLookup` checks every
@@ -46,6 +60,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
    was read as `a` up to `b..c`), a list band in a text table (it matched silently as its text) and a list, map or boolean value
    (likewise); a text bound that begins with a quote character is now a quoted bound, compared with case. Fix the band or the
    value; no other action.
+
+### Build
+
+2. **Guava 33.7.2-jre, `failureaccess` 1.0.3 and Tink 1.23.0 as direct dependencies of `minimalist-kafka`; Confluent 8.3.2; Guava
+   removed from `platform-core`.** Confluent's serializers declare Guava 32.0.1-jre and Tink 1.20.0. In `minimalist-kafka`'s own build
+   the managed version won, but Maven's nearest-wins mediation in a consumer - `twin-kafka`, the demos, an application - saw Confluent's
+   Guava two levels down and `platform-core`'s three levels down, and picked the old one; the field's Snyk gate reported the High
+   finding on it and rejected the release. A direct dependency travels with the library and sits one level below it in every consumer,
+   ahead of Confluent's. Guava is also excluded from the two serializer artifacts that declare it and Tink from the three encryption
+   artifacts, so one version of each appears in the tree, and `failureaccess` stays explicit at the version Guava itself declares,
+   because a curated resolver in the field once dropped the transitive node (4.6.2, `NoClassDefFoundError`). `platform-core` no longer
+   declares Guava: nothing in the engine imports it (Caffeine is its cache). The whole reactor resolves one Guava, one `failureaccess`
+   and one Tink; `minimalist-kafka` and `twin-kafka` tests pass on Confluent 8.3.2, the CSFLE round trip included. **Upgrade note:** an
+   application that pinned Guava itself to pass 4.12.23 through its gate may drop the pin; an application that used Guava only through
+   `platform-core`'s transitive dependency declares it itself from this release; no other action.
 
 ---
 ## Version 4.12.23, 10/11/2026
