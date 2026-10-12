@@ -25,16 +25,18 @@ import com.accenture.util.RangeNotation;
  * The lower bound of one range - 'f:minRange(range)' - typed by the notation.
  * <p>
  * The range is written as the bands of 'rangeLookup' are: {@code min..max} runs from {@code min} inclusive up to
- * but excluding {@code max}, and {@code min..} or {@code ..max} leaves an end open. A whole number within the
- * 64-bit range is returned as a long and any other number as its exact decimal text ({@code 2500.50} - the
- * high-precision rule of DECIMAL; f:double converts it when a floating-point output value is wanted); a text
- * bound is returned as written, a quoted one without its quotes. An open end has no bound: {@code ..2500}
- * answers the optional second argument, or
- * null when there is none, so the null-source rule of a data mapping leaves the target unset.
+ * but excluding {@code max}, and {@code min..} or {@code ..max} leaves an end open. A number written without a
+ * decimal point, within the 64-bit range, is returned as a long and any other number as its exact decimal text
+ * ({@code 2500.50} - the high-precision rule of DECIMAL; f:double converts it when a floating-point output value
+ * is wanted); a text bound is returned as written, a quoted one without its quotes. An open end has no bound:
+ * {@code ..2500} answers the optional second argument, or null when there is none, so the null-source rule of a
+ * data mapping leaves the target unset. A null range answers null, never the default: the band a lookup did not
+ * choose, read back through a dynamic key, has no bounds, while the default belongs to an open end.
  * <p>
- * A malformed range, a band given as a list, a range mixing kinds (a number and text, or quoted and unquoted
- * text), and an empty range (its lower bound not below its upper bound) are refused by name. This is exactly
- * how 'rangeLookup' refuses such a band in a table.
+ * A malformed range (a quoted bound not closed, followed by text, or holding its own quote character), a band
+ * given as a list, a range mixing kinds (a number and text, or quoted and unquoted text), and an empty range
+ * (its lower bound not below its upper bound) are refused by name. This is exactly how 'rangeLookup' refuses
+ * such a band in a table.
  */
 @SimplePlugin
 public class SimpleMinRange implements PluginFunction {
@@ -50,7 +52,8 @@ public class SimpleMinRange implements PluginFunction {
      *
      * @param input - first argument is the range written as text,
      *              optional second argument is the default value when the lower end is open
-     * @return the lower bound as a number or text, otherwise the default value or null when there is none
+     * @return the lower bound as a number or text, otherwise the default value or null when there is none;
+     *         null for a null range
      */
     @Override
     public Object calculate(Object... input) {

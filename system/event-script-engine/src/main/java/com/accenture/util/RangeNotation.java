@@ -29,10 +29,12 @@ import java.util.regex.Pattern;
  * {@code 2500.50}, {@code -1}) is a NUMBER bound and compares exactly as a decimal. Text in single or double
  * quotes ({@code '0020'}, {@code "2026-11-15"}) is a QUOTED bound and compares as written, case-sensitively;
  * the quotes are how a zero-padded code or a case-sensitive band is kept as text, and a quoted bound may contain
- * the separator. Anything else ({@code 16:00}, {@code h}) is a TEXT bound and compares as text without case, and
- * may not contain the separator. A range whose lower bound is not below its upper bound ({@code 3..3},
- * {@code 5..1}) holds nothing - no value could ever match it - and is refused; so is a band given as a list or a
- * map, because a band is one range.
+ * the separator and the other quote character ({@code "O'Brien"}), never its own - the first closing quote ends the
+ * bound, in either position. Anything else ({@code 16:00}, {@code h}) is a TEXT bound and compares as text without
+ * case, and may not contain the separator. Text orders by Unicode code point, the order of the Rust engine's string
+ * comparison ({@code String.compareTo} orders UTF-16 units, which disagree above U+FFFF). A range whose lower bound
+ * is not below its upper bound ({@code 3..3}, {@code 5..1}) holds nothing - no value could ever match it - and is
+ * refused; so is a band given as a list or a map, because a band is one range.
  * <p>
  * The three plugins read the notation through this class, so a range is refused by one of them exactly when the
  * others refuse it. It lives beside the other plugin helpers because a plugin class may reference only the classes
@@ -128,17 +130,23 @@ public final class RangeNotation {
         return Bound.unquoted(value, range.substring(at + SEPARATOR.length()).trim());
     }
 
-    /** The upper bound from what follows the separator: quoted to the end, or unquoted text with no separator. */
+    /**
+     * The upper bound from what follows the separator: quoted up to its closing quote, which must end the range, or
+     * unquoted text with no separator.
+     */
     private static Bound upperBound(String rest, String range, String subject) {
         if (rest.isEmpty()) {
             return Bound.unquoted("", "");
         }
         char first = rest.charAt(0);
         if (isQuote(first)) {
-            if (rest.length() < 2 || rest.charAt(rest.length() - 1) != first) {
+            // the first closing quote ends the bound, as it does for the lower bound, and nothing may follow it;
+            // an unmatched quote (-1) fails the same test
+            int close = rest.indexOf(first, 1);
+            if (close != rest.length() - 1) {
                 throw malformed(subject, range);
             }
-            return Bound.quoted(rest.substring(1, rest.length() - 1), "", subject, range);
+            return Bound.quoted(rest.substring(1, close), "", subject, range);
         }
         if (rest.contains(SEPARATOR) || first == '.' || first == '<' || first == '=') {
             throw malformed(subject, range);
@@ -158,8 +166,8 @@ public final class RangeNotation {
         }
         int order = switch (lower.kind) {
             case NUMBER -> lower.number().compareTo(upper.number());
-            case QUOTED -> lower.value.compareTo(upper.value);
-            case TEXT -> lower.value.toLowerCase(Locale.ROOT).compareTo(upper.value.toLowerCase(Locale.ROOT));
+            case QUOTED -> compare(lower.value, upper.value);
+            case TEXT -> compare(lower.value.toLowerCase(Locale.ROOT), upper.value.toLowerCase(Locale.ROOT));
         };
         if (order >= 0) {
             throw new IllegalArgumentException(subject +
@@ -184,13 +192,39 @@ public final class RangeNotation {
     }
 
     /**
+     * Text order by Unicode code point - the order in which both engines compare bounds and values.
+     * {@code String.compareTo} orders UTF-16 code units, which disagree with code points when a character above
+     * U+FFFF (a surrogate pair) meets one between U+E000 and U+FFFF.
+     *
+     * @param a one text
+     * @param b another
+     * @return negative, zero or positive as a is below, equal to or above b
+     */
+    public static int compare(String a, String b) {
+        int i = 0;
+        int j = 0;
+        while (i < a.length() && j < b.length()) {
+            int x = a.codePointAt(i);
+            int y = b.codePointAt(j);
+            if (x != y) {
+                return Integer.compare(x, y);
+            }
+            i += Character.charCount(x);
+            j += Character.charCount(y);
+        }
+        return Integer.compare(a.length() - i, b.length() - j);
+    }
+
+    /**
      * The typed lower or upper bound of one range - the body of minRange and maxRange
      *
      * @param input the plugin's arguments: the range as text, and an optional default for an open end
      * @param lowerEnd true for the lower bound, false for the upper bound
-     * @return a whole number within the 64-bit range as a long, any other number as its exact decimal text,
-     *         a text bound as written (a quoted one without its quotes), or the default (null when there is
-     *         none) when that end of the range is open
+     * @return a number written without a decimal point, within the 64-bit range, as a long, any other number as
+     *         its exact decimal text, a text bound as written (a quoted one without its quotes), the default (null
+     *         when there is none) when that end of the range is open, or null when the range itself is null - the
+     *         band a lookup did not choose, read back through a dynamic key, has no bounds, and the default
+     *         belongs to an open end
      * @throws IllegalArgumentException when the arguments are not one or two, or the range is refused
      */
     public static Object bound(Object[] input, boolean lowerEnd) {
@@ -198,7 +232,8 @@ public final class RangeNotation {
             throw new IllegalArgumentException("Expected one or two input values - actual=" + input.length);
         }
         if (input[0] == null) {
-            throw new IllegalArgumentException("Range" + NOTATION + "null");
+            // no range, no bounds: the null-source rule leaves the mapping target unset
+            return null;
         }
         var range = parse(String.valueOf(input[0]), "Range");
         String bound = lowerEnd ? range.lower : range.upper;
@@ -209,8 +244,9 @@ public final class RangeNotation {
     }
 
     /**
-     * A whole number within the 64-bit range is a long; any other number stays its exact decimal text - the
-     * high-precision rule of the DECIMAL statement, where a double would round it.
+     * A number written without a decimal point, within the 64-bit range, is a long; any other number ({@code 1.0}
+     * included) stays its exact decimal text - the high-precision rule of the DECIMAL statement, where a double
+     * would round it.
      */
     private static Object number(String bound) {
         if (bound.indexOf('.') < 0) {

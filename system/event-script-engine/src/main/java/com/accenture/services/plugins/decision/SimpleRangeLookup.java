@@ -52,9 +52,11 @@ import java.util.Map;
  * the quotes keep a zero-padded code or a case-sensitive band as text - and unquoted text bounds
  * compare it as text without case, which is how ISO-8601 dates and times and alphabetic bands
  * work. Text compares as written, so a value must be shaped like the bounds (zero-padded, the same
- * parts). A table that mixes kinds is refused. As with 'lookup', the 'keys' field may be a list or
- * a JSON list written as text, and the table itself may be JSON text; a band, though, is one range
- * and never a list.
+ * parts, one UTC offset and one precision throughout), and text orders by Unicode code point. The
+ * value must be a number or text: a boolean, a list, a map or bytes are refused by name on every
+ * table, because a band is a scale and none of them sits on one. A table that mixes kinds is
+ * refused. As with 'lookup', the 'keys' field may be a list or a JSON list written as text, and the
+ * table itself may be JSON text; a band, though, is one range and never a list.
  * <p>
  * Every band is checked when the table is read, whatever the value (a null value included): a
  * malformed range, a band given as a list, a band mixing kinds, and an empty band - its lower bound
@@ -100,6 +102,7 @@ public class SimpleRangeLookup implements PluginFunction {
         if (input[1] == null) {
             return defaultValue;
         }
+        checkValue(input[1]);
         String band = switch (kind) {
             case NUMBER -> resolveNumeric(bands, DecimalPluginUtils.operand(input[1], NAME));
             case QUOTED -> resolveText(bands, String.valueOf(input[1]), false);
@@ -155,11 +158,30 @@ public class SimpleRangeLookup implements PluginFunction {
         for (Band band : bands) {
             String lower = fold(band.range.lower, ignoreCase);
             String upper = fold(band.range.upper, ignoreCase);
-            if (contains(lower == null ? null : lower.compareTo(v), upper == null ? null : v.compareTo(upper))) {
+            if (contains(lower == null ? null : RangeNotation.compare(lower, v),
+                         upper == null ? null : RangeNotation.compare(v, upper))) {
                 return band.key;
             }
         }
         return null;
+    }
+
+    /** A band is a scale of numbers or text, so the value must be one of them; anything else is refused by name. */
+    private static void checkValue(Object value) {
+        if (value instanceof Number || value instanceof String) {
+            return;
+        }
+        String kind = "an object";
+        if (value instanceof Boolean) {
+            kind = "a boolean";
+        } else if (value instanceof List) {
+            kind = "a list";
+        } else if (value instanceof Map) {
+            kind = "a map";
+        } else if (value instanceof byte[]) {
+            kind = "bytes";
+        }
+        throw new IllegalArgumentException(NAME + " value must be a number or text - got " + kind);
     }
 
     /** A bound folded for the comparison - null for an open end. */

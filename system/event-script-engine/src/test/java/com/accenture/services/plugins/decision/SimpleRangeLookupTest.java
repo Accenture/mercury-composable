@@ -119,7 +119,35 @@ class SimpleRangeLookupTest {
         assertStartsWith("Range table mixes numeric and text bounds", failure(mixed, 1));
         // numeric bands, non-numeric value: fails by name, as graph.math does
         assertTrue(failure(SCORE_BANDS, "abc").getMessage().contains("Expected a decimal number in rangeLookup"));
-        assertStartsWith("Boolean operand in rangeLookup", failure(SCORE_BANDS, true));
+        assertEquals("rangeLookup value must be a number or text - got a boolean", failure(SCORE_BANDS, true).getMessage());
+    }
+
+    @Test
+    void shouldRefuseAValueThatIsNotANumberOrText() {
+        // a band is a scale of numbers or text; a list compared as its text differed by engine, so every table refuses it
+        assertEquals("rangeLookup value must be a number or text - got a list",
+                failure(oneBand("a..h"), List.of("b")).getMessage());
+        assertStartsWith("rangeLookup value must be a number or text - got a map", failure(oneBand("'a'..'h'"), Map.of("b", 1)));
+        assertStartsWith("rangeLookup value must be a number or text - got a boolean", failure(oneBand("a..h"), true));
+        assertStartsWith("rangeLookup value must be a number or text - got bytes", failure(oneBand("1..2"), new byte[0]));
+        assertStartsWith("rangeLookup value must be a number or text - got a list", failure(SCORE_BANDS, List.of(1)));
+        // a null value still takes the default
+        assertEquals("none", plugin.calculate(oneBand("a..h"), null, "none"));
+    }
+
+    @Test
+    void shouldOrderTextByCodePointAndKeepTheOtherQuoteInsideABound() {
+        // U+FFE5 sits between U+FF10 and U+1F600 by code point, as the Rust engine orders text; by UTF-16 units it
+        // would sit above the emoji and miss
+        var wide = oneBand("'\uFF10'..'\uD83D\uDE00'");
+        assertEquals("a", plugin.calculate(wide, "\uFFE5"));
+        assertEquals("none", plugin.calculate(wide, "\uD83D\uDE01", "none"));
+        assertEquals("a", plugin.calculate(oneBand("\uFF10..\uD83D\uDE00"), "\uFFE5"));
+        // the other quote character is ordinary text inside a quoted bound - the YAML convention
+        assertEquals("a", plugin.calculate(oneBand("\"O'Brien\"..\"O'Neil\""), "O'Hara"));
+        assertEquals("none", plugin.calculate(oneBand("\"O'Brien\"..\"O'Neil\""), "O'Neil", "none"));
+        // a quoted bound never holds its own quote character
+        assertStartsWith("Range of 'a' must be written as", failure(oneBand("'a'..'b'c'"), "b"));
     }
 
     @Test
