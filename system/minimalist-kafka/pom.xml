@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>minimalist-kafka</artifactId>
-    <version>4.12.23</version>
+    <version>4.12.24</version>
     <packaging>jar</packaging>
     <name>Minimalist Kafka (notification function + flow adapter)</name>
     <description>
@@ -44,7 +44,7 @@
              the kafka.version pinned above. We still pin our own kafka-clients rather than inherit a
              version - the serializers implement the stable Serializer/Deserializer contract, so they
              are tolerant of a different Kafka client version. -->
-        <confluent.version>8.3.0</confluent.version>
+        <confluent.version>8.3.2</confluent.version>
     </properties>
 
     <dependencyManagement>
@@ -55,14 +55,6 @@
                 <version>2025.0.7</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <!-- Converge Guava to platform-core's version: Confluent's serdes otherwise drag in an
-                 older 32.0.1, leaving this module on a different Guava (and failureaccess) than the
-                 rest of the reactor. Pinning here keeps one Guava + one failureaccess companion. -->
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>33.7.2-jre</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -80,22 +72,36 @@
     </repositories>
 
     <dependencies>
+        <!-- Confluent's 8.3.2 serdes fetches in an older guava 32.0.1 and tink 1.20.0.
+             Pinning here to avoid security vulnerabilities of transitive dependencies.
+             Guava 33.7.2-jre also loads failureaccess 1.0.3.-->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.7.2-jre</version>
+        </dependency>
+        <!-- Guava's failureaccess companion is required at runtime by Confluent's serdes (Guava
+             LocalCache -> InternalFutureFailureAccess). Guava brings it transitively, but a strict or
+             curated resolver in the field once dropped the deep node (NoClassDefFoundError, 2026-07).
+             Declared explicitly, at the version Guava 33.7.2-jre itself declares, so it is a
+             first-class classpath entry. Keep the two versions in step when bumping Guava. -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>failureaccess</artifactId>
+            <version>1.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.crypto.tink</groupId>
+            <artifactId>tink</artifactId>
+            <version>1.23.0</version>
+        </dependency>
+
         <!-- Event Script engine brings the flow runtime + REST automation, and fetches platform-core
              transitively. The flow adapter routes Kafka messages into Event Script flows. -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.12.23</version>
-        </dependency>
-
-        <!-- Guava's failureaccess companion is required at runtime by Confluent's serdes (Guava
-             LocalCache -> InternalFutureFailureAccess). Declared explicitly so it is a first-class
-             classpath entry and cannot be dropped by strict/curated dependency resolution in the
-             field, where it otherwise arrives only as a transitive-of-a-transitive of Guava. -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>failureaccess</artifactId>
-            <version>1.0.3</version>
+            <version>4.12.24</version>
         </dependency>
 
         <!-- Kafka client (key=String, value=byte[]). -->
@@ -146,6 +152,10 @@
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -160,6 +170,10 @@
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -184,6 +198,10 @@
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.google.crypto.tink</groupId>
+                    <artifactId>tink</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -202,6 +220,12 @@
             <artifactId>kafka-schema-registry-client-encryption-aws</artifactId>
             <version>${confluent.version}</version>
             <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.crypto.tink</groupId>
+                    <artifactId>tink</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Local (Tink) KMS driver: a static in-JVM keyset for repeatable CSFLE round-trip tests, so
@@ -211,6 +235,12 @@
             <artifactId>kafka-schema-registry-client-encryption-tink</artifactId>
             <version>${confluent.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.crypto.tink</groupId>
+                    <artifactId>tink</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Embedded Kafka (real KRaft broker) for integration tests. -->
