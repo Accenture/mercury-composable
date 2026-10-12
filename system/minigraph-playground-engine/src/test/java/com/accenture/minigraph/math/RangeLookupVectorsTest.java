@@ -47,7 +47,7 @@ class RangeLookupVectorsTest {
             Map.entry("mixed-band-quoting", "mixes a quoted and an unquoted bound"),
             Map.entry("list-band", "not a list or a map"),
             Map.entry("not-a-number", "Expected a decimal number in rangeLookup|Cannot convert"),
-            Map.entry("boolean-operand", "Boolean operand in rangeLookup"));
+            Map.entry("bad-value", "must be a number or text"));
 
     @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> vectors() throws IOException {

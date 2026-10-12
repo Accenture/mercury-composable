@@ -352,6 +352,17 @@ class GraphTaskTest {
         assertEquals(25000L, ((Number) mm.getElement("tier_from")).longValue());
         assertFalse(mm.exists("tier_to"));
         assertFalse(mm.exists("to_next_tier"));
+        // a miss - no spend in the request - names the default tier, and the band read back through the dynamic key
+        // is nothing: a null range answers null, never the default, so tier_from and tier_to stay unset, the math
+        // node takes its ELSE path, and the run never aborts
+        response = runGraph("unit-test-range-bounds-1", Map.of("product_code", "0450"), Map.of());
+        assertEquals(200, response.getStatus());
+        mm = bodyMap(response);
+        assertEquals("unknown", mm.getElement("tier"));
+        assertFalse(mm.exists("tier_from"));
+        assertFalse(mm.exists("tier_to"));
+        assertFalse(mm.exists("to_next_tier"));
+        assertEquals("legacy", mm.getElement("product_line"));
     }
 
     @Test

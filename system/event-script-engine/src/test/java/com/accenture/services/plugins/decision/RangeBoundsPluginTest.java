@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * minRange and maxRange read one range in the notation of rangeLookup's bands and answer its bound typed by the
- * notation: a long for a whole number, the exact decimal text for any other number, text as written for a text or
- * quoted bound, the optional default (or null) for an open end.
+ * notation: a long for a number written without a decimal point, the exact decimal text for any other number, text
+ * as written for a text or quoted bound, the optional default (or null) for an open end; null for a null range.
  */
 class RangeBoundsPluginTest {
 
@@ -78,6 +78,29 @@ class RangeBoundsPluginTest {
         assertEquals("a..b", min.calculate("'a..b'..'c'"));
         assertEquals("1000", min.calculate("'1000'.."));
         assertEquals("m", max.calculate("..'m'", "none"));
+        // the other quote character is ordinary text inside a quoted bound, in either position - the YAML convention
+        assertEquals("this is a 'nice' drawing", min.calculate("\"this is a 'nice' drawing\"..\"zebra\""));
+        assertEquals("this is a \"nice\" drawing", max.calculate("'a'..'this is a \"nice\" drawing'"));
+        assertEquals("O'Brien", min.calculate("\"O'Brien\"..\"O'Neil\""));
+    }
+
+    @Test
+    void shouldAnswerNullForANullRangeNeverTheDefault() {
+        // the band a lookup did not choose, read back through a dynamic key, has no bounds; the default belongs to an
+        // open end, so an unknown tier never reads as "from 0" - the null-source rule leaves the target unset
+        assertNull(min.calculate((Object) null));
+        assertNull(max.calculate((Object) null));
+        assertNull(min.calculate(null, 0));
+        assertNull(max.calculate(null, "none"));
+    }
+
+    @Test
+    void shouldOrderTextByCodePoint() {
+        // U+FF10 (a fullwidth zero) sits below U+1F600 (an emoji) by code point, as the Rust engine orders text;
+        // String.compareTo orders UTF-16 units, which would call this range empty
+        assertEquals("\uFF10", min.calculate("'\uFF10'..'\uD83D\uDE00'"));
+        assertEquals("\uD83D\uDE00", max.calculate("\uFF10..\uD83D\uDE00"));
+        assertStartsWith("Range is empty", failure(min, "'\uD83D\uDE00'..'\uFF10'"));
     }
 
     @Test
@@ -98,8 +121,6 @@ class RangeBoundsPluginTest {
     void shouldRefuseTheWrongNumberOfArgumentsAndANonRange() {
         assertStartsWith("Expected one or two input values - actual=0", failure(min));
         assertStartsWith("Expected one or two input values - actual=3", failure(max, "1..2", 0, 0));
-        assertEquals("Range must be written as min..max, min.. or ..max (the upper bound is excluded) - got null",
-                failure(min, (Object) null).getMessage());
         assertEquals("Range must be written as min..max, min.. or ..max (the upper bound is excluded) - got '1-2'",
                 failure(max, "1-2").getMessage());
         assertStartsWith("Range must be written as", failure(min, ".."));
@@ -125,6 +146,10 @@ class RangeBoundsPluginTest {
         // a quote must be closed and end the bound; an open end is written by omission; quoting is all or nothing
         assertStartsWith("Range must be written as", failure(min, "'a..b"));
         assertStartsWith("Range must be written as", failure(max, "'a' x..'b'"));
+        // a quoted bound never holds its own quote character, in either position - the other style does that
+        assertStartsWith("Range must be written as", failure(min, "'a'b'..'z'"));
+        assertStartsWith("Range must be written as", failure(max, "'a'..'b'c'"));
+        assertStartsWith("Range must be written as", failure(max, "'a'..'b' x'"));
         assertEquals("Range has an empty quoted bound - an open end is written by omission: '''..'m''",
                 failure(min, "''..'m'").getMessage());
         assertEquals("Range mixes a quoted and an unquoted bound - quote both bounds or neither: ''a'..b'",
