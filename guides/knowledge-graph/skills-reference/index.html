@@ -3390,11 +3390,15 @@ omitted end is open, so adjacent bands tile a scale with no gap and no overlap. 
 decides the comparison: a canonical number makes a numeric band — the value is compared exactly as a decimal, and
 a non-numeric value fails by name, as <code>graph.math</code> does; text in single or double quotes (<code>'0020'</code>,
 <code>"2026-11-15"</code>) makes a quoted band, compared as written and case-sensitively — the quotes keep a zero-padded
-code as text; unquoted text (<code>16:00</code>, <code>h</code>) compares without case, which is how alphabetic bands work. A table
-that mixes kinds is refused, and so is a band given as a list. Text compares as written, so <strong>a value must be
-shaped like the bounds</strong>: dates and times in ISO-8601 order and zero-padded (<code>2026-10-11T15:00:00Z</code> or
-<code>2026-10-11 15:00:00</code>), the value carrying the same parts — <code>9:30</code> is not <code>09:30</code>, and a time-only band does not
-place a full timestamp.</p>
+code as text, and a quoted bound may hold the separator and the other quote character (<code>"O'Brien"</code>), never its
+own; unquoted text (<code>16:00</code>, <code>h</code>) compares without case, which is how alphabetic bands work. Text orders by Unicode
+code point on both engines. The value must be a number or text — a boolean, a list or a map fails by name, because
+a band is a scale and none of them sits on one. A table that mixes kinds is refused, and so is a band given as a
+list. Text compares as written, so <strong>a value must be shaped like the bounds</strong>: dates and times in ISO-8601 order and
+zero-padded (<code>2026-10-11T15:00:00Z</code> or <code>2026-10-11 15:00:00</code>), the value carrying the same parts — <code>9:30</code> is not
+<code>09:30</code>, and a time-only band does not place a full timestamp — and one UTC offset and one precision throughout,
+UTC by preference: <code>17:00:00+02:00</code> sorts after <code>16:00:00Z</code> though it is the earlier instant, and <code>15:00:00.5Z</code>
+sorts before <code>15:00:00Z</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>create node loyalty-tiers
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>with type DecisionTable
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>with properties
@@ -3426,11 +3430,11 @@ open (<code>excellent=800..</code>). A null value or a miss takes the default, s
 aborts the run.
 The product owner reads the bands on the graph, and a new threshold is a graph change, never code.</p>
 <p>The bounds of a band are data too. <code>f:minRange(range, default)</code> and <code>f:maxRange(range, default)</code> read one
-range in the same notation and return its lower or upper bound, <strong>typed by the notation</strong> — a whole number
-is a long, any other number is its exact decimal as text (the high-precision rule of <code>DECIMAL</code>), a text bound is
-text as written, a quoted one without its quotes — and an
-open end answers the optional default, or null when there is none, so the null-source rule leaves the target
-unset. A dynamic key reads the band the lookup chose:</p>
+range in the same notation and return its lower or upper bound, <strong>typed by the notation</strong> — a number written
+without a decimal point is a long, any other number is its exact decimal as text (the high-precision rule of
+<code>DECIMAL</code>), a text bound is text as written, a quoted one without its quotes — and an open end answers the
+optional default, or null when there is none, so the null-source rule leaves the target unset. A dynamic key reads
+the band the lookup chose:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>create node locate
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>with type Decision
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>with properties
@@ -3442,10 +3446,12 @@ unset. A dynamic key reads the band the lookup chose:</p>
 </code></pre></div>
 <p><code>tier_from</code> is <code>10000</code> for gold and the default <code>0</code> for standard (the lower end of <code>..2500</code> is open);
 <code>tier_to</code> is <code>25000</code> for gold and stays unset for platinum (<code>25000..</code> has no upper bound); <code>same_day_until</code>
-is the text <code>16:00</code>. A <code>graph.math</code> node reads a bound the same way (<code>MAPPING: f:maxRange(loyalty-tiers.{model.tier})
+is the text <code>16:00</code>. On a miss — no spend in the request — <code>model.tier</code> is the default <code>unknown</code>, <code>loyalty-tiers.unknown</code>
+is nothing, and a null range answers null, never the default, so <code>tier_from</code> and <code>tier_to</code> stay unset and the run
+never aborts (an unknown tier never reads as "from 0"). A <code>graph.math</code> node reads a bound the same way (<code>MAPPING: f:maxRange(loyalty-tiers.{model.tier})
 -&gt; model.tier_to</code>) and computes with it (<code>DECIMAL: to_next_tier -&gt; {model.tier_to} - {input.body.annual_spend}</code>).
-A range is refused exactly when <code>rangeLookup</code> would refuse the band — malformed, a list, mixing kinds,
-or empty: <code>3..3</code> holds nothing, since the upper bound is excluded — and the lookup checks every
+A range is refused exactly when <code>rangeLookup</code> would refuse the band — malformed (a quoted bound holding its own
+quote character included), a list, mixing kinds, or empty: <code>3..3</code> holds nothing, since the upper bound is excluded — and the lookup checks every
 band when it reads a table, whatever the value.</p>
 <p>A decimal bound stays text so that nothing is rounded. When a floating-point number is wanted in the output,
 convert it in a second mapping, since a plugin argument is never another plugin:</p>

@@ -5952,12 +5952,12 @@ double enters, precision follows IEEE-754 (integers exact to 2^53).</p>
 <tr>
 <td style="text-align: left;"><strong>Decision</strong></td>
 <td style="text-align: left;">rangeLookup</td>
-<td style="text-align: left;">A range table, a value and an optional default — returns the name of the first band whose range contains the value, or the default on a miss (null when omitted; a null value takes the default). The table has the decision-table shape, but each band field is ONE range written as text: <code>min..max</code> runs from <code>min</code> inclusive up to but excluding <code>max</code>, an omitted end is open, so adjacent bands tile a scale with no gap and no overlap. A bound is a canonical number, quoted text (<code>'0020'</code>, <code>"2026-11-15"</code> — single or double quotes) or unquoted text, and the table decides the comparison: numeric bounds compare the value exactly as a decimal (a number or a numeric string; anything else fails by name), quoted bounds compare it as written and case-sensitively, unquoted text bounds compare it as text without case. A table mixing kinds is refused, and so is a band given as a list. Text compares as written, so a value must be shaped like the bounds — dates and times in ISO-8601 order, zero-padded. Syntax: <code>f:rangeLookup(table, value, text(default))</code> — see the worked example below.</td>
+<td style="text-align: left;">A range table, a value and an optional default — returns the name of the first band whose range contains the value, or the default on a miss (null when omitted; a null value takes the default). The table has the decision-table shape, but each band field is ONE range written as text: <code>min..max</code> runs from <code>min</code> inclusive up to but excluding <code>max</code>, an omitted end is open, so adjacent bands tile a scale with no gap and no overlap. A bound is a canonical number, quoted text (<code>'0020'</code>, <code>"2026-11-15"</code> — single or double quotes) or unquoted text, and the table decides the comparison: numeric bounds compare the value exactly as a decimal (a number or a numeric string; anything else fails by name), quoted bounds compare it as written and case-sensitively, unquoted text bounds compare it as text without case; text orders by Unicode code point. The value must be a number or text (a boolean, a list or a map fails by name). A table mixing kinds is refused, and so is a band given as a list. Text compares as written, so a value must be shaped like the bounds — dates and times in ISO-8601 order, zero-padded, one UTC offset and one precision. Syntax: <code>f:rangeLookup(table, value, text(default))</code> — see the worked example below.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Decision</strong></td>
 <td style="text-align: left;">minRange</td>
-<td style="text-align: left;">One range written as text and an optional default — returns the range's lower bound, typed by the notation: a whole number within the 64-bit range is a long, any other number is its exact decimal as text (<code>2500.50</code> — the high-precision rule of <code>DECIMAL</code>; <code>f:double</code> converts it when a floating-point number is wanted in the output), a text bound is text as written, a quoted one without its quotes; an open end (<code>..max</code>) returns the default, null when omitted. The notation is <code>rangeLookup</code>'s (<code>min..max</code>, <code>min..</code>, <code>..max</code>) and so are the refusals: a malformed range, a band given as a list, a range mixing kinds, an empty range (<code>3..3</code> holds nothing, the upper bound being excluded). Syntax: <code>f:minRange(range, default)</code> — see <em>The bounds of a band</em> below.</td>
+<td style="text-align: left;">One range written as text and an optional default — returns the range's lower bound, typed by the notation: a number written without a decimal point, within the 64-bit range, is a long, any other number is its exact decimal as text (<code>2500.50</code> — the high-precision rule of <code>DECIMAL</code>; <code>f:double</code> converts it when a floating-point number is wanted in the output), a text bound is text as written, a quoted one without its quotes; an open end (<code>..max</code>) returns the default, null when omitted; a null range returns null, never the default. The notation is <code>rangeLookup</code>'s (<code>min..max</code>, <code>min..</code>, <code>..max</code>) and so are the refusals: a malformed range (a quoted bound holding its own quote character included), a band given as a list, a range mixing kinds, an empty range (<code>3..3</code> holds nothing, the upper bound being excluded). Syntax: <code>f:minRange(range, default)</code> — see <em>The bounds of a band</em> below.</td>
 </tr>
 <tr>
 <td style="text-align: left;"><strong>Decision</strong></td>
@@ -6182,11 +6182,15 @@ compare</strong>: a canonical number (<code>25000</code>, <code>2500.50</code>) 
 string and is compared exactly as a decimal (so money written as text per the <code>DECIMAL</code> convention works, and
 <code>true</code> or <code>abc</code> fails by name); text in single or double quotes (<code>'0020'</code>, <code>"2026-11-15"</code>) makes a quoted band,
 compared as written and case-sensitively — the quotes keep a zero-padded code as text, where <code>0000</code> would read as
-a number; unquoted text (<code>16:00</code>, <code>h</code>) compares as text without case, which is how alphabetic bands work. A table
-that mixes kinds is refused, and so is a band given as a list: a band is one range. Text compares as written, so
-<strong>a value must be shaped like the bounds</strong>: dates and times in ISO-8601 order and zero-padded, either
-<code>2026-10-11T15:00:00Z</code> or <code>2026-10-11 15:00:00</code>, with the value carrying the same parts as the bounds — <code>9:30</code> is
-not <code>09:30</code>, and a time-only band does not place a full timestamp.</p>
+a number, and a quoted bound may hold the separator and the other quote character (<code>"O'Brien"</code>), never its own;
+unquoted text (<code>16:00</code>, <code>h</code>) compares as text without case, which is how alphabetic bands work. Text orders by
+Unicode code point on both engines. The value must be a number or text — a boolean, a list or a map fails by name,
+because a band is a scale and none of them sits on one. A table that mixes kinds is refused, and so is a band given
+as a list: a band is one range. Text compares as written, so <strong>a value must be shaped like the bounds</strong>: dates and
+times in ISO-8601 order and zero-padded, either <code>2026-10-11T15:00:00Z</code> or <code>2026-10-11 15:00:00</code>, with the value
+carrying the same parts as the bounds — <code>9:30</code> is not <code>09:30</code>, and a time-only band does not place a full
+timestamp — and with one UTC offset and one precision throughout, UTC by preference: <code>17:00:00+02:00</code> sorts after
+<code>16:00:00Z</code> though it is the earlier instant, and <code>15:00:00.5Z</code> sorts before <code>15:00:00Z</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-65-1" name="__codelineno-65-1" href="#__codelineno-65-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'classpath(json:/decision/loyalty-tiers.json)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.tiers'</span>
 <a id="__codelineno-65-2" name="__codelineno-65-2" href="#__codelineno-65-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'f:rangeLookup(model.tiers,</span><span class="nv"> </span><span class="s">input.body.annual_spend,</span><span class="nv"> </span><span class="s">text(unknown))</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">output.body.tier'</span>
 <a id="__codelineno-65-3" name="__codelineno-65-3" href="#__codelineno-65-3"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'classpath(json:/decision/cut-off.json)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.cut_off'</span>
@@ -6201,13 +6205,16 @@ value, or a miss, takes the default, so an absent request field never aborts the
 value against numeric bands does, by name.</p>
 <p><em>The bounds of a band</em></p>
 <p><code>f:minRange(range, default)</code> and <code>f:maxRange(range, default)</code> read one range in the same notation and
-return its lower or upper bound, <strong>typed by the notation</strong>: a whole number within the 64-bit range is a long,
-any other number is its exact decimal as text (<code>2500.50</code> — the high-precision rule of <code>DECIMAL</code>, where a double
-would round it), and a text bound is text as written, a quoted one without its quotes. An
-open end has no bound, so it returns the optional default, or null when there is none (the null-source
-rule then leaves a <code>model.*</code> target unset). A range is refused exactly when <code>rangeLookup</code> would refuse
-the band: malformed, a list, mixing kinds, or empty — <code>3..3</code> holds nothing, since the upper
-bound is excluded — and the lookup checks every band when it reads a table, whatever the value.</p>
+return its lower or upper bound, <strong>typed by the notation</strong>: a number written without a decimal point, within the
+64-bit range, is a long (<code>1.0</code> is not one — it stays the text <code>1.0</code>), any other number is its exact decimal as text
+(<code>2500.50</code> — the high-precision rule of <code>DECIMAL</code>, where a double would round it), and a text bound is text as written,
+a quoted one without its quotes. An open end has no bound, so it returns the optional default, or null when there is
+none (the null-source rule then leaves a <code>model.*</code> target unset). A null range returns null, never the default: the
+band a lookup did not choose, read back through a dynamic key, has no bounds, while the default belongs to an open
+end — so the read-back of a missed band leaves its targets unset and never aborts the flow. A range is refused
+exactly when <code>rangeLookup</code> would refuse the band: malformed (a quoted bound holding its own quote character
+included), a list, mixing kinds, or empty — <code>3..3</code> holds nothing, since the upper bound is excluded — and the lookup
+checks every band when it reads a table, whatever the value.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-66-1" name="__codelineno-66-1" href="#__codelineno-66-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'f:minRange(model.tiers.gold)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.gold_from'</span>
 <a id="__codelineno-66-2" name="__codelineno-66-2" href="#__codelineno-66-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'f:maxRange(model.tiers.gold)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.gold_to'</span>
 <a id="__codelineno-66-3" name="__codelineno-66-3" href="#__codelineno-66-3"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'f:minRange(model.tiers.standard,</span><span class="nv"> </span><span class="s">int(0))</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.standard_from'</span>
