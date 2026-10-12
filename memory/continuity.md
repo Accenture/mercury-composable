@@ -378,6 +378,18 @@
   the bounds (dates and times in ISO-8601 order, zero-padded; `9:30` is not `09:30`) - DECLARED in the guides, no shape gate: a gate
   for one text shape would teach that the others are safe. Vectors 52 + 48; the fixture gained a decimal fee-band table and a quoted
   product-code table.
+  **Second review 2026-10-11 (Eric's rulings; Java #557 commit `904e000c`, Rust mercury #382 commit `5b561472` - Increment 179, both
+  OPEN):** the documented read-back pattern aborted a run on a miss - `loyalty-tiers.{model.tier}` with the default `unknown` resolves to
+  null and the bound plugins refused a null range by name; now a NULL RANGE ANSWERS NULL, never the default (the default belongs to an open
+  end, a bound the author placed; a missing band has no bounds), so the targets stay unset through the null-source rule. Text orders by
+  Unicode CODE POINT on both engines (`String.compareTo` orders UTF-16 units, which disagree above U+FFFF - `RangeNotation.compare`). A
+  quoted bound ends at its FIRST closing quote in either position: the other quote character is ordinary text inside it (`"O'Brien"` -
+  the YAML convention Eric asked to keep), a bound's own never. The lookup VALUE must be a number or text - a boolean, a list, a map or
+  bytes refused by name on every table (a list compared as its text differed by engine). Docs: "a number written without a decimal point"
+  is the long rule (`1.0` stays text), timestamps need one UTC offset and one precision (declared, not gated), the CHANGELOG's upgrade
+  note names what v4.12.23 accepted (`a..b..c`, a list band in a text table, a list value). Vectors 62 + 55; the fixture's miss run.
+  **Gate note:** the one-liner `cargo test ... --lib range --test range_bounds_vectors ...` filters the vector tests OUT by name - run
+  them without the filter.
   <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-10-11 | uses: 7 | tier: active | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
