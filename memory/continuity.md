@@ -36,8 +36,10 @@
   **Published and VERIFIED 2026-10-11:** the twelve crates on crates.io at 4.12.23 (created 03:39:20Z–03:39:34Z by Eric's
   `cargo publish --workspace` from the tag, none yanked; the platform-core tarball's 33 source files the tag's set with `lib.rs`,
   `serializer.rs` and `canonical_packager.rs` SHA-256 identical; the event-script tarball carries `rangeLookup`). The Java artifacts are
-  the tag and the GitHub release, as always. **Field rollout planned 2026-10-12 (Eric, 2026-10-11)**; acceptance to be recorded when
-  reported (4.12.22's was never reported separately; 4.12.23 goes to the field). Origin 2026-10-11-034330.md.
+  the tag and the GitHub release, as always. **REJECTED by the field's Snyk gate 2026-10-12:** Guava resolved to 32.0.1-jre through
+  Confluent's serializers in every consumer of `minimalist-kafka`, because the 4.12.23 pin sat in `dependencyManagement`
+  ([[conv-library-pins-are-direct-dependencies]]); **v4.12.24 carries the fix** ([[release-4-12-24]], prepared 2026-10-12). 4.12.22's
+  acceptance was never reported separately. Origin 2026-10-11-034330.md.
   Prior: v4.12.22 (2026-10-10 01:24:53Z — the graph contract on both engines and the mini-scheduler's active environment; #542 squash
   `67e573e8` = tag; the graph contract (ADR-0029, [[graph-contract-by-declaration]]: #533–#536, the mock request headers #531), the
   scheduler's active environment (ADR-0030, [[scheduler-active-environment-store]]: #539), the service registry's echo fix #530; READ: a
@@ -691,6 +693,24 @@
   RFC-0002 in the RFC register, PR #470); all five sibling checkouts scanned clean, tree and commit messages. Relates
   [[eric-code-changes-via-pr]] (how a change reaches main).
   <!-- id: conv-compartment-downstream-secrets | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: core | origin: 2026-09-30-164034 -->
+
+- **A library's `dependencyManagement` never reaches a consumer - a transitive version the library must control is a DIRECT
+  dependency of that library, with the artifacts that declare the old one excluding it (Eric's fix, 2026-10-12; v4.12.24).** The
+  4.12.23 Guava pin in `minimalist-kafka`'s `dependencyManagement` converged that module's own build and nothing else: Maven's
+  nearest-wins in `twin-kafka`, the demos and every field application saw Confluent's Guava 32.0.1-jre two levels down and
+  `platform-core`'s 33.7.2 three levels down, picked the old one, and the field's Snyk gate - one project per pom
+  ([[snyk-retired-manifest-placeholders]]) - rejected the release on `twin-kafka`'s manifest. A direct dependency travels with the
+  library and sits one level below it in every consumer, ahead of any transitive declarer. The shape: declare the version in the
+  library that drags the old one in (`guava`, `failureaccess`, `tink` in `minimalist-kafka`), exclude it from the artifacts that
+  declare it so ONE version appears in the tree, and keep `failureaccess` explicit at the version Guava itself declares - this is the
+  SECOND Guava field incident; the first (4.6.2, archived `thread-guava-failureaccess-field-fix`) was a curated field resolver dropping
+  the deep transitive node (`NoClassDefFoundError` on `InternalFutureFailureAccess`), so the pin stays even though plain Maven brings
+  the artifact. `platform-core` declares no Guava (Caffeine is its cache; no source in the repo imports `com.google.common`). **The
+  verification that holds:** `mvn install` the edited modules first (a consumer's tree reads the INSTALLED pom), then
+  `mvn dependency:tree -Dincludes=<groups>` over the WHOLE reactor, counting versions - one of each - and the consuming modules' tests
+  (the CSFLE round trip exercises Tink). A module's own clean build proves nothing about its consumers. Relates
+  [[conv-template-version-sweep]] (the other reactor-wide sweep).
+  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-12 | uses: 1 | tier: working | origin: 2026-10-12-221919 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
