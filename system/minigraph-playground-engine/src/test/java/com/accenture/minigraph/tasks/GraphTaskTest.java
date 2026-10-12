@@ -321,7 +321,6 @@ class GraphTaskTest {
         // f:minRange(loyalty-tiers.{model.tier}, int(0)) and f:maxRange(loyalty-tiers.{model.tier}) - and its
         // bounds are typed by the notation: whole numbers for a money band, exact decimal text for a fee band, text
         // for a time or a quoted code; a graph.math node computes the distance to the next tier from the upper bound
-        // when there is one
         var response = runGraph("unit-test-range-bounds-1", Map.of("annual_spend", "12500.75", "product_code", "0450"), Map.of());
         assertEquals(200, response.getStatus());
         var mm = bodyMap(response);
@@ -336,10 +335,14 @@ class GraphTaskTest {
         assertEquals("1000", mm.getElement("current_from"));
         assertEquals("7.5", mm.getElement("mid_to_text"));
         assertEquals(7.5, mm.getElement("mid_to"));
-        // the lower end of the standard band is open: the default 0 answers
-        response = runGraph("unit-test-range-bounds-1", Map.of("annual_spend", 100), Map.of());
+    }
+
+    @Test
+    void rangeBoundsOfAnOpenEndAnswerTheDefaultOrNothing() throws TimeoutException {
+        // unit-test-range-bounds-1: the lower end of the standard band is open, so the default 0 answers
+        var response = runGraph("unit-test-range-bounds-1", Map.of("annual_spend", 100), Map.of());
         assertEquals(200, response.getStatus());
-        mm = bodyMap(response);
+        var mm = bodyMap(response);
         assertEquals("standard", mm.getElement("tier"));
         assertEquals(0L, ((Number) mm.getElement("tier_from")).longValue());
         assertEquals(2500L, ((Number) mm.getElement("tier_to")).longValue());
@@ -352,12 +355,16 @@ class GraphTaskTest {
         assertEquals(25000L, ((Number) mm.getElement("tier_from")).longValue());
         assertFalse(mm.exists("tier_to"));
         assertFalse(mm.exists("to_next_tier"));
-        // a miss - no spend in the request - names the default tier, and the band read back through the dynamic key
-        // is nothing: a null range answers null, never the default, so tier_from and tier_to stay unset, the math
-        // node takes its ELSE path, and the run never aborts
-        response = runGraph("unit-test-range-bounds-1", Map.of("product_code", "0450"), Map.of());
+    }
+
+    @Test
+    void rangeBoundsOfAMissedBandStayUnset() throws TimeoutException {
+        // unit-test-range-bounds-1: a miss - no spend in the request - names the default tier, and the band read back
+        // through the dynamic key is nothing: a null range answers null, never the default, so tier_from and tier_to
+        // stay unset, the math node takes its ELSE path, and the run never aborts
+        var response = runGraph("unit-test-range-bounds-1", Map.of("product_code", "0450"), Map.of());
         assertEquals(200, response.getStatus());
-        mm = bodyMap(response);
+        var mm = bodyMap(response);
         assertEquals("unknown", mm.getElement("tier"));
         assertFalse(mm.exists("tier_from"));
         assertFalse(mm.exists("tier_to"));
