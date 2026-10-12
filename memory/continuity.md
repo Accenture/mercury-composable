@@ -379,7 +379,7 @@
   for one text shape would teach that the others are safe. Vectors 52 + 48; the fixture gained a decimal fee-band table and a quoted
   product-code table.
   **Second review 2026-10-11 (Eric's rulings; Java #557 commit `904e000c`, Rust mercury #382 commit `5b561472` - Increment 179, both
-  OPEN):** the documented read-back pattern aborted a run on a miss - `loyalty-tiers.{model.tier}` with the default `unknown` resolves to
+  MERGED 2026-10-12: Java squash `b82bdc8d`, Rust merge `108bb34f`):** the documented read-back pattern aborted a run on a miss - `loyalty-tiers.{model.tier}` with the default `unknown` resolves to
   null and the bound plugins refused a null range by name; now a NULL RANGE ANSWERS NULL, never the default (the default belongs to an open
   end, a bound the author placed; a missing band has no bounds), so the targets stay unset through the null-source rule. Text orders by
   Unicode CODE POINT on both engines (`String.compareTo` orders UTF-16 units, which disagree above U+FFFF - `RangeNotation.compare`). A
