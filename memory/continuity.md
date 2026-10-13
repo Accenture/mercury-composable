@@ -34,7 +34,9 @@
   2026-10-12:** the twelve crates on crates.io at 4.12.24 (created 22:31:11Z–22:31:23Z by Eric's `cargo publish --workspace` from the
   tag, none yanked; the platform-core tarball's 33 source files SHA-256 identical to the tag's). **Field result 2026-10-12: Snyk PASSED, Sonar FAILED** on its new-code gate (8 findings, 40 in the full report, one a bug in the
   Kotlin example - [[conv-sonar-gate-heuristics]]); all 40 fixed on `fix/sonar-findings-4.12.24` (`d3613175`, PR #560 MERGED 2026-10-13 00:34Z, squash `a4d94916`; **Eric tests the
-  main head in the field's pipeline first (2026-10-13), then the next release carries it** - no cut until the field reports). 4.12.23 was REJECTED by Snyk on 2026-10-12; 4.12.22's acceptance was never reported separately. Origin 2026-10-12-223627.md.
+  main head in the field's pipeline first (2026-10-13)**: the rescan found ONE Blocker left, the round's own `active` field against the
+  constant `ACTIVE` (S1845) - fixed on `fix/active-environment-field-name` (`8d2c39f8`, PR for Eric to open); then the next release carries
+  both - no cut until the field reports). 4.12.23 was REJECTED by Snyk on 2026-10-12; 4.12.22's acceptance was never reported separately. Origin 2026-10-12-223627.md.
   Prior: v4.12.23 (2026-10-11 03:35:56Z — the API playground and `f:rangeLookup`, lock-step with Rust; #551 squash `79995691` plus #552
   and #553 before the tag, tag → `14cbae7a`; the API playground round #545–#550 (Swagger UI fetched by script, a Mercury-branded page on
   the Reactive HTTP server without Spring Boot, Deploy and `api.playground.specs`), `f:rangeLookup` #552, the front-matter fix and guard
@@ -717,7 +719,9 @@
   Sonar round, 2026-10-12; the earlier rounds are the archived `thread-sonar-quality-gate-4.6.2`, `thread-sonar-4-9-1-field-rejection`,
   `thread-sonar-4-10-4-field-rejection` and `thread-sonar-4-11-x-field-round-3`).** 4.12.24 passed Snyk and failed Sonar on eight
   new-code findings, one a Blocker. (1) S1845: a field and a constant that differ only by case (`purpose` / `PURPOSE`) - name a constant
-  that is a property key `*_KEY`. (2) S125: a PROSE COMMENT LINE THAT ENDS IN A SEMICOLON reads as commented-out code, and a `${...}`
+  that is a property key `*_KEY`, and BEFORE renaming a field grep the file for a constant of the same spelling: the round's own
+  rename `activeEnvironment` → `active` collided with `ACTIVE = "active"` and came back as the last Blocker (fixed as `current`,
+  `8d2c39f8`). (2) S125: a PROSE COMMENT LINE THAT ENDS IN A SEMICOLON reads as commented-out code, and a `${...}`
   placeholder inside javadoc does too - end a comment with a period or nothing. (3) S6213: `record` is a restricted identifier even as a
   lambda parameter - use `entry`. (4) S1450: a field assigned in one method and read in a callback registered in another is reported
   as "could be local" - hold it in a final `AtomicReference` (Eric's ruling), which is also the memory-visibility shape the callback
