@@ -32,9 +32,9 @@
   `aa67a429`, release 22:29:09Z; no dependency change there, Increments 177–179; 139 suites / 719 passed / 0 failed; `rust`, `docs` and
   agent-memory CI green on the tag); the packs stay at 4.12.21 ([[conv-ports-adopt-java-release-number]]). **Published and VERIFIED
   2026-10-12:** the twelve crates on crates.io at 4.12.24 (created 22:31:11Z–22:31:23Z by Eric's `cargo publish --workspace` from the
-  tag, none yanked; the platform-core tarball's 33 source files SHA-256 identical to the tag's). **Field acceptance PENDING:** the
-  field's Snyk gate on 4.12.24 is the acceptance to record (4.12.23 was REJECTED there on 2026-10-12; 4.12.22's was never reported
-  separately). Origin 2026-10-12-223627.md.
+  tag, none yanked; the platform-core tarball's 33 source files SHA-256 identical to the tag's). **Field result 2026-10-12: Snyk PASSED, Sonar FAILED** on its new-code gate (8 findings, 40 in the full report, one a bug in the
+  Kotlin example - [[conv-sonar-gate-heuristics]]); all 40 fixed on `fix/sonar-findings-4.12.24` (`d3613175`, PR for Eric to open, the next
+  release carries it). 4.12.23 was REJECTED by Snyk on 2026-10-12; 4.12.22's acceptance was never reported separately. Origin 2026-10-12-223627.md.
   Prior: v4.12.23 (2026-10-11 03:35:56Z — the API playground and `f:rangeLookup`, lock-step with Rust; #551 squash `79995691` plus #552
   and #553 before the tag, tag → `14cbae7a`; the API playground round #545–#550 (Swagger UI fetched by script, a Mercury-branded page on
   the Reactive HTTP server without Spring Boot, Deploy and `api.playground.specs`), `f:rangeLookup` #552, the front-matter fix and guard
@@ -712,6 +712,23 @@
   (the CSFLE round trip exercises Tink). A module's own clean build proves nothing about its consumers. Relates
   [[conv-template-version-sweep]] (the other reactor-wide sweep).
   <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-12 | uses: 1 | tier: working | origin: 2026-10-12-221919 -->
+
+- **The field's Sonar gate judges NEW code, and five of its heuristics catch prose and framework idioms - write for them (the fifth
+  Sonar round, 2026-10-12; the earlier rounds are the archived `thread-sonar-quality-gate-4.6.2`, `thread-sonar-4-9-1-field-rejection`,
+  `thread-sonar-4-10-4-field-rejection` and `thread-sonar-4-11-x-field-round-3`).** 4.12.24 passed Snyk and failed Sonar on eight
+  new-code findings, one a Blocker. (1) S1845: a field and a constant that differ only by case (`purpose` / `PURPOSE`) - name a constant
+  that is a property key `*_KEY`. (2) S125: a PROSE COMMENT LINE THAT ENDS IN A SEMICOLON reads as commented-out code, and a `${...}`
+  placeholder inside javadoc does too - end a comment with a period or nothing. (3) S6213: `record` is a restricted identifier even as a
+  lambda parameter - use `entry`. (4) S1450: a field assigned in one method and read in a callback registered in another is reported
+  as "could be local" - hold it in a final `AtomicReference` (Eric's ruling), which is also the memory-visibility shape the callback
+  needs. (5) S6548 (Info) flags every `getInstance()` singleton - an intentional one carries `@SuppressWarnings("java:S6548")` with
+  "Intentional singleton" in its javadoc (Eric's ruling; `ActiveEnvironment`, `ContractCatalog`, `SkillSnapshot`). Limits: S3776
+  cognitive complexity 15 per method; 25 assertions per test method (#558). S1168: a private helper returns an empty array, never null.
+  Kotlin: `require(...)` over if-throw, `map[key]` over `map.get(key)`, `?: throw` over `!!`, and `Unit?` over `Void` for a function
+  with no output - plain `Unit` would serialize the Unit object as the response body. A pre-existing finding counts as new the next
+  time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
+  [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-12 | uses: 1 | tier: working | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
