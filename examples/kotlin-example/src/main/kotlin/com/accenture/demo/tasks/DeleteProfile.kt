@@ -16,10 +16,7 @@ class DeleteProfile : TypedLambdaFunction<Map<String, Any>, Map<String, Any>> {
         input: Map<String, Any>,
         instance: Int
     ): Map<String, Any> {
-        if (!headers.containsKey(PROFILE_ID)) {
-            throw AppException(400, "Missing profile_id")
-        }
-        val profileId = headers[PROFILE_ID]
+        val profileId = headers[PROFILE_ID] ?: throw AppException(400, "Missing profile_id")
         val f = File(TEMP_DATA_STORE, profileId + JSON_EXT)
         if (!f.exists()) {
             throw AppException(404, "Profile $profileId not found")
@@ -27,8 +24,8 @@ class DeleteProfile : TypedLambdaFunction<Map<String, Any>, Map<String, Any>> {
         Files.delete(f.toPath())
         val util = Utility.getInstance()
         val result: MutableMap<String, Any> = HashMap()
-        result.put(ID, (if (util.isDigits(profileId)) util.str2int(profileId) else profileId)!!)
-        result.put(DELETED, true)
+        result[ID] = if (util.isDigits(profileId)) util.str2int(profileId) else profileId
+        result[DELETED] = true
         return result
     }
 

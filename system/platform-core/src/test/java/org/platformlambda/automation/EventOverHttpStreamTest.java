@@ -325,7 +325,7 @@ class EventOverHttpStreamTest extends TestBase {
     @Test
     void idleStallFailsInBand408() throws InterruptedException {
         // the target declares a one-second idle allowance and goes silent - the server
-        // housekeeper (10s sweep) or the client's own idle timer must fail it in-band;
+        // housekeeper (10s sweep) or the client's own idle timer must fail it in-band, and
         // both produce the pinned 408 wording
         long started = System.currentTimeMillis();
         var events = sendStreaming(STREAMING_TARGET, "stall", "5000", 2);

@@ -269,7 +269,7 @@ public class SchemaCodec {
          * against the same registry with the same identity.
          *
          * Duplicating the bearer.auth.* block under schema.registry.serde.* is not a viable
-         * workaround for the caller: those keys live in application.properties, whose ${...}
+         * workaround for the caller: those keys live in application.properties, whose placeholder
          * references AppConfigReader resolves - and destructively rewrites - at construction, before
          * any @MainApplication credential bootstrap has published its system properties. The
          * registry client template does not have that problem because it is read later, which is

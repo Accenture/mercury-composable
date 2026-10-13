@@ -101,10 +101,8 @@ public final class GraphSet {
      * @param graphs the graph models keyed by graph id
      * @return the package bytes
      * @throws RefusedException naming every broken rule
-     * @throws IOException when a value cannot be written
      */
-    public static byte[] pack(String setName, Map<String, String> fields, Map<String, Map<String, Object>> graphs)
-            throws IOException {
+    public static byte[] pack(String setName, Map<String, String> fields, Map<String, Map<String, Object>> graphs) {
         List<String> reasons = new ArrayList<>();
         if (!GraphModelGate.isValidGraphId(setName)) {
             reasons.add("set name '" + setName + "' - " + ID_RULE);

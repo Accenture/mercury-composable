@@ -19,7 +19,7 @@ class GetProfile : TypedLambdaFunction<MutableMap<String, Any>, Profile> {
         if (!headers.containsKey(PROFILE_ID)) {
             throw AppException(400, "Missing profile_id")
         }
-        val profileId = headers.get(PROFILE_ID)
+        val profileId = headers[PROFILE_ID]
         val profileFile = File(TEMP_DATA_STORE, profileId + JSON_EXT)
         if (!profileFile.exists()) {
             throw AppException(404, "Profile $profileId not found")

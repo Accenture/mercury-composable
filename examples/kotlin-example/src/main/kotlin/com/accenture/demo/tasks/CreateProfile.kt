@@ -9,9 +9,7 @@ import org.platformlambda.core.util.Utility
 @PreLoad(route = "v1.create.profile", instances = 10)
 class CreateProfile : TypedLambdaFunction<Map<String, Any>, ProfileConfirmation> {
     override fun handleEvent(headers: Map<String, String>, input: Map<String, Any>, instance: Int): ProfileConfirmation {
-        if (!input.containsKey("id")) {
-            throw IllegalArgumentException("Missing id")
-        }
+        require(input.containsKey("id")) { "Missing id" }
 
         val requiredFields = headers[REQUIRED_FIELDS]
             ?: throw IllegalArgumentException("Missing required_fields")
@@ -23,9 +21,7 @@ class CreateProfile : TypedLambdaFunction<Map<String, Any>, ProfileConfirmation>
 
         val fields = util.split(requiredFields, ", ")
         for (f in fields) {
-            if (!data.exists(f)) {
-                throw IllegalArgumentException("Missing $f")
-            }
+            require(data.exists(f)) { "Missing $f" }
         }
 
         val pFields = util.split(protectedFields, ", ")

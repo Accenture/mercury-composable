@@ -315,7 +315,7 @@ class EventStreamResponseTest extends TestBase {
 
     @Test
     void stalledProducerTimesOutInBand() throws IOException, InterruptedException {
-        // the producer declares a one-second idle allowance (x-ttl) and then goes silent;
+        // the producer declares a one-second idle allowance (x-ttl) and then goes silent.
         // the context housekeeper (10s sweep) must fail the stream in-band
         long started = System.currentTimeMillis();
         var response = get("/api/hello/stream?mode=stall", "text/event-stream");

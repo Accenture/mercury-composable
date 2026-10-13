@@ -30,6 +30,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Publisher to process a Flux stream object for delivery of messages over an event stream
@@ -47,8 +48,8 @@ public class FluxPublisher<T> {
     private final long timer;
     private final AtomicBoolean eof = new AtomicBoolean(false);
     private final AtomicBoolean expired = new AtomicBoolean(false);
-    private Disposable disposable = null;
-    private CustomSerializer serializer = null;
+    private final AtomicReference<Disposable> disposable = new AtomicReference<>();
+    private final AtomicReference<CustomSerializer> serializer = new AtomicReference<>();
     private boolean useVirtualThread = true;
 
     /**
@@ -70,11 +71,12 @@ public class FluxPublisher<T> {
             } catch (IllegalArgumentException e) {
                 // ok to ignore
             }
-            if (disposable != null && !disposable.isDisposed()) {
+            var subscription = disposable.get();
+            if (subscription != null && !subscription.isDisposed()) {
                 Utility util = Utility.getInstance();
                 log.warn("Flux publisher timeout after {} for {}",
                         util.elapsedTime(expiry), util.getSimpleRoute(stream.getInputStreamId()));
-                disposable.dispose();
+                subscription.dispose();
             }
         });
     }
@@ -89,7 +91,7 @@ public class FluxPublisher<T> {
      * @param serializer for custom conversion
      */
     public void setCustomSerializer(CustomSerializer serializer) {
-        this.serializer = serializer;
+        this.serializer.set(serializer);
     }
 
     /**
@@ -102,7 +104,7 @@ public class FluxPublisher<T> {
         String outStream = stream.getOutputStreamId();
         Platform platform = Platform.getInstance();
         var executor = useVirtualThread? platform.getVirtualThreadExecutor() : platform.getKernelThreadExecutor();
-        disposable = flux.subscribeOn(Schedulers.fromExecutor(executor))
+        disposable.set(flux.subscribeOn(Schedulers.fromExecutor(executor))
                 .doFinally(signal -> {
                     if (!expired.get()) {
                         expired.set(true);
@@ -120,7 +122,8 @@ public class FluxPublisher<T> {
                 })
                 .subscribe(data -> {
                     try {
-                        Object payload = serializer == null? data : serializer.toMap(data);
+                        var custom = serializer.get();
+                        Object payload = custom == null ? data : custom.toMap(data);
                         EventEmitter.getInstance().send(outStream, payload, new Kv(TYPE, DATA));
                     } catch (IllegalArgumentException e) {
                         log.error("Unable to publish data to {} - {}", util.getSimpleRoute(outStream), e.getMessage());
@@ -133,7 +136,7 @@ public class FluxPublisher<T> {
                         log.error("Unable to publish exception to {} - {}",
                                 util.getSimpleRoute(outStream), ex.getMessage());
                     }
-                });
+                }));
         return stream.getInputStreamId();
     }
 }

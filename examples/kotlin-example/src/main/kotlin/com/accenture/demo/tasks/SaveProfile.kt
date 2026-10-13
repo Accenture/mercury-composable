@@ -10,16 +10,15 @@ import org.slf4j.LoggerFactory
 import java.io.File
 
 @PreLoad(route = "v1.save.profile", instances = 10)
-class SaveProfile : TypedLambdaFunction<Map<String, Any>, Void> {
+class SaveProfile : TypedLambdaFunction<Map<String, Any>, Unit?> {
 
     override fun handleEvent(
         headers: Map<String, String>,
         input: Map<String, Any>,
         instance: Int
-    ): Void? {
+    ): Unit? {
         require(input.containsKey("id")) { "Missing id in profile" }
-        val requiredFields: String = headers[REQUIRED_FIELDS]!!
-        requireNotNull(requiredFields) { "Missing required_fields" }
+        val requiredFields = headers[REQUIRED_FIELDS] ?: throw IllegalArgumentException("Missing required_fields")
         val dataset = MultiLevelMap(input)
         val fields = util.split(requiredFields, ", ")
         for (f in fields) {
@@ -36,7 +35,7 @@ class SaveProfile : TypedLambdaFunction<Map<String, Any>, Void> {
         if (!folder.exists() && folder.mkdirs()) {
             log.info("Temporary key folder {} created", folder)
         }
-        val id: String? = input.get("id").toString()
+        val id = input["id"].toString()
         val file = File(folder, id + JSON_EXT)
         util.str2file(file, json)
         log.info("Profile {} saved", id)

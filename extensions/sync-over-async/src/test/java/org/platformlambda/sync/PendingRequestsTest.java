@@ -38,7 +38,7 @@ class PendingRequestsTest {
         assertTrue(pending.complete("cid-1", "ok"));
         assertEquals("ok", future.get(1, TimeUnit.SECONDS));
         // D8: completion is IN PLACE - the entry stays until the awaiting (or aborting) path removes it,
-        // because the response was destructively popped from Redis and the future is the only copy left;
+        // because the response was destructively popped from Redis and the future is the only copy left.
         // an await-by-cid arriving after completion must still find it.
         assertTrue(pending.isPending("cid-1"), "completed entry stays registered for the await-by-cid lookup");
         assertEquals(future, pending.get("cid-1"), "await-by-cid finds the completed future");

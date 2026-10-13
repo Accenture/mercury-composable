@@ -96,7 +96,7 @@ class RangeBoundsPluginTest {
 
     @Test
     void shouldOrderTextByCodePoint() {
-        // U+FF10 (a fullwidth zero) sits below U+1F600 (an emoji) by code point, as the Rust engine orders text;
+        // U+FF10 (a fullwidth zero) sits below U+1F600 (an emoji) by code point, as the Rust engine orders text.
         // String.compareTo orders UTF-16 units, which would call this range empty
         assertEquals("\uFF10", min.calculate("'\uFF10'..'\uD83D\uDE00'"));
         assertEquals("\uD83D\uDE00", max.calculate("\uFF10..\uD83D\uDE00"));
