@@ -2026,7 +2026,7 @@ class FlowTests extends TestBase {
         // f:json(text([])) creates an empty list directly in data mapping
         assertEquals(List.of(), result.get("empty_list"));
         assertEquals(Map.of(), result.get("empty_map"));
-        // a nested JSON constant - commas and braces ride inside the text(...) argument;
+        // a nested JSON constant - commas and braces ride inside the text(...) argument
         // whole numbers arrive as integers after the event round trip (MsgPack downcast)
         Object nested = result.get("nested_json");
         assertInstanceOf(Map.class, nested);

@@ -44,7 +44,10 @@ import java.util.regex.Pattern;
  * <p>
  * All resources are read through the classloader (getResourceAsStream), which works under
  * every packaging - classes directory, plain jar, and Spring Boot nested jar alike.
+ * <p>
+ * Intentional singleton.
  */
+@SuppressWarnings("java:S6548")
 public class SkillSnapshot {
     public static final String MANIFEST = "manifest.json";
     public static final String INSTALLED_CONTRACTS = "references/installed-contracts.md";

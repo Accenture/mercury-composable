@@ -14,18 +14,14 @@ class HelloExceptionHandler : TypedLambdaFunction<Map<String?, Any?>, Map<String
         instance: Int
     ): MutableMap<String?, Any?> {
         if (input.containsKey(STACK)) {
-            val map = Utility.getInstance().stackTraceToMap(input.get(STACK).toString())
+            val map = Utility.getInstance().stackTraceToMap(input[STACK].toString())
             log.info("{}", map)
         }
-        if (input.containsKey(STATUS) && input.containsKey(MESSAGE)) {
-            log.info("User defined exception handler - status={} error={}", input.get(STATUS), input.get(MESSAGE))
-            val error: MutableMap<String?, Any?> = HashMap<String?, Any?>()
-            error.put(TYPE, ERROR)
-            error.put(STATUS, input.get(STATUS))
-            error.put(MESSAGE, input.get(MESSAGE))
-            return error
+        return if (input.containsKey(STATUS) && input.containsKey(MESSAGE)) {
+            log.info("User defined exception handler - status={} error={}", input[STATUS], input[MESSAGE])
+            mutableMapOf<String?, Any?>(TYPE to ERROR, STATUS to input[STATUS], MESSAGE to input[MESSAGE])
         } else {
-            return mutableMapOf<String?, Any?>()
+            mutableMapOf<String?, Any?>()
         }
     }
 

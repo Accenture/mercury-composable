@@ -419,8 +419,8 @@ class GraphSuspendResumeTest {
     }
 
     /** Write a record back as the store holds it, so the next resume reads the rewritten copy. */
-    private void writeStoredRecord(String graphId, String cid, MultiLevelMap record) throws IOException {
-        Files.write(storedFile(graphId, cid).toPath(), new MsgPack().pack(record.getMap()));
+    private void writeStoredRecord(String graphId, String cid, MultiLevelMap stored) throws IOException {
+        Files.write(storedFile(graphId, cid).toPath(), new MsgPack().pack(stored.getMap()));
     }
 
     private File storedFile(String graphId, String cid) {

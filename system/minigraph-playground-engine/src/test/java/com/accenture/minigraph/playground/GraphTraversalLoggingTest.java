@@ -91,22 +91,22 @@ class GraphTraversalLoggingTest {
         assertEquals(200, response.getStatus());
 
         List<Map<?, ?>> records = appender.records.stream()
-                .filter(record -> "hello".equals(record.get("graph"))).toList();
-        // Every record carries the correlation label (trace id, or flow instance id).
-        assertTrue(records.stream().allMatch(record ->
-                        record.get("id") instanceof String id && !id.isBlank()),
-                "expected every record to carry a non-blank 'id', got: " + records);
+                .filter(entry -> "hello".equals(entry.get("graph"))).toList();
+        // Every entry carries the correlation label (trace id, or flow instance id).
+        assertTrue(records.stream().allMatch(entry ->
+                        entry.get("id") instanceof String id && !id.isBlank()),
+                "expected every entry to carry a non-blank 'id', got: " + records);
         // The trail starts at the root node...
-        assertTrue(records.stream().anyMatch(record -> "Walk to root".equals(record.get("text"))),
-                "expected a 'Walk to root' record, got: " + records);
+        assertTrue(records.stream().anyMatch(entry -> "Walk to root".equals(entry.get("text"))),
+                "expected a 'Walk to root' entry, got: " + records);
         // ...reports each skill with its execution time (same wording as the dry-run console)...
-        assertTrue(records.stream().anyMatch(record -> record.get("text") instanceof String text &&
+        assertTrue(records.stream().anyMatch(entry -> entry.get("text") instanceof String text &&
                         text.matches("Executed \\S+ with skill \\S+ in \\S+ ms")),
-                "expected an 'Executed {node} with skill {skill} in {time} ms' record, got: " + records);
+                "expected an 'Executed {node} with skill {skill} in {time} ms' entry, got: " + records);
         // ...and closes with the total elapsed time.
-        assertTrue(records.stream().anyMatch(record -> record.get("text") instanceof String text &&
+        assertTrue(records.stream().anyMatch(entry -> entry.get("text") instanceof String text &&
                         text.matches("Graph traversal completed in \\d+ ms")),
-                "expected a 'Graph traversal completed in {time} ms' record, got: " + records);
+                "expected a 'Graph traversal completed in {time} ms' entry, got: " + records);
     }
 
     private static class CapturingAppender extends AbstractAppender {

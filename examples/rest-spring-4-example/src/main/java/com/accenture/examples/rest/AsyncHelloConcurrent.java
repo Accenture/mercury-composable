@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 /**
  * This demonstrates non-blocking fork-n-join using future results
@@ -48,14 +49,9 @@ public class AsyncHelloConcurrent {
             forward.put(key, request.getHeader(key));
         }
         int total = 10;
-        List<EventEnvelope> parallelEvents = new ArrayList<>();
-        for (int i=0; i < total; i++) {
-            EventEnvelope event = new EventEnvelope();
-            event.setTo("hello.world");
-            event.setBody(forward);
-            event.setHeader("request", "#"+(i+1));
-            parallelEvents.add(event);
-        }
+        List<EventEnvelope> parallelEvents = IntStream.rangeClosed(1, total)
+                .mapToObj(i -> new EventEnvelope().setTo("hello.world").setBody(forward).setHeader("request", "#" + i))
+                .toList();
         return Mono.create(callback ->
             po.asyncRequest(parallelEvents, 3000)
                 .onSuccess(events -> {

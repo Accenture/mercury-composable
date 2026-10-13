@@ -10,7 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Nothing yet. Each change merged to `main` after v4.12.24 is listed here; it moves under its release heading when the version is cut.
+Each change merged to `main` after v4.12.24 is listed here; it moves under its release heading when the version is cut.
+
+### Fixed
+
+1. **The field's Sonar gate on 4.12.24: forty findings closed, one of them a bug; no behaviour change.** Snyk passed 4.12.24, and
+   Sonar's new-code gate failed on eight findings in the graph contract, the scheduler's active environment and the range notation,
+   with thirty-one more across the code base in the full report. All are closed. The one bug was in the Kotlin example: a `!!` on a
+   header lookup that could throw, followed by a null assertion that could never fire; an Elvis throw replaces both. The rest:
+   a constant renamed so a field no longer differs from it by case only (`GraphContract.PURPOSE_KEY`); `mappingSides` returns an
+   empty array instead of null; `checkBounds` split into a lower and an upper check; the `active` field of `ActiveEnvironment`;
+   three intentional singletons annotated `@SuppressWarnings("java:S6548")`; `FluxPublisher` holds its subscription and custom
+   serializer in `AtomicReference`s, which also gives the expiry timer's callback a memory-visibility guarantee it lacked;
+   `GraphSet.pack` no longer declares an `IOException` it never threw; `TopicManager.listTopics` loses a dead assignment; the
+   concurrent example builds its event list with a stream; the Kotlin example uses `require`, indexed access, a lifted `return`
+   and `Unit?` in place of `Void`; lambda parameters named `record` are renamed; and seven prose comments are reworded, because a
+   comment line that ends in a semicolon reads as commented-out code to Sonar. Reactor: 249 suites, 1830 tests, 0 failures.
+   **Upgrade note:** none.
 
 ---
 ## Version 4.12.24, 10/12/2026

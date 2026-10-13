@@ -27,7 +27,6 @@ import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -65,7 +64,7 @@ public class PackGraphSet implements TypedLambdaFunction<AsyncHttpRequest, Event
         final byte[] bytes;
         try {
             bytes = GraphSet.pack(setName, fields, graphs);
-        } catch (GraphSet.RefusedException | IOException e) {
+        } catch (GraphSet.RefusedException e) {
             throw new IllegalArgumentException(NOT_PACKED + e.getMessage());
         }
         return new EventEnvelope()

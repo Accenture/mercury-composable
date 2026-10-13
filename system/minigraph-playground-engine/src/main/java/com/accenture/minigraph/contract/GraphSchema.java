@@ -741,17 +741,27 @@ public final class GraphSchema {
         if (n == null) {
             return;
         }
-        if (lowerBound != null) {
-            var cmp = n.compareTo(lowerBound);
-            if (exclusiveMinimum ? cmp <= 0 : cmp < 0) {
-                violations.add(path + MUST_BE + (exclusiveMinimum ? "more than " : "at least ") + renderNumber(lowerBound));
-            }
+        checkLowerBound(path, n, violations);
+        checkUpperBound(path, n, violations);
+    }
+
+    private void checkLowerBound(String path, BigDecimal n, List<String> violations) {
+        if (lowerBound == null) {
+            return;
         }
-        if (upperBound != null) {
-            var cmp = n.compareTo(upperBound);
-            if (exclusiveMaximum ? cmp >= 0 : cmp > 0) {
-                violations.add(path + MUST_BE + (exclusiveMaximum ? "less than " : "at most ") + renderNumber(upperBound));
-            }
+        var cmp = n.compareTo(lowerBound);
+        if (exclusiveMinimum ? cmp <= 0 : cmp < 0) {
+            violations.add(path + MUST_BE + (exclusiveMinimum ? "more than " : "at least ") + renderNumber(lowerBound));
+        }
+    }
+
+    private void checkUpperBound(String path, BigDecimal n, List<String> violations) {
+        if (upperBound == null) {
+            return;
+        }
+        var cmp = n.compareTo(upperBound);
+        if (exclusiveMaximum ? cmp >= 0 : cmp > 0) {
+            violations.add(path + MUST_BE + (exclusiveMaximum ? "less than " : "at most ") + renderNumber(upperBound));
         }
     }
 

@@ -319,7 +319,6 @@ public class TopicManager implements LambdaFunction {
             return new ArrayList<>(preAllocatedTopics.keySet());
         }
         startAdmin();
-        List<String> result = new ArrayList<>();
         ListTopicsResult list = admin.listTopics();
         try {
             processed++;
@@ -330,7 +329,7 @@ public class TopicManager implements LambdaFunction {
         } catch (ExecutionException e) {
             handleListFailure(e);
         }
-        return result;
+        return new ArrayList<>();
     }
 
     private void handleListFailure(Exception e) {

@@ -367,7 +367,7 @@ class PlaygroundTest {
         assertEquals(200, response3.getStatus());
         var text = String.valueOf(response3.getBody());
         log.info("Describe graph endpoint response - {} characters", text.length());
-        // the {sequence} is an artificial cache-buster (not resource identity);
+        // the {sequence} is an artificial cache-buster, not a resource identity
         // a draft that does not exist answers 404 as if it is not there
         var request3b = new AsyncHttpRequest();
         request3b.setTargetHost("http://127.0.0.1:" + port).setUrl("/api/graph/model/{graph_id}/{sequence}");

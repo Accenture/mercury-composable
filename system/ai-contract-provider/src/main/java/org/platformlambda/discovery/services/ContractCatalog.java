@@ -37,7 +37,10 @@ import java.util.regex.Pattern;
  * auto-preload its functions into this app). ContractCatalogTest resolves every anchor
  * with Class.forName using test-scope dependencies, so a renamed or removed behavior
  * class still fails the reactor build.
+ * <p>
+ * Intentional singleton.
  */
+@SuppressWarnings("java:S6548")
 public class ContractCatalog {
     private static final Pattern CONTRACT_ID = Pattern.compile("[a-z][a-z0-9-]{1,63}");
     private static final Pattern SUMMARY = Pattern.compile("[A-Za-z0-9][A-Za-z0-9 .,;:/()_+\\-]{0,239}");

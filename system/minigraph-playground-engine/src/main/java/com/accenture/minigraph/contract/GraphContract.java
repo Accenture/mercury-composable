@@ -81,11 +81,12 @@ public final class GraphContract {
     private static final String OBJECT = "object";
     private static final String ARRAY = "array";
     private static final String MAP_TO = "->";
+    private static final String[] NO_SIDES = new String[0];
     private static final String MODEL_PREFIX = "model.";
     private static final String RESULT = "result";
     private static final String INPUT = "input";
     private static final String OUTPUT = "output";
-    private static final String PURPOSE = "purpose";
+    private static final String PURPOSE_KEY = "purpose";
     private static final String FOR_EACH = "for_each";
     private static final String MAPPING = "MAPPING";
     private static final String COMPUTE = "COMPUTE";
@@ -284,7 +285,7 @@ public final class GraphContract {
     }
 
     private static String rootPurpose(Map<String, Object> model) {
-        if (nodeProperties(model, ROOT).get(PURPOSE) instanceof String s && !s.isBlank()) {
+        if (nodeProperties(model, ROOT).get(PURPOSE_KEY) instanceof String s && !s.isBlank()) {
             return s.trim();
         }
         return null;
@@ -451,16 +452,16 @@ public final class GraphContract {
         return tag == null ? text.trim() : text.substring(text.indexOf(':') + 1).trim();
     }
 
-    /** The two sides of a mapping line ({@code lhs -> rhs}); null for a line that is not a mapping. */
+    /** The two sides of a mapping line ({@code lhs -> rhs}); an empty array for a line that is not a mapping. */
     private static String[] mappingSides(String text) {
         var tag = tagOf(text);
         if (tag != null && !MAPPING.equals(tag)) {
-            return null;
+            return NO_SIDES;
         }
         var body = afterTag(text);
         var sep = body.lastIndexOf(MAP_TO);
         if (sep <= 0) {
-            return null;
+            return NO_SIDES;
         }
         return new String[]{body.substring(0, sep).trim(), body.substring(sep + MAP_TO.length()).trim()};
     }
@@ -477,7 +478,7 @@ public final class GraphContract {
             return;
         }
         var sides = mappingSides(text);
-        if (sides != null) {
+        if (sides.length == 2) {
             mappingEvidence(property, sides[0], sides[1]);
         }
     }
@@ -603,7 +604,7 @@ public final class GraphContract {
     /** Tier 3, first hop: a variable fed by a typed input path takes its type. */
     private void variableFromInput(String alias, String text) {
         var sides = mappingSides(text);
-        if (sides == null) {
+        if (sides.length == 0) {
             return;
         }
         var lhs = sides[0];
@@ -623,7 +624,7 @@ public final class GraphContract {
     /** Tier 3, second hop: an output path fed by a typed variable or a typed input takes the type. */
     private void outputFromVariable(String alias, String text) {
         var sides = mappingSides(text);
-        if (sides == null) {
+        if (sides.length == 0) {
             return;
         }
         var lhs = sides[0];
@@ -957,7 +958,7 @@ public final class GraphContract {
         var view = new LinkedHashMap<String, Object>();
         view.put("graph", graphId);
         if (purpose != null) {
-            view.put(PURPOSE, purpose);
+            view.put(PURPOSE_KEY, purpose);
         }
         var input = new LinkedHashMap<String, Object>();
         input.put(BODY, namespaceView(INPUT_BODY));

@@ -140,7 +140,7 @@ public final class RangeNotation {
         }
         char first = rest.charAt(0);
         if (isQuote(first)) {
-            // the first closing quote ends the bound, as it does for the lower bound, and nothing may follow it;
+            // the first closing quote ends the bound, as it does for the lower bound, and nothing may follow it
             // an unmatched quote (-1) fails the same test
             int close = rest.indexOf(first, 1);
             if (close != rest.length() - 1) {
