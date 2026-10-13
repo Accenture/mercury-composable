@@ -35,7 +35,7 @@
   tag, none yanked; the platform-core tarball's 33 source files SHA-256 identical to the tag's). **Field result 2026-10-12: Snyk PASSED, Sonar FAILED** on its new-code gate (8 findings, 40 in the full report, one a bug in the
   Kotlin example - [[conv-sonar-gate-heuristics]]); all 40 fixed on `fix/sonar-findings-4.12.24` (`d3613175`, PR #560 MERGED 2026-10-13 00:34Z, squash `a4d94916`; **Eric tests the
   main head in the field's pipeline first (2026-10-13)**: the rescan found ONE Blocker left, the round's own `active` field against the
-  constant `ACTIVE` (S1845) - fixed on `fix/active-environment-field-name` (`8d2c39f8`, PR for Eric to open); then the next release carries
+  constant `ACTIVE` (S1845) - fixed on `fix/active-environment-field-name` (`8d2c39f8`, PR #561 MERGED 2026-10-13, squash `d776685d`, the field tests this head next); then the next release carries
   both - no cut until the field reports). 4.12.23 was REJECTED by Snyk on 2026-10-12; 4.12.22's acceptance was never reported separately. Origin 2026-10-12-223627.md.
   Prior: v4.12.23 (2026-10-11 03:35:56Z — the API playground and `f:rangeLookup`, lock-step with Rust; #551 squash `79995691` plus #552
   and #553 before the tag, tag → `14cbae7a`; the API playground round #545–#550 (Swagger UI fetched by script, a Mercury-branded page on
