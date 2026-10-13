@@ -75,7 +75,7 @@ public final class ActiveEnvironment {
 
     private final String localEnvironment;
     private final String storeRoute;
-    private final AtomicReference<String> active = new AtomicReference<>(DEFAULT_ENVIRONMENT);
+    private final AtomicReference<String> current = new AtomicReference<>(DEFAULT_ENVIRONMENT);
 
     private ActiveEnvironment() {
         var config = AppConfigReader.getInstance();
@@ -94,7 +94,7 @@ public final class ActiveEnvironment {
 
     /** The active environment as this instance last read from the store or set; {@code prod} until an operator sets one. */
     public String getActive() {
-        return active.get();
+        return current.get();
     }
 
     /** The route of the persistence function ({@code scheduler.environment.store}). */
@@ -104,7 +104,7 @@ public final class ActiveEnvironment {
 
     /** True when this instance's environment is the active one, by the last read or set value. */
     public boolean isActive() {
-        return localEnvironment.equalsIgnoreCase(active.get());
+        return localEnvironment.equalsIgnoreCase(current.get());
     }
 
     /** True when the store function is registered, so the active environment survives a restart. */
@@ -135,17 +135,17 @@ public final class ActiveEnvironment {
             try {
                 var result = postOffice().request(new EventEnvelope().setTo(storeRoute).setHeader(TYPE, GET), STORE_TIMEOUT).get();
                 if (result.getBody() instanceof String name && !name.isBlank()) {
-                    active.set(name.trim());
+                    current.set(name.trim());
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.warn("Active environment not read from {} - interrupted; keeping {}", storeRoute, active.get());
+                log.warn("Active environment not read from {} - interrupted; keeping {}", storeRoute, current.get());
             } catch (ExecutionException e) {
                 var cause = e.getCause() != null ? e.getCause() : e;
-                log.warn("Active environment not read from {} - {}; keeping {}", storeRoute, cause.getMessage(), active.get());
+                log.warn("Active environment not read from {} - {}; keeping {}", storeRoute, cause.getMessage(), current.get());
             }
         }
-        return active.get();
+        return current.get();
     }
 
     /**
@@ -163,7 +163,7 @@ public final class ActiveEnvironment {
         if (isPersistent()) {
             persist(target, who);
         }
-        active.set(target);
+        current.set(target);
         log.info("Active environment set to {} by {} - this instance ({}) is {}", target, who, localEnvironment,
                 isActive() ? ACTIVE : STANDBY);
         return status();
@@ -190,7 +190,7 @@ public final class ActiveEnvironment {
     public Map<String, Object> status() {
         var result = new LinkedHashMap<String, Object>();
         result.put(ENVIRONMENT_HEADER, localEnvironment);
-        result.put(ACTIVE, active.get());
+        result.put(ACTIVE, current.get());
         result.put(MODE, isActive() ? ACTIVE : STANDBY);
         result.put(PERSISTENT, isPersistent());
         result.put(STORE, storeRoute);
@@ -199,7 +199,7 @@ public final class ActiveEnvironment {
 
     /** Drop the in-memory value, as a restart does; the next {@link #refresh()} reads the store again. */
     public void reset() {
-        active.set(DEFAULT_ENVIRONMENT);
+        current.set(DEFAULT_ENVIRONMENT);
     }
 
     /** An environment name is one word of letters, digits, hyphens and underscores. */
