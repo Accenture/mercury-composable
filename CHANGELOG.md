@@ -10,7 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Each change merged to `main` after v4.12.24 is listed here; it moves under its release heading when the version is cut.
+Nothing yet. Each change merged to `main` after v4.12.25 is listed here; it moves under its release heading when the version is cut.
+
+---
+## Version 4.12.25, 10/12/2026
+
+The field's quality gate on 4.12.24 passed Snyk and failed Sonar; this release closes every finding of that report - forty code
+smells and one bug, none of them a behaviour change - and the field's pipeline has passed on this content (CI, Snyk and Sonar). The
+Rust port has no change and stays at 4.12.24. **Upgrade note:** none.
 
 ### Fixed
 
@@ -25,8 +32,9 @@ Each change merged to `main` after v4.12.24 is listed here; it moves under its r
    `GraphSet.pack` no longer declares an `IOException` it never threw; `TopicManager.listTopics` loses a dead assignment; the
    concurrent example builds its event list with a stream; the Kotlin example uses `require`, indexed access, a lifted `return`
    and `Unit?` in place of `Void`; lambda parameters named `record` are renamed; and seven prose comments are reworded, because a
-   comment line that ends in a semicolon reads as commented-out code to Sonar. Reactor: 249 suites, 1830 tests, 0 failures.
-   **Upgrade note:** none.
+   comment line that ends in a semicolon reads as commented-out code to Sonar. The field's rescan found one Blocker left, of this
+   round's own making: the renamed `ActiveEnvironment` field `active` differed from the constant `ACTIVE` only by case; it is `current`
+   now (#561). Reactor: 249 suites, 1830 tests, 0 failures. **Upgrade note:** none.
 
 ---
 ## Version 4.12.24, 10/12/2026
