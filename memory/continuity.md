@@ -19,25 +19,21 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.24 (2026-10-12 22:33:21Z — **the Guava resolution the field's Snyk gate rejected in 4.12.23, plus the range
-  plugins' bounds and refinements, lock-step with the Rust port**: release PR #559 squash `e1940a4d`, tag `v4.12.24` → `c571e9c3` (the
-  main head, one memory commit past the squash); pom verified at the tag; the GitHub release is published (not a draft) and its notes
-  name Guava and the Snyk gate; agent-memory green on the tag commit, the CI build still running at verification (22:40Z). **Content:** Guava 33.7.2-jre, `failureaccess` 1.0.3 and
-  Tink 1.23.0 as DIRECT dependencies of `minimalist-kafka` with Confluent 8.3.2, and Guava removed from `platform-core`
-  ([[conv-library-pins-are-direct-dependencies]] - Eric's pom edits, reviewed); `f:minRange` and `f:maxRange`, quoted bounds and the
-  stricter `f:rangeLookup` (#554–#558, [[static-decision-table-is-graph-data]]). **READ:** no action for the dependency change unless an
-  application pinned Guava itself to pass its gate (drop it) or used Guava only through `platform-core` (declare it); a range table
-  written for 4.12.23 reads the CHANGELOG item 1's upgrade note. Sweep BUILD FILES ONLY 45 / 102. Readiness: `mvn -o clean install`
-  BUILD SUCCESS 6:57, 249 suites, 1830 tests, 0 failures, 3 skipped. **Lockstep:** Rust v4.12.24 (mercury #383 merge `de283537`, tag →
-  `aa67a429`, release 22:29:09Z; no dependency change there, Increments 177–179; 139 suites / 719 passed / 0 failed; `rust`, `docs` and
-  agent-memory CI green on the tag); the packs stay at 4.12.21 ([[conv-ports-adopt-java-release-number]]). **Published and VERIFIED
-  2026-10-12:** the twelve crates on crates.io at 4.12.24 (created 22:31:11Z–22:31:23Z by Eric's `cargo publish --workspace` from the
-  tag, none yanked; the platform-core tarball's 33 source files SHA-256 identical to the tag's). **Field result 2026-10-12: Snyk PASSED, Sonar FAILED** on its new-code gate (8 findings, 40 in the full report, one a bug in the
-  Kotlin example - [[conv-sonar-gate-heuristics]]); all 40 fixed on `fix/sonar-findings-4.12.24` (`d3613175`, PR #560 MERGED 2026-10-13 00:34Z, squash `a4d94916`; **Eric tests the
-  main head in the field's pipeline first (2026-10-13)**: the rescan found ONE Blocker left, the round's own `active` field against the
-  constant `ACTIVE` (S1845) - fixed on `fix/active-environment-field-name` (`8d2c39f8`, PR #561 MERGED 2026-10-13, squash `d776685d`); **the field's pipeline PASSED
-  on that main head 2026-10-13 - CI, Snyk and Sonar** - and v4.12.25 carries both rounds ([[release-4-12-25]], prepared 2026-10-13,
-  Java only: Rust stays at 4.12.24 by Eric's ruling). 4.12.23 was REJECTED by Snyk on 2026-10-12; 4.12.22's acceptance was never reported separately. Origin 2026-10-12-223627.md.
+- **latest_release:** v4.12.25 (2026-10-13 02:14:53Z — **Java only: every finding of the field's Sonar gate on 4.12.24 closed**: release
+  PR #562 squash `f496291e` = tag `v4.12.25` = the main head at the tag; pom verified at the tag; the GitHub release is published (not a
+  draft) and its notes name Sonar; agent-memory green on the tag commit, the CI build still running at verification (02:20Z). **Content:**
+  #560 (`a4d94916`) and #561 (`d776685d`) - forty code smells and one bug (the Kotlin example's `!!`), no behaviour change
+  ([[conv-sonar-gate-heuristics]]); **the field's pipeline PASSED on that content before the cut (CI, Snyk, Sonar, 2026-10-13)**, so the
+  release is pre-accepted; its deployment is the event left to record. **READ:** no action. Sweep BUILD FILES ONLY 45 / 102. Readiness:
+  `mvn -o clean install` BUILD SUCCESS 7:04, 249 suites, 1830 tests, 0 failures, 3 skipped. **No Rust release (Eric's ruling,
+  2026-10-13):** the port has no change since its 4.12.24 tag and catches up with its next feature or fix
+  ([[conv-ports-adopt-java-release-number]]); the packs stay at 4.12.21. Origin 2026-10-13-021606.md.
+  Prior: v4.12.24 (2026-10-12 22:33:21Z — the Guava resolution the field's Snyk gate rejected in 4.12.23, plus the range plugins' bounds
+  and refinements (#554–#558), lock-step with Rust 4.12.24; #559 squash `e1940a4d`, tag → `c571e9c3`; Guava 33.7.2-jre, `failureaccess`
+  1.0.3 and Tink 1.23.0 as DIRECT dependencies of `minimalist-kafka` with Confluent 8.3.2, Guava out of `platform-core`
+  ([[conv-library-pins-are-direct-dependencies]]); 1830 tests; Rust #383 → `aa67a429`, crates 12/12 at 22:31Z, the platform-core
+  tarball identical to the tag. **Field result 2026-10-12: Snyk PASSED, Sonar FAILED** on 8 new-code findings (40 in the report) → fixed
+  in 4.12.25. Origin 2026-10-12-223627.md.)
   Prior: v4.12.23 (2026-10-11 03:35:56Z — the API playground and `f:rangeLookup`, lock-step with Rust; #551 squash `79995691` plus #552
   and #553 before the tag, tag → `14cbae7a`; the API playground round #545–#550 (Swagger UI fetched by script, a Mercury-branded page on
   the Reactive HTTP server without Spring Boot, Deploy and `api.playground.specs`), `f:rangeLookup` #552, the front-matter fix and guard
