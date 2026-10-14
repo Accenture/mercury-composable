@@ -28,7 +28,8 @@
   pipeline passed on 4.12.25 and it is deployed - the acceptance recorded; nothing pending for this release.** **READ:** no action. Sweep BUILD FILES ONLY 45 / 102. Readiness:
   `mvn -o clean install` BUILD SUCCESS 7:04, 249 suites, 1830 tests, 0 failures, 3 skipped. **No Rust release (Eric's ruling,
   2026-10-13):** the port has no change since its 4.12.24 tag and catches up with its next feature or fix
-  ([[conv-ports-adopt-java-release-number]]); the packs stay at 4.12.21. Origin 2026-10-13-021606.md.
+  ([[conv-ports-adopt-java-release-number]]); the packs stay at 4.12.21 - **their 4.12.25 catch-up is HELD (Eric, 2026-10-14) until the
+  account has full access to the higher AI models on Bedrock; the additional tests and the fine tuning come first**. Origin 2026-10-13-021606.md.
   Prior: v4.12.24 (2026-10-12 22:33:21Z — the Guava resolution the field's Snyk gate rejected in 4.12.23, plus the range plugins' bounds
   and refinements (#554–#558), lock-step with Rust 4.12.24; #559 squash `e1940a4d`, tag → `c571e9c3`; Guava 33.7.2-jre, `failureaccess`
   1.0.3 and Tink 1.23.0 as DIRECT dependencies of `minimalist-kafka` with Confluent 8.3.2, Guava out of `platform-core`
@@ -769,7 +770,8 @@
   and Finding 7 (#563 squash `cd708eba`, mercury #384 merge `9141cc32`, both MERGED 2026-10-14, with the packs' surface PRs
   mercury-python #44 merge `03c5f57` and mercury-nodejs #112 merge `0ece23f`); the packs' thread closed; the concept doc's Q2 Bedrock
   half done - sprint 1 COMPLETE on main in all four repositories. **Paused 2026-10-14 (Eric):** resumes when the admin resolves
-  the account's access to the newer Claude models - additional tests and fine tuning then.
+  the account's access to the newer Claude models - additional tests and fine tuning then; **the packs' 4.12.25 catch-up release is
+  HELD until that access exists (Eric)**.
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
