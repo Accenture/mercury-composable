@@ -184,6 +184,12 @@ every agent's toolbox — governed in both directions.
   model ids take the `anthropic.` prefix), and the Gemini SDK flips to Vertex by
   environment (GOOGLE_GENAI_USE_VERTEXAI + ADC) with zero adapter change. Direct API
   keys remain the dev-loop convenience only.
+  **The Bedrock half is DONE (2026-10-14):** the LLM helper's `bedrock` backend in both
+  packs - the AWS credential chain through IAM, no vendor key, two Bedrock surfaces
+  (`llm.aws.api`) - driven live against an enterprise account with negative controls first,
+  then chat, a structured verdict and a progressive stream, and the Java engine's shipped
+  triage graph and streaming relay in front of each helper: the engines' certification
+  report, Scenario 8. Vertex and Foundry remain the same client-construction switch, undriven.
 - **Q3 — MCP registration timing.** Static tool declaration vs boot-time enumeration of
   the server's tool list; allowlist config shape; failure behavior when a listed tool is
   absent at boot (fail-fast per the compiled-or-404 taste?).
