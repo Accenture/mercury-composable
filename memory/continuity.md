@@ -535,8 +535,9 @@
   never buffered into one message — the cadence is the API's and depends on the model (Haiku 4.5 continuous, Opus 5.5 bursts about every 600 ms), the error contract holds on the real SDKs, and all 32
   traces that touched a helper rebuild as one tree ([[connected-edge-spans]]). The deploy lane did the deploying ([[graph-manifest-list-later-wins]]). **Opus 5.5 stays the helper's default**
   (Eric): it thinks before it answers and its thinking tokens count against `max_tokens`, so the triage graph now asks for 2000 tokens (512 before) and Haiku 4.5 is the documented choice for smooth
-  rendering; a 48-call probe found no empty result at the old budgets either, so the change removes the question. AWS Bedrock through IAM is the helper's planned second backend (a thread in the
-  packs). Rust twin: mercury #342.
+  rendering; a 48-call probe found no empty result at the old budgets either, so the change removes the question. AWS Bedrock through IAM is the helper's SECOND BACKEND since 2026-10-14 - built and driven live in
+  [[bp-agent-orchestration]]'s sprint 1, the report's Scenario 8 and Finding 7 (#563 squash `cd708eba`, mercury #384 merge `9141cc32`), the packs'
+  thread closed. Rust twin: mercury #342.
   <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-14 | uses: 4 | tier: active | origin: 2026-10-02-001806 -->
 
 ## Conventions
@@ -765,7 +766,9 @@
   (`llm.aws.api`: `mantle`, the default, or `runtime`, the classic one with the account's own inference-profile ids - Eric's ruling),
   model access is a one-time use case plus a per-model agreement (`CreateFoundationModelAgreement`, run on Eric's word), and a model
   generation can be gated at the account on top (the 5.5 family stayed 403 - his AWS account team). Certification report Scenario 8
-  and Finding 7 (#563, mercury #384); the packs' thread closed; the concept doc's Q2 Bedrock half done.
+  and Finding 7 (#563 squash `cd708eba`, mercury #384 merge `9141cc32`, both MERGED 2026-10-14, with the packs' surface PRs
+  mercury-python #44 merge `03c5f57` and mercury-nodejs #112 merge `0ece23f`); the packs' thread closed; the concept doc's Q2 Bedrock
+  half done - sprint 1 COMPLETE on main in all four repositories.
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
