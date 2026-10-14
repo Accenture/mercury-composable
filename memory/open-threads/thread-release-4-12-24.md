@@ -6,4 +6,4 @@
   Next: the field's Snyk result on 4.12.24 is the acceptance to record on `latest_release`; [[bp-agent-orchestration]] resumes on Bedrock.
   origin: 2026-10-12-221919; close 2026-10-12-223627.
   → serves: vision-mercury-composable
-  <!-- id: release-4-12-24 | created: 2026-10-12 | last_used: 2026-10-12 | uses: 1 | tier: working | origin: 2026-10-12-221919 -->
+  <!-- id: release-4-12-24 | created: 2026-10-12 | last_used: 2026-10-12 | uses: 2 | tier: active | origin: 2026-10-12-221919 -->

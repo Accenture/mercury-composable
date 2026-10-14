@@ -5,4 +5,4 @@
   heading stays open and the feature lands as a numbered item ([[conv-changelog-from-tag-range]] still derives the section from the tag
   range). Next: field acceptance to be recorded when reported; [[bp-agent-orchestration]] resumes. origin: 2026-10-11-011444; close 2026-10-11-034330.
   → serves: vision-mercury-composable
-  <!-- id: release-4-12-23 | created: 2026-10-11 | last_used: 2026-10-11 | uses: 3 | tier: active | origin: 2026-10-11-011444 -->
+  <!-- id: release-4-12-23 | created: 2026-10-11 | last_used: 2026-10-11 | uses: 3 | tier: archive-candidate | origin: 2026-10-11-011444 -->

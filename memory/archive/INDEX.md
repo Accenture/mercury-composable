@@ -247,3 +247,10 @@
 - msgpack-core-cve-upgrade — Bump `msgpack-core` to 0.9.13 once published - CLOSED 2026-10-06 as moot. PR #517 (squash… — faded — 2026-Q4.md
 - release-4-12-21 — v4.12.21 on the four repositories — CLOSED 2026-10-07, released and verified. Outcome: pre… — faded — 2026-Q4.md
 - test-temp-file-housekeeping — Unit tests leave no temporary files behind (Eric, 2026-10-06) - DONE: #516 squash `fd02ca6… — faded — 2026-Q4.md
+- playground-three-step-run-controls — The Playground's dry-run lifecycle is three explicit steps - Instantiate, Upload (optional… — faded — 2026-Q4.md
+- playground-file-import-download — A graph file becomes the session draft through `POST /api/graph/import/{id}`, which travel… — faded — 2026-Q4.md
+- graph-set-pack-and-deploy — A graph set is one or more graphs in a canonical `<set>.pack`, checked by the gate when pa… — faded — 2026-Q4.md
+- close-stalled-threads-20261009 — Close stalled threads (due) — CLOSED 2026-10-09: bp-agent-orchestration (46 sessions) — Er… — completed thread swept (older than archive_window) — 2026-Q4.md
+- graph-contract-schema — The graph contract (RFC-0007) — CLOSED 2026-10-09 at the promotion to ADR-0029 (PR #537 sq… — completed thread swept (older than archive_window) — 2026-Q4.md
+- reverify-invariants-20261009 — Re-verify invariants (due) — WALKED 2026-10-09 (Eric): the 19 `core` facts and the Vision… — completed thread swept (older than archive_window) — 2026-Q4.md
+- scheduler-active-environment — The mini-scheduler's active environment (RFC-0008) — CLOSED 2026-10-09 at the promotion to… — completed thread swept (older than archive_window) — 2026-Q4.md
