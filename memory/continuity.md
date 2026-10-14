@@ -758,8 +758,14 @@
   a Bedrock API key, the region from `llm.aws.region`/`AWS_REGION`, a bare model id prefixed `anthropic.`, no server-side fallbacks,
   an empty chain a 503 by name, `llm.health` reporting the region; the routes, the contract and the engines unchanged; 66 shared
   vectors, the real client built in tests with no AWS environment. Claude Platform on AWS (Anthropic-operated, bare model ids, full
-  parity) is a different route the same seam could take. The live drive - a wrong credential first - needs an account with Bedrock
-  model access; this machine has none.
+  parity) is a different route the same seam could take. **Driven live 2026-10-14 on this machine with Eric's temporary IAM credentials, negative
+  controls first:** a wrong secret a 401 by name, no credential a 503 by name (the Python mapping gap it found fixed in #44), then chat,
+  a structured verdict and a progressive stream on Haiku 4.5 from both helpers and this engine's shipped triage graph and streaming
+  relay in front of each - no vendor key anywhere. What it taught: Bedrock has TWO SURFACES an account may be enabled for separately
+  (`llm.aws.api`: `mantle`, the default, or `runtime`, the classic one with the account's own inference-profile ids - Eric's ruling),
+  model access is a one-time use case plus a per-model agreement (`CreateFoundationModelAgreement`, run on Eric's word), and a model
+  generation can be gated at the account on top (the 5.5 family stayed 403 - his AWS account team). Certification report Scenario 8
+  and Finding 7 (#563, mercury #384); the packs' thread closed; the concept doc's Q2 Bedrock half done.
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
