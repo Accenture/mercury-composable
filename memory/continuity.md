@@ -752,7 +752,7 @@
   security compliance - the platform-mediated access the concept doc's Q2 anticipated (the Anthropic SDK covers Bedrock, so the switch is
   client construction, not a new helper). The session resumes on a different dev machine that has the AWS environment access; this
   machine has none, so nothing here was tried against Bedrock. The two v4.12.2x releases and the API playground round are done.
-  **Sprint 1 - AWS Bedrock integration (Eric, 2026-10-13; built 2026-10-14, mercury-python #43 and mercury-nodejs #111 OPEN):** the
+  **Sprint 1 - AWS Bedrock integration (Eric, 2026-10-13; built 2026-10-14, mercury-python #43 merge `c25ba35` and mercury-nodejs #111 merge `def1e3a`, both MERGED 2026-10-14):** the
   LLM helper's second backend, `llm.backend: 'bedrock'` - the SDK's Bedrock Mantle client over the AWS credential chain through IAM or
   a Bedrock API key, the region from `llm.aws.region`/`AWS_REGION`, a bare model id prefixed `anthropic.`, no server-side fallbacks,
   an empty chain a 503 by name, `llm.health` reporting the region; the routes, the contract and the engines unchanged; 66 shared
