@@ -768,7 +768,8 @@
   generation can be gated at the account on top (the 5.5 family stayed 403 - his AWS account team). Certification report Scenario 8
   and Finding 7 (#563 squash `cd708eba`, mercury #384 merge `9141cc32`, both MERGED 2026-10-14, with the packs' surface PRs
   mercury-python #44 merge `03c5f57` and mercury-nodejs #112 merge `0ece23f`); the packs' thread closed; the concept doc's Q2 Bedrock
-  half done - sprint 1 COMPLETE on main in all four repositories.
+  half done - sprint 1 COMPLETE on main in all four repositories. **Paused 2026-10-14 (Eric):** resumes when the admin resolves
+  the account's access to the newer Claude models - additional tests and fine tuning then.
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
