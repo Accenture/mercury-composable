@@ -566,6 +566,19 @@
   rest.yaml). (ADR-0030)
   <!-- id: scheduler-active-environment-store | created: 2026-10-09 | last_used: 2026-10-09 | uses: 1 | tier: archive-candidate | origin: 2026-10-09-045453 -->
 
+- **The LLM helper is not engine code: it is a Claude-only function host in the Python and Node packs, and the Java engine only points at it (PR #488, squash `7c938ef1`; Eric's rulings,
+  2026-10-01).** `examples/llm-helper` in mercury-python (#38) and mercury-nodejs (#106) serves `llm.chat`, `llm.stream` and `llm.health` on the Anthropic SDK; the engine stays LLM-free and holds no
+  credential, and the playground's `support-triage` graph and the `/api/llm/stream` relay (`LlmStreamRelay`) reach the helper through `event-over-http.yaml` by route name. **The evidence is
+  `docs/test-reports/llm-helper-certification.md`** (byte-identical with the Rust engine's, and registered in the three places the AI contract snapshot needs: the pom include set, `skill/files.list`
+  and `SkillSnapshotTest`'s fixed extras): Java and Rust in front of both helpers through a Layer 1 streaming service, a Layer 2 flow and two Layer 3 graphs, with real Claude calls (40 results per
+  pair, 124 model calls, no failed check). Every batch the helper forwarded reached the edge as its own frame (50 to 101 per stream, 4 to 10 ms of drift) — Eric's rule is that progressive tokens are
+  never buffered into one message — the cadence is the API's and depends on the model (Haiku 4.5 continuous, Opus 5.5 bursts about every 600 ms), the error contract holds on the real SDKs, and all 32
+  traces that touched a helper rebuild as one tree ([[connected-edge-spans]]). The deploy lane did the deploying ([[graph-manifest-list-later-wins]]). **Opus 5.5 stays the helper's default**
+  (Eric): it thinks before it answers and its thinking tokens count against `max_tokens`, so the triage graph now asks for 2000 tokens (512 before) and Haiku 4.5 is the documented choice for smooth
+  rendering; a 48-call probe found no empty result at the old budgets either, so the change removes the question. AWS Bedrock through IAM is the helper's planned second backend (a thread in the
+  packs). Rust twin: mercury #342.
+  <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-14 | uses: 4 | tier: active | origin: 2026-10-02-001806 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
@@ -780,6 +793,13 @@
   security compliance - the platform-mediated access the concept doc's Q2 anticipated (the Anthropic SDK covers Bedrock, so the switch is
   client construction, not a new helper). The session resumes on a different dev machine that has the AWS environment access; this
   machine has none, so nothing here was tried against Bedrock. The two v4.12.2x releases and the API playground round are done.
+  **Sprint 1 - AWS Bedrock integration (Eric, 2026-10-13; built 2026-10-14, mercury-python #43 and mercury-nodejs #111 OPEN):** the
+  LLM helper's second backend, `llm.backend: 'bedrock'` - the SDK's Bedrock Mantle client over the AWS credential chain through IAM or
+  a Bedrock API key, the region from `llm.aws.region`/`AWS_REGION`, a bare model id prefixed `anthropic.`, no server-side fallbacks,
+  an empty chain a 503 by name, `llm.health` reporting the region; the routes, the contract and the engines unchanged; 66 shared
+  vectors, the real client built in tests with no AWS environment. Claude Platform on AWS (Anthropic-operated, bare model ids, full
+  parity) is a different route the same seam could take. The live drive - a wrong credential first - needs an account with Bedrock
+  model access; this machine has none.
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than

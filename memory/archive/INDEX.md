@@ -223,7 +223,7 @@
 - decimal-mode — Exact decimal arithmetic: a `DECIMAL:` statement for `graph.math` and an explicit plugin f… — faded — 2026-Q4.md
 - flow-11-doc-label — (drift) The AI agent guide mislabelled `flows/flow-11.yml`. CLOSED 2026-10-02. PR #490 (sq… — faded — 2026-Q4.md
 - playground-bundle-stale — (drift) The Java Playground's committed webapp bundle lacked the `CONDITION` and `DECIMAL`… — faded — 2026-Q4.md
-- llm-helper-certification-java — The LLM helper is not engine code: it is a Claude-only function host in the Python and Nod… — faded — 2026-Q4.md
+- llm-helper-certification-java — The LLM helper is not engine code: it is a Claude-only function host in the Python and Nod… — faded — 2026-Q4.md — REACTIVATED 2026-10-14, back in continuity.md (referenced by the AI SDLC sprint)
 - graph-null-property-filtered — A graph holds no null property: `"key": null` is filtered out wherever a graph enters an e… — faded — 2026-Q4.md
 - close-stalled-threads-20261005 — Close stalled threads (due) — CLOSED 2026-10-05: post-4-12-15-carry-overs (41 sessions) —… — completed thread swept (older than archive_window) — 2026-Q4.md
 - playground-split-describe-skill-rust-twin — (twin) The Rust Playground lacked the one-third console default and `describe skill` in th… — completed thread swept (older than archive_window) — 2026-Q4.md
