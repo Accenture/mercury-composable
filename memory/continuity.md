@@ -24,7 +24,8 @@
   draft) and its notes name Sonar; agent-memory green on the tag commit, the CI build still running at verification (02:20Z). **Content:**
   #560 (`a4d94916`) and #561 (`d776685d`) - forty code smells and one bug (the Kotlin example's `!!`), no behaviour change
   ([[conv-sonar-gate-heuristics]]); **the field's pipeline PASSED on that content before the cut (CI, Snyk, Sonar, 2026-10-13)**, so the
-  release is pre-accepted; its deployment is the event left to record. **READ:** no action. Sweep BUILD FILES ONLY 45 / 102. Readiness:
+  release is pre-accepted; its deployment was the event left to record. **FIELD-DEPLOYED 2026-10-14 (Eric): the field's CI
+  pipeline passed on 4.12.25 and it is deployed - the acceptance recorded; nothing pending for this release.** **READ:** no action. Sweep BUILD FILES ONLY 45 / 102. Readiness:
   `mvn -o clean install` BUILD SUCCESS 7:04, 249 suites, 1830 tests, 0 failures, 3 skipped. **No Rust release (Eric's ruling,
   2026-10-13):** the port has no change since its 4.12.24 tag and catches up with its next feature or fix
   ([[conv-ports-adopt-java-release-number]]); the packs stay at 4.12.21. Origin 2026-10-13-021606.md.
