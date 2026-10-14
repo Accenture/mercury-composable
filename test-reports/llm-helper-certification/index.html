@@ -2688,6 +2688,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scenario-8-aws-bedrock-through-iam-the-helpers-second-backend-driven-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 8 — AWS Bedrock through IAM: the helper's second backend, driven 2026-10-14
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#findings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3125,6 +3136,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scenario-8-aws-bedrock-through-iam-the-helpers-second-backend-driven-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 8 — AWS Bedrock through IAM: the helper's second backend, driven 2026-10-14
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#findings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3218,6 +3240,10 @@ Claude key with nothing throttled.</em></p>
   own logs; none is broken. <a href="#scenario-7-one-connected-tree-per-request">Scenario 7</a>.</li>
 <li><strong>The engines held no credential.</strong> The credential reached the two helpers only; each engine process was started without
   one (verified by counting the variable in each process's environment: 1 for each helper, 0 for each engine).</li>
+<li><strong>AWS Bedrock through IAM, driven 2026-10-14 (<a href="#scenario-8-aws-bedrock-through-iam-the-helpers-second-backend-driven-2026-10-14">Scenario 8</a>).</strong>
+  The helper's second backend ran against an enterprise account with temporary IAM credentials and no vendor key: negative
+  controls first, then a chat reply, a structured verdict and a progressive stream on Haiku 4.5 from both helpers, and the Java
+  engine's shipped triage graph and streaming relay in front of each. The account's two surfaces and its model gates are Finding 7.</li>
 </ul>
 <h2 id="what-was-under-test">What was under test<a class="headerlink" href="#what-was-under-test" title="Permanent link">&para;</a></h2>
 <table>
@@ -3675,6 +3701,63 @@ first token (no credential, an unknown model) is a root <code>http.request</code
 relay, the client leg, the helper's span and a terminal with <code>frames=0</code>. A helper's application log lines carry the caller's
 business correlation id and the trace id in their <code>context</code> block, and the completed-call line holds the model, the
 <code>stop_reason</code>, the token counts, the request id and the elapsed time — never a prompt or a completion.</p>
+<h2 id="scenario-8-aws-bedrock-through-iam-the-helpers-second-backend-driven-2026-10-14">Scenario 8 — AWS Bedrock through IAM: the helper's second backend, driven 2026-10-14<a class="headerlink" href="#scenario-8-aws-bedrock-through-iam-the-helpers-second-backend-driven-2026-10-14" title="Permanent link">&para;</a></h2>
+<p>The helper's Bedrock backend (<code>llm.backend: 'bedrock'</code>, mercury-python #43 and mercury-nodejs #111, the surface setting of
+mercury-python #44 and its Node twin) was driven on 2026-10-14 (UTC) against an enterprise AWS account in <code>us-east-1</code>, with
+temporary IAM credentials - a key pair and a session token - in the helper processes' environment and nothing else: no vendor
+API key anywhere. Negative controls ran first. Each helper ran on a port of its own and was driven over Event-over-HTTP with the
+Python pack's <code>PostOffice</code> client, then the Java engine (the shipped playground, <code>-Dllm.peer.port</code>) ran in front of each.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Python helper</th>
+<th>Node.js helper</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A corrupted secret</td>
+<td><code>401 LLM provider error - 401 authentication_error: The request signature we calculated does not match ...</code></td>
+<td>the same</td>
+</tr>
+<tr>
+<td>No credential at all</td>
+<td>health <code>503 AWS credential missing</code>; the call a bare 500 until mercury-python #44 mapped the SDK's wording (Finding 7)</td>
+<td>health <code>503 AWS credential missing</code>; the call the same 503</td>
+</tr>
+<tr>
+<td><code>llm.chat</code>, Haiku 4.5</td>
+<td><code>200</code>, <code>ready</code>, 14 input / 4 output tokens</td>
+<td><code>200</code>, <code>ready</code>, 14 / 4</td>
+</tr>
+<tr>
+<td><code>llm.chat</code> with a schema</td>
+<td><code>{"verdict": "bug", "confidence": 0.95}</code>, 218 / 17</td>
+<td>the same, 218 / 17</td>
+</tr>
+<tr>
+<td><code>llm.stream</code></td>
+<td>4 batches, the first after 815 ms, <code>eof</code> with usage 20 / 23</td>
+<td>4 batches, the first after 714 ms, usage 20 / 23</td>
+</tr>
+<tr>
+<td>Java engine, the shipped <code>support-triage</code> graph</td>
+<td><code>bug</code> → <code>bug-filed</code>, 240 / 29</td>
+<td><code>question</code> → <code>answered</code>, 242 / 24</td>
+</tr>
+<tr>
+<td>Java engine, the streaming relay <code>/api/llm/stream</code></td>
+<td>4 <code>data</code> frames, then <code>done</code> with usage, the trace id and the correlation id</td>
+<td>the same, <code>language: node.js</code></td>
+</tr>
+</tbody>
+</table>
+<p>Every call ran on <code>us.anthropic.claude-haiku-4-5-20251001-v1:0</code> through the classic Bedrock runtime (<code>llm.aws.api: 'runtime'</code>),
+because the account turned out to be enabled for that surface and not for the Anthropic-shaped one the SDK prefers, and for
+Haiku 4.5 and not for the newer model generation (Finding 7). The Rust engine was not driven in this round: a backend changes
+nothing in an engine, which reaches the helper by route, and the Java engine's two layers show the composition unchanged.
+<code>/api/llm/chat</code> of Scenario 3 is an entry of the deploy folder (Appendix A), not a shipped one, and was not redeployed.</p>
 <h2 id="findings">Findings<a class="headerlink" href="#findings" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>The cadence of progressive rendering belongs to the API and the model, not to the pipeline.</strong> Opus 5.5's batches arrive in
@@ -3707,6 +3790,19 @@ business correlation id and the trace id in their <code>context</code> block, an
 <li><strong>Engine parity held without adjustment.</strong> The same graph JSON, byte for byte, ran on both engines; the relay's contract
    and error shapes were identical; the only visible difference is cosmetic, the order in which each engine serializes a
    response map's keys.</li>
+<li><strong>Bedrock has two surfaces, two gates and a model vocabulary of its own (2026-10-14).</strong> The SDK's preferred Bedrock client
+   targets an Anthropic-shaped endpoint that spells a model <code>anthropic.claude-opus-5-5</code>; the classic runtime takes an inference
+   profile id exactly as the account lists it (<code>us.anthropic.claude-haiku-4-5-20251001-v1:0</code>), with a date and a version no rule
+   can derive. An account may be enabled for one surface and not the other: this one answered <code>403 ... is not available for
+   this account</code> on the Anthropic-shaped endpoint for every Claude model while the classic runtime served Haiku 4.5, so the
+   helper gained <code>llm.aws.api</code> (<code>mantle</code>, the default, or <code>runtime</code>) and <code>llm.health</code> names the surface. Model access is two
+   steps - a one-time use case for Anthropic models and a per-model agreement, <code>CreateFoundationModelAgreement</code> on the offer the
+   account is given - and the agreement alone does not open a model generation the account is not enabled for: Opus 5.5, Sonnet
+   5.5 and Haiku 5.5 stayed <code>403</code> on both surfaces with their agreements active, an AWS account-team matter rather than a
+   setting; <code>GetFoundationModelAvailability</code> tells the four gates apart (agreement, authorization, entitlement, region).
+   Bedrock sends no <code>request-id</code> the helper reads, so a reply carries none. The negative control earned its place: the second
+   one surfaced the SDK's exact wording for an empty credential chain, <code>Could not resolve AWS credentials from session</code>, which
+   the Python mapping had not covered - fixed in mercury-python #44; the Node chain's <code>CredentialsProviderError</code> mapped as built.</li>
 </ol>
 <h2 id="defects-found-and-fixed">Defects found and fixed<a class="headerlink" href="#defects-found-and-fixed" title="Permanent link">&para;</a></h2>
 <p>The round surfaced one product defect, found while building the second helper from the first: in the Python helper a body
@@ -3719,17 +3815,21 @@ and its concurrency scenario used a budget small enough to meet Finding 2.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Python helper (8086) and Node.js helper (8087), from their repositories</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>mercury-serve<span class="w"> </span>examples/llm-helper/llm_helper.py<span class="w"> </span>-Dlog.format<span class="o">=</span>compact<span class="w"> </span>-Dllm.log.batches<span class="o">=</span><span class="nb">true</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>node<span class="w"> </span>dist/src/cli.js<span class="w"> </span>examples/llm-helper/llm-helper.mjs<span class="w"> </span>-Dlog.format<span class="o">=</span>compact<span class="w"> </span>-Dllm.log.batches<span class="o">=</span><span class="nb">true</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># the engines, with the deploy folder of Appendix A (replace $DEPLOY; Rust takes one REST location)</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>java<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8085</span><span class="w"> </span>-Dllm.peer.port<span class="o">=</span><span class="m">8086</span><span class="w"> </span>-Dlog.format<span class="o">=</span>compact<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span>-Dgraph.model.automation<span class="o">=</span><span class="s2">"classpath:/graphs.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/graphs.yaml"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span>-Dyaml.flow.automation<span class="o">=</span><span class="s2">"classpath:/flows.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/flows.yaml"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span>-Dyaml.rest.automation<span class="o">=</span><span class="s2">"file:</span><span class="nv">$DEPLOY</span><span class="s2">/rest-java.yaml"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span>-jar<span class="w"> </span>examples/minigraph-playground/target/minigraph-playground-4.12.20.jar
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>cargo<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span>minigraph-playground<span class="w"> </span>--<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8090</span><span class="w"> </span>-Dllm.peer.port<span class="o">=</span><span class="m">8086</span><span class="w"> </span>-Dlog.format<span class="o">=</span>compact<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span>-Dgraph.model.automation<span class="o">=</span><span class="s2">"classpath:/graphs.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/graphs.yaml"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span>-Dyaml.flow.automation<span class="o">=</span><span class="s2">"classpath:/flows.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/flows.yaml"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">  </span>-Dyaml.rest.automation<span class="o">=</span><span class="s2">"file:</span><span class="nv">$DEPLOY</span><span class="s2">/rest-rust.yaml"</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># AWS Bedrock instead of a key (Scenario 8): the AWS credential chain in the helper's environment, the surface the</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># account is enabled for, the model as the account lists it</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>mercury-serve<span class="w"> </span>examples/llm-helper/llm_helper.py<span class="w"> </span>-Dllm.backend<span class="o">=</span>bedrock<span class="w"> </span>-Dllm.aws.api<span class="o">=</span>runtime<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span>-Dllm.model<span class="o">=</span>us.anthropic.claude-haiku-4-5-20251001-v1:0
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># the engines, with the deploy folder of Appendix A (replace $DEPLOY; Rust takes one REST location)</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>java<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8085</span><span class="w"> </span>-Dllm.peer.port<span class="o">=</span><span class="m">8086</span><span class="w"> </span>-Dlog.format<span class="o">=</span>compact<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span>-Dgraph.model.automation<span class="o">=</span><span class="s2">"classpath:/graphs.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/graphs.yaml"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span>-Dyaml.flow.automation<span class="o">=</span><span class="s2">"classpath:/flows.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/flows.yaml"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span>-Dyaml.rest.automation<span class="o">=</span><span class="s2">"file:</span><span class="nv">$DEPLOY</span><span class="s2">/rest-java.yaml"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">  </span>-jar<span class="w"> </span>examples/minigraph-playground/target/minigraph-playground-4.12.20.jar
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>cargo<span class="w"> </span>run<span class="w"> </span>-p<span class="w"> </span>minigraph-playground<span class="w"> </span>--<span class="w"> </span>-Drest.server.port<span class="o">=</span><span class="m">8090</span><span class="w"> </span>-Dllm.peer.port<span class="o">=</span><span class="m">8086</span><span class="w"> </span>-Dlog.format<span class="o">=</span>compact<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">  </span>-Dgraph.model.automation<span class="o">=</span><span class="s2">"classpath:/graphs.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/graphs.yaml"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">  </span>-Dyaml.flow.automation<span class="o">=</span><span class="s2">"classpath:/flows.yaml, file:</span><span class="nv">$DEPLOY</span><span class="s2">/flows.yaml"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">  </span>-Dyaml.rest.automation<span class="o">=</span><span class="s2">"file:</span><span class="nv">$DEPLOY</span><span class="s2">/rest-rust.yaml"</span>
 </code></pre></div>
 <p>Then, against either engine's port:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Layer 3 - the shipped graph, then the generic chat graph</span>
