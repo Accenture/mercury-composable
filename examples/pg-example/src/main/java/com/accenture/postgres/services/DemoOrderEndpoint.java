@@ -56,13 +56,14 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
     private static final String ORDER_ID = "order_id";
     private static final String STATUS = "status";
     private static final String UPDATED = "updated";
+    private static final String CREATED = "created";
     private static final String ORDERS = "orders";
     private static final String IDS = "ids";
     private static final String OPEN = "open";
     private static final List<String> COLUMNS = List.of("id", PROFILE_ID, "item", "quantity", "amount",
-                                                        STATUS, "created", UPDATED);
+                                                        STATUS, CREATED, UPDATED);
     private static final String HISTORY_TABLE = "demo_order_history";
-    private static final List<String> HISTORY_COLUMNS = List.of(ORDER_ID, "event", "created");
+    private static final List<String> HISTORY_COLUMNS = List.of(ORDER_ID, "event", CREATED);
     private static final String SQL_BY_PROFILE =
             "SELECT * FROM demo_order WHERE profile_id = $1 ORDER BY created, id";
     private static final String SQL_BY_PROFILE_AND_STATUS =
@@ -118,7 +119,7 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
     }
 
     /**
-     * PgTransactionBuilder - the orders AND one "created" history row per order, two tables in ONE
+     * PgTransactionBuilder - the orders AND one CREATED history row per order, two tables in ONE
      * transaction: if the history insert failed, the orders would roll back too. The result carries one
      * row count per step, in the order the steps were added.
      */
@@ -127,7 +128,7 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
         var now = new Timestamp(System.currentTimeMillis());
         var rows = orderRows(profileId, body, now);
         var ids = orderIds(rows);
-        var events = ids.stream().map(id -> List.<Object>of(id, "created", now)).toList();
+        var events = ids.stream().map(id -> List.<Object>of(id, CREATED, now)).toList();
         var tx = new PgTransactionBuilder()
                 .insertRows(TABLE, COLUMNS, rows)
                 .insertRows(HISTORY_TABLE, HISTORY_COLUMNS, events);
@@ -191,7 +192,7 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
     }
 
     /**
-     * transaction - two different statements, all or none: the order is marked cancelled and the event is
+     * transaction - two different statements, all or none: the order is marked canceled and the event is
      * recorded in the history table. If the second statement failed, the first would roll back.
      * Both statements select by id AND profile_id, so an unknown order updates nothing and answers 404.
      */

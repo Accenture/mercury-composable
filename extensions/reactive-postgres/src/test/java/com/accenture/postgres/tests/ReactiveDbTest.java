@@ -301,7 +301,7 @@ class ReactiveDbTest {
         var shortRows = List.<List<Object>>of(List.of("x", tag));
         var shortRow = assertThrows(AppException.class, () -> sql.insertRows(po, "health_check", columns, shortRows));
         assertEquals("Row 1 must have 5 values", shortRow.getMessage());
-        var listRows = List.<List<Object>>of(List.of("x", tag, List.of("a"), ts, ts));
+        var listRows = List.of(List.of("x", tag, List.of("a"), ts, ts));
         var listValue = assertThrows(AppException.class, () -> sql.insertRows(po, "health_check", columns, listRows));
         assertEquals(400, listValue.getStatus());
         var noRows = List.<List<Object>>of();
