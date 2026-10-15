@@ -22,6 +22,53 @@ rest:
     cors: cors_1
     headers: header_1
     tracing: true
+
+  - service: "v1.demo.orders"
+    # POST a list of orders for a profile (PgRequest.insertRows - one multi-row INSERT)
+    # GET the profile's orders (PgRequest.query - a positional parameter; with ?status=a,b
+    # the query uses named parameters, one of them a list expanded into the IN clause)
+    methods: ['GET', 'POST']
+    url: "/api/demo/orders/{profile_id}"
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "v1.demo.orders"
+    # PUT {status, ids} to change many orders in one transaction (PgRequest.batch)
+    methods: ['PUT']
+    url: "/api/demo/orders/{profile_id}/status"
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "v1.demo.orders"
+    # PUT to cancel one order and record the event, all or none (PgRequest.transaction)
+    methods: ['PUT']
+    url: "/api/demo/orders/{profile_id}/cancel/{order_id}"
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "v1.demo.orders.events"
+    # GET aggregates through a PgQueryStatement event sent to "postgres.service"
+    methods: ['GET']
+    url: "/api/demo/orders/{profile_id}/summary"
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "v1.demo.orders.events"
+    # DELETE the profile's orders and their history through a PgTransactionStatement event
+    methods: ['DELETE']
+    url: "/api/demo/orders/{profile_id}/purge"
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
 #
 # CORS HEADERS for pre-flight (HTTP OPTIONS) and normal responses
 #

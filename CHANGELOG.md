@@ -24,6 +24,13 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    column names are validated as plain identifiers, and a list or map value is refused. Measured on the module's embedded
    PostgreSQL, 500 rows: one multi-row statement 94 ms, one transaction of 500 statements 249 ms, 500 autocommitted statements
    650 ms. **Upgrade note:** none - a new method.
+2. **`examples/pg-example` gains the orders demo - every `PgRequest` method and the `postgres.service` event form.** The example
+   showed only the repository pattern and the direct database client. `DemoOrderEndpoint` now drives `insertRows` (one multi-row
+   INSERT), `query` with a positional parameter and with named parameters including a list expanded into the `IN` clause, `batch`
+   (one statement for many ids in one transaction) and `transaction` (two statements, all or none); `DemoOrderEvents` sends a
+   `PgQueryStatement` and a `PgTransactionStatement` to `postgres.service` with the PostOffice. Two demo tables in `pg-schema.sql`,
+   seven REST routes, a README section with the patterns side by side, and an end-to-end unit test on the embedded PostgreSQL.
+   **Upgrade note:** none - an example.
 
 ---
 ## Version 4.12.25, 10/12/2026

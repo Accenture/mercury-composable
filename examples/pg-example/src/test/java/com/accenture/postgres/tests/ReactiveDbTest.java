@@ -339,6 +339,79 @@ class ReactiveDbTest {
         assertTrue(error.getStatus() >= 400);
     }
 
+    /**
+     * This unit test drives the orders demo: DemoOrderEndpoint (every PgRequest method - insertRows, query
+     * with positional and named-list parameters, batch, transaction) and DemoOrderEvents (PgQueryStatement
+     * and PgTransactionStatement events sent to "postgres.service").
+     *
+     * @throws ExecutionException in case of error
+     * @throws InterruptedException in case of error
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    void doDemoOrderEndpoints() throws ExecutionException, InterruptedException {
+        var po = new PostOffice("unit.test", "404", "TEST /demo-orders");
+        var host = "http://127.0.0.1:" + getPort();
+        // 1. insertRows - three orders in one multi-row INSERT
+        var orders = List.of(Map.of("item", "Web shooter", "quantity", 2, "amount", 19.99),
+                             Map.of("item", "Camera", "quantity", 1, "amount", 250),
+                             Map.of("item", "Film", "quantity", 10, "amount", 4.5));
+        var create = new AsyncHttpRequest().setMethod("POST").setTargetHost(host)
+                        .setUrl("/api/demo/orders/D1").setBody(Map.of("orders", orders))
+                        .setHeader("content-type", "application/json");
+        var created = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(create.toMap()), TIMEOUT).get();
+        var createdMap = new MultiLevelMap((Map<String, Object>) created.getBody());
+        assertEquals(3, createdMap.getElement("inserted"));
+        var ids = (List<String>) createdMap.getElement("ids");
+        assertEquals(3, ids.size());
+        // 2. query with a positional parameter
+        var list = new AsyncHttpRequest().setMethod("GET").setTargetHost(host)
+                        .setUrl("/api/demo/orders/D1").setHeader("accept", "application/json");
+        var listed = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(list.toMap()), TIMEOUT).get();
+        var rows = (List<Map<String, Object>>) listed.getBody();
+        assertEquals(3, rows.size());
+        assertEquals("open", rows.getFirst().get("status"));
+        // 3. batch - the same UPDATE for two ids in one transaction
+        var ship = new AsyncHttpRequest().setMethod("PUT").setTargetHost(host)
+                        .setUrl("/api/demo/orders/D1/status")
+                        .setBody(Map.of("status", "shipped", "ids", List.of(ids.get(0), ids.get(1))))
+                        .setHeader("content-type", "application/json");
+        var shipped = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(ship.toMap()), TIMEOUT).get();
+        assertEquals(Map.of("updated", List.of(1, 1)), shipped.getBody());
+        // 4. query with named parameters, the status filter a list expanded into the IN clause
+        list.setQueryParameter("status", "shipped");
+        listed = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(list.toMap()), TIMEOUT).get();
+        assertEquals(2, ((List<?>) listed.getBody()).size());
+        // 5. transaction - cancel the third order and record the event, all or none
+        var cancel = new AsyncHttpRequest().setMethod("PUT").setTargetHost(host)
+                        .setUrl("/api/demo/orders/D1/cancel/" + ids.get(2)).setHeader("accept", "application/json");
+        var cancelled = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(cancel.toMap()), TIMEOUT).get();
+        assertEquals(Map.of("updated", List.of(1, 1)), cancelled.getBody());
+        var unknown = new AsyncHttpRequest().setMethod("PUT").setTargetHost(host)
+                        .setUrl("/api/demo/orders/D1/cancel/no-such-order").setHeader("accept", "application/json");
+        var notFound = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(unknown.toMap()), TIMEOUT).get();
+        assertEquals(404, notFound.getStatus());
+        list.setQueryParameter("status", "shipped,cancelled");
+        listed = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(list.toMap()), TIMEOUT).get();
+        assertEquals(3, ((List<?>) listed.getBody()).size());
+        // 6. a PgQueryStatement event - the NUMERIC sum travels as a plain string
+        var summary = new AsyncHttpRequest().setMethod("GET").setTargetHost(host)
+                        .setUrl("/api/demo/orders/D1/summary").setHeader("accept", "application/json");
+        var summarized = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(summary.toMap()), TIMEOUT).get();
+        var totals = new MultiLevelMap((Map<String, Object>) summarized.getBody());
+        assertEquals(3, totals.getElement("orders"));
+        assertEquals(1, totals.getElement("cancelled"));
+        assertEquals("274.49", String.valueOf(totals.getElement("total")));
+        // 7. a PgTransactionStatement event - history first, then the orders
+        var purge = new AsyncHttpRequest().setMethod("DELETE").setTargetHost(host)
+                        .setUrl("/api/demo/orders/D1/purge").setHeader("accept", "application/json");
+        var purged = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(purge.toMap()), TIMEOUT).get();
+        assertEquals(Map.of("history_deleted", 1, "orders_deleted", 3), purged.getBody());
+        list.setQueryParameter("status", null);
+        listed = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(list.toMap()), TIMEOUT).get();
+        assertEquals(0, ((List<?>) listed.getBody()).size());
+    }
+
     private int getPort() {
         AppConfigReader config = AppConfigReader.getInstance();
         return util.str2int(config.getProperty("rest.server.port", "8080"));
