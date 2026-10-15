@@ -22,7 +22,9 @@ import com.accenture.db2.models.Db2QueryStatement;
 import org.platformlambda.postgres.models.PgQueryStatement;
 import org.platformlambda.postgres.models.PgUpdateStatement;
 import org.platformlambda.postgres.support.PgRequest;
+import org.platformlambda.postgres.support.PgTransactionBuilder;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
 
@@ -132,6 +134,28 @@ class StatementTest {
         statement.bindParameters("1", "a", "2", "b", "3", "c");
         assertEquals(sql, statement.getStatement());
         assertEquals(6, statement.getParameters().size());
+    }
+
+    @Test
+    void transactionBuilderStepsTest() {
+        var columns = List.of("id", "name");
+        // 600 rows of two columns exceed the 1000-parameter cap, so the first step is two statements
+        var rows = new java.util.ArrayList<List<Object>>();
+        for (int i = 0; i < 600; i++) {
+            rows.add(List.of("id-" + i, "name-" + i));
+        }
+        var tx = new PgTransactionBuilder()
+                .insertRows("demo", columns, rows)
+                .update("DELETE FROM demo WHERE id = $1", "id-1")
+                .batch("UPDATE demo SET name = $1 WHERE id = $2", List.of(List.of("a", "id-2"), List.of("b", "id-3")));
+        assertEquals(3, tx.size());
+        assertFalse(tx.isEmpty());
+        assertTrue(new PgTransactionBuilder().isEmpty());
+        var noSql = assertThrows(AppException.class, () -> tx.update(null));
+        assertEquals("Missing SQL statement", noSql.getMessage());
+        var noRows = List.<List<Object>>of();
+        var noBatch = assertThrows(AppException.class, () -> tx.batch("UPDATE demo SET name = $1", noRows));
+        assertEquals("Missing list of lists of parameters", noBatch.getMessage());
     }
 
     @Test

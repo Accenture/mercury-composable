@@ -75,6 +75,7 @@ and `demo_order_history` tables (created by `pg-schema.sql`): `DemoOrderEndpoint
 | Request | Pattern | What to look at |
 |---|---|---|
 | `POST /api/demo/orders/{profile_id}` | `PgRequest.insertRows` | every order in ONE multi-row INSERT - one round trip, one commit |
+| `POST /api/demo/orders/{profile_id}/with-history` | `PgTransactionBuilder` + `PgRequest.transaction` | the orders AND their history rows: two tables in one transaction, all or none, one count per step |
 | `GET /api/demo/orders/{profile_id}` | `PgRequest.query`, positional `$1` | the rows as a list of maps |
 | `GET /api/demo/orders/{profile_id}?status=open,shipped` | `PgRequest.query`, named `:name` parameters | the status list is expanded into the `IN (...)` clause for you |
 | `PUT /api/demo/orders/{profile_id}/status` | `PgRequest.batch` | the same UPDATE for many ids, one transaction, a count per statement |
@@ -94,6 +95,17 @@ var some = sql.query(po, "... WHERE profile_id = :profile_id AND status IN (:sta
                      Map.of("profile_id", id, "status_list", List.of("open", "shipped")));
 var counts = sql.batch(po, SQL_SET_STATUS, parameterList);                     // same statement, many rows
 var result = sql.transaction(po, List.of(SQL_CANCEL, SQL_HISTORY), parameters); // different statements
+```
+
+When several tables must change together, collect the steps in a `PgTransactionBuilder` - multi-row inserts
+per table, single statements, batches - and run it with `transaction(po, builder)`; every step rolls back if
+any statement fails, and the result has one row count per step:
+
+```java
+var tx = new PgTransactionBuilder()
+            .insertRows("demo_order", COLUMNS, rows)
+            .insertRows("demo_order_history", HISTORY_COLUMNS, events);
+var counts = sql.transaction(po, tx);   // [orders inserted, history rows inserted]
 ```
 
 The event form is what the helper does underneath. A `PgQueryStatement` answers a list of rows, a
