@@ -261,6 +261,76 @@ class ReactiveDbTest {
      * @throws InterruptedException in case of error
      */
     @Test
+    void insertRowsTest() throws ExecutionException, InterruptedException {
+        var po = PostOffice.trackable("unit.test", "201", "TEST /insertrows");
+        var sql = new PgRequest(TIMEOUT);
+        var columns = List.of("id", "app_name", "app_instance", "created", "updated");
+        var tag = "rows-" + util.getUuid().substring(0, 8);
+        var ts = new Timestamp(System.currentTimeMillis());
+        var rows = new ArrayList<List<Object>>();
+        for (int i = 0; i < 3; i++) {
+            rows.add(List.of(tag + "-" + i, tag, "instance-" + i, ts, ts));
+        }
+        assertEquals(3, sql.insertRows(po, "health_check", columns, rows));
+        var records = sql.query(po, "SELECT * FROM health_check WHERE app_name = $1 ORDER BY id", tag);
+        assertEquals(3, records.size());
+        assertEquals(tag + "-2", records.get(2).get("id"));
+        assertEquals("instance-2", records.get(2).get("app_instance"));
+        // an upsert through the optional clause - the same ids again, one column changed
+        var later = new Timestamp(ts.getTime() + 60000);
+        var revised = new ArrayList<List<Object>>();
+        for (int i = 0; i < 3; i++) {
+            revised.add(List.of(tag + "-" + i, tag, "revised-" + i, ts, later));
+        }
+        var upserted = sql.insertRows(po, "public.health_check", columns, revised,
+                "ON CONFLICT (id) DO UPDATE SET app_instance = EXCLUDED.app_instance, updated = EXCLUDED.updated");
+        assertEquals(3, upserted);
+        records = sql.query(po, "SELECT * FROM health_check WHERE app_name = $1 ORDER BY id", tag);
+        assertEquals(3, records.size());
+        assertEquals("revised-1", records.get(1).get("app_instance"));
+        var skipped = sql.insertRows(po, "health_check", columns, revised, "ON CONFLICT DO NOTHING");
+        assertEquals(0, skipped);
+        // validation - identifiers are written into the statement, so they must be plain
+        var badTable = assertThrows(AppException.class, () ->
+                sql.insertRows(po, "health_check; DROP TABLE x", columns, rows));
+        assertEquals(400, badTable.getStatus());
+        var badColumn = assertThrows(AppException.class, () ->
+                sql.insertRows(po, "health_check", List.of("id", "app_name)"), rows));
+        assertEquals(400, badColumn.getStatus());
+        var shortRow = assertThrows(AppException.class, () ->
+                sql.insertRows(po, "health_check", columns, List.of(List.of("x", tag))));
+        assertEquals("Row 1 must have 5 values", shortRow.getMessage());
+        var listValue = assertThrows(AppException.class, () ->
+                sql.insertRows(po, "health_check", columns, List.of(List.of("x", tag, List.of("a"), ts, ts))));
+        assertEquals(400, listValue.getStatus());
+        var noRows = assertThrows(AppException.class, () -> sql.insertRows(po, "health_check", columns, List.of()));
+        assertEquals("Missing rows", noRows.getMessage());
+    }
+
+    @Test
+    void insertRowsBeyondParameterLimitTest() throws ExecutionException, InterruptedException {
+        // a statement carries at most 1000 parameters (200 rows of five columns),
+        // so 2500 rows must split into 13 statements executed in one transaction
+        var po = PostOffice.trackable("unit.test", "202", "TEST /insertrows/split");
+        // a 12500-parameter payload travels through the event system - allow more than the usual 5 seconds
+        var sql = new PgRequest(30000);
+        var columns = List.of("id", "app_name", "app_instance", "created", "updated");
+        var tag = "split-" + util.getUuid().substring(0, 8);
+        var ts = new Timestamp(System.currentTimeMillis());
+        int total = 2500;
+        var rows = new ArrayList<List<Object>>(total);
+        for (int i = 0; i < total; i++) {
+            rows.add(List.of(tag + "-" + i, tag, "instance", ts, ts));
+        }
+        long start = System.currentTimeMillis();
+        assertEquals(total, sql.insertRows(po, "health_check", columns, rows));
+        log.info("Inserted {} rows in 13 statements in {} ms", total, System.currentTimeMillis() - start);
+        var counted = sql.query(po, "SELECT count(*) AS n FROM health_check WHERE app_name = $1", tag);
+        assertEquals(total, ((Number) counted.getFirst().get("n")).intValue());
+        assertEquals(total, sql.update(po, "DELETE FROM health_check WHERE app_name = $1", tag));
+    }
+
+    @Test
     void crudTest() throws ExecutionException, InterruptedException {
         var id = util.getUuid();
         var name = "unit test";
