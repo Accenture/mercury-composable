@@ -554,7 +554,7 @@
   **The cap is a finding:** Spring's `DatabaseClient` spec is immutable and `PgService` binds one parameter per `bind()` call, each
   copying the binding set, so a statement's cost is quadratic in its parameter count (13108 rows: 22 s at PostgreSQL's 65535 limit,
   5 s at 4000, 4.1 s at 1000). For a bulk update the same shape is an upsert or `UPDATE t SET ... FROM (VALUES ...) AS v(...)` through
-  `update()`. `examples/pg-example` shows every helper method and the event form side by side (`DemoOrderEndpoint`, `DemoOrderEvents`). No Rust twin (the port has no R2DBC module). Applies [[clean-knowledge-design-over-engine-coverage]] (a documented cap,
+  `update()`. `examples/pg-example` shows every helper method and the event form side by side (`DemoOrderEndpoint`, `DemoOrderEvents`). **Across tables (the field's follow-up after testing `insertRows`, 2026-10-15; branch `feat/pg-transaction-builder`, commit `3dbec406`, PR pending):** `PgTransactionBuilder` collects `insertRows` per table, `update` and `batch` steps and `PgRequest.transaction(po, builder)` runs them in ONE transaction - one row count per step, a failing statement rolling back every earlier one (pinned by a duplicate-key test against two tables); the demo's `POST .../with-history`. No Rust twin (the port has no R2DBC module). Applies [[clean-knowledge-design-over-engine-coverage]] (a documented cap,
   not a rewrite of the binding) and [[conv-sonar-gate-heuristics]].
   <!-- id: pg-single-connection-is-serial | created: 2026-10-14 | last_used: 2026-10-14 | uses: 1 | tier: working | origin: 2026-10-15-000750 -->
 
