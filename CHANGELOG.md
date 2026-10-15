@@ -31,6 +31,13 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    `PgQueryStatement` and a `PgTransactionStatement` to `postgres.service` with the PostOffice. Two demo tables in `pg-schema.sql`,
    seven REST routes, a README section with the patterns side by side, and an end-to-end unit test on the embedded PostgreSQL.
    **Upgrade note:** none - an example.
+3. **`PgTransactionBuilder` - several tables in one transaction, all or none (`reactive-postgres`).** The field asked for the
+   multi-row insert across tables: rows for table 1, table 2 and table 3 land together or not at all. The builder collects steps -
+   `insertRows(table, columns, rows[, onConflict])` per table (the same rules and per-statement cap as `PgRequest.insertRows`),
+   `update(sql, values...)` for any single statement and `batch(sql, parameterList)` - and `PgRequest.transaction(po, builder)` runs
+   them on one connection in one transaction, answering one row count per step; a failing statement rolls back every earlier one
+   and the call throws with the database's reason. `examples/pg-example` shows it as `POST /api/demo/orders/{profile_id}/with-history`
+   (orders and their history rows). **Upgrade note:** none - a new class and an overload.
 
 ---
 ## Version 4.12.25, 10/12/2026

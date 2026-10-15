@@ -23,6 +23,7 @@ import io.zonky.test.db.postgres.embedded.EmbeddedPostgres;
 import org.junit.jupiter.api.AfterAll;
 import org.platformlambda.postgres.models.HealthCheck;
 import org.platformlambda.postgres.support.PgRequest;
+import org.platformlambda.postgres.support.PgTransactionBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import com.accenture.postgres.models.TempTestData;
@@ -309,6 +310,46 @@ class ReactiveDbTest {
     }
 
     @Test
+    void transactionBuilderTest() throws ExecutionException, InterruptedException {
+        var po = PostOffice.trackable("unit.test", "203", "TEST /transaction-builder");
+        var sql = new PgRequest(TIMEOUT);
+        var healthColumns = List.of("id", "app_name", "app_instance", "created", "updated");
+        var tempColumns = List.of("id", "name", "address", "created");
+        var tag = "tx-" + util.getUuid().substring(0, 8);
+        var ts = new Timestamp(System.currentTimeMillis());
+        // two tables and an update in ONE transaction - one count per step
+        var tx = new PgTransactionBuilder()
+                .insertRows("health_check", healthColumns, List.of(
+                        List.of(tag + "-h1", tag, "instance-1", ts, ts),
+                        List.of(tag + "-h2", tag, "instance-2", ts, ts)))
+                .insertRows("temp_unit_test_table", tempColumns, List.of(
+                        List.of(tag + "-t1", tag, "1 World Blvd", ts),
+                        List.of(tag + "-t2", tag, "2 World Blvd", ts)))
+                .update("UPDATE temp_unit_test_table SET address = $1 WHERE id = $2", "3 World Blvd", tag + "-t2")
+                .batch("UPDATE health_check SET app_instance = $1 WHERE id = $2",
+                        List.of(List.of("revised", tag + "-h1"), List.of("revised", tag + "-h2")));
+        assertEquals(4, tx.size());
+        assertEquals(List.of(2, 2, 1, 2), sql.transaction(po, tx));
+        var temp = sql.query(po, "SELECT * FROM temp_unit_test_table WHERE name = $1 ORDER BY id", tag);
+        assertEquals("3 World Blvd", temp.get(1).get("address"));
+        // all or none - the third step hits a duplicate key, so the first two tables stay untouched
+        var failing = new PgTransactionBuilder()
+                .insertRows("health_check", healthColumns, List.of(List.of(tag + "-h3", tag, "instance-3", ts, ts)))
+                .insertRows("temp_unit_test_table", tempColumns, List.of(List.of(tag + "-t3", tag, "4 World Blvd", ts)))
+                .insertRows("temp_unit_test_table", tempColumns, List.of(List.of(tag + "-t1", tag, "duplicate", ts)));
+        var ex = assertThrows(AppException.class, () -> sql.transaction(po, failing));
+        assertTrue(ex.getMessage().contains("duplicate key"), ex.getMessage());
+        var health = sql.query(po, "SELECT * FROM health_check WHERE app_name = $1 ORDER BY id", tag);
+        assertEquals(2, health.size());
+        assertEquals("revised", health.getFirst().get("app_instance"));
+        temp = sql.query(po, "SELECT * FROM temp_unit_test_table WHERE name = $1", tag);
+        assertEquals(2, temp.size());
+        var empty = new PgTransactionBuilder();
+        var missing = assertThrows(AppException.class, () -> sql.transaction(po, empty));
+        assertEquals("Missing transaction steps", missing.getMessage());
+    }
+
+    @Test
     void insertRowsBeyondParameterLimitTest() throws ExecutionException, InterruptedException {
         // a statement carries at most 1000 parameters (200 rows of five columns),
         // so 2500 rows must split into 13 statements executed in one transaction
@@ -339,7 +380,8 @@ class ReactiveDbTest {
         var now = new Date();
         var timestamp = new Timestamp(now.getTime());
         // Except for unit test where the PostOffice is hardcoded.
-        // You should always instantiate a new instance of a PostOffice using: var po = new PostOffice(headers, instance)
+        // You should always instantiate a new instance of a PostOffice using
+        // "var po = new PostOffice(headers, instance)"
         var po = PostOffice.trackable("unit.test", "200", "TEST /crud");
         var sql = new PgRequest(TIMEOUT);
         var count = sql.update(po, SQL_INSERT, id, name, instance, timestamp, timestamp);
@@ -411,7 +453,8 @@ class ReactiveDbTest {
         var now = new Date();
         var timestamp = new Timestamp(now.getTime());
         // Except for unit test where the PostOffice is hardcoded.
-        // You should always instantiate a new instance of a PostOffice using: var po = new PostOffice(headers, instance)
+        // You should always instantiate a new instance of a PostOffice using
+        // "var po = new PostOffice(headers, instance)"
         var po = PostOffice.trackable("unit.test", "600", "TEST /mock/db2");
         var sql = new Db2Request(TIMEOUT);
         var data = Map.of("id", id, "app_name", name, "app_instance", instance,

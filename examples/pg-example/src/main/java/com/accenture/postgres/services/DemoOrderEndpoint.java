@@ -26,6 +26,7 @@ import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.postgres.support.PgRequest;
+import org.platformlambda.postgres.support.PgTransactionBuilder;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -39,6 +40,8 @@ import java.util.concurrent.ExecutionException;
  * PgRequest wraps the "postgres.service" events (see DemoOrderEvents for the raw form):
  * <ul>
  *     <li>POST /api/demo/orders/{profile_id} - insertRows: all the orders in ONE multi-row INSERT</li>
+ *     <li>POST /api/demo/orders/{profile_id}/with-history - PgTransactionBuilder: the orders AND their
+ *         history rows, two tables in one transaction, all or none</li>
  *     <li>GET /api/demo/orders/{profile_id} - query with a positional parameter;
  *         with ?status=a,b - query with named parameters, one of them a list</li>
  *     <li>PUT /api/demo/orders/{profile_id}/status - batch: the same UPDATE for many ids in one transaction</li>
@@ -58,6 +61,8 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
     private static final String OPEN = "open";
     private static final List<String> COLUMNS = List.of("id", PROFILE_ID, "item", "quantity", "amount",
                                                         STATUS, "created", UPDATED);
+    private static final String HISTORY_TABLE = "demo_order_history";
+    private static final List<String> HISTORY_COLUMNS = List.of(ORDER_ID, "event", "created");
     private static final String SQL_BY_PROFILE =
             "SELECT * FROM demo_order WHERE profile_id = $1 ORDER BY created, id";
     private static final String SQL_BY_PROFILE_AND_STATUS =
@@ -83,8 +88,10 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
         }
         var orderId = input.getPathParameter(ORDER_ID);
         var method = input.getMethod();
+        var withHistory = input.getUrl().endsWith("/with-history");
         if ("POST".equals(method)) {
-            return createOrders(po, sql, profileId, input.getBody());
+            return withHistory ? createOrdersWithHistory(po, sql, profileId, input.getBody())
+                               : createOrders(po, sql, profileId, input.getBody());
         }
         if ("GET".equals(method)) {
             return listOrders(po, sql, profileId, input.getQueryParameter(STATUS));
@@ -105,12 +112,34 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
      */
     private Map<String, Object> createOrders(PostOffice po, PgRequest sql, String profileId, Object body)
             throws ExecutionException, InterruptedException {
+        var rows = orderRows(profileId, body, new Timestamp(System.currentTimeMillis()));
+        int inserted = sql.insertRows(po, TABLE, COLUMNS, rows);
+        return Map.of("inserted", inserted, IDS, orderIds(rows));
+    }
+
+    /**
+     * PgTransactionBuilder - the orders AND one "created" history row per order, two tables in ONE
+     * transaction: if the history insert failed, the orders would roll back too. The result carries one
+     * row count per step, in the order the steps were added.
+     */
+    private Map<String, Object> createOrdersWithHistory(PostOffice po, PgRequest sql, String profileId, Object body)
+            throws ExecutionException, InterruptedException {
+        var now = new Timestamp(System.currentTimeMillis());
+        var rows = orderRows(profileId, body, now);
+        var ids = orderIds(rows);
+        var events = ids.stream().map(id -> List.<Object>of(id, "created", now)).toList();
+        var tx = new PgTransactionBuilder()
+                .insertRows(TABLE, COLUMNS, rows)
+                .insertRows(HISTORY_TABLE, HISTORY_COLUMNS, events);
+        var counts = sql.transaction(po, tx);
+        return Map.of("inserted", counts.getFirst(), "history", counts.get(1), IDS, ids);
+    }
+
+    private static List<List<Object>> orderRows(String profileId, Object body, Timestamp now) {
         var util = Utility.getInstance();
         if (!(body instanceof Map<?, ?> map) || !(map.get(ORDERS) instanceof List<?> orders) || orders.isEmpty()) {
             throw new AppException(400, "Body must contain a non-empty 'orders' list");
         }
-        var now = new Timestamp(System.currentTimeMillis());
-        var ids = new ArrayList<String>();
         var rows = new ArrayList<List<Object>>();
         for (var o : orders) {
             if (!(o instanceof Map<?, ?> order) || order.get("item") == null ||
@@ -118,14 +147,15 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
                     !(order.get("amount") instanceof Number amount)) {
                 throw new AppException(400, "Each order needs item, quantity and amount");
             }
-            var id = util.getUuid();
-            ids.add(id);
             // the amount is bound as a double - NUMERIC(12, 2) rounds it to cents on the way in
-            rows.add(List.of(id, profileId, String.valueOf(order.get("item")), quantity.intValue(),
+            rows.add(List.of(util.getUuid(), profileId, String.valueOf(order.get("item")), quantity.intValue(),
                              amount.doubleValue(), OPEN, now, now));
         }
-        int inserted = sql.insertRows(po, TABLE, COLUMNS, rows);
-        return Map.of("inserted", inserted, IDS, ids);
+        return rows;
+    }
+
+    private static List<String> orderIds(List<List<Object>> rows) {
+        return rows.stream().map(row -> String.valueOf(row.getFirst())).toList();
     }
 
     /**

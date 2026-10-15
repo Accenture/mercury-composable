@@ -42,6 +42,15 @@ rest:
     tracing: true
 
   - service: "v1.demo.orders"
+    # POST a list of orders AND their history rows - two tables in one transaction (PgTransactionBuilder)
+    methods: ['POST']
+    url: "/api/demo/orders/{profile_id}/with-history"
+    timeout: 10s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+
+  - service: "v1.demo.orders"
     # PUT to cancel one order and record the event, all or none (PgRequest.transaction)
     methods: ['PUT']
     url: "/api/demo/orders/{profile_id}/cancel/{order_id}"

@@ -155,23 +155,68 @@ public class PgRequest {
         if (po == null) {
             throw new AppException(400, "Missing PostOffice");
         }
-        validateRows(table, columns, rows);
-        int rowsPerStatement = Math.max(1, MAX_PARAMETERS / columns.size());
-        if (rows.size() <= rowsPerStatement) {
-            return update(po, multiRowInsert(table, columns, rows.size(), onConflict), flatten(rows));
+        var statements = insertStatements(table, columns, rows, onConflict);
+        if (statements.size() == 1) {
+            var only = statements.getFirst();
+            return update(po, only.sql(), only.parameters().toArray());
         }
-        var sqlList = new ArrayList<String>();
-        var parameterList = new ArrayList<List<Object>>();
-        for (int start = 0; start < rows.size(); start += rowsPerStatement) {
-            var chunk = rows.subList(start, Math.min(rows.size(), start + rowsPerStatement));
-            sqlList.add(multiRowInsert(table, columns, chunk.size(), onConflict));
-            parameterList.add(Arrays.asList(flatten(chunk)));
-        }
+        var sqlList = statements.stream().map(BoundStatement::sql).toList();
+        var parameterList = statements.stream().map(BoundStatement::parameters).toList();
         int total = 0;
         for (int count : transaction(po, sqlList, parameterList)) {
             total += count;
         }
         return total;
+    }
+
+    /**
+     * Run the steps of a PgTransactionBuilder - multi-row inserts into one or more tables and any insert,
+     * update or delete statements - in ONE transaction: all or none. If any statement fails, every
+     * earlier one is rolled back and an AppException carries the database's reason.
+     *
+     * @param po PostOffice
+     * @param builder the steps, in order
+     * @return one row count per step, in order (a multi-row insert split into several statements is summed)
+     * @throws ExecutionException in case of error
+     * @throws InterruptedException in case of error
+     */
+    public List<Integer> transaction(PostOffice po, PgTransactionBuilder builder)
+            throws ExecutionException, InterruptedException {
+        if (builder == null || builder.isEmpty()) {
+            throw new AppException(400, "Missing transaction steps");
+        }
+        var counts = transaction(po, builder.getStatements(), builder.getParameters());
+        return builder.countPerStep(counts);
+    }
+
+    /**
+     * A SQL statement with the values bound to its positional parameters
+     *
+     * @param sql statement
+     * @param parameters values in parameter order
+     */
+    record BoundStatement(String sql, List<Object> parameters) { }
+
+    /**
+     * Turn rows into multi-row INSERT statements of at most MAX_PARAMETERS bind parameters each
+     *
+     * @param table name
+     * @param columns names
+     * @param rows values in column order
+     * @param onConflict optional clause or null
+     * @return one or more statements with their parameters
+     */
+    static List<BoundStatement> insertStatements(String table, List<String> columns, List<List<Object>> rows,
+                                                 String onConflict) {
+        validateRows(table, columns, rows);
+        int rowsPerStatement = Math.max(1, MAX_PARAMETERS / columns.size());
+        var statements = new ArrayList<BoundStatement>();
+        for (int start = 0; start < rows.size(); start += rowsPerStatement) {
+            var chunk = rows.subList(start, Math.min(rows.size(), start + rowsPerStatement));
+            statements.add(new BoundStatement(multiRowInsert(table, columns, chunk.size(), onConflict),
+                                              Arrays.asList(flatten(chunk))));
+        }
+        return statements;
     }
 
     /**

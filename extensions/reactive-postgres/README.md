@@ -236,6 +236,27 @@ and is refused.
 For a bulk update, the same shape works with an upsert, or with `update()` and a statement such as
 `UPDATE t SET col = v.col FROM (VALUES ($1, $2), ($3, $4)) AS v(id, col) WHERE t.id = v.id`.
 
+## Several tables in one transaction
+
+When rows for several tables must land together - and roll back together if any statement fails - collect the
+steps in a `PgTransactionBuilder` and run it with `transaction(po, builder)`:
+
+```java
+var tx = new PgTransactionBuilder()
+            .insertRows("demo_order", ORDER_COLUMNS, orders)
+            .insertRows("demo_order_history", HISTORY_COLUMNS, events)
+            .update("UPDATE demo_profile SET updated = $1 WHERE id = $2", now, profileId)
+            .batch("UPDATE demo_order SET status = $1 WHERE id = $2", parameterList);
+List<Integer> counts = sql.transaction(po, tx);   // one row count per step, in order
+```
+
+Each call adds one step: `insertRows` a multi-row INSERT into one table (with the same rules and the same
+per-statement parameter cap as `PgRequest.insertRows`; a larger set becomes several statements but stays one
+step), `update` any single insert, update or delete statement with positional or named parameters, and
+`batch` the same statement once per parameter list. The whole builder runs on one connection in one
+transaction, so a failure in any statement rolls back every earlier one and the call throws an `AppException`
+carrying the database's reason. Order the steps as the foreign keys require.
+
 ## SQL statement execution debug logging
 
 Add the following key-values if you want to see what SQL statements have been executed in your code.

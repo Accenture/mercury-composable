@@ -259,7 +259,8 @@ class ReactiveDbTest {
         var now = new Date();
         var timestamp = new Timestamp(now.getTime());
         // Except for unit test where the PostOffice is hardcoded.
-        // You should always instantiate a new instance of a PostOffice using "var po = new PostOffice(headers, instance)"
+        // You should always instantiate a new instance of a PostOffice using
+        // "var po = new PostOffice(headers, instance)"
         var po = PostOffice.trackable("unit.test", "200", "TEST /crud");
         var sql = new PgRequest(TIMEOUT);
         var count = sql.update(po, SQL_INSERT, id, name, instance, timestamp, timestamp);
@@ -397,7 +398,8 @@ class ReactiveDbTest {
         // 6. a PgQueryStatement event - the NUMERIC sum travels as a plain string
         var summary = new AsyncHttpRequest().setMethod("GET").setTargetHost(host)
                         .setUrl("/api/demo/orders/D1/summary").setHeader("accept", "application/json");
-        var summarized = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(summary.toMap()), TIMEOUT).get();
+        var summarized = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(summary.toMap()),
+                        TIMEOUT).get();
         var totals = new MultiLevelMap((Map<String, Object>) summarized.getBody());
         assertEquals(3, totals.getElement("orders"));
         assertEquals(1, totals.getElement("cancelled"));
@@ -410,6 +412,17 @@ class ReactiveDbTest {
         list.setQueryParameter("status", null);
         listed = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(list.toMap()), TIMEOUT).get();
         assertEquals(0, ((List<?>) listed.getBody()).size());
+        // 8. PgTransactionBuilder - two orders and their two history rows, two tables in one transaction
+        var withHistory = new AsyncHttpRequest().setMethod("POST").setTargetHost(host)
+                        .setUrl("/api/demo/orders/D1/with-history")
+                        .setBody(Map.of("orders", List.of(orders.get(0), orders.get(1))))
+                        .setHeader("content-type", "application/json");
+        var both = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(withHistory.toMap()), TIMEOUT).get();
+        var bothMap = new MultiLevelMap((Map<String, Object>) both.getBody());
+        assertEquals(2, bothMap.getElement("inserted"));
+        assertEquals(2, bothMap.getElement("history"));
+        purged = po.request(new EventEnvelope().setTo(ASYNC_HTTP_CLIENT).setBody(purge.toMap()), TIMEOUT).get();
+        assertEquals(Map.of("history_deleted", 2, "orders_deleted", 2), purged.getBody());
     }
 
     private int getPort() {
