@@ -88,7 +88,7 @@ class StatementTest {
         Map<String, Object> map = mapper.readValue(query, Map.class);
         var restored = mapper.readValue(map, PgQueryStatement.class);
         assertEquals(sql, restored.getStatement());
-        // PostGreSQL R2DBC SQL statement's parameter index is zero-based
+        // PostgreSQL R2DBC SQL statement's parameter index is zero-based
         // i.e. $1 = 0, $2 = 1 and so on
         assertEquals(Map.of(0, hello, 1, world, 2, address, 3, date.toString()), restored.getParameters());
         assertInstanceOf(Timestamp.class, restored.getOriginalParameter(3));
@@ -136,7 +136,7 @@ class StatementTest {
 
     @Test
     void numberedIndexParamWithListValueTest() {
-        // the case for PostGreSQL
+        // the case for PostgreSQL
         var sql = "SELECT * FROM test WHERE name = $2 and seq IN ($1)";
         var query = new PgQueryStatement(sql);
         query.bindParameters(List.of(1, 2, 3), "hello");

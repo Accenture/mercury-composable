@@ -49,8 +49,15 @@ import java.util.concurrent.ExecutionException;
 public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, Object> {
     private static final long TIMEOUT = 8000;
     private static final String TABLE = "demo_order";
-    private static final List<String> COLUMNS = List.of("id", "profile_id", "item", "quantity", "amount",
-                                                        "status", "created", "updated");
+    private static final String PROFILE_ID = "profile_id";
+    private static final String ORDER_ID = "order_id";
+    private static final String STATUS = "status";
+    private static final String UPDATED = "updated";
+    private static final String ORDERS = "orders";
+    private static final String IDS = "ids";
+    private static final String OPEN = "open";
+    private static final List<String> COLUMNS = List.of("id", PROFILE_ID, "item", "quantity", "amount",
+                                                        STATUS, "created", UPDATED);
     private static final String SQL_BY_PROFILE =
             "SELECT * FROM demo_order WHERE profile_id = $1 ORDER BY created, id";
     private static final String SQL_BY_PROFILE_AND_STATUS =
@@ -62,16 +69,12 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
     private static final String SQL_CANCEL_HISTORY =
             "INSERT INTO demo_order_history (order_id, event, created)" +
             " SELECT id, 'cancelled', $1 FROM demo_order WHERE id = $2 AND profile_id = $3";
-    private static final String PROFILE_ID = "profile_id";
-    private static final String ORDER_ID = "order_id";
-    private static final String STATUS = "status";
-    private static final String ORDERS = "orders";
-    private static final String IDS = "ids";
-    private static final String OPEN = "open";
 
     @Override
-    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws ExecutionException, InterruptedException {
-        // a function creates its own PostOffice from the incoming headers so the trace continues into the database calls
+    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance)
+            throws ExecutionException, InterruptedException {
+        // a function creates its own PostOffice from the incoming headers,
+        // so the distributed trace continues into the database calls
         var po = new PostOffice(headers, instance);
         var sql = new PgRequest(TIMEOUT);
         var profileId = input.getPathParameter(PROFILE_ID);
@@ -111,7 +114,8 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
         var rows = new ArrayList<List<Object>>();
         for (var o : orders) {
             if (!(o instanceof Map<?, ?> order) || order.get("item") == null ||
-                    !(order.get("quantity") instanceof Number quantity) || !(order.get("amount") instanceof Number amount)) {
+                    !(order.get("quantity") instanceof Number quantity) ||
+                    !(order.get("amount") instanceof Number amount)) {
                 throw new AppException(400, "Each order needs item, quantity and amount");
             }
             var id = util.getUuid();
@@ -142,19 +146,18 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
      * batch - the same UPDATE statement once per id, executed in one transaction on one connection:
      * one commit for the whole set, and the count for each statement comes back in order.
      */
-    private Map<String, Object> setStatus(PostOffice po, PgRequest sql, String profileId, Object body) throws ExecutionException, InterruptedException {
+    private Map<String, Object> setStatus(PostOffice po, PgRequest sql, String profileId, Object body)
+            throws ExecutionException, InterruptedException {
         var mm = new MultiLevelMap(body instanceof Map<?, ?> map ? castMap(map) : Map.of());
         var status = mm.getElement(STATUS);
         if (!(status instanceof String newStatus) || !(mm.getElement(IDS) instanceof List<?> ids) || ids.isEmpty()) {
             throw new AppException(400, "Body must contain 'status' and a non-empty 'ids' list");
         }
         var now = new Timestamp(System.currentTimeMillis());
-        var parameterList = new ArrayList<List<Object>>();
-        for (var id : ids) {
-            parameterList.add(List.of(newStatus, now, String.valueOf(id), profileId));
-        }
+        var parameterList = ids.stream()
+                .map(id -> List.<Object>of(newStatus, now, String.valueOf(id), profileId)).toList();
         var counts = sql.batch(po, SQL_SET_STATUS, parameterList);
-        return Map.of("updated", counts);
+        return Map.of(UPDATED, counts);
     }
 
     /**
@@ -171,7 +174,7 @@ public class DemoOrderEndpoint implements TypedLambdaFunction<AsyncHttpRequest, 
         if (counts.getFirst() == 0) {
             throw new AppException(404, "Order " + orderId + " not found for profile " + profileId);
         }
-        return Map.of("updated", counts);
+        return Map.of(UPDATED, counts);
     }
 
     @SuppressWarnings("unchecked")

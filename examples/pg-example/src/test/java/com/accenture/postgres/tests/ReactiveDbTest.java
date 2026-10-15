@@ -259,7 +259,7 @@ class ReactiveDbTest {
         var now = new Date();
         var timestamp = new Timestamp(now.getTime());
         // Except for unit test where the PostOffice is hardcoded.
-        // You should always instantiate a new instance of a PostOffice using "var po = new PostOffice(headers, instance)
+        // You should always instantiate a new instance of a PostOffice using "var po = new PostOffice(headers, instance)"
         var po = PostOffice.trackable("unit.test", "200", "TEST /crud");
         var sql = new PgRequest(TIMEOUT);
         var count = sql.update(po, SQL_INSERT, id, name, instance, timestamp, timestamp);

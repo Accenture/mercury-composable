@@ -294,17 +294,18 @@ class ReactiveDbTest {
         var badTable = assertThrows(AppException.class, () ->
                 sql.insertRows(po, "health_check; DROP TABLE x", columns, rows));
         assertEquals(400, badTable.getStatus());
-        var badColumn = assertThrows(AppException.class, () ->
-                sql.insertRows(po, "health_check", List.of("id", "app_name)"), rows));
+        var badColumns = List.of("id", "app_name)");
+        var badColumn = assertThrows(AppException.class, () -> sql.insertRows(po, "health_check", badColumns, rows));
         assertEquals(400, badColumn.getStatus());
-        var shortRow = assertThrows(AppException.class, () ->
-                sql.insertRows(po, "health_check", columns, List.of(List.of("x", tag))));
+        var shortRows = List.<List<Object>>of(List.of("x", tag));
+        var shortRow = assertThrows(AppException.class, () -> sql.insertRows(po, "health_check", columns, shortRows));
         assertEquals("Row 1 must have 5 values", shortRow.getMessage());
-        var listValue = assertThrows(AppException.class, () ->
-                sql.insertRows(po, "health_check", columns, List.of(List.of("x", tag, List.of("a"), ts, ts))));
+        var listRows = List.<List<Object>>of(List.of("x", tag, List.of("a"), ts, ts));
+        var listValue = assertThrows(AppException.class, () -> sql.insertRows(po, "health_check", columns, listRows));
         assertEquals(400, listValue.getStatus());
-        var noRows = assertThrows(AppException.class, () -> sql.insertRows(po, "health_check", columns, List.of()));
-        assertEquals("Missing rows", noRows.getMessage());
+        var noRows = List.<List<Object>>of();
+        var missing = assertThrows(AppException.class, () -> sql.insertRows(po, "health_check", columns, noRows));
+        assertEquals("Missing rows", missing.getMessage());
     }
 
     @Test

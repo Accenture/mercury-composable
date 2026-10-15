@@ -41,8 +41,8 @@ public class PgRequest {
     // parameter count. Measured on the embedded server for 13108 rows of five columns: 22 s at the
     // PostgreSQL limit, 5 s at 4000, 4.1 s at 1000. One statement still carries hundreds of rows.
     private static final int MAX_PARAMETERS = 1000;
-    private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
-    private static final Pattern TABLE_NAME = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)?");
+    private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_]\\w*");
+    private static final Pattern TABLE_NAME = Pattern.compile("[A-Za-z_]\\w*(\\.[A-Za-z_]\\w*)?");
     private final long timeout;
 
     public PgRequest(long timeout) {

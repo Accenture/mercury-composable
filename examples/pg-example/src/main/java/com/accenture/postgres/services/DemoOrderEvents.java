@@ -58,7 +58,8 @@ public class DemoOrderEvents implements TypedLambdaFunction<AsyncHttpRequest, Ob
     private static final String PROFILE_ID = "profile_id";
 
     @Override
-    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) throws ExecutionException, InterruptedException {
+    public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance)
+            throws ExecutionException, InterruptedException {
         var po = new PostOffice(headers, instance);
         var profileId = input.getPathParameter(PROFILE_ID);
         if (profileId == null) {
