@@ -543,7 +543,7 @@
 
 - **PostgreSQL runs one statement at a time per connection, so "parallel inserts on a single connection" only queue; the levers are
   one multi-row statement, one transaction and the pool - `PgRequest.insertRows` is the helper (a field question relayed by Eric,
-  2026-10-14; branch `feat/pg-multi-row-insert`, commits `1d5143b1` the helper, `3d0b53fc` the `pg-example` orders demo and `248da3c3` the Sonar round, PR pending).** The R2DBC driver serialises a connection's
+  2026-10-14; branch `feat/pg-multi-row-insert`, PR #564 squash `5627748b`, MERGED 2026-10-15 - the helper, the `pg-example` orders demo and a Sonar round from Eric's local scan; ships in the next Java release).** The R2DBC driver serialises a connection's
   statements through one conversation queue and the backend executes them one by one, so parallelism comes from connections and
   latency from round trips and commits. Measured on the embedded server, 500 single-row inserts: autocommit loop 650-800 ms, one
   transaction of 500 statements 250-320 ms, 500 statements in flight over the pool 190-270 ms, ONE multi-row INSERT 94 ms - and the
