@@ -541,6 +541,23 @@
   thread closed. Rust twin: mercury #342.
   <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-14 | uses: 4 | tier: active | origin: 2026-10-02-001806 -->
 
+- **PostgreSQL runs one statement at a time per connection, so "parallel inserts on a single connection" only queue; the levers are
+  one multi-row statement, one transaction and the pool - `PgRequest.insertRows` is the helper (a field question relayed by Eric,
+  2026-10-14; branch `feat/pg-multi-row-insert`, commit `1d5143b1`, PR pending).** The R2DBC driver serialises a connection's
+  statements through one conversation queue and the backend executes them one by one, so parallelism comes from connections and
+  latency from round trips and commits. Measured on the embedded server, 500 single-row inserts: autocommit loop 650-800 ms, one
+  transaction of 500 statements 250-320 ms, 500 statements in flight over the pool 190-270 ms, ONE multi-row INSERT 94 ms - and the
+  embedded round trip is ~0.1 ms, so a networked field database widens every gap. `insertRows(po, table, columns, rows[, onConflict])`
+  builds `INSERT ... VALUES ($1, ...), ($n, ...)` (public `multiRowInsert`), takes an `ON CONFLICT` clause for an upsert, validates
+  identifiers (they are written into the SQL), refuses a list or map value (the statement classes rewrite a list parameter into the
+  SQL text for IN clauses), and splits a large set into statements of at most 1000 parameters in one `transaction()` - all or none.
+  **The cap is a finding:** Spring's `DatabaseClient` spec is immutable and `PgService` binds one parameter per `bind()` call, each
+  copying the binding set, so a statement's cost is quadratic in its parameter count (13108 rows: 22 s at PostgreSQL's 65535 limit,
+  5 s at 4000, 4.1 s at 1000). For a bulk update the same shape is an upsert or `UPDATE t SET ... FROM (VALUES ...) AS v(...)` through
+  `update()`. No Rust twin (the port has no R2DBC module). Applies [[clean-knowledge-design-over-engine-coverage]] (a documented cap,
+  not a rewrite of the binding) and [[conv-sonar-gate-heuristics]].
+  <!-- id: pg-single-connection-is-serial | created: 2026-10-14 | last_used: 2026-10-14 | uses: 1 | tier: working | origin: 2026-10-15-000750 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
