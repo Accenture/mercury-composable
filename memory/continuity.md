@@ -543,7 +543,7 @@
 
 - **PostgreSQL runs one statement at a time per connection, so "parallel inserts on a single connection" only queue; the levers are
   one multi-row statement, one transaction and the pool - `PgRequest.insertRows` is the helper (a field question relayed by Eric,
-  2026-10-14; branch `feat/pg-multi-row-insert`, commits `1d5143b1` the helper and `3d0b53fc` the `pg-example` orders demo, PR pending).** The R2DBC driver serialises a connection's
+  2026-10-14; branch `feat/pg-multi-row-insert`, commits `1d5143b1` the helper, `3d0b53fc` the `pg-example` orders demo and `248da3c3` the Sonar round, PR pending).** The R2DBC driver serialises a connection's
   statements through one conversation queue and the backend executes them one by one, so parallelism comes from connections and
   latency from round trips and commits. Measured on the embedded server, 500 single-row inserts: autocommit loop 650-800 ms, one
   transaction of 500 statements 250-320 ms, 500 statements in flight over the pool 190-270 ms, ONE multi-row INSERT 94 ms - and the
@@ -718,7 +718,10 @@
   "Intentional singleton" in its javadoc (Eric's ruling; `ActiveEnvironment`, `ContractCatalog`, `SkillSnapshot`). Limits: S3776
   cognitive complexity 15 per method; 25 assertions per test method (#558). S1168: a private helper returns an empty array, never null.
   Kotlin: `require(...)` over if-throw, `map[key]` over `map.get(key)`, `?: throw` over `!!`, and `Unit?` over `Void` for a function
-  with no output - plain `Unit` would serialize the Unit object as the response body. A pre-existing finding counts as new the next
+  with no output - plain `Unit` would serialize the Unit object as the response body. **Sixth round (a local scan, 2026-10-14):** S5778 - an `assertThrows` lambda holds ONE
+  invocation, so build `List.of(...)` arguments outside it; S1192 counts a literal inside `List.of` against a constant of the same
+  value; S6204 - a loop that only maps into a list is a stream; S6035 - `\\w` over `[A-Za-z0-9_]`; S103 - 120 columns, which a
+  `throws` list widened past. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-13 | uses: 3 | tier: active | origin: 2026-10-13-001452 -->
