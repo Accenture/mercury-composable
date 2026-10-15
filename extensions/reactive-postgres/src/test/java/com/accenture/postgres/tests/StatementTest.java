@@ -21,6 +21,7 @@ package com.accenture.postgres.tests;
 import com.accenture.db2.models.Db2QueryStatement;
 import org.platformlambda.postgres.models.PgQueryStatement;
 import org.platformlambda.postgres.models.PgUpdateStatement;
+import org.platformlambda.postgres.support.PgRequest;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.Utility;
@@ -87,7 +88,7 @@ class StatementTest {
         Map<String, Object> map = mapper.readValue(query, Map.class);
         var restored = mapper.readValue(map, PgQueryStatement.class);
         assertEquals(sql, restored.getStatement());
-        // PostGreSQL R2DBC SQL statement's parameter index is zero-based
+        // PostgreSQL R2DBC SQL statement's parameter index is zero-based
         // i.e. $1 = 0, $2 = 1 and so on
         assertEquals(Map.of(0, hello, 1, world, 2, address, 3, date.toString()), restored.getParameters());
         assertInstanceOf(Timestamp.class, restored.getOriginalParameter(3));
@@ -118,8 +119,24 @@ class StatementTest {
     }
 
     @Test
+    void multiRowInsertStatementTest() {
+        var columns = List.of("id", "name");
+        var sql = PgRequest.multiRowInsert("demo", columns, 3, null);
+        assertEquals("INSERT INTO demo (id, name) VALUES ($1, $2), ($3, $4), ($5, $6)", sql);
+        var upsert = PgRequest.multiRowInsert("public.demo", columns, 1,
+                                                " ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name ");
+        assertEquals("INSERT INTO public.demo (id, name) VALUES ($1, $2)" +
+                        " ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name", upsert);
+        // the statement binds as positional parameters without rewriting
+        var statement = new PgUpdateStatement(sql);
+        statement.bindParameters("1", "a", "2", "b", "3", "c");
+        assertEquals(sql, statement.getStatement());
+        assertEquals(6, statement.getParameters().size());
+    }
+
+    @Test
     void numberedIndexParamWithListValueTest() {
-        // the case for PostGreSQL
+        // the case for PostgreSQL
         var sql = "SELECT * FROM test WHERE name = $2 and seq IN ($1)";
         var query = new PgQueryStatement(sql);
         query.bindParameters(List.of(1, 2, 3), "hello");

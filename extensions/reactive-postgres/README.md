@@ -205,6 +205,37 @@ var sql = new PgRequest(TIMEOUT);
 var count = sql.update(po, SQL_INSERT, id, name, instance, timestamp, timestamp);
 ```
 
+## Multi-row insert
+
+PostgreSQL executes one statement at a time per connection, so a loop of single-row inserts pays one
+round trip and one commit per row. `PgRequest.insertRows` writes all the rows with ONE multi-row
+`INSERT ... VALUES ($1, ...), ($6, ...)` statement:
+
+```java
+var sql = new PgRequest(TIMEOUT);
+var columns = List.of("id", "app_name", "app_instance", "created", "updated");
+var rows = List.of(List.of("001", "demo", "pod-1", timestamp, timestamp),
+                   List.of("002", "demo", "pod-2", timestamp, timestamp));
+int inserted = sql.insertRows(po, "health_check", columns, rows);
+```
+
+An optional last argument is appended to the statement, which makes it an upsert:
+
+```java
+sql.insertRows(po, "health_check", columns, rows,
+               "ON CONFLICT (id) DO UPDATE SET updated = EXCLUDED.updated");
+```
+
+A statement carries at most 1000 bind parameters (200 rows of five columns): PostgreSQL itself accepts
+65535, but the database client's cost grows with the square of a statement's parameter count, and 1000
+measured fastest. A larger set of rows is split into such statements and executed in one transaction, so
+the insert is still all or none. Table and column names are validated as plain identifiers because they
+are written into the statement; the values are bound as parameters. A list or a map is not a column value
+and is refused.
+
+For a bulk update, the same shape works with an upsert, or with `update()` and a statement such as
+`UPDATE t SET col = v.col FROM (VALUES ($1, $2), ($3, $4)) AS v(id, col) WHERE t.id = v.id`.
+
 ## SQL statement execution debug logging
 
 Add the following key-values if you want to see what SQL statements have been executed in your code.

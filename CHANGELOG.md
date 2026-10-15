@@ -10,7 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Nothing yet. Each change merged to `main` after v4.12.25 is listed here; it moves under its release heading when the version is cut.
+Each change merged to `main` after v4.12.25 is listed here; it moves under its release heading when the version is cut.
+
+### Added
+
+1. **`PgRequest.insertRows` - many rows in one multi-row INSERT statement (`reactive-postgres`).** A field installation found a
+   loop of single-row inserts slow: PostgreSQL executes one statement at a time per connection, so each row paid a round trip and
+   a commit. `insertRows(po, table, columns, rows)` writes every row with one `INSERT ... VALUES ($1, ...), ($6, ...)` statement
+   and an optional clause makes it an upsert (`ON CONFLICT (id) DO UPDATE SET ...`). A statement carries at most 1000 bind
+   parameters - PostgreSQL accepts 65535, but Spring's `DatabaseClient` copies its bindings on every `bind()` call, so a
+   statement's cost grows with the square of its parameter count (13108 rows: 22 s at the PostgreSQL limit, 4.1 s at 1000) -
+   and a larger set of rows is split into such statements inside one transaction, so the insert stays all or none. Table and
+   column names are validated as plain identifiers, and a list or map value is refused. Measured on the module's embedded
+   PostgreSQL, 500 rows: one multi-row statement 94 ms, one transaction of 500 statements 249 ms, 500 autocommitted statements
+   650 ms. **Upgrade note:** none - a new method.
+2. **`examples/pg-example` gains the orders demo - every `PgRequest` method and the `postgres.service` event form.** The example
+   showed only the repository pattern and the direct database client. `DemoOrderEndpoint` now drives `insertRows` (one multi-row
+   INSERT), `query` with a positional parameter and with named parameters including a list expanded into the `IN` clause, `batch`
+   (one statement for many ids in one transaction) and `transaction` (two statements, all or none); `DemoOrderEvents` sends a
+   `PgQueryStatement` and a `PgTransactionStatement` to `postgres.service` with the PostOffice. Two demo tables in `pg-schema.sql`,
+   seven REST routes, a README section with the patterns side by side, and an end-to-end unit test on the embedded PostgreSQL.
+   **Upgrade note:** none - an example.
 
 ---
 ## Version 4.12.25, 10/12/2026
