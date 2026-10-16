@@ -687,7 +687,9 @@
   2026-10-16 (Eric):** the field's INFRASTRUCTURE COST AND SETUP ISSUES - an API credit balance, cloud account setup, expired
   credentials, model access gating - are outside this open-source project's control, are escalated to the field admin, and are
   never logged here either, in memory or in docs; a record says what the project did and learned. The 2026-10-16 research
-  record was redacted accordingly. Relates [[eric-code-changes-via-pr]] (how a change reaches main).
+  record was redacted accordingly, the sprint-1 records in all four repositories generalized, and the full rule text with
+  the clause copied into the Rust port's and both packs' `memory/instructions.md` as their Core Rule 6 (Eric, 2026-10-16).
+  Relates [[eric-code-changes-via-pr]] (how a change reaches main).
   <!-- id: conv-compartment-downstream-secrets | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: core | origin: 2026-09-30-164034 -->
 
 - **A library's `dependencyManagement` never reaches a consumer - a transitive version the library must control is a DIRECT
