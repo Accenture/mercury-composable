@@ -27,8 +27,9 @@
   release is pre-accepted; its deployment was the event left to record. **FIELD-DEPLOYED 2026-10-14 (Eric): the field's CI
   pipeline passed on 4.12.25 and it is deployed - the acceptance recorded; nothing pending for this release.** **READ:** no action. Sweep BUILD FILES ONLY 45 / 102. Readiness:
   `mvn -o clean install` BUILD SUCCESS 7:04, 249 suites, 1830 tests, 0 failures, 3 skipped. **No Rust release (Eric's ruling,
-  2026-10-13):** the port has no change since its 4.12.24 tag and catches up with its next feature or fix
-  ([[conv-ports-adopt-java-release-number]]); the packs stay at 4.12.21 - **their 4.12.25 catch-up is HELD (Eric, 2026-10-14) until the
+  2026-10-13):** the port catches up with its next feature or fix ([[conv-ports-adopt-java-release-number]]) - since 2026-10-16 it
+  carries one change past its 4.12.24 tag, the rustls 0.23.46 lockfile bump for four RustSec advisories (mercury #386 merge
+  `4a1cab95`, Increment 180); the packs stay at 4.12.21 - **their 4.12.25 catch-up is HELD (Eric, 2026-10-14) until the
   higher AI models are available on Bedrock; the additional tests and the fine tuning come first**. Origin 2026-10-13-021606.md.
   Prior: v4.12.24 (2026-10-12 22:33:21Z — the Guava resolution the field's Snyk gate rejected in 4.12.23, plus the range plugins' bounds
   and refinements (#554–#558), lock-step with Rust 4.12.24; #559 squash `e1940a4d`, tag → `c571e9c3`; Guava 33.7.2-jre, `failureaccess`
