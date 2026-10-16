@@ -29,7 +29,7 @@
   `mvn -o clean install` BUILD SUCCESS 7:04, 249 suites, 1830 tests, 0 failures, 3 skipped. **No Rust release (Eric's ruling,
   2026-10-13):** the port has no change since its 4.12.24 tag and catches up with its next feature or fix
   ([[conv-ports-adopt-java-release-number]]); the packs stay at 4.12.21 - **their 4.12.25 catch-up is HELD (Eric, 2026-10-14) until the
-  account has full access to the higher AI models on Bedrock; the additional tests and the fine tuning come first**. Origin 2026-10-13-021606.md.
+  higher AI models are available on Bedrock; the additional tests and the fine tuning come first**. Origin 2026-10-13-021606.md.
   Prior: v4.12.24 (2026-10-12 22:33:21Z — the Guava resolution the field's Snyk gate rejected in 4.12.23, plus the range plugins' bounds
   and refinements (#554–#558), lock-step with Rust 4.12.24; #559 squash `e1940a4d`, tag → `c571e9c3`; Guava 33.7.2-jre, `failureaccess`
   1.0.3 and Tink 1.23.0 as DIRECT dependencies of `minimalist-kafka` with Confluent 8.3.2, Guava out of `platform-core`
@@ -682,8 +682,11 @@
   downstream project as source material to scrub, citing it only as "a downstream design draft", never by path or repo name; scan
   the diff (and staged memory) for source-material identifiers before a commit or PR, and if one leaks, stop and tell Eric before
   pushing. Rule text: `memory/instructions.md` Core Rule 6. First applied the same day to two downstream drafts (RFC-0001 and
-  RFC-0002 in the RFC register, PR #470); all five sibling checkouts scanned clean, tree and commit messages. Relates
-  [[eric-code-changes-via-pr]] (how a change reaches main).
+  RFC-0002 in the RFC register, PR #470); all five sibling checkouts scanned clean, tree and commit messages. **Extended
+  2026-10-16 (Eric):** the field's INFRASTRUCTURE COST AND SETUP ISSUES - an API credit balance, cloud account setup, expired
+  credentials, model access gating - are outside this open-source project's control, are escalated to the field admin, and are
+  never logged here either, in memory or in docs; a record says what the project did and learned. The 2026-10-16 research
+  record was redacted accordingly. Relates [[eric-code-changes-via-pr]] (how a change reaches main).
   <!-- id: conv-compartment-downstream-secrets | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: core | origin: 2026-09-30-164034 -->
 
 - **A library's `dependencyManagement` never reaches a consumer - a transitive version the library must control is a DIRECT
@@ -780,19 +783,19 @@
   a Bedrock API key, the region from `llm.aws.region`/`AWS_REGION`, a bare model id prefixed `anthropic.`, no server-side fallbacks,
   an empty chain a 503 by name, `llm.health` reporting the region; the routes, the contract and the engines unchanged; 66 shared
   vectors, the real client built in tests with no AWS environment. Claude Platform on AWS (Anthropic-operated, bare model ids, full
-  parity) is a different route the same seam could take. **Driven live 2026-10-14 on this machine with Eric's temporary IAM credentials, negative
+  parity) is a different route the same seam could take. **Driven live 2026-10-14 on this machine through IAM, negative
   controls first:** a wrong secret a 401 by name, no credential a 503 by name (the Python mapping gap it found fixed in #44), then chat,
   a structured verdict and a progressive stream on Haiku 4.5 from both helpers and this engine's shipped triage graph and streaming
   relay in front of each - no vendor key anywhere. What it taught: Bedrock has TWO SURFACES an account may be enabled for separately
   (`llm.aws.api`: `mantle`, the default, or `runtime`, the classic one with the account's own inference-profile ids - Eric's ruling),
   model access is a one-time use case plus a per-model agreement (`CreateFoundationModelAgreement`, run on Eric's word), and a model
-  generation can be gated at the account on top (the 5.5 family stayed 403 - his AWS account team). Certification report Scenario 8
+  generation can be gated at the account on top. Certification report Scenario 8
   and Finding 7 (#563 squash `cd708eba`, mercury #384 merge `9141cc32`, both MERGED 2026-10-14, with the packs' surface PRs
   mercury-python #44 merge `03c5f57` and mercury-nodejs #112 merge `0ece23f`); the packs' thread closed; the concept doc's Q2 Bedrock
-  half done - sprint 1 COMPLETE on main in all four repositories. **Paused 2026-10-14 (Eric):** resumes when the admin resolves
-  the account's access to the newer Claude models - additional tests and fine tuning then; **the packs' 4.12.25 catch-up release is
-  HELD until that access exists (Eric)**.
-  **Research 2026-10-15/16 while that access is pending (Eric's direction) - sprint 2 is DOCUMENT INGESTION:** a field
+  half done - sprint 1 COMPLETE on main in all four repositories. **Paused 2026-10-14 (Eric):** resumes when the newer
+  Claude models are available - additional tests and fine tuning then; **the packs' 4.12.25 catch-up release is HELD until then
+  (Eric)**.
+  **Research 2026-10-15/16 (Eric's direction) - sprint 2 is DOCUMENT INGESTION:** a field
   installation converts legal PDFs into machine-readable blocks that a second round digests into a graph executing the rules
   and math for transaction processing; the general frame is AI nodes that interpret ambiguity and return per-block outcomes a
   deterministic node routes - to another agent, a program, or a human through suspend. Rulings: a large payload travels OUT OF

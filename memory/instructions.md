@@ -154,6 +154,10 @@ Java 21 virtual-thread technology), Maven 3.9.7+ (`.java-version` pins the local
    - **Scan before committing or opening a PR:** `git diff` (and staged memory) for any
      identifier from the source material. If something leaks, stop and tell Eric before
      pushing; history on `main` is append-only, so a leak cannot be quietly undone.
+   - **The field's infrastructure cost and setup issues are out of scope too (Eric, 2026-10-16):** an API credit balance,
+     cloud account setup, expired credentials, model access gating and similar matters are outside this open-source
+     project's control and are escalated to the field admin. They are never logged here, in memory or in docs; a record
+     says what the project did and learned, not what the field's infrastructure did.
    - Applies to every agent and every session, including lightweight logs.
 
 ## Session Working Conventions
