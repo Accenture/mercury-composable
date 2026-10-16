@@ -792,6 +792,21 @@
   half done - sprint 1 COMPLETE on main in all four repositories. **Paused 2026-10-14 (Eric):** resumes when the admin resolves
   the account's access to the newer Claude models - additional tests and fine tuning then; **the packs' 4.12.25 catch-up release is
   HELD until that access exists (Eric)**.
+  **Research 2026-10-15/16 while that access is pending (Eric's direction) - sprint 2 is DOCUMENT INGESTION:** a field
+  installation converts legal PDFs into machine-readable blocks that a second round digests into a graph executing the rules
+  and math for transaction processing; the general frame is AI nodes that interpret ambiguity and return per-block outcomes a
+  deterministic node routes - to another agent, a program, or a human through suspend. Rulings: a large payload travels OUT OF
+  BAND (the event carries a reference to a blob in a shared store - the temp file system in a shared container, else S3, Redis or
+  a database - and the helper dereferences it); a conversion's verdict is a LIST of per-block outcomes with their own confidence,
+  the rendered output and the pending chunks in the shared folder; not every block enters the graph (legal text is mostly
+  elaboration) and every later round reads the previous round's output; other formats need tools made available to the graph (an
+  Excel parser), and common tools and MCP are components of this epic. First lab experiment (Haiku 4.5 on Bedrock, three
+  client-proprietary documents under neutral names in a lab folder OUTSIDE the repositories, 2026-10-16): the model's
+  segmentation is the unstable part (about half the blocks differ between two identical runs while roles agree on 84-91% of the
+  matched ones; self-reported confidence never discriminates; whole-document runs are coarser), so a DETERMINISTIC SEGMENTER
+  owns block identity and agreement across runs on stable ids is the determinism measure; agreements are operative-heavy and
+  need a relevance axis against the declared processing scope; pass 2 on the blocks alone yields the human-escalation questions
+  and conflicts. Thread [[ai-sdlc-document-ingestion]]; the helper's typed parts by reference and the manifest go to an RFC.
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
