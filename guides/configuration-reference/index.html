@@ -7782,9 +7782,9 @@ Only the ids the listed manifests name are executable.</p>
 <code>&lt;set&gt;.pack</code> (<a href="../canonical-package-format/#graph-sets">the canonical package</a>), read from the manifest's
 <code>location</code> — and must then name an <code>unpack</code> folder: a <code>file:/</code> location the application can write, where the
 loader writes every graph of a set as <code>&lt;unpack&gt;/&lt;graph-id&gt;.json</code> before the gate reads it. A <code>classpath:</code> value,
-the Playground's temp folder (<code>location.graph.temp</code>) and a folder another manifest already uses are refused:
-<code>sets</code> need a writable <code>unpack</code> folder of their own, and without one the manifest's sets are skipped with an ERROR
-while its loose graphs still compile.</p>
+the Playground's temp folder (<code>location.graph.temp</code>) or a folder inside it, and a folder another manifest already uses
+are refused: <code>sets</code> need a writable <code>unpack</code> folder of their own, and without one the manifest's sets are skipped with
+an ERROR while its loose graphs still compile.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">graphs</span><span class="p">:</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'tutorial-1'</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="s">'classpath:/graph'</span><span class="w">          </span><span class="c1"># where &lt;graph-id&gt;.json AND &lt;set&gt;.pack are read from</span>

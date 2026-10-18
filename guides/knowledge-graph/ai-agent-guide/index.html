@@ -3418,21 +3418,22 @@ promotes.</p>
    describes it), or the command line:
    <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>java<span class="w"> </span>-jar<span class="w"> </span>helpers/graph-packager/target/graph-packager-&lt;version&gt;.jar<span class="w"> </span>pack<span class="w"> </span>--set<span class="w"> </span><span class="o">{</span>set<span class="o">}</span><span class="w"> </span>--manifest<span class="w"> </span><span class="nv">version</span><span class="o">=</span><span class="m">1</span>.0.0<span class="w"> </span>/tmp/graph/<span class="o">{</span>name<span class="o">}</span>.json
 </code></pre></div></li>
-<li><strong>Stage</strong> the file with a manifest that names the set and an <code>unpack</code> folder the application can write:
+<li><strong>Stage</strong> the file with a manifest that names the set and an <code>unpack</code> folder the application can write,
+   outside the Playground's temp folder (<code>location.graph.temp</code>, <code>/tmp/graph</code> by default):
    <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/graph/deploy<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>cp<span class="w"> </span><span class="o">{</span>set<span class="o">}</span>.pack<span class="w"> </span>/tmp/graph/deploy/
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>cat<span class="w"> </span>&gt;<span class="w"> </span>/tmp/graph/deploy/graphs.yaml<span class="w"> </span><span class="s">&lt;&lt;'EOF'</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="s">location: 'file:/tmp/graph/deploy'</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="s">sets:</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="s">  - '{set}'</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="s">unpack: 'file:/tmp/graph/deploy/unpacked'</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="s">unpack: 'file:/tmp/unpack'</span>
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="s">EOF</span>
 </code></pre></div></li>
 <li><strong>Restart</strong> with both manifests as above and <strong>verify</strong> the set in the startup log:
-   <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Deployed set {set} (version 1.0.0) from file:/tmp/graph/deploy/{set}.pack - 1 graphs into file:/tmp/graph/deploy/unpacked
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Deployed set {set} (version 1.0.0) from file:/tmp/graph/deploy/{set}.pack - 1 graphs into file:/tmp/unpack
 </code></pre></div>
    <code>list graphs</code> shows <code>{name} (set {set}, version 1.0.0)</code>, a duplicate of a bundled id is logged as an
    ERROR (the set's copy wins, as a later manifest's does), and <code>import graph from {name}</code> finds the
-   unpacked copy. The loader's generated manifest, <code>/tmp/graph/deploy/unpacked/graphs.yaml</code>, records what
+   unpacked copy. The loader's generated manifest, <code>/tmp/unpack/graphs.yaml</code>, records what
    deployed and which files it wrote.</li>
 </ol>
 <p>The rules of a set — the entry names, the root-name agreement, the manifest fields, the command line
