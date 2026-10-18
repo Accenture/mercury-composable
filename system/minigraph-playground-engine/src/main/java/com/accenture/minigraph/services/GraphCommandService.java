@@ -1323,8 +1323,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                     var deployed = findDeployedGraph(filename);
                     if (deployed != null) {
                         po.send(new EventEnvelope().setTo(outRoute).setBody("Found deployed graph model in " +
-                                        deployed.location() +
-                                "\nPlease export an updated version and re-import to instantiate an instance model"));
+                                        deployed.location()));
                         importGraphAsDraft(po, inRoute, outRoute, deployed.json());
                     }
                 }
