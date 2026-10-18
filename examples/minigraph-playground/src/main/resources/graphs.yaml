@@ -1,18 +1,19 @@
 graphs:
   - 'tutorial-1'
-  - 'tutorial-2'
-  - 'tutorial-3'
-  - 'tutorial-4'
-  - 'tutorial-5'
-  - 'tutorial-6'
-  - 'tutorial-7'
-  - 'tutorial-8'
-  - 'tutorial-9'
-  - 'tutorial-10'
-  - 'tutorial-11'
-  - 'tutorial-12'
-  - 'tutorial-13'
-  - 'tutorial-14'
   - 'support-triage'
 
+#
+# Graph set is optional
+# ---------------------
+#
+# To illustrate use of "graph sets",
+# tutorial-2 to 14 are deployed in packed format under resources/graph/tutorials.pack.
+#
+# The "unpack" folder is "/tmp/unpack".
+#
+sets:
+  - 'tutorials'
+
 location: 'classpath:/graph'
+
+unpack: 'file:/tmp/unpack'
