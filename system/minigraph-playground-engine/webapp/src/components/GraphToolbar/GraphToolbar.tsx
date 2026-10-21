@@ -1,6 +1,6 @@
 import { useCallback, type ReactNode } from 'react';
 import type { MinigraphGraphData } from '../../utils/graphTypes';
-import { CopyIcon, DownloadIcon, ImportIcon } from '../../icons/GraphToolbarIcons';
+import { CopyIcon, DownloadIcon, ImageIcon, ImportIcon } from '../../icons/GraphToolbarIcons';
 import { graphFileName, suggestGraphId } from '../../utils/graphFile';
 import styles from './GraphToolbar.module.css';
 
@@ -18,6 +18,10 @@ interface GraphToolbarProps {
   importDisabledReason?: string | null;
   /** Opens the download dialog that saves the graph as `<graph-id>.json`. */
   onDownload?:    () => void;
+  /** Saves an image of the whole graph as `<graph-id>.png` (the Export PNG button). */
+  onExportImage?: () => void;
+  /** True while the image is being rendered: the Export PNG button is disabled until it is saved. */
+  exportingImage?: boolean;
 }
 
 export default function GraphToolbar({
@@ -29,6 +33,8 @@ export default function GraphToolbar({
   onImport,
   importDisabledReason = null,
   onDownload,
+  onExportImage,
+  exportingImage = false,
 }: GraphToolbarProps) {
   const handleCopy = useCallback(() => {
     if (!graphData) return;
@@ -38,6 +44,7 @@ export default function GraphToolbar({
       .catch(() => onCopyError?.());
   }, [graphData, onCopySuccess, onCopyError]);
 
+  const graphId         = suggestGraphId(graphName);
   const nodeCount       = graphData?.nodes.length ?? 0;
   const connectionCount = (graphData?.connections ?? []).length;
 
@@ -73,11 +80,29 @@ export default function GraphToolbar({
             onClick={onDownload}
             disabled={!graphData}
             title={graphData
-              ? `Download the graph as ${graphFileName(suggestGraphId(graphName))}`
+              ? `Download the graph as ${graphFileName(graphId)}`
               : 'No graph to download'}
             aria-label="Download graph as a JSON file"
           >
             <DownloadIcon className={styles.toolbarIcon} aria-hidden="true" focusable="false" />
+          </button>
+        )}
+        {onExportImage && (
+          // Runs straight from the click: the browser opens its "save as" dialog
+          // only shortly after a user gesture.
+          <button
+            type="button"
+            className={`${styles.toolbarButton} ${styles.toolbarIconButton}`}
+            onClick={onExportImage}
+            disabled={!graphData || exportingImage}
+            title={exportingImage
+              ? 'Exporting the graph image…'
+              : graphData
+                ? `Export the whole graph as ${graphId}.png`
+                : 'No graph to export'}
+            aria-label="Export graph as a PNG image"
+          >
+            <ImageIcon className={styles.toolbarIcon} aria-hidden="true" focusable="false" />
           </button>
         )}
         <button

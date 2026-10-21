@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { saveBinaryFile, saveTextFile, supportsSaveFilePicker } from '../graphFile';
+import { saveBinaryFile, saveImageFile, saveTextFile, supportsSaveFilePicker } from '../graphFile';
 
 type PickerWindow = Window & { showSaveFilePicker?: unknown };
 
@@ -71,5 +71,126 @@ describe('saveTextFile', () => {
 
     expect(picker.mock.calls[0][0].types).toEqual([{ description: 'MiniGraph model (JSON)', accept: { 'application/json': ['.json'] } }]);
     expect(write).toHaveBeenCalledWith('{}');
+  });
+});
+
+describe('saveImageFile', () => {
+  /** A handle the native dialog answers, with the file it points at (Chromium creates it empty). */
+  function pickedFile(existing: string = '') {
+    const file = { content: existing, removed: false };
+    const write = vi.fn().mockImplementation(async (data: Blob) => { file.content = await data.text(); });
+    const close = vi.fn().mockResolvedValue(undefined);
+    const abort = vi.fn().mockResolvedValue(undefined);
+    const handle = {
+      name: 'chosen.png',
+      createWritable: vi.fn().mockResolvedValue({ write, close, abort }),
+      getFile: vi.fn().mockImplementation(async () => new File([file.content], 'chosen.png')),
+      remove: vi.fn().mockImplementation(async () => { file.removed = true; }),
+    };
+    return { file, handle, write, close, abort };
+  }
+
+  it('opens the native dialog before rendering, then writes the image', async () => {
+    const order: string[] = [];
+    const png = new Blob(['png'], { type: 'image/png' });
+    const { handle, write } = pickedFile();
+    const picker = vi.fn().mockImplementation(async () => {
+      order.push('dialog');
+      return handle;
+    });
+    (window as PickerWindow).showSaveFilePicker = picker;
+    const render = vi.fn().mockImplementation(async () => {
+      order.push('render');
+      return png;
+    });
+
+    const outcome = await saveImageFile(render, 'demo.png');
+
+    expect(order).toEqual(['dialog', 'render']);
+    expect(outcome).toEqual({ saved: true, fileName: 'chosen.png' });
+    expect(picker.mock.calls[0][0]).toEqual({
+      suggestedName: 'demo.png',
+      excludeAcceptAllOption: true,
+      types: [{ description: 'PNG image', accept: { 'image/png': ['.png'] } }],
+    });
+    expect(write).toHaveBeenCalledWith(png);
+    expect(handle.remove).not.toHaveBeenCalled();
+  });
+
+  it('opens the dialog in the same task as the call, so the click still counts', () => {
+    const picker = vi.fn().mockReturnValue(new Promise(() => undefined));
+    (window as PickerWindow).showSaveFilePicker = picker;
+
+    void saveImageFile(vi.fn(), 'demo.png');
+
+    expect(picker).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders nothing when the dialog is cancelled', async () => {
+    (window as PickerWindow).showSaveFilePicker = vi.fn().mockRejectedValue(Object.assign(new Error('cancelled'), { name: 'AbortError' }));
+    const render = vi.fn();
+
+    expect(await saveImageFile(render, 'demo.png')).toEqual({ saved: false, cancelled: true });
+    expect(render).not.toHaveBeenCalled();
+  });
+
+  it('passes a render failure on and removes the empty file the dialog left', async () => {
+    const { file, handle } = pickedFile();
+    (window as PickerWindow).showSaveFilePicker = vi.fn().mockResolvedValue(handle);
+
+    await expect(saveImageFile(() => Promise.reject(new Error('no canvas')), 'demo.png')).rejects.toThrow('no canvas');
+    expect(file.removed).toBe(true);
+    expect(handle.createWritable).not.toHaveBeenCalled();
+  });
+
+  it('keeps a chosen file that still holds its old content', async () => {
+    const { file, handle } = pickedFile('an older image');
+    (window as PickerWindow).showSaveFilePicker = vi.fn().mockResolvedValue(handle);
+
+    await expect(saveImageFile(() => Promise.reject(new Error('no canvas')), 'demo.png')).rejects.toThrow('no canvas');
+    expect(file.removed).toBe(false);
+  });
+
+  it('aborts a failed write and removes the empty file', async () => {
+    const { file, handle, write, close, abort } = pickedFile();
+    write.mockRejectedValue(new Error('disk full'));
+    (window as PickerWindow).showSaveFilePicker = vi.fn().mockResolvedValue(handle);
+
+    await expect(saveImageFile(async () => new Blob(['png']), 'demo.png')).rejects.toThrow('disk full');
+    expect(abort).toHaveBeenCalledTimes(1);
+    expect(close).not.toHaveBeenCalled();
+    expect(file.removed).toBe(true);
+  });
+
+  it('reports the save failure, not the cleanup, where the browser cannot remove the file', async () => {
+    const { handle } = pickedFile();
+    const withoutRemove = { name: handle.name, createWritable: handle.createWritable, getFile: handle.getFile };
+    (window as PickerWindow).showSaveFilePicker = vi.fn().mockResolvedValue(withoutRemove);
+    await expect(saveImageFile(() => Promise.reject(new Error('no canvas')), 'demo.png')).rejects.toThrow('no canvas');
+
+    handle.getFile.mockRejectedValue(new Error('NotAllowedError'));
+    (window as PickerWindow).showSaveFilePicker = vi.fn().mockResolvedValue(handle);
+    await expect(saveImageFile(() => Promise.reject(new Error('no canvas')), 'demo.png')).rejects.toThrow('no canvas');
+    expect(handle.remove).not.toHaveBeenCalled();
+  });
+
+  it('without the dialog, renders and downloads the image under the file name', async () => {
+    const blobs: Blob[] = [];
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob: Blob | MediaSource) => {
+      blobs.push(blob as Blob);
+      return 'blob:image';
+    });
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const clicked: HTMLAnchorElement[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      clicked.push(this);
+    });
+
+    const outcome = await saveImageFile(async () => new Blob(['png'], { type: 'image/png' }), 'demo.png');
+
+    expect(outcome).toEqual({ saved: true, fileName: 'demo.png' });
+    expect(blobs[0].type).toBe('image/png');
+    expect(await blobs[0].text()).toBe('png');
+    expect(clicked[0].download).toBe('demo.png');
   });
 });

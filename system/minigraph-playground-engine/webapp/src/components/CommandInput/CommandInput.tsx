@@ -97,13 +97,14 @@ export default function CommandInput({
     };
   }, [resizeToContent]);
 
+  // The keys are stated once, in the hint below the box, as symbols.
   const placeholder = disabled
     ? 'Not connected'
-    : 'Enter command (Enter to send · Shift+Enter for new line)';
+    : 'Enter command';
 
   const hint = disabled
     ? 'Enter your test message once it is connected'
-    : 'Enter to send · Shift+Enter for new line · ↑↓ for history';
+    : '⏎ to send · ⇧⏎ for new line · ↑↓ for history';
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // ── 1. Tab ────────────────────────────────────────────────────────────

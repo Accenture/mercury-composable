@@ -84,6 +84,8 @@ Props: `command`, `onChange`, `onKeyDown` (the history navigation from `useWebSo
 - **History dropup** ("Recent Commands"): `useHistoryAutocomplete` filters the history by a
   case-insensitive prefix of the first line, at most 8 entries; navigated with
   `aria-activedescendant`, focus never leaves the textarea.
+- The box's placeholder is "Enter command" ("Not connected" while offline); the keys are stated once,
+  in the hint below it, as symbols: "⏎ to send · ⇧⏎ for new line · ↑↓ for history".
 - Keys: `Enter` accepts a highlighted suggestion or sends; `Shift+Enter` inserts a newline; `Tab`
   accepts the active (or first) suggestion and is always consumed; `Escape` closes the dropup;
   `ArrowUp`/`ArrowDown` move in the dropup when open, otherwise reach the history only from the
@@ -117,7 +119,8 @@ authoring callbacks, `isConnected`, `supportsAuthoring`), `panelLayoutKey` and `
   2026-10-03). **Every enabled tab stays mounted** and is hidden by CSS, so the canvas keeps its
   zoom and pan.
 - The graph file callbacks pass through: `onImportFiles?` and `onImportGraph?` to `GraphView`,
-  `onDownloadGraph?` to both `GraphView` and `GraphDataView` (their toolbars' Download button).
+  `onDownloadGraph?` to both `GraphView` and `GraphDataView` (their toolbars' Download button),
+  `onGraphImageSaved?` and `onGraphImageError?` to `GraphView` (the Export PNG toasts).
 - With `helpPanel` set, the panel becomes a vertical split: the tab content above (`minSize` 0%),
   the help below (`minSize` 15%, default 45%). `helpPanel` may be a render function receiving
   `(toggleMaximize, isMaximized)`; maximize resizes to 0/100 and restore returns to the saved
@@ -194,11 +197,13 @@ graph or no connection (`connected` defaults to `false`, so the parent must pass
 ### `GraphToolbar` and `GraphRunControls` (`components/GraphToolbar/`)
 
 `GraphToolbar` shows the graph name (default "Untitled"), "N node(s) · M connection(s)", optional
-`extraActions`, then up to three icon buttons: **Import** (`onImport?`, disabled with
+`extraActions`, then up to four icon buttons: **Import** (`onImport?`, disabled with
 `importDisabledReason` as its tooltip — "Connect first to import a graph"), **Download**
 (`onDownload?`, disabled without a graph; the tooltip names the file, `<graph-id>.json` from
-`suggestGraphId(graphName)`) and **Copy**, which writes the graph JSON (pretty-printed) to the
-clipboard. `GraphView` wires Import and Download; `GraphDataView` wires Download only.
+`suggestGraphId(graphName)`), **Export PNG** (`onExportImage?`; the tooltip names
+`<graph-id>.png`; disabled without a graph and while `exportingImage`) and **Copy**, which writes
+the graph JSON (pretty-printed) to the clipboard. `GraphView` wires Import, Download and Export PNG
+([graph-view.md](graph-view.md#image-export)); `GraphDataView` wires Download only.
 `GraphRunControls` (rendered inside the toolbar by `GraphView`) is a `role="group"` with the three
 steps **Instantiate**, **Upload** (optional) and **Run**:
 

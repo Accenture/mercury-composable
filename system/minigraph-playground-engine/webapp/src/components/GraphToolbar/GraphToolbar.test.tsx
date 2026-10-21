@@ -61,3 +61,41 @@ describe('GraphToolbar file actions', () => {
     expect(downloadButton.title).toBe('No graph to download');
   });
 });
+
+describe('GraphToolbar Export PNG button', () => {
+  it('sits after Download and before Copy and names the file in its tooltip', () => {
+    render(<GraphToolbar graphData={GRAPH} graphName="My Graph" onDownload={vi.fn()} onExportImage={vi.fn()} />);
+
+    expect(screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
+      'Download graph as a JSON file',
+      'Export graph as a PNG image',
+      'Copy raw graph JSON to clipboard',
+    ]);
+    const exportButton = screen.getByRole('button', { name: 'Export graph as a PNG image' });
+    expect(exportButton.getAttribute('title')).toBe('Export the whole graph as My-Graph.png');
+    expect(exportButton.hasAttribute('aria-haspopup')).toBe(false);
+  });
+
+  it('exports straight from the click', () => {
+    const onExportImage = vi.fn();
+    render(<GraphToolbar graphData={GRAPH} graphName="demo" onExportImage={onExportImage} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export graph as a PNG image' }));
+
+    expect(onExportImage).toHaveBeenCalledTimes(1);
+  });
+
+  it('is disabled while the image is being exported, and without a graph', () => {
+    const { rerender } = render(
+      <GraphToolbar graphData={GRAPH} graphName="demo" onExportImage={vi.fn()} exportingImage />,
+    );
+    let exportButton = screen.getByRole('button', { name: 'Export graph as a PNG image' }) as HTMLButtonElement;
+    expect(exportButton.disabled).toBe(true);
+    expect(exportButton.title).toBe('Exporting the graph image…');
+
+    rerender(<GraphToolbar graphData={null} onExportImage={vi.fn()} />);
+    exportButton = screen.getByRole('button', { name: 'Export graph as a PNG image' }) as HTMLButtonElement;
+    expect(exportButton.disabled).toBe(true);
+    expect(exportButton.title).toBe('No graph to export');
+  });
+});

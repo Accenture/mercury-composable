@@ -47,6 +47,20 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    variables** rows - a name, a type (text, number, boolean or JSON) and the value - posted after the headers, so a variable the
    author names wins over one a header derives; its labels now read **JSON payload (input body)** and **Input header
    (optional)**. Both engines; the bundle is regenerated for both. **Upgrade note:** none - a new namespace.
+5. **The MiniGraph Playground exports the graph as a PNG image.** The Graph tab's toolbar gains an **Export PNG** button. It
+   saves the whole graph, not only the part the viewport shows, at zoom 1 with a solid background and 2 image pixels per graph
+   pixel, as `<graph-id>.png`. The edges, their labels and the node text are in the image; the minimap, the zoom controls and the
+   selection outline are not, and the node cards are drawn without their shadow (Safari paints it as a solid grey block in the
+   image). In a Chromium browser the "save as" dialog opens first and the image is rendered after it, and a
+   save that fails after the dialog removes the empty file the dialog created. There is no SVG export: the SVG the renderer
+   builds keeps the node cards as HTML inside `foreignObject`, which vector editors and office suites show as a blank image. The
+   webapp gains one npm dependency, `html-to-image` 1.11.11 (MIT license, no dependencies of its own), pinned exactly because
+   1.11.12 and 1.11.13 draw styles wrongly; it is bundled into the Playground's assets in the engine jar. Both engines; the
+   bundle is regenerated for both. **Upgrade note:** none - a new toolbar action; a dependency scan of the webapp sees one more
+   package.
+6. **The MiniGraph Playground engine has a favicon - the Mercury atom.** `public/favicon.ico` holds 16, 32 and 48 px images of
+   the white atom that the documentation site and the API playground use, on the API playground's deep purple. It answers the
+   `/favicon.ico` request that every Playground page load answered with 404. Both engines. **Upgrade note:** none.
 
 ### Changed
 
@@ -67,6 +81,9 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    after it. Example: a node with a skill and six 35-character mapping lines (seven rows) takes an estimated 13 lines at 240 px
    and 7 at 360 px, so it is drawn 360 px wide and 229 px tall instead of 337 px. Thumbnail mode keeps every card at 240 px.
    Both engines; the bundle is regenerated for both. **Upgrade note:** none - a layout change in the dev-mode Playground only.
+3. **The Playground's command input states its keys once.** The input box's placeholder repeated the hint printed below it and
+   was clipped at the box's edge. It now reads "Enter command", and the hint below uses symbols: "⏎ to send · ⇧⏎ for new line ·
+   ↑↓ for history". Both engines; the bundle is regenerated for both. **Upgrade note:** none.
 
 ---
 ## Version 4.12.25, 10/12/2026
