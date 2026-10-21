@@ -66,3 +66,13 @@ export function ImportIcon(props: ToolbarIconProps) {
     </svg>
   );
 }
+
+export function ImageIcon(props: ToolbarIconProps) {
+  return (
+    <svg {...sharedProps} {...props}>
+      <rect x="2.25" y="2.75" width="11.5" height="10.5" rx="1.25" />
+      <circle cx="5.75" cy="6.25" r="1.25" />
+      <path d="m2.75 12 3.75-3.75 2.5 2.5 1.75-1.75 2.5 2.5" />
+    </svg>
+  );
+}

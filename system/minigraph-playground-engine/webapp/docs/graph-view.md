@@ -94,7 +94,9 @@ Props: `graphData`, `graphName?`, `onCopySuccess?`/`onCopyError?` (toolbar copy)
 `graphRunControls?`, `onRenderError?`, `isRefreshing?`, `onClipNode?`, `onClipNodes?`,
 `onClipboardDrop?`, `onImportFiles?(files)` (a `.json` graph file dropped on the canvas),
 `onImportGraph?` (the Import Graph button → file picker), `onDownload?` (the toolbar's Download
-button), `isActive` (the Graph tab is visible — enables the minimap hotkey),
+button), `onExportImageSaved?(fileName)` / `onExportImageError?(message)` (the outcome of the
+toolbar's Export image menu, for the toasts), `isActive` (the Graph tab is visible — enables the
+minimap hotkey),
 `isConnected`, `supportsAuthoring?`, `onCreateNode?(source)`, `onCreateConnection?(source,
 target, anchor?)`, `onEditNode?`, `onDeleteNode?`, `onDeleteNodes?`, `onDeleteConnections?
 (requests)`, `panelLayoutKey?`. Authoring actions need `supportsAuthoring && callback &&
@@ -102,9 +104,9 @@ isConnected`; clip actions need only their callback; a clipboard drop needs `isC
 
 What it renders:
 
-- `GraphToolbar` (name, counts, import, download, copy) with `GraphRunControls` in its actions
-  slot, only when the graph has nodes. Import is disabled while offline ("Connect first to import a
-  graph").
+- `GraphToolbar` (name, counts, import, download, export image, copy) with `GraphRunControls` in
+  its actions slot, only when the graph has nodes. Import is disabled while offline ("Connect first
+  to import a graph"); Export image works offline too (see [Image export](#image-export)).
 - `<ReactFlow>` with controlled nodes/edges (every new transform replaces both, clears the
   selection and closes the menus), `fitView` padding 0.1, zoom 0.2–4, zoom on scroll / pinch /
   double-click, `panOnScroll` off (spelled out so an upgrade cannot change them),
@@ -134,6 +136,54 @@ What it renders:
 - When `panelLayoutKey` changes (`${leftPanelMode}|${clipboardOpen}|${helpOpen}` from the
   parent), the graph re-fits after two nested animation frames; the key describes panel
   *visibility* only, so separator drags never re-fit.
+
+### Image export
+
+The toolbar's **Export image** button (a picture icon between Download and Copy) opens a two-item
+menu, **Export PNG** and **Export SVG**. Either one saves the **whole graph**, whatever part of it the
+viewport shows, as `<graph-id>.png` or `<graph-id>.svg` (`graphImageFileName`: the graph id that
+Download suggests, from `suggestGraphId(graphName)`). The code is `utils/graphImage.ts`; the save is
+`saveImageFile` in `utils/graphFile.ts`; `GraphView.handleExportImage` joins them.
+
+- **Renderer.** The npm package `html-to-image`, React Flow's documented approach: it copies the
+  `.react-flow__viewport` element, writes every element's computed style into the copy, and wraps
+  the copy in an SVG `<foreignObject>`; the PNG is that SVG drawn on a canvas. The viewport holds
+  only the edges and the nodes, so the minimap, the zoom controls and the dotted background (its
+  siblings) never appear.
+- **Bounds.** The node bounds (`instance.getNodesBounds(getNodes())`) joined with each edge's SVG
+  box (`edgeBounds`: `getBBox()` of every `.react-flow__edge` group, which is in graph coordinates),
+  because a back edge can curl outside its nodes. `graphImageFrame` draws those bounds at **zoom 1**
+  with 40 px of padding on every side: the image is as large as the graph in graph pixels, never
+  scaled to fit a fixed size.
+- **PNG** at 2 image pixels per graph pixel (`GRAPH_IMAGE_PIXEL_RATIO`), whatever the screen;
+  `html-to-image` scales a canvas side above 16,384 pixels down to fit. Tutorial 12 (9 nodes) spans
+  1,320 × 934 graph pixels; with the padding that is 1,400 × 1,014, so its PNG is 2,800 × 2,028
+  pixels (657 KB).
+- **Solid background.** `resolveBackgroundColor` takes the first opaque background of the viewport
+  or an ancestor (the canvas's `--bg-primary`, white; `#ffffff` when none is found). The PNG canvas
+  is filled with it. For the SVG, `withSolidBackground` inserts a full-size `<rect>` of that colour
+  first, because `html-to-image` paints its background on the copied viewport, which the frame's
+  transform moves away from the image's top-left corner.
+- **Left out.** `includeInGraphImage` filters the connection handles (the authoring halo included),
+  a selected node's resize controls and the box-selection rectangle. A selected node's outline and a
+  selected edge's colour are CSS rules that the copy would inherit, so `GraphView` sets
+  `data-exporting` on the graph surface while it renders (`flushSync` puts the attribute in the DOM
+  first) and the selection rules in `GraphView.module.css` apply only `:not([data-exporting])`. The
+  selection disappears from the screen for the length of the render and comes back.
+- **Save order.** `saveImageFile` opens the browser's "save as" dialog (`showSaveFilePicker`, the
+  Chromium browsers) **before** rendering: the browser opens it only shortly after the click, and a
+  large graph can take longer to render. A cancelled dialog renders nothing. Without the dialog the
+  image is rendered first and downloaded into the download folder. The toolbar button is disabled
+  while an image renders; Playground toasts "Image saved as `<file>`" or "Image export failed: …".
+- **The SVG needs a browser to display it.** Its node cards are HTML inside `<foreignObject>`:
+  browsers draw it (checked in Chromium and in macOS Quick Look, which uses WebKit), but a renderer
+  without `foreignObject` support shows only the background: librsvg (`rsvg-convert`, used by many
+  converters) does, and so do most vector editors. Use the PNG for documents and slides. The SVG is also large, because every
+  element carries its full computed style: 2.9 MB for tutorial 12.
+- **The version is pinned exactly at 1.11.11** (`package.json`, no caret). React Flow's example
+  pins the same version because 1.11.12 and 1.11.13 draw styles wrongly (upstream issue
+  bubkoo/html-to-image#516, open). The package is MIT licensed and has no dependencies of its own;
+  it is bundled into the main `index-*.js` chunk.
 
 ### Selection, menus and gestures
 

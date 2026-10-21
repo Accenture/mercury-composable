@@ -111,7 +111,8 @@
   text-align: initial;
 }
 
-:global(.react-flow__node.selectable.selected) {
+/* Selection styling stays out of an exported image (data-exporting, set by GraphView while it renders). */
+.graphSurface:not([data-exporting]) :global(.react-flow__node.selectable.selected) {
   box-shadow:
     0 0 0 2px #7c3aed,
     0 2px 8px rgba(0,0,0,0.45) !important;
@@ -287,13 +288,14 @@
 /* ── Selected connection ──
  * Edge strokes are set inline by the transformer, so the selected state needs
  * !important to win. Click an edge to select it; Delete/Backspace removes it.
+ * Not while an image is exported (data-exporting): the image shows the graph.
  */
-.graphSurface :global(.react-flow__edge.selected .react-flow__edge-path) {
+.graphSurface:not([data-exporting]) :global(.react-flow__edge.selected .react-flow__edge-path) {
   stroke: var(--primary-color) !important;
   stroke-width: 3 !important;
 }
 
-.graphSurface :global(.react-flow__edge.selected .react-flow__edge-textbg) {
+.graphSurface:not([data-exporting]) :global(.react-flow__edge.selected .react-flow__edge-textbg) {
   stroke: var(--primary-color) !important;
 }
 

@@ -1,3 +1,4 @@
+import type { GraphImageFormat } from './graphImage';
 import type { MinigraphGraphData } from './graphTypes';
 
 /** The engine's rule for a graph file name (`validGraphFileName`): letters, digits, hyphen and underscore. */
@@ -121,9 +122,12 @@ interface SaveFilePickerOptions {
   types?: { description?: string; accept: Record<string, string[]> }[];
 }
 
+/** What a save writes: text, bytes, or a rendered file such as an image. */
+type FileContent = string | Uint8Array<ArrayBuffer> | Blob;
+
 interface WritableFileHandle {
   name: string;
-  createWritable(): Promise<{ write(data: string | Uint8Array<ArrayBuffer>): Promise<void>; close(): Promise<void> }>;
+  createWritable(): Promise<{ write(data: FileContent): Promise<void>; close(): Promise<void> }>;
 }
 
 type PickerWindow = Window & {
@@ -149,6 +153,10 @@ interface SaveFileType {
 const GRAPH_FILE_TYPE: SaveFileType = { description: 'MiniGraph model (JSON)', mimeType: 'application/json', extension: '.json' };
 const GRAPH_SET_FILE_TYPE: SaveFileType = { description: 'MiniGraph graph set', mimeType: 'application/octet-stream', extension: '.pack' };
 const OPENAPI_FILE_TYPE: SaveFileType = { description: 'OpenAPI document (YAML)', mimeType: 'application/yaml', extension: '.yaml' };
+const IMAGE_FILE_TYPES: Record<GraphImageFormat, SaveFileType> = {
+  png: { description: 'PNG image', mimeType: 'image/png', extension: '.png' },
+  svg: { description: 'SVG image', mimeType: 'image/svg+xml', extension: '.svg' },
+};
 
 /**
  * Save text as a file: through the native "save as" dialog where the browser has one (the user
@@ -172,7 +180,22 @@ export function saveBinaryFile(bytes: Uint8Array<ArrayBuffer>, fileName: string)
   return saveFile(bytes, fileName, GRAPH_SET_FILE_TYPE);
 }
 
-async function saveFile(data: string | Uint8Array<ArrayBuffer>, fileName: string, type: SaveFileType): Promise<SaveOutcome> {
+/**
+ * An image of the graph to `<graph-id>.png` or `.svg`. `render` runs only AFTER the native dialog
+ * closes: the browser opens that dialog only shortly after the user's click, and rendering a large
+ * graph can take longer. A cancelled dialog renders nothing. Without the dialog, `render` runs
+ * first and the result goes to the download folder.
+ */
+export function saveImageFile(render: () => Promise<Blob>, fileName: string, format: GraphImageFormat): Promise<SaveOutcome> {
+  return saveFile(render, fileName, IMAGE_FILE_TYPES[format]);
+}
+
+async function saveFile(
+  data: FileContent | (() => Promise<FileContent>),
+  fileName: string,
+  type: SaveFileType,
+): Promise<SaveOutcome> {
+  const content = typeof data === 'function' ? data : () => Promise.resolve(data);
   const picker = (window as PickerWindow).showSaveFilePicker;
   if (typeof picker === 'function') {
     let handle: WritableFileHandle;
@@ -186,12 +209,13 @@ async function saveFile(data: string | Uint8Array<ArrayBuffer>, fileName: string
       if ((err as Error).name === 'AbortError') return { saved: false, cancelled: true };
       throw err;
     }
+    const written = await content();
     const writable = await handle.createWritable();
-    await writable.write(data);
+    await writable.write(written);
     await writable.close();
     return { saved: true, fileName: handle.name };
   }
-  const blob = new Blob([data], { type: type.mimeType });
+  const blob = new Blob([await content()], { type: type.mimeType });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;

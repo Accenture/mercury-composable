@@ -10,7 +10,7 @@ you think it is.
 | Tool | Version | Notes |
 |---|---|---|
 | Node.js | 22.12 or newer | `react-router` 8.3 declares `node >= 22.22`, so `npm ci` on 22.12 prints one `EBADENGINE` warning; the build and the tests are unaffected. Node 25+ works too (see [Testing](#testing)). |
-| npm | 11 | `npm ci` installs exactly the locked tree (`package-lock.json`, 269 packages). Never `npm install` in a release: it may rewrite the lockfile. |
+| npm | 11 | `npm ci` installs exactly the locked tree (`package-lock.json`, 270 packages). Never `npm install` in a release: it may rewrite the lockfile. |
 | Vite | 8 (Rolldown) | Configured in `vite.config.ts`. |
 | TypeScript | 5.9 | `npm run typecheck` is `tsc --noEmit` and runs before every build. |
 
@@ -95,7 +95,7 @@ Expected churn by kind of change:
 | Help page text | `index-<hash>.js`, its `.map`, `template/playground.html` (new hash) |
 | Application source | `index-<hash>.js`, its `.map`, `playground.html`; a vendor chunk only when tree-shaking changes (PR #493 shrank `vendor-panels`) |
 | Comment-only source edit | the `.map` only |
-| Dependency bump | the matching `vendor-*` chunk and map (`manualChunks` in `vite.config.ts` keeps react-router, @xyflow/react, react-markdown + remark-gfm, react-json-view-lite and react-resizable-panels in their own chunks) |
+| Dependency bump | the matching `vendor-*` chunk and map (`manualChunks` in `vite.config.ts` keeps react-router, @xyflow/react, react-markdown + remark-gfm, react-json-view-lite and react-resizable-panels in their own chunks); any other dependency, such as `html-to-image` (pinned at 1.11.11, see [graph-view.md](graph-view.md#image-export)), is in `index-<hash>.js` |
 
 Live check: run the engine's playground example, open `http://127.0.0.1:8085`, and confirm the page
 references the new chunk (`curl -s http://127.0.0.1:8085/ | grep index-`); older hashes answer 404.

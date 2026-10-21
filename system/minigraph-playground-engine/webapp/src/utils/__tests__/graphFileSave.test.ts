@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { saveBinaryFile, saveTextFile, supportsSaveFilePicker } from '../graphFile';
+import { saveBinaryFile, saveImageFile, saveTextFile, supportsSaveFilePicker } from '../graphFile';
 
 type PickerWindow = Window & { showSaveFilePicker?: unknown };
 
@@ -71,5 +71,77 @@ describe('saveTextFile', () => {
 
     expect(picker.mock.calls[0][0].types).toEqual([{ description: 'MiniGraph model (JSON)', accept: { 'application/json': ['.json'] } }]);
     expect(write).toHaveBeenCalledWith('{}');
+  });
+});
+
+describe('saveImageFile', () => {
+  it('opens the native dialog before rendering, then writes the image', async () => {
+    const order: string[] = [];
+    const png = new Blob(['png'], { type: 'image/png' });
+    const write = vi.fn().mockResolvedValue(undefined);
+    const picker = vi.fn().mockImplementation(async () => {
+      order.push('dialog');
+      return { name: 'chosen.png', createWritable: async () => ({ write, close: vi.fn() }) };
+    });
+    (window as PickerWindow).showSaveFilePicker = picker;
+    const render = vi.fn().mockImplementation(async () => {
+      order.push('render');
+      return png;
+    });
+
+    const outcome = await saveImageFile(render, 'demo.png', 'png');
+
+    expect(order).toEqual(['dialog', 'render']);
+    expect(outcome).toEqual({ saved: true, fileName: 'chosen.png' });
+    expect(picker.mock.calls[0][0]).toEqual({
+      suggestedName: 'demo.png',
+      excludeAcceptAllOption: true,
+      types: [{ description: 'PNG image', accept: { 'image/png': ['.png'] } }],
+    });
+    expect(write).toHaveBeenCalledWith(png);
+  });
+
+  it('opens the dialog in the same task as the call, so the click still counts', () => {
+    const picker = vi.fn().mockReturnValue(new Promise(() => undefined));
+    (window as PickerWindow).showSaveFilePicker = picker;
+
+    void saveImageFile(vi.fn(), 'demo.svg', 'svg');
+
+    expect(picker).toHaveBeenCalledTimes(1);
+    expect(picker.mock.calls[0][0].types).toEqual([{ description: 'SVG image', accept: { 'image/svg+xml': ['.svg'] } }]);
+  });
+
+  it('renders nothing when the dialog is cancelled', async () => {
+    (window as PickerWindow).showSaveFilePicker = vi.fn().mockRejectedValue(Object.assign(new Error('cancelled'), { name: 'AbortError' }));
+    const render = vi.fn();
+
+    expect(await saveImageFile(render, 'demo.png', 'png')).toEqual({ saved: false, cancelled: true });
+    expect(render).not.toHaveBeenCalled();
+  });
+
+  it('passes a render failure on to the caller', async () => {
+    (window as PickerWindow).showSaveFilePicker = vi.fn().mockResolvedValue({ name: 'demo.png', createWritable: vi.fn() });
+
+    await expect(saveImageFile(() => Promise.reject(new Error('no canvas')), 'demo.png', 'png')).rejects.toThrow('no canvas');
+  });
+
+  it('without the dialog, renders and downloads the image under the file name', async () => {
+    const blobs: Blob[] = [];
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob: Blob | MediaSource) => {
+      blobs.push(blob as Blob);
+      return 'blob:image';
+    });
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+    const clicked: HTMLAnchorElement[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      clicked.push(this);
+    });
+
+    const outcome = await saveImageFile(async () => new Blob(['<svg/>'], { type: 'image/svg+xml' }), 'demo.svg', 'svg');
+
+    expect(outcome).toEqual({ saved: true, fileName: 'demo.svg' });
+    expect(blobs[0].type).toBe('image/svg+xml');
+    expect(await blobs[0].text()).toBe('<svg/>');
+    expect(clicked[0].download).toBe('demo.svg');
   });
 });

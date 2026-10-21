@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import {
   ReactFlow,
   Background,
@@ -24,6 +25,15 @@ import { transformGraphData, computeMeasuredPositions, type GraphNodeData, type 
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import type { MinigraphGraphData, MinigraphNode, MinigraphConnection } from '../../utils/graphTypes';
 import type { ConnectionRemovalRequest } from '../../graphActions/connectionEdits';
+import { saveImageFile } from '../../utils/graphFile';
+import {
+  edgeBounds,
+  graphImageFileName,
+  renderGraphImage,
+  resolveBackgroundColor,
+  unionRects,
+  type GraphImageFormat,
+} from '../../utils/graphImage';
 import { hasClipboardItemType, readClipboardItemId } from '../../clipboard/dnd';
 import { findNodeByAlias, extractDirectConnections } from '../../clipboard/helpers';
 import GraphToolbar from '../GraphToolbar/GraphToolbar';
@@ -62,6 +72,10 @@ interface GraphViewProps {
   onImportGraph?:  () => void;
   /** The toolbar's Download button: saves the graph as `<graph-id>.json`. */
   onDownload?:     () => void;
+  /** Called with the file name after the toolbar's Export image menu saved a PNG or SVG. */
+  onExportImageSaved?: (fileName: string) => void;
+  /** Called with the reason when an image export fails. */
+  onExportImageError?: (message: string) => void;
   /** Whether the Graph tab is currently visible and may handle graph-only hotkeys. */
   isActive:        boolean;
   isConnected:     boolean;
@@ -111,6 +125,8 @@ export default function GraphView({
   onImportFiles,
   onImportGraph,
   onDownload,
+  onExportImageSaved,
+  onExportImageError,
   isActive,
   isConnected,
   supportsAuthoring = false,
@@ -539,6 +555,41 @@ export default function GraphView({
     [canDeleteConnection, onDeleteConnections],
   );
 
+  // ── Image export (the toolbar's Export image menu) ─────────────────────────
+  // The whole graph, not the visible part: the bounds are every node plus every
+  // edge's curve, drawn at zoom 1. `html-to-image` copies the computed styles of
+  // the live elements, so `data-exporting` switches the selection styling off
+  // for the duration of the render (flushSync puts it in the DOM first).
+  const graphSurfaceRef = useRef<HTMLDivElement>(null);
+  const [exportingImage, setExportingImage] = useState(false);
+  const handleExportImage = useCallback((format: GraphImageFormat) => {
+    const instance = rfInstanceRef.current;
+    const viewport = graphSurfaceRef.current?.querySelector<HTMLElement>('.react-flow__viewport');
+    if (!instance || !viewport) {
+      onExportImageError?.('The graph is not on screen yet.');
+      return;
+    }
+    const render = async () => {
+      flushSync(() => setExportingImage(true));
+      try {
+        const bounds = unionRects([instance.getNodesBounds(instance.getNodes()), ...edgeBounds(viewport)]);
+        if (!bounds) throw new Error('The graph has nothing to draw.');
+        return await renderGraphImage(viewport, bounds, format, resolveBackgroundColor(viewport));
+      } finally {
+        setExportingImage(false);
+      }
+    };
+    // Called straight from the menu click: saveImageFile opens the browser's
+    // "save as" dialog before any await, while the click still counts.
+    saveImageFile(render, graphImageFileName(graphName, format), format)
+      .then((outcome) => {
+        if (outcome.saved) onExportImageSaved?.(outcome.fileName);
+      })
+      .catch((err: unknown) => {
+        onExportImageError?.(err instanceof Error ? err.message : String(err));
+      });
+  }, [graphName, onExportImageError, onExportImageSaved]);
+
   if (transformError) {
     return (
       <div className={styles.empty}>
@@ -567,12 +618,16 @@ export default function GraphView({
             onImport={onImportGraph}
             importDisabledReason={isConnected ? null : 'Connect first to import a graph'}
             onDownload={onDownload}
+            onExportImage={handleExportImage}
+            exportingImage={exportingImage}
           />
         )}
 
         <div
+          ref={graphSurfaceRef}
           className={styles.graphSurface}
           data-connect-picking={connectFromAlias !== null || undefined}
+          data-exporting={exportingImage || undefined}
           onDragEnter={handleSurfaceDragEnter}
           onDragOver={handleSurfaceDragOver}
           onDragLeave={handleSurfaceDragLeave}

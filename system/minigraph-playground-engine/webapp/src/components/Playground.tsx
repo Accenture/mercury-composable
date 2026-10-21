@@ -1157,6 +1157,8 @@ export default function Playground({ config }: PlaygroundProps) {
             onImportFiles={supportsAuthoring ? graphFileImport.importFiles : undefined}
             onImportGraph={supportsAuthoring ? graphFileImport.openFilePicker : undefined}
             onDownloadGraph={tabs.includes('graph') ? handleOpenDownloadDialog : undefined}
+            onGraphImageSaved={(fileName) => addToast(`Image saved as ${fileName}`, 'success')}
+            onGraphImageError={(message) => addToast(`Image export failed: ${message}`, 'error')}
             isConnected={ws.connected}
             supportsAuthoring={supportsAuthoring}
             onCreateNode={supportsAuthoring ? graphAuthoring.openCreateNode : undefined}
