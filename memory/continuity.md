@@ -584,6 +584,11 @@
   title ("docs/deck-benchmark-study (e385eec2, 55ab58e1 + logs), title Deck slide 13 …").
   Agent-side guard adopted 2026-09-07: in PR handoff text, give the title its own line/code
   block — never inline after branch/commit metadata, so a dialog paste cannot drag it along.
+  Third instance, a new cause (2026-10-21): PR #571's squash `e269a3cb` landed with the PR's STALE
+  title, "…export the graph as a PNG or an SVG image". The review had dropped the SVG export, but
+  `gh pr edit` is refused for the EMU account, so the PR still carried the old title and the dialog
+  pre-filled it. Agent-side guard: when the agent cannot update a PR's title itself, the handoff
+  says that the title on GitHub is now wrong and must be replaced in the squash dialog.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-14 | uses: 94 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
