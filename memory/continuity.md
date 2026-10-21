@@ -762,8 +762,11 @@
   chunk and its hash stay put if only comments changed (#492: two comments in `helpContent.ts`, one map line). The regenerated bundle ships in the engine jar of the next release. NOT built: a CI step that
   rebuilds the bundle and compares it with the committed one, feasible because the build is reproducible; Eric has not asked for it. **Since 2026-10-02 the release has two targets**
   ([[playground-webapp-single-source]]): `npm run release:rust` or `release:all` also deploys the bundle and a mirror of the help pages into the sibling Rust repo, so a help edit is done when BOTH repos
-  carry the result. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout: only the entry
-  page moved out of `public/`).
+  carry the result. **A bundler bump changes the bundle too (2026-10-21, #572):** Vite 8.1.5 → 8.3.5 moved Rolldown 1.1 → 1.2
+  and changed every JavaScript chunk, its CommonJS interop helper included. A Dependabot PR cannot rebuild the bundle, so a
+  maintainer pushes the rebuilt bundle onto that PR, A/B-tests the two bundles in a browser (the unit tests run against the
+  source, never the bundle), and deploys the same files to Rust. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
+  only the entry page moved out of `public/`).
   <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-12 | uses: 19 | tier: active | origin: 2026-10-02-015208 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*

@@ -108,6 +108,14 @@ Rust port has no change and stays at 4.12.24. **Upgrade note:** none.
    comment line that ends in a semicolon reads as commented-out code to Sonar. The field's rescan found one Blocker left, of this
    round's own making: the renamed `ActiveEnvironment` field `active` differed from the constant `ACTIVE` only by case; it is `current`
    now (#561). Reactor: 249 suites, 1830 tests, 0 failures. **Upgrade note:** none.
+2. **The Playground webapp builds with Vite 8.3.5 (Rolldown 1.2.15) - five Vite dev-server advisories closed (#572).** Vite 8.1.5 was
+   affected by GHSA-587h-7wmj-h5pm (high: a Windows existence-check bypass in `launch-editor`), GHSA-r825-w8mm-5pxw,
+   GHSA-698v-4r3x-3vcv and GHSA-rq7h-c2jc-7f22 (medium) and GHSA-9jrq-w75r-8gcw (low), all in the development server, none in the
+   bundle the engine jar ships. The new Rolldown emits a different bundle - every JavaScript chunk changes, the CommonJS interop
+   helper among them - so the bundle is rebuilt for both engines; in Chrome and Firefox the rebuilt and the previous bundle behave
+   the same (routing, the graph view, the Raw view, the help panel, the command palette, the PNG export pixel for pixel). Both
+   engines. **Upgrade note:** none.
+
 
 ---
 ## Version 4.12.24, 10/12/2026

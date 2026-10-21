@@ -39,7 +39,7 @@
     "fake-indexeddb": "^6.2.5",
     "happy-dom": "^20.11.1",
     "typescript": "^5.9.3",
-    "vite": "^8.0.16",
+    "vite": "^8.3.5",
     "vite-plugin-svgr": "^4.5.0",
     "vitest": "^4.1.11"
   }
