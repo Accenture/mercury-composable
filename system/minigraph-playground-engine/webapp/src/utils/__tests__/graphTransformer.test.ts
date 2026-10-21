@@ -662,13 +662,18 @@ describe('node overlap prevention', () => {
   it('computeMeasuredPositions restacks measured heights without overlap', () => {
     const graph = tutorial12Fixture as MinigraphGraphData;
     const positions = computeMeasuredPositions(graph, measuredTutorial12);
+    // Widths come from the content, never from measurement, so the relayout
+    // uses the same widths the transform renders.
+    const widths = new Map(
+      transformGraphData(graph).nodes.map(node => [node.id, nodeWidth(node)]),
+    );
 
     expect(new Set(positions.keys())).toEqual(new Set(graph.nodes.map(node => node.alias)));
     expectNoOverlap(graph.nodes.map(node => ({
       id: node.alias,
       x: positions.get(node.alias)!.x,
       y: positions.get(node.alias)!.y,
-      width: 240,
+      width: widths.get(node.alias)!,
       height: measuredTutorial12.get(node.alias)!,
     })));
   });
@@ -677,15 +682,15 @@ describe('node overlap prevention', () => {
     const graph = tutorial12Fixture as MinigraphGraphData;
     const partial = new Map([['error-handler', 438]]);
     const positions = computeMeasuredPositions(graph, partial);
-    const estimates = new Map(
-      transformGraphData(graph).nodes.map(node => [node.id, nodeHeight(node)]),
-    );
+    const transformed = transformGraphData(graph).nodes;
+    const estimates = new Map(transformed.map(node => [node.id, nodeHeight(node)]));
+    const widths = new Map(transformed.map(node => [node.id, nodeWidth(node)]));
 
     expectNoOverlap(graph.nodes.map(node => ({
       id: node.alias,
       x: positions.get(node.alias)!.x,
       y: positions.get(node.alias)!.y,
-      width: 240,
+      width: widths.get(node.alias)!,
       height: partial.get(node.alias) ?? estimates.get(node.alias)!,
     })));
   });
@@ -717,5 +722,106 @@ describe('node overlap prevention', () => {
       width: nodeWidth(node),
       height: nodeHeight(node),
     })));
+  });
+});
+
+// ─── Content-driven node width ──────────────────────────────────────────────
+// A node starts at 240 px and widens in 40 px steps, up to 480 px, while its
+// property values would wrap onto more than 1.5 lines per row on average.  The
+// estimate fits 22 characters per line at 240 px and one more per 7 px.  Every
+// flow node in a column then takes the width of the column's widest node.
+
+describe('content-driven node width', () => {
+  // 35 characters: 2 lines at 240-320 px (22-33 characters per line), 1 line
+  // at 360 px (39 characters per line).
+  const longMappings = Array.from(
+    { length: 6 },
+    (_, index) => `input.body.field_${index} -> model.field_${index}`,
+  );
+
+  function widthGraph(): MinigraphGraphData {
+    const graph = makeGraph(
+      ['root', 'mapper', 'short', 'end'],
+      [
+        ['root', 'mapper'],
+        ['root', 'short'],
+        ['mapper', 'end'],
+        ['short', 'end'],
+      ],
+    );
+    graph.nodes.find(node => node.alias === 'mapper')!.properties = {
+      skill: 'graph.data.mapper',
+      mapping: longMappings,
+    };
+    graph.nodes.find(node => node.alias === 'short')!.properties = { skill: 'graph.math' };
+    graph.nodes.push({
+      alias: 'notes',
+      types: ['Entity'],
+      properties: { description: 'x'.repeat(500) },
+    });
+    return graph;
+  }
+
+  function widthOf(nodes: Node<GraphNodeData>[], alias: string): number {
+    return nodeWidth(nodes.find(node => node.id === alias)!);
+  }
+
+  it('keeps a node of short values at 240 px', () => {
+    const result = transformGraphData(widthGraph());
+
+    expect(widthOf(result.nodes, 'root')).toBe(240);
+    expect(widthOf(result.nodes, 'end')).toBe(240);
+  });
+
+  it('widens a node to the narrowest step at which its rows stop wrapping heavily', () => {
+    const result = transformGraphData(widthGraph());
+    const mapper = result.nodes.find(node => node.id === 'mapper')!;
+
+    // Seven rows: the skill and six mappings.  At 240 px they take 1 + 12 = 13
+    // lines, more than 7 x 1.5 = 10.5; 280 px and 320 px still take 13; at
+    // 360 px they take 7.
+    expect(mapper.width).toBe(360);
+    // The height estimate follows the width: 40 px header + 7 rows x
+    // (9 px padding + 18 px for one line) = 229 px, against 337 px at 240 px.
+    expect(mapper.initialHeight).toBe(40 + (7 * (9 + 18)));
+  });
+
+  it('gives every node in a column the width of its widest node', () => {
+    const result = transformGraphData(widthGraph());
+    const mapper = result.nodes.find(node => node.id === 'mapper')!;
+    const short = result.nodes.find(node => node.id === 'short')!;
+
+    expect(short.position.x).toBe(mapper.position.x);
+    expect(short.width).toBe(mapper.width);
+    // The next column starts 120 px after the widened column.
+    const end = result.nodes.find(node => node.id === 'end')!;
+    expect(end.position.x).toBe(mapper.position.x + 360 + 120);
+  });
+
+  it('caps the width at 480 px and keeps a segregated node at its own width', () => {
+    const result = transformGraphData(widthGraph());
+
+    expect(widthOf(result.nodes, 'notes')).toBe(480);
+  });
+
+  it('lays out widened nodes without overlap or edge intrusions', () => {
+    const graph = widthGraph();
+    const result = transformGraphData(graph);
+
+    expect(scoreGeometry(result.nodes, result.edges).nodeIntrusions).toBe(0);
+    expectNoOverlap(result.nodes.map(node => ({
+      id: node.id,
+      x: node.position.x,
+      y: node.position.y,
+      width: nodeWidth(node),
+      height: nodeHeight(node),
+    })));
+    expectGraphSemanticsPreserved(graph, result.nodes, result.edges);
+  });
+
+  it('keeps every card at 240 px in thumbnail mode', () => {
+    const result = transformGraphData(widthGraph(), { compactNodes: true });
+
+    expect(result.nodes.every(node => node.width === 240)).toBe(true);
   });
 });

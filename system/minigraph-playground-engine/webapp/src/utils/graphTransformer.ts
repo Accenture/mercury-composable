@@ -32,12 +32,24 @@ export interface GraphEdgeData extends Record<string, unknown> {
 }
 
 // ─── Layout constants ────────────────────────────────────────────────────────
-// NODE_WIDTH / NODE_HEIGHT drive column/row spacing in the layout pass.
-// They are also used as the initial `width`/`height` on each node so React
-// Flow's wrapper has a reasonable size from the very first render.  After
-// mount React Flow's own ResizeObserver measures the real DOM dimensions and
-// updates accordingly, keeping NodeResizer in sync.
-const NODE_WIDTH  = 240;
+// Node widths (see layoutNodeWidths) and NODE_HEIGHT drive column/row spacing
+// in the layout pass.  They are also used as the initial `width`/`height` on
+// each node so React Flow's wrapper has a reasonable size from the very first
+// render.  After mount React Flow's own ResizeObserver measures the real DOM
+// dimensions and updates accordingly, keeping NodeResizer in sync.
+//
+// Content-driven width: a node starts at NODE_MIN_WIDTH and widens in
+// NODE_WIDTH_STEP increments, up to NODE_MAX_WIDTH, while its property values
+// would wrap onto more than NODE_MAX_LINES_PER_ROW lines per row on average.
+// A node of short values keeps the minimum; a node of long mapping lines or a
+// long description widens instead of growing into a tall, narrow column.
+// Every flow node in a layout column then takes the width of the column's
+// widest node (computeLayout); a segregated node keeps its own width.
+// Thumbnail mode keeps every card at NODE_MIN_WIDTH (uniform cards).
+const NODE_MIN_WIDTH  = 240;
+const NODE_MAX_WIDTH  = 480;
+const NODE_WIDTH_STEP = 40;
+const NODE_MAX_LINES_PER_ROW = 1.5;
 const NODE_HEIGHT = 100; // rough estimate; ResizeObserver will correct it post-mount
 // Thumbnail mode: every node is a uniform FIXED-height card — the header
 // (~40px) plus a clipped body peek of 1.5x the header showing the first
@@ -103,34 +115,68 @@ function nodeHeightForHandleCount(handleCount: number, baseHeight: number = NODE
   return Math.max(baseHeight, ((handleCount - 1) * EDGE_HANDLE_GAP) + (EDGE_HANDLE_PADDING * 2));
 }
 
-// ─── Content height estimation ───────────────────────────────────────────────
+// ─── Content size estimation ─────────────────────────────────────────────────
 // Nodes size to their content (no fixed height), so the layout must anticipate
 // how tall each node will render. MinigraphNodeBody draws a header plus one row
 // per property value (array values expand to one row per item), wrapping long
-// values at the fixed node width. These constants approximate that rendering so
+// values at the node's width. These constants approximate that rendering so
 // the pre-measurement layout is already close to the real DOM height;
 // GraphView re-runs the layout via computeMeasuredPositions once React Flow
 // reports measured heights, which is what actually guarantees non-overlap.
 const NODE_HEADER_ESTIMATE      = 40;  // header bar: icon + alias + type badge
 const NODE_ROW_PADDING_ESTIMATE = 9;   // per-row vertical padding + divider
 const NODE_LINE_HEIGHT_ESTIMATE = 18;  // one wrapped line of 0.75rem value text
-const NODE_VALUE_CHARS_PER_LINE = 22;  // value column width at NODE_WIDTH
+// The value column is the node width minus 86 px: borders, the body padding,
+// the 60 px label column and the gap after it (154 px at NODE_MIN_WIDTH).
+// Wrapping at word boundaries fits about one character per 7 px of 0.75rem
+// text, so a 240 px node holds 22 characters per line.
+const NODE_VALUE_COLUMN_INSET        = 86;
+const NODE_VALUE_CHAR_WIDTH_ESTIMATE = 7;
 
-function estimateRowLines(item: unknown): number {
-  const text = typeof item === 'string' ? item : JSON.stringify(item) ?? '';
-  return Math.max(1, Math.ceil(text.length / NODE_VALUE_CHARS_PER_LINE));
+function valueCharsPerLine(nodeWidth: number): number {
+  return Math.floor((nodeWidth - NODE_VALUE_COLUMN_INSET) / NODE_VALUE_CHAR_WIDTH_ESTIMATE);
 }
 
-function estimateNodeContentHeight(node: MinigraphNodeModel): number {
-  let height = NODE_HEADER_ESTIMATE;
+/** The text of each rendered property row, in MinigraphNodeBody's order. */
+function propertyRowTexts(node: MinigraphNodeModel): string[] {
+  const rows: string[] = [];
   for (const value of Object.values(node.properties ?? {})) {
     if (value === undefined || value === null) continue;
     const items = Array.isArray(value) ? value : [value];
     for (const item of items) {
-      height += NODE_ROW_PADDING_ESTIMATE + (estimateRowLines(item) * NODE_LINE_HEIGHT_ESTIMATE);
+      rows.push(typeof item === 'string' ? item : JSON.stringify(item) ?? '');
     }
   }
+  return rows;
+}
+
+function estimateRowLines(text: string, charsPerLine: number): number {
+  return Math.max(1, Math.ceil(text.length / charsPerLine));
+}
+
+function estimateNodeContentHeight(node: MinigraphNodeModel, nodeWidth: number): number {
+  const charsPerLine = valueCharsPerLine(nodeWidth);
+  let height = NODE_HEADER_ESTIMATE;
+  for (const text of propertyRowTexts(node)) {
+    height += NODE_ROW_PADDING_ESTIMATE + (estimateRowLines(text, charsPerLine) * NODE_LINE_HEIGHT_ESTIMATE);
+  }
   return Math.max(NODE_HEIGHT, height);
+}
+
+/**
+ * The narrowest width, from NODE_MIN_WIDTH in NODE_WIDTH_STEP increments, at
+ * which the node's rows wrap onto no more than NODE_MAX_LINES_PER_ROW lines per
+ * row on average; NODE_MAX_WIDTH when no step meets that.
+ */
+function estimateNodeWidth(node: MinigraphNodeModel): number {
+  const rows = propertyRowTexts(node);
+  const maxLines = rows.length * NODE_MAX_LINES_PER_ROW;
+  for (let width = NODE_MIN_WIDTH; width < NODE_MAX_WIDTH; width += NODE_WIDTH_STEP) {
+    const charsPerLine = valueCharsPerLine(width);
+    const lines = rows.reduce((sum, text) => sum + estimateRowLines(text, charsPerLine), 0);
+    if (lines <= maxLines) return width;
+  }
+  return NODE_MAX_WIDTH;
 }
 
 // ─── Layout node classification ─────────────────────────────────────────────
@@ -173,6 +219,8 @@ interface LayoutSlot {
   /** Real node alias. Virtual long-edge slots have no alias and are never rendered. */
   alias?: string;
   height: number;
+  /** Node width; 0 for a virtual slot, which never widens its column. */
+  width: number;
   stableKey: string;
 }
 
@@ -192,6 +240,7 @@ interface CandidateNodeGeometry {
   level: number;
   x: number;
   y: number;
+  width: number;
   height: number;
 }
 
@@ -382,10 +431,33 @@ function isScoreBetter(candidate: LayoutScore, current: LayoutScore): boolean {
       candidate.edgeCrossings < current.edgeCrossings);
 }
 
+/**
+ * Left x and width of each local column, from level 0 up to the deepest
+ * level: a column is as wide as its widest real node (NODE_MIN_WIDTH when it
+ * holds none) and COL_GAP separates neighbouring columns.
+ */
+function columnOffsets(
+  layers: Map<number, LayoutSlot[]>,
+): Map<number, { x: number; width: number }> {
+  const columns = new Map<number, { x: number; width: number }>();
+  const maxLevel = layers.size > 0 ? Math.max(...layers.keys()) : -1;
+  let x = 0;
+  for (let level = 0; level <= maxLevel; level++) {
+    const width = (layers.get(level) ?? []).reduce(
+      (max, slot) => Math.max(max, slot.width),
+      0,
+    ) || NODE_MIN_WIDTH;
+    columns.set(level, { x, width });
+    x += width + COL_GAP;
+  }
+  return columns;
+}
+
 function candidateNodeGeometry(
   layers: Map<number, LayoutSlot[]>,
 ): Map<string, CandidateNodeGeometry> {
   const geometry = new Map<string, CandidateNodeGeometry>();
+  const columns = columnOffsets(layers);
   for (const [level, slots] of layers) {
     const totalHeight = slots.reduce(
       (sum, slot) => sum + slot.height,
@@ -397,8 +469,9 @@ function candidateNodeGeometry(
         geometry.set(slot.alias, {
           alias: slot.alias,
           level,
-          x: level * (NODE_WIDTH + COL_GAP),
+          x: columns.get(level)!.x,
           y: cursorY,
+          width: slot.width,
           height: slot.height,
         });
       }
@@ -451,10 +524,10 @@ function forwardBezierYRangeOverNode(
   targetOffset: number,
   node: CandidateNodeGeometry,
 ): { yLow: number; yHigh: number } | null {
-  const sourceX = source.x + NODE_WIDTH;
+  const sourceX = source.x + source.width;
   const targetX = target.x;
   const nodeLeft = node.x + NODE_INTRUSION_EPSILON;
-  const nodeRight = node.x + NODE_WIDTH - NODE_INTRUSION_EPSILON;
+  const nodeRight = node.x + node.width - NODE_INTRUSION_EPSILON;
   if (nodeLeft >= targetX || nodeRight <= sourceX) return null;
 
   const controlX = sourceX + ((targetX - sourceX) / 2);
@@ -705,6 +778,7 @@ function minimizeCrossings(
   connections: MinigraphGraphData['connections'],
   backEdges: Set<string>,
   nodeHeights: Map<string, number>,
+  nodeWidths: Map<string, number>,
 ): Map<number, LayoutSlot[]> {
   const realLayers = new Map<number, LayoutSlot[]>();
   for (const [alias, level] of localLevelOf) {
@@ -713,6 +787,7 @@ function minimizeCrossings(
       id: realSlotId(alias),
       alias,
       height: nodeHeights.get(alias) ?? NODE_HEIGHT,
+      width: nodeWidths.get(alias) ?? NODE_MIN_WIDTH,
       stableKey: `real:${alias}`,
     });
   }
@@ -766,6 +841,7 @@ function minimizeCrossings(
       layers.get(level)!.push({
         id: dummyId,
         height: NODE_HEIGHT,
+        width: 0,
         stableKey: dummyId,
       });
       segments.push({ sourceId: previousId, targetId: dummyId, level: previousLevel });
@@ -944,6 +1020,7 @@ function relieveNodeIntrusions(
   levelOf: Map<string, number>,
   connections: MinigraphGraphData['connections'],
   nodeHeights: Map<string, number>,
+  nodeWidths: Map<string, number>,
 ): void {
   // Same work budget as the ordering-time geometry scoring: adversarial-scale
   // graphs skip relief entirely.  Shifts only change y, so the level-derived
@@ -961,6 +1038,7 @@ function relieveNodeIntrusions(
         level,
         x: position.x,
         y: position.y,
+        width: nodeWidths.get(alias) ?? NODE_MIN_WIDTH,
         height: nodeHeights.get(alias) ?? NODE_HEIGHT,
       });
     }
@@ -1054,7 +1132,12 @@ function computeLayout(
   nodes: MinigraphGraphData['nodes'],
   connections: MinigraphGraphData['connections'],
   nodeHeights: Map<string, number>,
-): { positions: Map<string, { x: number; y: number }>; levelOf: Map<string, number> } {
+  preferredWidths: Map<string, number>,
+): {
+  positions: Map<string, { x: number; y: number }>;
+  levelOf: Map<string, number>;
+  widths: Map<string, number>;
+} {
   // ── Step 1: Classify & partition ──────────────────────────────────────────
   // Build the set of aliases that participate in at least one connection so
   // classifyNode can distinguish modules (disconnected) from flow nodes.
@@ -1209,6 +1292,9 @@ function computeLayout(
   // ── Step 4: BFS layout for each component, placed left-to-right ───────────
   const levelOf = new Map<string, number>();
   const positions = new Map<string, { x: number; y: number }>();
+  // Rendered widths: a flow node takes its column's width (below), a
+  // segregated node keeps its own content-driven width.
+  const widths = new Map(preferredWidths);
   let componentLevelOffset = 0;
   let componentXOffset = 0;
 
@@ -1259,19 +1345,37 @@ function computeLayout(
       if (!localLevelOf.has(alias)) localLevelOf.set(alias, maxLocalLevel + 1);
     }
 
+    // Every node in a column takes the width of the column's widest node.
+    // The column stays aligned, and an edge leaving a narrower node never
+    // runs across the part of a wider neighbour that sticks out beside it —
+    // the intrusion scoring only checks nodes in the columns an edge skips.
+    const columnWidths = new Map<number, number>();
+    for (const [alias, level] of localLevelOf) {
+      columnWidths.set(level, Math.max(
+        columnWidths.get(level) ?? NODE_MIN_WIDTH,
+        preferredWidths.get(alias) ?? NODE_MIN_WIDTH,
+      ));
+    }
+    for (const [alias, level] of localLevelOf) {
+      widths.set(alias, columnWidths.get(level)!);
+    }
+
     const orderedLayers = minimizeCrossings(
       localLevelOf,
       connectionsByComponent[componentIndex],
       backEdges,
       nodeHeights,
+      widths,
     );
 
     // Assign pixel positions for this component's flow — centred at y = 0 per
     // local column. Virtual slots reserve candidate clearance for edges that
     // span intermediate levels; actual Bezier/body scoring rejects collisions.
     // componentXOffset gives each independent tree a fixed pixel gap from the
-    // previous tree instead of tying tree spacing to column count.
-    let componentMaxX = componentXOffset;
+    // previous tree instead of tying tree spacing to column count.  Each
+    // column is as wide as its widest node; narrower nodes align left in it.
+    const columns = columnOffsets(orderedLayers);
+    let componentMaxX = componentXOffset + NODE_MIN_WIDTH;
     for (const [localLevel, slots] of [...orderedLayers].sort(([a], [b]) => a - b)) {
       const totalHeight = slots.reduce(
         (sum, slot) => sum + slot.height,
@@ -1280,8 +1384,9 @@ function computeLayout(
 
       let cursorY = -totalHeight / 2;
       const globalLevel = componentLevelOffset + localLevel;
-      const x = componentXOffset + localLevel * (NODE_WIDTH + COL_GAP);
-      componentMaxX = Math.max(componentMaxX, x);
+      const column = columns.get(localLevel)!;
+      const x = componentXOffset + column.x;
+      componentMaxX = Math.max(componentMaxX, x + column.width);
       for (const slot of slots) {
         if (slot.alias) {
           levelOf.set(slot.alias, globalLevel);
@@ -1296,13 +1401,13 @@ function computeLayout(
 
     const componentMaxLevel = localLevelOf.size > 0 ? Math.max(...localLevelOf.values()) : 0;
     componentLevelOffset += componentMaxLevel + 1;
-    componentXOffset = componentMaxX + NODE_WIDTH + COMPONENT_GAP;
+    componentXOffset = componentMaxX + COMPONENT_GAP;
   }
 
   // ── Step 4.5: Bounded intrusion relief ─────────────────────────────────────
   // Positions hold only flow nodes at this point; segregated rows are anchored
   // below the (possibly shifted) flow bounding box in Step 6.
-  relieveNodeIntrusions(positions, levelOf, connections, nodeHeights);
+  relieveNodeIntrusions(positions, levelOf, connections, nodeHeights, widths);
 
   // ── Step 5: Bounding box of the main flow ─────────────────────────────────
   // Used to anchor the vertical start of the segregated rows.
@@ -1328,35 +1433,52 @@ function computeLayout(
     const aliases = (groupMap.get(key) ?? []).slice().sort(); // alphabetical for visual stability
     if (aliases.length === 0) continue;
 
-    const startX = 0; // left-align segregated rows with the main flow
+    let cursorX = 0; // left-align segregated rows with the main flow
     const rowHeight = aliases.reduce(
       (max, alias) => Math.max(max, nodeHeights.get(alias) ?? NODE_HEIGHT),
       0,
     );
 
-    aliases.forEach((alias, i) => {
+    for (const alias of aliases) {
       positions.set(alias, {
-        x: startX + i * (NODE_WIDTH + COL_GAP),
+        x: cursorX,
         y: nextRowY,
       });
-    });
+      cursorX += (widths.get(alias) ?? NODE_MIN_WIDTH) + COL_GAP;
+    }
 
     nextRowY += rowHeight + SEGREGATED_ROW_GAP;
   }
 
-  return { positions, levelOf };
+  return { positions, levelOf, widths };
 }
 
 /**
- * Estimated node heights for layout: the content estimate (header-only in
- * thumbnail mode), floored by the handle-count minimum.  Counts total
- * outgoing/incoming for rough handle counts — accurate per-side counts only
- * exist once back-edges are known.
+ * Node widths for layout and rendering: the content-driven width
+ * (estimateNodeWidth), or NODE_MIN_WIDTH for every node in thumbnail mode.
+ * Widths are never measured back from the DOM, so the initial layout and the
+ * measured-height relayout use the same widths.
+ */
+function layoutNodeWidths(
+  nodes: MinigraphGraphData['nodes'],
+  compactNodes: boolean,
+): Map<string, number> {
+  return new Map(
+    nodes.map(n => [n.alias, compactNodes ? NODE_MIN_WIDTH : estimateNodeWidth(n)]),
+  );
+}
+
+/**
+ * Estimated node heights for layout: the content estimate at the node's
+ * width (header-only in thumbnail mode), floored by the handle-count minimum.
+ * Counts total outgoing/incoming for rough handle counts — accurate per-side
+ * counts only exist once back-edges are known.
  */
 function layoutNodeHeights(
   nodes: MinigraphGraphData['nodes'],
   connections: MinigraphGraphData['connections'],
   compactNodes: boolean,
+  nodeWidths: Map<string, number>,
 ): Map<string, number> {
   const totalOutgoing = new Map<string, number>();
   const totalIncoming = new Map<string, number>();
@@ -1373,7 +1495,9 @@ function layoutNodeHeights(
       );
       return [
         n.alias,
-        compactNodes ? handleFloor : Math.max(handleFloor, estimateNodeContentHeight(n)),
+        compactNodes
+          ? handleFloor
+          : Math.max(handleFloor, estimateNodeContentHeight(n, nodeWidths.get(n.alias) ?? NODE_MIN_WIDTH)),
       ];
     }),
   );
@@ -1394,13 +1518,15 @@ export function computeMeasuredPositions(
   options: { compactNodes?: boolean } = {},
 ): Map<string, { x: number; y: number }> {
   const connections = data.connections ?? [];
-  const heights = layoutNodeHeights(data.nodes, connections, options.compactNodes === true);
+  const compactNodes = options.compactNodes === true;
+  const widths = layoutNodeWidths(data.nodes, compactNodes);
+  const heights = layoutNodeHeights(data.nodes, connections, compactNodes, widths);
   for (const [alias, measured] of measuredHeights) {
     if (heights.has(alias) && Number.isFinite(measured) && measured > 0) {
       heights.set(alias, measured);
     }
   }
-  return computeLayout(data.nodes, connections, heights).positions;
+  return computeLayout(data.nodes, connections, heights, widths).positions;
 }
 
 /**
@@ -1415,8 +1541,14 @@ export function transformGraphData(
   const supportsConnectionAuthoring = options.supportsConnectionAuthoring === true;
   const compactNodes = options.compactNodes === true;
 
-  const approxNodeHeights = layoutNodeHeights(data.nodes, connections, compactNodes);
-  const { positions, levelOf } = computeLayout(data.nodes, connections, approxNodeHeights);
+  const preferredWidths = layoutNodeWidths(data.nodes, compactNodes);
+  const approxNodeHeights = layoutNodeHeights(data.nodes, connections, compactNodes, preferredWidths);
+  const { positions, levelOf, widths } = computeLayout(
+    data.nodes,
+    connections,
+    approxNodeHeights,
+    preferredWidths,
+  );
 
   // ── Classify connections as forward or backward ───────────────────────────
   // A back-edge goes from a deeper (or equal) level to a shallower level.
@@ -1565,13 +1697,14 @@ export function transformGraphData(
       // node toggling available while Shift+drag from empty canvas box-selects.
       className: 'nokey',
       position: positions.get(n.alias) ?? { x: 0, y: 0 },
-      // Fixed width; the height depends on the detail mode.  Expanded:
+      // Content-driven width (layoutNodeWidths), fixed for the render; the
+      // height depends on the detail mode.  Expanded:
       // `initialHeight` sizes the very first paint (before measurement) at the
       // layout's estimate, then drops out of the inline style so the DOM
       // height follows the content, floored by style.minHeight — a fixed
       // `height` is only ever (re)introduced by the user through NodeResizer.
       // Thumbnail: a fixed uniform card height; the body peek is clipped.
-      width: NODE_WIDTH,
+      width: widths.get(n.alias) ?? NODE_MIN_WIDTH,
       ...(compactNodes
         ? { height: estimatedHeight }
         : { initialHeight: estimatedHeight }),

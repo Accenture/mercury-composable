@@ -48,17 +48,34 @@ same layout with real DOM heights. The algorithm, in order:
    Intrusion scoring models React Flow's bezier (control points at mid-x, handle offsets as
    assigned later) and bisects the curve's y-range over a node's x-span; it is skipped above
    2,000 edge–node pairs.
-7. **Pixels.** `x = componentOffset + level × (240 + 120)`; each column is stacked with 60 px gaps
-   and centred on y = 0, with virtual slots reserving corridors for long edges.
+7. **Pixels.** Every flow node in a column takes the width of the column's widest node (below),
+   so a column's nodes align and an edge never leaves a narrow node across a wider neighbour.
+   Columns sit 120 px apart: `x = componentOffset + Σ (width of each earlier column + 120)`, which
+   is `level × (240 + 120)` when no node is widened. Each column is stacked with 60 px gaps and
+   centred on y = 0, with virtual slots reserving corridors for long edges.
 8. **Intrusion relief** (`relieveNodeIntrusions`, ≤ 8 passes): the first remaining intrusion, in
    canonical order, moves its node (and every node in the same column on that side) just past the
    curve plus 16 px.
 9. **Segregated rows** below the flow (+120 px): Dictionary, Provider, Module, Entity, unknown,
-   one row each, alphabetical, 360 px apart, 80 px between rows.
+   one row each, alphabetical, each node at its own width with 120 px between nodes, 80 px between
+   rows.
 
-Node heights are estimated first (40 px header + 9 px + 18 px × ⌈chars / 22⌉ per property line;
-floor `NODE_HEIGHT` 100; a handle floor of `(n − 1) × 24 + 64` when a side has several handles).
-Thumbnail (compact) mode uses the floor only. `GraphView` then **relayouts once with measured
+**Node width follows the content** (`layoutNodeWidths`). A node starts at 240 px and widens in
+40 px steps, up to 480 px, while its property rows would wrap onto more than 1.5 lines per row on
+average; 480 px when no step meets that. The estimate: the value column is the node width minus
+86 px (borders, body padding, the 60 px label column and its gap), and wrapping at word
+boundaries fits one character per 7 px of the 12 px text — 22 characters per line at 240 px,
+39 at 360 px, 56 at 480 px. Example: seven rows of 35 characters take 13 lines at 240 px (more
+than 7 × 1.5 = 10.5) and 7 at 360 px, so the node is 360 px wide. A node of short values keeps
+240 px; long mapping lines or a long description widen the node instead of stretching it into a
+tall, narrow column. Widths are never measured back, so the measured relayout uses the same
+widths. Thumbnail (compact) mode keeps every card at 240 px.
+
+Node heights are estimated first, at the node's own content-driven width (a node widened to its
+column's width renders a little shorter, which the measured relayout corrects) (40 px header + 9 px + 18 px × ⌈chars /
+characters per line⌉ per property line; floor `NODE_HEIGHT` 100; a handle floor of
+`(n − 1) × 24 + 64` when a side has several handles). Thumbnail (compact) mode uses the floor
+only. `GraphView` then **relayouts once with measured
 heights** per (graphData, compact) pair: it waits until every node has `measured.height`, checks
 the nodes really come from this `graphData` (same `properties` object identity, same mode), applies
 only the positions that changed and `fitView({padding: 0.1})` in a `requestAnimationFrame`. Later

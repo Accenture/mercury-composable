@@ -69,6 +69,14 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    order-1001 (from input.header.x-correlation-id)"). Both engines. **Upgrade note:** a dry run that read a mock header back
    under its written case (`inspect input.header`, or a mapping of the whole `input.header`) now sees the lower-case name; a
    graph reading one header by name is unaffected, since header lookups are case-insensitive.
+2. **The MiniGraph Playground's graph view widens a node whose text would wrap heavily.** Every node was 240 px wide, so a node
+   with long mapping lines or a long description wrapped each value onto several lines and grew into a tall, narrow column - one
+   such node could be taller than the screen. A node now starts at 240 px and widens in 40 px steps, up to 480 px, while its
+   property values would wrap onto more than 1.5 lines per row on average; a node of short values stays at 240 px. Every node in
+   a layout column takes the width of the column's widest node, so the column stays aligned and the next column starts 120 px
+   after it. Example: a node with a skill and six 35-character mapping lines (seven rows) takes an estimated 13 lines at 240 px
+   and 7 at 360 px, so it is drawn 360 px wide and 229 px tall instead of 337 px. Thumbnail mode keeps every card at 240 px.
+   Both engines; the bundle is regenerated for both. **Upgrade note:** none - a layout change in the dev-mode Playground only.
 
 ---
 ## Version 4.12.25, 10/12/2026
