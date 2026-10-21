@@ -135,7 +135,7 @@ export default function GraphRunControls({
     instantiateStatus,
   );
   const uploadTooltip = appendStatus(
-    'Upload a JSON payload as the mock input.body of the instance, and optional mock headers as its input.header. Only you see the form.',
+    'Upload a JSON payload as the mock input.body of the instance, optional mock headers as its input.header and optional mock model variables. Only you see the form.',
     uploadStatus,
   );
   const runTooltip = appendStatus(

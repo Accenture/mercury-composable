@@ -436,6 +436,12 @@
   border-color: var(--danger-color);
 }
 
+/* after .input, whose flex it overrides: the type selector keeps its width */
+.rowType {
+  flex: 0 0 6rem;
+  font-family: inherit;
+}
+
 .entryRemove:hover:not(:disabled) {
   border-color: var(--danger-color);
   color: var(--danger-color);

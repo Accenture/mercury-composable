@@ -24,7 +24,9 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.util.MultiLevelMap;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -35,13 +37,16 @@ public class UploadMockContent implements TypedLambdaFunction<AsyncHttpRequest, 
     private static final String NAMESPACE = "namespace";
     private static final String BODY = "body";
     private static final String HEADER = "header";
+    private static final String MODEL = "model";
 
     /**
      * Load mock data into the session's graph instance. The {@code namespace} query parameter selects
      * the target: {@code body} (the default) takes a JSON map or list as {@code input.body};
-     * {@code header} takes a JSON object of text values as {@code input.header} - the shape a real
-     * request delivers, read case-insensitively by the graph, so a dry run can supply the headers a
-     * graph reads. Either namespace travels like a command to every member of a collaborative session.
+     * {@code header} takes a JSON object of text values as {@code input.header}, processed as a real
+     * request's headers are (see GraphCommandService.loadMockHeaders), so a dry run can supply the
+     * headers a graph reads; {@code model} takes a JSON object whose keys name model variables, for the
+     * state a request's edge would have set. Each namespace travels like a command to every member of a
+     * collaborative session.
      */
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
@@ -55,21 +60,66 @@ public class UploadMockContent implements TypedLambdaFunction<AsyncHttpRequest, 
         }
         var body = input.getBody();
         if (HEADER.equals(namespace)) {
-            if (!(body instanceof Map<?, ?> map) || !map.values().stream().allMatch(String.class::isInstance)) {
-                throw new IllegalArgumentException("Mock headers must be a JSON object with text values");
-            }
+            checkHeaders(body);
+        } else if (MODEL.equals(namespace)) {
+            checkModelVariables(body);
         } else if (BODY.equals(namespace)) {
             if (!(body instanceof Map || body instanceof List)) {
                 throw new IllegalArgumentException("Input is not a valid JSON payload that represents a Map or List");
             }
         } else {
-            throw new IllegalArgumentException("Unknown mock namespace '" + namespace + "' - use body or header");
+            throw new IllegalArgumentException("Unknown mock namespace '" + namespace +
+                    "' - use body, header or model");
         }
         if (GraphCommandService.uploadContent(id, body, namespace)) {
             return new EventEnvelope().setHeader("Content-Type", "application/json")
                     .setBody(Map.of("message", "Content uploaded", "type", "upload", NAMESPACE, namespace));
         } else {
             throw new IllegalArgumentException("Session "+id+" is expired or invalid");
+        }
+    }
+
+    /**
+     * Mock headers are a JSON object of text values whose names are distinct without case, because a
+     * request's header names are case-insensitive and the engine stores them in lower case.
+     */
+    private static void checkHeaders(Object body) {
+        if (!(body instanceof Map<?, ?> map) || !map.values().stream().allMatch(String.class::isInstance)) {
+            throw new IllegalArgumentException("Mock headers must be a JSON object with text values");
+        }
+        var names = new HashSet<String>();
+        for (var name : map.keySet()) {
+            var lower = String.valueOf(name).toLowerCase();
+            if (!names.add(lower)) {
+                throw new IllegalArgumentException("Duplicate mock header '" + lower +
+                        "' - header names are case-insensitive");
+            }
+        }
+    }
+
+    /**
+     * Mock model variables are a JSON object: each key is a model path without the {@code model.} prefix,
+     * in the dot-bracket syntax of the state machine, and each value is not null. An empty segment is
+     * refused because the syntax check drops it, and a name of dots alone would replace the whole model.
+     */
+    private static void checkModelVariables(Object body) {
+        if (!(body instanceof Map<?, ?> map)) {
+            throw new IllegalArgumentException("Mock model variables must be a JSON object");
+        }
+        var syntax = new MultiLevelMap();
+        for (var entry : map.entrySet()) {
+            var name = String.valueOf(entry.getKey());
+            if (name.isBlank() || name.startsWith(".") || name.endsWith(".") || name.contains("..")) {
+                throw new IllegalArgumentException("Invalid mock model variable '" + name + "' - empty path segment");
+            }
+            if (entry.getValue() == null) {
+                throw new IllegalArgumentException("Mock model variable '" + name + "' has no value");
+            }
+            try {
+                syntax.validateCompositePathSyntax(MODEL + "." + name);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid mock model variable '" + name + "' - " + e.getMessage());
+            }
         }
     }
 }

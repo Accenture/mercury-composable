@@ -1083,7 +1083,7 @@ export default function Playground({ config }: PlaygroundProps) {
                   onSuccess={handleUploadSuccess}
                   onClose={handleCloseUploadPanel}
                   onError={handleUploadError}
-                  description="The JSON becomes the instance's input.body and the optional headers its input.header. In a shared session every member's instance receives them."
+                  description="The JSON becomes the instance's input.body, the optional headers its input.header and the optional model variables its model.{name}. In a shared session every member's instance receives them."
                   inputPathHints={graphRun.inputBodyPaths}
                   inputHeaderHints={graphRun.inputHeaderNames}
                 />

@@ -54,6 +54,7 @@ class SessionManagementTest {
     private static final EventEmitter po = EventEmitter.getInstance();
     private static String httpTarget;
     private static final String MOCK_DATA_LOADED = "Mock data loaded into 'input.body' namespace";
+    private static final String MOCK_MODEL_LOADED = "Mock data loaded into 'model' namespace";
     private static final String GRAPH_IMPORTED = "Graph model imported as draft";
 
     @BeforeAll
@@ -858,9 +859,10 @@ class SessionManagementTest {
 
     /**
      * The header namespace of the mock upload (POST /api/mock/{id}?namespace=header): a JSON object
-     * of text values becomes every member's input.header, the names kept as given (the graph reads
-     * headers case-insensitively), the body untouched; the invitation names both endpoints; the REST
-     * edge refuses an unknown namespace and a header payload that is not an object of text values.
+     * of text values becomes every member's input.header as a request delivers it - the names in lower
+     * case, and the correlation-id header carrying the member's model.cid when the upload has none -
+     * the body untouched; the model namespace sets every member's model variables; the invitation names
+     * the three endpoints.
      */
     @Test
     void mockHeaderUploadLoadsEveryMemberInstanceTest() throws InterruptedException {
@@ -882,29 +884,89 @@ class SessionManagementTest {
             assertNotNull(waitForMessage(fx.messagesA(), "Graph instance created", 5));
             assertNotNull(waitForMessage(fx.messagesB(), "Graph instance created", 5));
             // the subscriber uploads mock headers: forwarded to the primary, loaded there and
-            // replayed into every subscriber's instance - into input.header, the names as given
+            // replayed into every subscriber's instance - into input.header as a request delivers it
             fx.messagesA().clear();
             fx.messagesB().clear();
             assertTrue(GraphCommandService.uploadContent(fx.sessionB(), Map.of("X-Request-Id", "abc-123"), "header"));
             assertNotNull(waitForMessage(fx.messagesA(), headersLoaded, 5));
             assertNotNull(waitForMessage(fx.messagesB(), headersLoaded, 5));
-            assertEquals(Map.of("X-Request-Id", "abc-123"), GraphCommandService.downloadContent(fx.sessionA(), "input.header"));
-            assertEquals(Map.of("X-Request-Id", "abc-123"), GraphCommandService.downloadContent(fx.sessionB(), "input.header"));
+            assertNotNull(waitForMessage(fx.messagesB(), "input.header.x-correlation-id = ", 5));
+            var cidB = GraphCommandService.downloadContent(fx.sessionB(), "model.cid");
+            assertNotNull(cidB);
+            assertEquals(Map.of("x-request-id", "abc-123", "x-correlation-id", cidB),
+                    GraphCommandService.downloadContent(fx.sessionB(), "input.header"));
+            assertEquals(GraphCommandService.downloadContent(fx.sessionA(), "model.cid"),
+                    GraphCommandService.downloadContent(fx.sessionA(), "input.header.x-correlation-id"));
+            assertEquals("abc-123", GraphCommandService.downloadContent(fx.sessionA(), "input.header.x-request-id"));
             // a body upload leaves the headers in place
             fx.messagesA().clear();
             fx.messagesB().clear();
             assertTrue(GraphCommandService.uploadContent(fx.sessionA(), Map.of("person_id", 300)));
             assertNotNull(waitForMessage(fx.messagesA(), MOCK_DATA_LOADED, 5));
             assertNotNull(waitForMessage(fx.messagesB(), MOCK_DATA_LOADED, 5));
-            assertEquals(Map.of("X-Request-Id", "abc-123"), GraphCommandService.downloadContent(fx.sessionB(), "input.header"));
+            assertEquals("abc-123", GraphCommandService.downloadContent(fx.sessionB(), "input.header.x-request-id"));
             assertEquals(Map.of("person_id", 300), GraphCommandService.downloadContent(fx.sessionB(), "input.body"));
-            // the console reads the headers back, and the invitation names both endpoints
+            // model variables travel the same way and leave model.cid in place
+            fx.messagesA().clear();
+            fx.messagesB().clear();
+            assertTrue(GraphCommandService.uploadContent(fx.sessionB(), Map.of("tier", "gold"), "model"));
+            assertNotNull(waitForMessage(fx.messagesA(), MOCK_MODEL_LOADED, 5));
+            assertNotNull(waitForMessage(fx.messagesB(), MOCK_MODEL_LOADED, 5));
+            assertEquals("gold", GraphCommandService.downloadContent(fx.sessionA(), "model.tier"));
+            assertEquals("gold", GraphCommandService.downloadContent(fx.sessionB(), "model.tier"));
+            assertEquals(cidB, GraphCommandService.downloadContent(fx.sessionB(), "model.cid"));
+            // the console reads the headers back, and the invitation names the three endpoints
             fx.messagesB().clear();
             po.send(fx.txPathB(), "inspect input.header");
             assertNotNull(waitForMessage(fx.messagesB(), "abc-123", 5));
             fx.messagesA().clear();
             po.send(fx.txPathA(), "upload mock data");
-            assertNotNull(waitForMessage(fx.messagesA(), "?namespace=header", 5));
+            var invitation = waitForMessage(fx.messagesA(), "?namespace=header", 5);
+            assertNotNull(invitation);
+            assertTrue(invitation.contains("?namespace=model"), invitation);
+        }
+    }
+
+    /**
+     * Mock headers are processed as a real request's are: the names in lower case, CR and LF removed
+     * from a value, the correlation-id header seeding model.cid and x-iteration-index seeding
+     * model.iteration_index - each derived value named on the console; model variables uploaded after
+     * them are set as given, dotted and indexed paths included.
+     */
+    @Test
+    void mockHeadersAreProcessedAsARequestTest() throws InterruptedException {
+        SessionFixture fx = createFixture();
+        if (fx == null) {
+            return;
+        }
+        try (fx) {
+            po.send(fx.txPathA(), "create node root");
+            assertNotNull(waitForMessage(fx.messagesA(), "node root created", 5));
+            po.send(fx.txPathA(), "create node end");
+            assertNotNull(waitForMessage(fx.messagesA(), "node end created", 5));
+            po.send(fx.txPathA(), "connect root to end with next");
+            assertNotNull(waitForMessage(fx.messagesA(), "node root connected to end", 5));
+            po.send(fx.txPathA(), "instantiate graph");
+            assertNotNull(waitForMessage(fx.messagesA(), "Graph instance created", 5));
+            fx.messagesA().clear();
+            var headers = Map.of("X-Correlation-Id", "order-1001", "X-Iteration-Index", " 2 ", "X-Note", "a\r\nb");
+            assertTrue(GraphCommandService.uploadContent(fx.sessionA(), headers, "header"));
+            assertNotNull(waitForMessage(fx.messagesA(),
+                    "model.cid = order-1001 (from input.header.x-correlation-id)", 5));
+            assertNotNull(waitForMessage(fx.messagesA(),
+                    "model.iteration_index = 2 (from input.header.x-iteration-index)", 5));
+            assertEquals(Map.of("x-correlation-id", "order-1001", "x-iteration-index", " 2 ", "x-note", "ab"),
+                    GraphCommandService.downloadContent(fx.sessionA(), "input.header"));
+            assertEquals("order-1001", GraphCommandService.downloadContent(fx.sessionA(), "model.cid"));
+            assertEquals("2", GraphCommandService.downloadContent(fx.sessionA(), "model.iteration_index"));
+            fx.messagesA().clear();
+            var variables = Map.of("tier", "gold", "limits.daily", 500, "flags[0]", true);
+            assertTrue(GraphCommandService.uploadContent(fx.sessionA(), variables, "model"));
+            assertNotNull(waitForMessage(fx.messagesA(), MOCK_MODEL_LOADED, 5));
+            assertEquals("gold", GraphCommandService.downloadContent(fx.sessionA(), "model.tier"));
+            assertEquals(500, GraphCommandService.downloadContent(fx.sessionA(), "model.limits.daily"));
+            assertEquals(List.of(true), GraphCommandService.downloadContent(fx.sessionA(), "model.flags"));
+            assertEquals("order-1001", GraphCommandService.downloadContent(fx.sessionA(), "model.cid"));
         }
     }
 
@@ -918,7 +980,7 @@ class SessionManagementTest {
         var unknown = new AsyncHttpRequest().setPathParameter("id", "ws-000000-0")
                 .setQueryParameter("namespace", "cookie").setBody(Map.of("a", "b"));
         var ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(Map.of(), unknown, 1));
-        assertEquals("Unknown mock namespace 'cookie' - use body or header", ex.getMessage());
+        assertEquals("Unknown mock namespace 'cookie' - use body, header or model", ex.getMessage());
         var nonText = new AsyncHttpRequest().setPathParameter("id", "ws-000000-0")
                 .setQueryParameter("namespace", "header").setBody(Map.of("count", 5));
         ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(Map.of(), nonText, 1));
@@ -932,6 +994,46 @@ class SessionManagementTest {
                 .setQueryParameter("namespace", "header").setBody(Map.of("a", "b"));
         ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(Map.of(), expired, 1));
         assertEquals("Session ws-000000-0 is expired or invalid", ex.getMessage());
+    }
+
+    /**
+     * The REST edge refuses two mock header names that differ only by case, a model payload that is
+     * not a JSON object, a model variable with an empty path segment, a bad index or no value, and -
+     * after the shape check - an unknown session.
+     */
+    @Test
+    void mockModelUploadRestEdgeRefusesBadInputTest() {
+        var edge = new UploadMockContent();
+        Map<String, String> noHeaders = Map.of();
+        var duplicate = mockRequest("header", Map.of("X-Tenant", "a", "x-tenant", "b"));
+        var ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(noHeaders, duplicate, 1));
+        assertEquals("Duplicate mock header 'x-tenant' - header names are case-insensitive", ex.getMessage());
+        var list = mockRequest("model", List.of("a"));
+        ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(noHeaders, list, 1));
+        assertEquals("Mock model variables must be a JSON object", ex.getMessage());
+        var empty = mockRequest("model", Map.of("a..b", 1));
+        ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(noHeaders, empty, 1));
+        assertEquals("Invalid mock model variable 'a..b' - empty path segment", ex.getMessage());
+        var dots = mockRequest("model", Map.of(".", 1));
+        ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(noHeaders, dots, 1));
+        assertEquals("Invalid mock model variable '.' - empty path segment", ex.getMessage());
+        var index = mockRequest("model", Map.of("items[x]", 1));
+        ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(noHeaders, index, 1));
+        assertEquals("Invalid mock model variable 'items[x]' - Invalid composite path - indexes must be digits",
+                ex.getMessage());
+        var nothing = new HashMap<String, Object>();
+        nothing.put("tier", null);
+        var noValue = mockRequest("model", nothing);
+        ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(noHeaders, noValue, 1));
+        assertEquals("Mock model variable 'tier' has no value", ex.getMessage());
+        var expired = mockRequest("model", Map.of("tier", "gold"));
+        ex = assertThrows(IllegalArgumentException.class, () -> edge.handleEvent(noHeaders, expired, 1));
+        assertEquals("Session ws-000000-0 is expired or invalid", ex.getMessage());
+    }
+
+    private static AsyncHttpRequest mockRequest(String namespace, Object body) {
+        return new AsyncHttpRequest().setPathParameter("id", "ws-000000-0")
+                .setQueryParameter("namespace", namespace).setBody(body);
     }
 
     /**

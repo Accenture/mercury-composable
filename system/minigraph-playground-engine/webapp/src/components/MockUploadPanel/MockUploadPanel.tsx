@@ -66,6 +66,73 @@ export function headerRowIssues(rows: HeaderRow[]): Map<string, string> {
   return issues;
 }
 
+/** How a model row's value text is read: as written, as a JSON number, as true/false, or as any JSON value. */
+export type ModelValueType = 'text' | 'number' | 'boolean' | 'json';
+
+/** One mock model variable row: a name under model., a value type and the value as typed. */
+interface ModelRow {
+  key: string;
+  name: string;
+  type: ModelValueType;
+  value: string;
+}
+
+let modelRowSeq = 0;
+function newModelRow(): ModelRow {
+  modelRowSeq += 1;
+  return { key: `m${modelRowSeq}`, name: '', type: 'text', value: '' };
+}
+
+const JSON_NUMBER = /^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$/;
+
+/** The value of a model row as its type reads it, or the reason the text is not of that type. */
+export function modelRowValue(row: ModelRow): { value?: unknown; issue?: string } {
+  switch (row.type) {
+    case 'number':
+      return JSON_NUMBER.test(row.value.trim())
+        ? { value: Number(row.value.trim()) }
+        : { issue: 'The value is not a number' };
+    case 'boolean':
+      return { value: row.value === 'true' };
+    case 'json':
+      try {
+        const parsed: unknown = JSON.parse(row.value);
+        return parsed === null ? { issue: 'A JSON value cannot be null' } : { value: parsed };
+      } catch {
+        return { issue: 'The value is not valid JSON' };
+      }
+    default:
+      return { value: row.value };
+  }
+}
+
+/**
+ * Issues of the model rows, by row key: a value needs a name, a name may not repeat (model names
+ * are case-sensitive) or hold an empty path segment, and a value must read as its type. Rows with
+ * neither name nor value are ignored.
+ */
+export function modelRowIssues(rows: ModelRow[]): Map<string, string> {
+  const issues = new Map<string, string>();
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const name = row.name.trim();
+    if (name === '') {
+      if (row.type !== 'boolean' && row.value.trim() !== '') issues.set(row.key, 'A model variable needs a name');
+      continue;
+    }
+    if (name.startsWith('.') || name.endsWith('.') || name.includes('..')) {
+      issues.set(row.key, `Empty path segment in '${name}'`);
+    } else if (seen.has(name)) {
+      issues.set(row.key, `Duplicate model variable '${name}'`);
+    } else {
+      seen.add(name);
+      const issue = modelRowValue(row).issue;
+      if (issue) issues.set(row.key, issue);
+    }
+  }
+  return issues;
+}
+
 const isMac =
   ((navigator as Navigator & { userAgentData?: { platform: string } }).userAgentData?.platform
     ?? navigator.platform)
@@ -96,6 +163,7 @@ export default function MockUploadPanel({
 }: MockUploadPanelProps) {
   const [json,        setJson]        = useState('');
   const [headerRows,  setHeaderRows]  = useState<HeaderRow[]>([]);
+  const [modelRows,   setModelRows]   = useState<ModelRow[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [fileError,   setFileError]   = useState<string | null>(null);
   const [isDragOver,  setIsDragOver]  = useState(false);
@@ -122,13 +190,26 @@ export default function MockUploadPanel({
     return map;
   }, [headerRows, rowIssues]);
   const headerCount = Object.keys(headers).length;
-  const canSubmit   = (hasBody ? isValidJson : headerCount > 0) && rowIssues.size === 0;
+  const modelIssues = useMemo(() => modelRowIssues(modelRows), [modelRows]);
+  // the named rows become model variables, each set as model.{name} after the headers
+  const model = useMemo(() => {
+    const map: Record<string, unknown> = {};
+    for (const row of modelRows) {
+      const name = row.name.trim();
+      if (name !== '' && !modelIssues.has(row.key)) map[name] = modelRowValue(row).value;
+    }
+    return map;
+  }, [modelRows, modelIssues]);
+  const modelCount  = Object.keys(model).length;
+  const canSubmit   = (hasBody ? isValidJson : headerCount + modelCount > 0)
+    && rowIssues.size === 0 && modelIssues.size === 0;
 
   // ── useMockUpload ────────────────────────────────────────────────────────
   const { isUploading, upload, cancel } = useMockUpload({
     uploadPath,
     json,
     headers,
+    model,
     onSuccess: (responseBody) => onSuccess(responseBody, uploadPath),
     onError: (msg) => {
       setUploadError(msg);   // inline error banner
@@ -179,6 +260,20 @@ export default function MockUploadPanel({
   }, []);
   const removeHeaderRow = useCallback((key: string) => {
     setHeaderRows(rows => rows.filter(row => row.key !== key));
+  }, []);
+
+  const addModelRow = useCallback(() => setModelRows(rows => [...rows, newModelRow()]), []);
+  const updateModelRow = useCallback((key: string, patch: Partial<ModelRow>) => {
+    setModelRows(rows => rows.map(row => {
+      if (row.key !== key) return row;
+      const next = { ...row, ...patch };
+      // a boolean row holds 'true' or 'false', which its selector shows
+      if (next.type === 'boolean' && next.value !== 'true' && next.value !== 'false') next.value = 'true';
+      return next;
+    }));
+  }, []);
+  const removeModelRow = useCallback((key: string) => {
+    setModelRows(rows => rows.filter(row => row.key !== key));
   }, []);
 
   const handleFormat = useCallback(() => {
@@ -344,7 +439,7 @@ export default function MockUploadPanel({
           )}
 
           <label htmlFor="mock-upload-textarea" className={styles.textareaLabel}>
-            JSON Payload
+            JSON payload (input body)
           </label>
           <textarea
             id="mock-upload-textarea"
@@ -372,7 +467,7 @@ export default function MockUploadPanel({
           </span>
           {/* ── Mock headers (optional) ─────────────────────────────── */}
           <div className={styles.headers}>
-            <span className={styles.textareaLabel}>Headers (optional)</span>
+            <span className={styles.textareaLabel}>Input header (optional)</span>
             <div className={styles.rows} role="group" aria-label="Mock headers">
               {headerRows.map(row => {
                 const issue = rowIssues.get(row.key);
@@ -420,8 +515,92 @@ export default function MockUploadPanel({
               </button>
             </div>
             <span className={styles.inputHintsNote}>
-              The headers become the instance's input.header, read case-insensitively by the graph, as a real
-              request's are.
+              The headers become the instance's input.header as a request delivers them: the names in lower
+              case, and the correlation-ID header (X-Correlation-Id by default) sets model.cid - without one,
+              the header carries the instance's model.cid.
+            </span>
+          </div>
+
+          {/* ── Mock model variables (optional) ─────────────────────── */}
+          <div className={styles.headers}>
+            <span className={styles.textareaLabel}>Model variables (optional)</span>
+            <div className={styles.rows} role="group" aria-label="Mock model variables">
+              {modelRows.map(row => {
+                const issue = modelIssues.get(row.key);
+                const label = row.name || '(unnamed)';
+                return (
+                  <div key={row.key} className={styles.rowBlock}>
+                    <div className={styles.row}>
+                      <input
+                        className={`${styles.input} ${styles.rowName}${issue ? ` ${styles.inputInvalid}` : ''}`}
+                        type="text"
+                        value={row.name}
+                        onChange={event => updateModelRow(row.key, { name: event.target.value })}
+                        placeholder="name"
+                        aria-label="Model variable name"
+                        autoComplete="off"
+                        spellCheck={false}
+                        disabled={isUploading}
+                      />
+                      <select
+                        className={`${styles.input} ${styles.rowType}`}
+                        value={row.type}
+                        onChange={event => updateModelRow(row.key, { type: event.target.value as ModelValueType })}
+                        aria-label={`Type of model variable ${label}`}
+                        disabled={isUploading}
+                      >
+                        <option value="text">text</option>
+                        <option value="number">number</option>
+                        <option value="boolean">boolean</option>
+                        <option value="json">JSON</option>
+                      </select>
+                      {row.type === 'boolean' ? (
+                        <select
+                          className={`${styles.input} ${styles.rowValue}`}
+                          value={row.value}
+                          onChange={event => updateModelRow(row.key, { value: event.target.value })}
+                          aria-label={`Value of model variable ${label}`}
+                          disabled={isUploading}
+                        >
+                          <option value="true">true</option>
+                          <option value="false">false</option>
+                        </select>
+                      ) : (
+                        <input
+                          className={`${styles.input} ${styles.rowValue}`}
+                          type="text"
+                          value={row.value}
+                          onChange={event => updateModelRow(row.key, { value: event.target.value })}
+                          placeholder={row.type === 'json' ? '{"a": 1} or [1, 2]' : 'value'}
+                          aria-label={`Value of model variable ${label}`}
+                          autoComplete="off"
+                          spellCheck={false}
+                          disabled={isUploading}
+                        />
+                      )}
+                      <button
+                        type="button"
+                        className={styles.entryRemove}
+                        onClick={() => removeModelRow(row.key)}
+                        disabled={isUploading}
+                        aria-label={`Remove model variable ${label}`}
+                        title="Remove model variable"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    {issue && <span className={styles.entryIssue} role="alert">⚠️ {issue}</span>}
+                  </div>
+                );
+              })}
+              <button type="button" className={styles.linkButton} onClick={addModelRow} disabled={isUploading}>
+                + Add model variable
+              </button>
+            </div>
+            <span className={styles.inputHintsNote}>
+              Each variable is set as model.{'{name}'} after the input header, and the other model variables
+              stay - the state a request's edge would set, which a dry run mocks here. A dotted or indexed name
+              (limits.daily, items[0]) sets a nested value.
             </span>
           </div>
 

@@ -71,6 +71,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String CONTENT = "content";
     private static final String MOCK_DATA_LOADED = "Mock data loaded into 'input.body' namespace";
     private static final String MOCK_HEADERS_LOADED = "Mock data loaded into 'input.header' namespace";
+    private static final String MOCK_MODEL_LOADED = "Mock data loaded into 'model' namespace";
     private static final String NAMESPACE = "namespace";
     private static final String BODY_NAMESPACE = "body";
     private static final String HEADER_NAMESPACE = "header";
@@ -82,9 +83,13 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final SimpleTypeMatchingConverter converter = SimpleTypeMatchingConverter.getInstance();
     private final AtomicInteger counter = new AtomicInteger();
     private final File tempDir;
+    // the business correlation-id header of a request (Event Script's HttpToFlow seeds model.cid from it)
+    private final String correlationIdHeader;
 
     public GraphCommandService() {
         var config = AppConfigReader.getInstance();
+        this.correlationIdHeader = config.getProperty("http.correlation.id.header", "X-Correlation-Id")
+                .toLowerCase();
         // load temp graph location
         var location = config.getProperty("location.graph.temp", DEFAULT_TEMP_DIR);
         if (location.startsWith(CLASSPATH_PREFIX)) {
@@ -209,8 +214,8 @@ public class GraphCommandService extends GraphLambdaFunction {
      * its instance loads the payload, and the upload is replayed into every subscriber's instance; a
      * subscriber forwards the payload to the primary, which does the same (the subscriber receives it
      * back on the replay). Every member of a collaborative session then runs the graph with the same
-     * {@code input.body} (or {@code input.header}, the namespace the upload names), and every member's
-     * console confirms the load.
+     * {@code input.body} (or {@code input.header} or model variables, the namespace the upload names),
+     * and every member's console confirms the load.
      */
     private void handleUpload(PostOffice po, String inRoute, String outRoute, Object content, String namespace,
                               boolean forwarded) {
@@ -284,9 +289,10 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     /**
-     * Load the mock content into the instance's {@code input.body} or, for the {@code header}
-     * namespace, {@code input.header} - the names kept as given, since the graph reads headers
-     * case-insensitively, exactly as it reads a real request's.
+     * Load the mock content into the instance: the {@code body} namespace replaces {@code input.body},
+     * the {@code header} namespace replaces {@code input.header} as a request delivers it (see
+     * loadMockHeaders), and the {@code model} namespace sets each variable it names under {@code model},
+     * leaving the others in place.
      */
     private void loadMockContent(PostOffice po, String inRoute, String outRoute, Object content, String namespace) {
         var instance = graphInstances.get(inRoute);
@@ -295,9 +301,58 @@ public class GraphCommandService extends GraphLambdaFunction {
                     "Mock data not loaded - this session has no graph instance (instantiate first)"));
             return;
         }
-        var header = HEADER_NAMESPACE.equals(namespace);
-        instance.stateMachine.setElement(header? INPUT_HEADER_NAMESPACE : INPUT_BODY, content);
-        po.send(new EventEnvelope().setTo(outRoute).setBody(header? MOCK_HEADERS_LOADED : MOCK_DATA_LOADED));
+        var stateMachine = instance.stateMachine;
+        if (HEADER_NAMESPACE.equals(namespace) && content instanceof Map<?, ?> headers) {
+            loadMockHeaders(po, outRoute, stateMachine, headers);
+        } else if (MODEL.equals(namespace) && content instanceof Map<?, ?> variables) {
+            for (var entry : variables.entrySet()) {
+                stateMachine.setElement(MODEL_NAMESPACE + entry.getKey(), entry.getValue());
+            }
+            po.send(new EventEnvelope().setTo(outRoute).setBody(MOCK_MODEL_LOADED));
+        } else {
+            stateMachine.setElement(INPUT_BODY, content);
+            po.send(new EventEnvelope().setTo(outRoute).setBody(MOCK_DATA_LOADED));
+        }
+    }
+
+    /**
+     * Mock headers are processed as a real request's are before they reach the graph. The REST edge
+     * stores every header name in lower case and removes CR and LF from a value. The business
+     * correlation-id header (http.correlation.id.header) seeds {@code model.cid}, as Event Script's
+     * HttpToFlow does, and a request without one carries the edge's id - here the instance's
+     * {@code model.cid}. A {@code x-iteration-index} header becomes {@code model.iteration_index}, as the
+     * deployed walker lifts it for a subgraph's for_each iteration. Each derived value is named on the
+     * console.
+     */
+    private void loadMockHeaders(PostOffice po, String outRoute, MultiLevelMap stateMachine, Map<?, ?> content) {
+        var headers = new HashMap<String, Object>();
+        for (var entry : content.entrySet()) {
+            var value = String.valueOf(entry.getValue()).replace("\r", "").replace("\n", "");
+            headers.put(String.valueOf(entry.getKey()).toLowerCase(), value);
+        }
+        var derived = new ArrayList<String>();
+        var cidPath = INPUT_HEADER_NAMESPACE + "." + correlationIdHeader;
+        if (headers.get(correlationIdHeader) instanceof String cid && !cid.isBlank()) {
+            stateMachine.setElement(MODEL_CID, cid);
+            derived.add(derivedValue(MODEL_CID, cid, cidPath));
+        } else if (stateMachine.getElement(MODEL_CID) instanceof String cid && !cid.isBlank()) {
+            headers.put(correlationIdHeader, cid);
+            derived.add(derivedValue(cidPath, cid, MODEL_CID));
+        }
+        if (headers.get(ITERATION_INDEX_HEADER) instanceof String index && !index.isBlank()) {
+            var target = MODEL_NAMESPACE + ITERATION_INDEX;
+            stateMachine.setElement(target, index.trim());
+            derived.add(derivedValue(target, index.trim(), INPUT_HEADER_NAMESPACE + "." + ITERATION_INDEX_HEADER));
+        }
+        stateMachine.setElement(INPUT_HEADER_NAMESPACE, headers);
+        po.send(new EventEnvelope().setTo(outRoute).setBody(MOCK_HEADERS_LOADED));
+        for (var line : derived) {
+            po.send(new EventEnvelope().setTo(outRoute).setBody(line));
+        }
+    }
+
+    private static String derivedValue(String target, String value, String source) {
+        return target + " = " + value + " (from " + source + ")";
     }
 
     private void handleCommand(PostOffice po, String command, String inRoute, String outRoute,
@@ -414,7 +469,8 @@ public class GraphCommandService extends GraphLambdaFunction {
         if (graphInstance != null) {
             var name = getTempGraphName(inRoute);
             po.send(new EventEnvelope().setTo(outRoute).setBody("You may upload JSON payload -> POST /api/mock/" + name +
-                    " (mock headers, a JSON object of text values -> POST /api/mock/" + name + "?namespace=header)"));
+                    " (mock headers, a JSON object of text values -> POST /api/mock/" + name + "?namespace=header;" +
+                    " model variables, a JSON object -> POST /api/mock/" + name + "?namespace=model)"));
         }
     }
 
@@ -433,12 +489,13 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     /**
      * Load mock data into the session's graph instance under the given namespace: {@code body}
-     * (a map or a list as {@code input.body}) or {@code header} (a map of text values as
-     * {@code input.header}). The REST edge validates the payload shape for the namespace.
+     * (a map or a list as {@code input.body}), {@code header} (a map of text values as
+     * {@code input.header}) or {@code model} (a map of model variables). The REST edge validates the
+     * payload shape for the namespace.
      *
      * @param id session id
      * @param content the mock content
-     * @param namespace body or header
+     * @param namespace body, header or model
      * @return false when the session has no graph instance
      */
     public static boolean uploadContent(String id, Object content, String namespace) {
