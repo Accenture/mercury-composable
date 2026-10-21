@@ -1,4 +1,3 @@
-import type { GraphImageFormat } from './graphImage';
 import type { MinigraphGraphData } from './graphTypes';
 
 /** The engine's rule for a graph file name (`validGraphFileName`): letters, digits, hyphen and underscore. */
@@ -127,7 +126,10 @@ type FileContent = string | Uint8Array<ArrayBuffer> | Blob;
 
 interface WritableFileHandle {
   name: string;
-  createWritable(): Promise<{ write(data: FileContent): Promise<void>; close(): Promise<void> }>;
+  createWritable(): Promise<{ write(data: FileContent): Promise<void>; close(): Promise<void>; abort(): Promise<void> }>;
+  getFile?(): Promise<File>;
+  /** Chromium's non-standard `FileSystemHandle.remove()`: deletes the file the handle points at. */
+  remove?(): Promise<void>;
 }
 
 type PickerWindow = Window & {
@@ -153,10 +155,7 @@ interface SaveFileType {
 const GRAPH_FILE_TYPE: SaveFileType = { description: 'MiniGraph model (JSON)', mimeType: 'application/json', extension: '.json' };
 const GRAPH_SET_FILE_TYPE: SaveFileType = { description: 'MiniGraph graph set', mimeType: 'application/octet-stream', extension: '.pack' };
 const OPENAPI_FILE_TYPE: SaveFileType = { description: 'OpenAPI document (YAML)', mimeType: 'application/yaml', extension: '.yaml' };
-const IMAGE_FILE_TYPES: Record<GraphImageFormat, SaveFileType> = {
-  png: { description: 'PNG image', mimeType: 'image/png', extension: '.png' },
-  svg: { description: 'SVG image', mimeType: 'image/svg+xml', extension: '.svg' },
-};
+const IMAGE_FILE_TYPE: SaveFileType = { description: 'PNG image', mimeType: 'image/png', extension: '.png' };
 
 /**
  * Save text as a file: through the native "save as" dialog where the browser has one (the user
@@ -181,13 +180,31 @@ export function saveBinaryFile(bytes: Uint8Array<ArrayBuffer>, fileName: string)
 }
 
 /**
- * An image of the graph to `<graph-id>.png` or `.svg`. `render` runs only AFTER the native dialog
- * closes: the browser opens that dialog only shortly after the user's click, and rendering a large
- * graph can take longer. A cancelled dialog renders nothing. Without the dialog, `render` runs
- * first and the result goes to the download folder.
+ * An image of the graph to `<graph-id>.png`. `render` runs only AFTER the native dialog closes:
+ * the browser opens that dialog only shortly after the user's click, and rendering a large graph
+ * can take longer. A cancelled dialog renders nothing, and a failed render removes the empty file
+ * the dialog left behind. Without the dialog, `render` runs first and the result goes to the
+ * download folder.
  */
-export function saveImageFile(render: () => Promise<Blob>, fileName: string, format: GraphImageFormat): Promise<SaveOutcome> {
-  return saveFile(render, fileName, IMAGE_FILE_TYPES[format]);
+export function saveImageFile(render: () => Promise<Blob>, fileName: string): Promise<SaveOutcome> {
+  return saveFile(render, fileName, IMAGE_FILE_TYPE);
+}
+
+/**
+ * Cleanup after a save that failed once the native dialog had closed. Chromium creates the chosen
+ * file when the dialog closes, before anything is written, so a failed render or write would leave
+ * an empty file behind. It is removed only while it is still empty: a file the user chose to
+ * overwrite and that still holds its old content is kept. Best effort - a browser without
+ * `remove()` keeps the empty file, and the save's own error is the one reported.
+ */
+async function removeIfEmpty(handle: WritableFileHandle): Promise<void> {
+  if (typeof handle.getFile !== 'function' || typeof handle.remove !== 'function') return;
+  try {
+    const file = await handle.getFile();
+    if (file.size === 0) await handle.remove();
+  } catch {
+    // the file stays; the caller reports the save's failure
+  }
 }
 
 async function saveFile(
@@ -209,10 +226,21 @@ async function saveFile(
       if ((err as Error).name === 'AbortError') return { saved: false, cancelled: true };
       throw err;
     }
-    const written = await content();
-    const writable = await handle.createWritable();
-    await writable.write(written);
-    await writable.close();
+    try {
+      const written = await content();
+      const writable = await handle.createWritable();
+      try {
+        await writable.write(written);
+        await writable.close();
+      } catch (err) {
+        // discard the browser's temporary copy; the chosen file keeps what it had
+        await writable.abort().catch(() => undefined);
+        throw err;
+      }
+    } catch (err) {
+      await removeIfEmpty(handle);
+      throw err;
+    }
     return { saved: true, fileName: handle.name };
   }
   const blob = new Blob([await content()], { type: type.mimeType });

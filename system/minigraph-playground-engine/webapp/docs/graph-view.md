@@ -112,7 +112,7 @@ Props: `graphData`, `graphName?`, `onCopySuccess?`/`onCopyError?` (toolbar copy)
 `onClipboardDrop?`, `onImportFiles?(files)` (a `.json` graph file dropped on the canvas),
 `onImportGraph?` (the Import Graph button → file picker), `onDownload?` (the toolbar's Download
 button), `onExportImageSaved?(fileName)` / `onExportImageError?(message)` (the outcome of the
-toolbar's Export image menu, for the toasts), `isActive` (the Graph tab is visible — enables the
+toolbar's Export PNG button, for the toasts), `isActive` (the Graph tab is visible — enables the
 minimap hotkey),
 `isConnected`, `supportsAuthoring?`, `onCreateNode?(source)`, `onCreateConnection?(source,
 target, anchor?)`, `onEditNode?`, `onDeleteNode?`, `onDeleteNodes?`, `onDeleteConnections?
@@ -121,9 +121,9 @@ isConnected`; clip actions need only their callback; a clipboard drop needs `isC
 
 What it renders:
 
-- `GraphToolbar` (name, counts, import, download, export image, copy) with `GraphRunControls` in
+- `GraphToolbar` (name, counts, import, download, export PNG, copy) with `GraphRunControls` in
   its actions slot, only when the graph has nodes. Import is disabled while offline ("Connect first
-  to import a graph"); Export image works offline too (see [Image export](#image-export)).
+  to import a graph"); Export PNG works offline too (see [Image export](#image-export)).
 - `<ReactFlow>` with controlled nodes/edges (every new transform replaces both, clears the
   selection and closes the menus), `fitView` padding 0.1, zoom 0.2–4, zoom on scroll / pinch /
   double-click, `panOnScroll` off (spelled out so an upgrade cannot change them),
@@ -156,15 +156,14 @@ What it renders:
 
 ### Image export
 
-The toolbar's **Export image** button (a picture icon between Download and Copy) opens a two-item
-menu, **Export PNG** and **Export SVG**. Either one saves the **whole graph**, whatever part of it the
-viewport shows, as `<graph-id>.png` or `<graph-id>.svg` (`graphImageFileName`: the graph id that
-Download suggests, from `suggestGraphId(graphName)`). The code is `utils/graphImage.ts`; the save is
+The toolbar's **Export PNG** button (a picture icon between Download and Copy) saves the **whole
+graph**, whatever part of it the viewport shows, as `<graph-id>.png` (`graphImageFileName`: the
+graph id that Download suggests, from `suggestGraphId(graphName)`). The code is `utils/graphImage.ts`; the save is
 `saveImageFile` in `utils/graphFile.ts`; `GraphView.handleExportImage` joins them.
 
 - **Renderer.** The npm package `html-to-image`, React Flow's documented approach: it copies the
   `.react-flow__viewport` element, writes every element's computed style into the copy, and wraps
-  the copy in an SVG `<foreignObject>`; the PNG is that SVG drawn on a canvas. The viewport holds
+  the copy in an SVG `<foreignObject>`, and draws that SVG on a canvas. The viewport holds
   only the edges and the nodes, so the minimap, the zoom controls and the dotted background (its
   siblings) never appear.
 - **Bounds.** The node bounds (`instance.getNodesBounds(getNodes())`) joined with each edge's SVG
@@ -177,26 +176,37 @@ Download suggests, from `suggestGraphId(graphName)`). The code is `utils/graphIm
   1,320 × 934 graph pixels; with the padding that is 1,400 × 1,014, so its PNG is 2,800 × 2,028
   pixels (657 KB).
 - **Solid background.** `resolveBackgroundColor` takes the first opaque background of the viewport
-  or an ancestor (the canvas's `--bg-primary`, white; `#ffffff` when none is found). The PNG canvas
-  is filled with it. For the SVG, `withSolidBackground` inserts a full-size `<rect>` of that colour
-  first, because `html-to-image` paints its background on the copied viewport, which the frame's
-  transform moves away from the image's top-left corner.
+  or an ancestor (the canvas's `--bg-primary`, white; `#ffffff` when none is found), and
+  `html-to-image` fills the whole canvas with it before drawing, so every pixel is opaque.
 - **Left out.** `includeInGraphImage` filters the connection handles (the authoring halo included),
   a selected node's resize controls and the box-selection rectangle. A selected node's outline and a
   selected edge's colour are CSS rules that the copy would inherit, so `GraphView` sets
   `data-exporting` on the graph surface while it renders (`flushSync` puts the attribute in the DOM
   first) and the selection rules in `GraphView.module.css` apply only `:not([data-exporting])`. The
-  selection disappears from the screen for the length of the render and comes back.
+  selection disappears from the screen for the length of the render and comes back. The same
+  attribute draws the node cards **without their shadow** (`[data-exporting]` sets `box-shadow:
+  none !important` over the node's inline style): Safari paints a blurred shadow inside the
+  `<foreignObject>` as a solid grey block beside each card, so the image is flat in every browser.
+- **Browsers.** Checked on tutorials 12 and 14, zoomed in with a node selected and the minimap
+  open, against the Java playground engine: Firefox 158 and Safari 27 take the download path,
+  Chrome 156 the dialog path (driven headless, so the dialog was a stand-in in the page: render
+  after the dialog, then write and close; a failed write aborted and removed the file). The three
+  images are the same whole graph, every pixel opaque, the selection back on screen afterwards.
 - **Save order.** `saveImageFile` opens the browser's "save as" dialog (`showSaveFilePicker`, the
   Chromium browsers) **before** rendering: the browser opens it only shortly after the click, and a
-  large graph can take longer to render. A cancelled dialog renders nothing. Without the dialog the
-  image is rendered first and downloaded into the download folder. The toolbar button is disabled
-  while an image renders; Playground toasts "Image saved as `<file>`" or "Image export failed: …".
-- **The SVG needs a browser to display it.** Its node cards are HTML inside `<foreignObject>`:
-  browsers draw it (checked in Chromium and in macOS Quick Look, which uses WebKit), but a renderer
-  without `foreignObject` support shows only the background: librsvg (`rsvg-convert`, used by many
-  converters) does, and so do most vector editors. Use the PNG for documents and slides. The SVG is also large, because every
-  element carries its full computed style: 2.9 MB for tutorial 12.
+  large graph can take longer to render. A cancelled dialog renders nothing. Chromium creates the
+  chosen file when the dialog closes, so a render or write that fails afterwards would leave an
+  empty file: `saveFile` aborts the failed write and removes the file while it is still empty
+  (`removeIfEmpty`, through Chromium's `FileSystemHandle.remove()`; a file the user chose to
+  overwrite that still holds its old content is kept). Without the dialog the image is rendered
+  first and downloaded into the download folder. The toolbar button is disabled while an image
+  renders; Playground toasts "Image saved as `<file>`" or "Image export failed: …".
+- **PNG only, by design.** The SVG that `html-to-image` builds on the way keeps the node cards as
+  HTML inside `<foreignObject>`. Browsers draw it, but a renderer without `foreignObject` support
+  shows only the background: librsvg (`rsvg-convert`, used by many converters) does, and so do
+  most vector editors and office suites - exactly where an exported graph goes. It would also be
+  large, because every element carries its full computed style (2.9 MB for tutorial 12, against
+  657 KB for the PNG). A vector export would draw the cards as SVG shapes and text; it is not built.
 - **The version is pinned exactly at 1.11.11** (`package.json`, no caret). React Flow's example
   pins the same version because 1.11.12 and 1.11.13 draw styles wrongly (upstream issue
   bubkoo/html-to-image#516, open). The package is MIT licensed and has no dependencies of its own;

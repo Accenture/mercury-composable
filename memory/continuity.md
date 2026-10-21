@@ -559,6 +559,19 @@
   not a rewrite of the binding) and [[conv-sonar-gate-heuristics]].
   <!-- id: pg-single-connection-is-serial | created: 2026-10-14 | last_used: 2026-10-14 | uses: 1 | tier: working | origin: 2026-10-15-000750 -->
 
+- **The Playground's graph image export is PNG only, rendered by `html-to-image` pinned at 1.11.11, with flat cards (Eric's
+  ruling 2026-10-21 on #571).** Export PNG saves the whole graph at zoom 1, 2 image pixels per graph pixel, on a solid
+  background. There is no SVG export: the renderer's SVG keeps the node cards as HTML inside `foreignObject`, which vector
+  editors, office suites and librsvg show as a blank image. A limit declared only in the CHANGELOG would be learned by losing an
+  image. In Chromium the "save as" dialog opens BEFORE the render, because the dialog needs the click's activation; Chromium
+  creates the chosen file at that point, so a failure afterwards aborts the write and removes the file while it is empty
+  (`removeIfEmpty`, the non-standard `FileSystemHandle.remove()`). The image draws the cards without their shadow, in every
+  browser: WebKit paints a blurred `box-shadow` inside `foreignObject` as a solid grey block. **Before bumping
+  `html-to-image`:** re-check upstream issue #516 (1.11.12 and 1.11.13 draw styles wrongly), then re-export a graph in Chrome,
+  Firefox and Safari and compare the three images. The 2026-10-21 log has the harness: puppeteer-core for Chrome and Firefox,
+  safaridriver for Safari. Applies [[clean-knowledge-design-over-engine-coverage]]; extends [[playground-webapp-single-source]].
+  <!-- id: playground-graph-image-png-only | created: 2026-10-21 | last_used: 2026-10-21 | uses: 1 | tier: working | origin: 2026-10-21-222735 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge

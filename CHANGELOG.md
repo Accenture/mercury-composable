@@ -47,16 +47,17 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    variables** rows - a name, a type (text, number, boolean or JSON) and the value - posted after the headers, so a variable the
    author names wins over one a header derives; its labels now read **JSON payload (input body)** and **Input header
    (optional)**. Both engines; the bundle is regenerated for both. **Upgrade note:** none - a new namespace.
-5. **The MiniGraph Playground exports the graph as a PNG or an SVG image.** The Graph tab's toolbar gains an **Export image**
-   menu with **Export PNG** and **Export SVG**. Either one saves the whole graph, not only the part the viewport shows, at zoom 1
-   with a solid background, as `<graph-id>.png` or `<graph-id>.svg`. The edges, their labels and the node text are in the image;
-   the minimap, the zoom controls and the selection outline are not. The PNG has 2 image pixels per graph pixel. The SVG holds
-   the node cards as HTML inside a `foreignObject` element, so browsers display it, but a renderer without `foreignObject`
-   support (librsvg, most vector editors) shows only the background - use the PNG there. The webapp gains one npm dependency,
-   `html-to-image` 1.11.11 (MIT license, no dependencies of its own), pinned exactly because 1.11.12 and 1.11.13 draw styles
-   wrongly; it is bundled into the Playground's assets in the engine jar. The bundle is regenerated for the Java engine; the
-   Rust engine's copy is a separate deploy (`npm run release:rust`). **Upgrade note:** none - a new toolbar action; a
-   dependency scan of the webapp sees one more package.
+5. **The MiniGraph Playground exports the graph as a PNG image.** The Graph tab's toolbar gains an **Export PNG** button. It
+   saves the whole graph, not only the part the viewport shows, at zoom 1 with a solid background and 2 image pixels per graph
+   pixel, as `<graph-id>.png`. The edges, their labels and the node text are in the image; the minimap, the zoom controls and the
+   selection outline are not, and the node cards are drawn without their shadow (Safari paints it as a solid grey block in the
+   image). In a Chromium browser the "save as" dialog opens first and the image is rendered after it, and a
+   save that fails after the dialog removes the empty file the dialog created. There is no SVG export: the SVG the renderer
+   builds keeps the node cards as HTML inside `foreignObject`, which vector editors and office suites show as a blank image. The
+   webapp gains one npm dependency, `html-to-image` 1.11.11 (MIT license, no dependencies of its own), pinned exactly because
+   1.11.12 and 1.11.13 draw styles wrongly; it is bundled into the Playground's assets in the engine jar. Both engines; the
+   bundle is regenerated for both. **Upgrade note:** none - a new toolbar action; a dependency scan of the webapp sees one more
+   package.
 
 ### Changed
 

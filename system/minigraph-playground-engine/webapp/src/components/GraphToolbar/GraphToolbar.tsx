@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import type { MinigraphGraphData } from '../../utils/graphTypes';
 import { CopyIcon, DownloadIcon, ImageIcon, ImportIcon } from '../../icons/GraphToolbarIcons';
 import { graphFileName, suggestGraphId } from '../../utils/graphFile';
-import type { GraphImageFormat } from '../../utils/graphImage';
 import styles from './GraphToolbar.module.css';
 
 interface GraphToolbarProps {
@@ -19,9 +18,9 @@ interface GraphToolbarProps {
   importDisabledReason?: string | null;
   /** Opens the download dialog that saves the graph as `<graph-id>.json`. */
   onDownload?:    () => void;
-  /** Saves an image of the whole graph as `<graph-id>.png` or `<graph-id>.svg` (the Export image menu). */
-  onExportImage?: (format: GraphImageFormat) => void;
-  /** True while an image is being rendered: the Export image button is disabled until it is saved. */
+  /** Saves an image of the whole graph as `<graph-id>.png` (the Export PNG button). */
+  onExportImage?: () => void;
+  /** True while the image is being rendered: the Export PNG button is disabled until it is saved. */
   exportingImage?: boolean;
 }
 
@@ -44,46 +43,6 @@ export default function GraphToolbar({
       .then(() => onCopySuccess?.())
       .catch(() => onCopyError?.());
   }, [graphData, onCopySuccess, onCopyError]);
-
-  // ── Export image menu ──
-  // A lightweight menu like the canvas context menus: the first item takes
-  // focus, an outside pointer down or Escape closes it, focus is not trapped.
-  const [exportMenuOpen, setExportMenuOpen] = useState(false);
-  const exportMenuAnchorRef = useRef<HTMLDivElement>(null);
-  const exportButtonRef = useRef<HTMLButtonElement>(null);
-  const firstExportItemRef = useRef<HTMLButtonElement>(null);
-  const canExportImage = Boolean(graphData) && !exportingImage;
-
-  useEffect(() => {
-    if (!exportMenuOpen) return;
-    firstExportItemRef.current?.focus();
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (exportMenuAnchorRef.current && !exportMenuAnchorRef.current.contains(event.target as Node)) {
-        setExportMenuOpen(false);
-      }
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      setExportMenuOpen(false);
-      exportButtonRef.current?.focus();
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [exportMenuOpen]);
-
-  // The export runs straight from the click: the browser opens its "save as"
-  // dialog only shortly after a user gesture.
-  const handleExport = (format: GraphImageFormat) => {
-    setExportMenuOpen(false);
-    onExportImage?.(format);
-  };
 
   const graphId         = suggestGraphId(graphName);
   const nodeCount       = graphData?.nodes.length ?? 0;
@@ -129,46 +88,22 @@ export default function GraphToolbar({
           </button>
         )}
         {onExportImage && (
-          <div className={styles.menuAnchor} ref={exportMenuAnchorRef}>
-            <button
-              ref={exportButtonRef}
-              type="button"
-              className={`${styles.toolbarButton} ${styles.toolbarIconButton}`}
-              onClick={() => setExportMenuOpen((open) => !open)}
-              disabled={!canExportImage}
-              title={exportingImage
-                ? 'Exporting the graph image…'
-                : graphData
-                  ? `Export the whole graph as an image (${graphId}.png or ${graphId}.svg)`
-                  : 'No graph to export'}
-              aria-label="Export graph as an image"
-              aria-haspopup="menu"
-              aria-expanded={exportMenuOpen}
-            >
-              <ImageIcon className={styles.toolbarIcon} aria-hidden="true" focusable="false" />
-            </button>
-            {exportMenuOpen && canExportImage && (
-              <div className={styles.menu} role="menu" aria-label="Export graph image">
-                <button
-                  ref={firstExportItemRef}
-                  role="menuitem"
-                  type="button"
-                  className={styles.menuItem}
-                  onClick={() => handleExport('png')}
-                >
-                  Export PNG
-                </button>
-                <button
-                  role="menuitem"
-                  type="button"
-                  className={styles.menuItem}
-                  onClick={() => handleExport('svg')}
-                >
-                  Export SVG
-                </button>
-              </div>
-            )}
-          </div>
+          // Runs straight from the click: the browser opens its "save as" dialog
+          // only shortly after a user gesture.
+          <button
+            type="button"
+            className={`${styles.toolbarButton} ${styles.toolbarIconButton}`}
+            onClick={onExportImage}
+            disabled={!graphData || exportingImage}
+            title={exportingImage
+              ? 'Exporting the graph image…'
+              : graphData
+                ? `Export the whole graph as ${graphId}.png`
+                : 'No graph to export'}
+            aria-label="Export graph as a PNG image"
+          >
+            <ImageIcon className={styles.toolbarIcon} aria-hidden="true" focusable="false" />
+          </button>
         )}
         <button
           type="button"

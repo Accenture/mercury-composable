@@ -119,6 +119,13 @@
   outline: none;
 }
 
+/* An exported image draws the node cards flat, in every browser: WebKit (Safari 27) paints the
+ * cards' blurred shadow inside the export's foreignObject as a solid grey block beside each card.
+ * The shadow is the node's inline style (minigraphNodeTheme), hence !important. */
+.graphSurface[data-exporting] :global(.react-flow__node) {
+  box-shadow: none !important;
+}
+
 /*
  * After box-select, React Flow renders a group bounding rectangle spanning the
  * selected nodes. The individual node borders already express selection here;

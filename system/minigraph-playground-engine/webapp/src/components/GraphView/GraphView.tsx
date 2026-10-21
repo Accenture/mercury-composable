@@ -32,7 +32,6 @@ import {
   renderGraphImage,
   resolveBackgroundColor,
   unionRects,
-  type GraphImageFormat,
 } from '../../utils/graphImage';
 import { hasClipboardItemType, readClipboardItemId } from '../../clipboard/dnd';
 import { findNodeByAlias, extractDirectConnections } from '../../clipboard/helpers';
@@ -72,7 +71,7 @@ interface GraphViewProps {
   onImportGraph?:  () => void;
   /** The toolbar's Download button: saves the graph as `<graph-id>.json`. */
   onDownload?:     () => void;
-  /** Called with the file name after the toolbar's Export image menu saved a PNG or SVG. */
+  /** Called with the file name after the toolbar's Export PNG button saved the image. */
   onExportImageSaved?: (fileName: string) => void;
   /** Called with the reason when an image export fails. */
   onExportImageError?: (message: string) => void;
@@ -555,14 +554,14 @@ export default function GraphView({
     [canDeleteConnection, onDeleteConnections],
   );
 
-  // ── Image export (the toolbar's Export image menu) ─────────────────────────
+  // ── Image export (the toolbar's Export PNG button) ─────────────────────────
   // The whole graph, not the visible part: the bounds are every node plus every
   // edge's curve, drawn at zoom 1. `html-to-image` copies the computed styles of
   // the live elements, so `data-exporting` switches the selection styling off
   // for the duration of the render (flushSync puts it in the DOM first).
   const graphSurfaceRef = useRef<HTMLDivElement>(null);
   const [exportingImage, setExportingImage] = useState(false);
-  const handleExportImage = useCallback((format: GraphImageFormat) => {
+  const handleExportImage = useCallback(() => {
     const instance = rfInstanceRef.current;
     const viewport = graphSurfaceRef.current?.querySelector<HTMLElement>('.react-flow__viewport');
     if (!instance || !viewport) {
@@ -574,14 +573,14 @@ export default function GraphView({
       try {
         const bounds = unionRects([instance.getNodesBounds(instance.getNodes()), ...edgeBounds(viewport)]);
         if (!bounds) throw new Error('The graph has nothing to draw.');
-        return await renderGraphImage(viewport, bounds, format, resolveBackgroundColor(viewport));
+        return await renderGraphImage(viewport, bounds, resolveBackgroundColor(viewport));
       } finally {
         setExportingImage(false);
       }
     };
-    // Called straight from the menu click: saveImageFile opens the browser's
+    // Called straight from the button click: saveImageFile opens the browser's
     // "save as" dialog before any await, while the click still counts.
-    saveImageFile(render, graphImageFileName(graphName, format), format)
+    saveImageFile(render, graphImageFileName(graphName))
       .then((outcome) => {
         if (outcome.saved) onExportImageSaved?.(outcome.fileName);
       })

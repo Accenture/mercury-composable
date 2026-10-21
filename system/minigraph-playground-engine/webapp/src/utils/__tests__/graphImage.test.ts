@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const htmlToImage = vi.hoisted(() => ({
   toBlob: vi.fn(),
-  toSvg: vi.fn(),
 }));
 
 vi.mock('html-to-image', () => htmlToImage);
@@ -20,7 +19,6 @@ import {
   renderGraphImage,
   resolveBackgroundColor,
   unionRects,
-  withSolidBackground,
 } from '../graphImage';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -32,9 +30,9 @@ afterEach(() => {
 
 describe('graphImageFileName', () => {
   it('names the file after the graph id that Download suggests', () => {
-    expect(graphImageFileName('My Graph', 'png')).toBe('My-Graph.png');
-    expect(graphImageFileName('tutorial-12', 'svg')).toBe('tutorial-12.svg');
-    expect(graphImageFileName(undefined, 'png')).toBe('untitled.png');
+    expect(graphImageFileName('My Graph')).toBe('My-Graph.png');
+    expect(graphImageFileName('tutorial-12')).toBe('tutorial-12.png');
+    expect(graphImageFileName(undefined)).toBe('untitled.png');
   });
 });
 
@@ -140,22 +138,6 @@ describe('resolveBackgroundColor', () => {
   });
 });
 
-describe('withSolidBackground', () => {
-  it('puts a full-size rectangle of the colour behind the content', () => {
-    const svg = `<svg xmlns="${SVG_NS}" width="680" height="290" viewBox="0 0 680 290">`
-      + '<foreignObject width="100%" height="100%" x="0" y="0"></foreignObject></svg>';
-
-    const doc = new DOMParser().parseFromString(withSolidBackground(svg, 'rgb(255, 255, 255)'), 'image/svg+xml');
-    const children = Array.from(doc.documentElement.children);
-
-    expect(children.map((child) => child.tagName)).toEqual(['rect', 'foreignObject']);
-    expect(children[0].getAttribute('width')).toBe('100%');
-    expect(children[0].getAttribute('height')).toBe('100%');
-    expect(children[0].getAttribute('fill')).toBe('rgb(255, 255, 255)');
-    expect(doc.documentElement.getAttribute('width')).toBe('680');
-  });
-});
-
 describe('renderGraphImage', () => {
   const bounds = { x: -30, y: -50, width: 600, height: 210 };
   let viewport: HTMLElement;
@@ -169,7 +151,7 @@ describe('renderGraphImage', () => {
     const png = new Blob(['png'], { type: 'image/png' });
     htmlToImage.toBlob.mockResolvedValue(png);
 
-    const result = await renderGraphImage(viewport, bounds, 'png', 'rgb(255, 255, 255)');
+    const result = await renderGraphImage(viewport, bounds, 'rgb(255, 255, 255)');
 
     expect(result).toBe(png);
     expect(htmlToImage.toBlob).toHaveBeenCalledTimes(1);
@@ -188,22 +170,6 @@ describe('renderGraphImage', () => {
   it('fails by name when the browser draws no PNG', async () => {
     htmlToImage.toBlob.mockResolvedValue(null);
 
-    await expect(renderGraphImage(viewport, bounds, 'png', 'white')).rejects.toThrow('The browser could not draw the image.');
-  });
-
-  it('renders an SVG file with a solid background rectangle', async () => {
-    const svg = `<svg xmlns="${SVG_NS}" width="680" height="290" viewBox="0 0 680 290">`
-      + '<foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">root ✓</div></foreignObject></svg>';
-    htmlToImage.toSvg.mockResolvedValue(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
-
-    const result = await renderGraphImage(viewport, bounds, 'svg', 'rgb(255, 255, 255)');
-
-    expect(result.type).toBe('image/svg+xml');
-    const text = await result.text();
-    expect(text.startsWith('<svg')).toBe(true);
-    expect(text).toContain('<rect width="100%" height="100%" fill="rgb(255, 255, 255)"');
-    expect(text).toContain('root ✓');
-    expect(htmlToImage.toSvg.mock.calls[0][1]).not.toHaveProperty('pixelRatio');
-    expect(htmlToImage.toBlob).not.toHaveBeenCalled();
+    await expect(renderGraphImage(viewport, bounds, 'white')).rejects.toThrow('The browser could not draw the image.');
   });
 });

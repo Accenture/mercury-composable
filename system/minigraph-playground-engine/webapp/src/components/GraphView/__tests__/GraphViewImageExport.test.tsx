@@ -4,7 +4,7 @@ import { type ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import GraphView from '../GraphView';
-import type { GraphImageFormat, GraphRect } from '../../../utils/graphImage';
+import type { GraphRect } from '../../../utils/graphImage';
 
 const mocks = vi.hoisted(() => ({
   renderGraphImage: vi.fn(),
@@ -58,15 +58,14 @@ vi.mock('../../../utils/graphImage', async (importOriginal) => ({
   renderGraphImage: mocks.renderGraphImage,
 }));
 
-// The real toolbar opens a menu; these two buttons stand for its items.
+// A stand-in for the toolbar's Export PNG button.
 vi.mock('../../GraphToolbar/GraphToolbar', () => ({
   default: ({ onExportImage, exportingImage }: {
-    onExportImage?: (format: GraphImageFormat) => void;
+    onExportImage?: () => void;
     exportingImage?: boolean;
   }) => (
     <div data-exporting-image={String(Boolean(exportingImage))}>
-      <button type="button" onClick={() => onExportImage?.('png')}>Export PNG</button>
-      <button type="button" onClick={() => onExportImage?.('svg')}>Export SVG</button>
+      <button type="button" onClick={() => onExportImage?.()}>Export PNG</button>
     </div>
   ),
 }));
@@ -114,26 +113,12 @@ describe('GraphView image export', () => {
     expect(picker.mock.calls[0][0].suggestedName).toBe('tutorial-1.png');
     expect(surfaceDuringRender).not.toBeNull();
     expect(surfaceDuringRender!.querySelector('.react-flow__viewport')).not.toBeNull();
-    const [viewport, bounds, format] = mocks.renderGraphImage.mock.calls[0];
+    const [viewport, bounds] = mocks.renderGraphImage.mock.calls[0];
     expect((viewport as HTMLElement).className).toBe('react-flow__viewport');
     expect(bounds).toEqual(mocks.nodesBounds);
-    expect(format).toBe('png');
     expect(write).toHaveBeenCalledWith(png);
     expect(document.querySelector('[data-exporting]')).toBeNull();
     expect(document.querySelector('[data-exporting-image]')!.getAttribute('data-exporting-image')).toBe('false');
-  });
-
-  it('saves the SVG under <graph-id>.svg', async () => {
-    const { picker } = mockSaveDialog('tutorial-1.svg');
-    mocks.renderGraphImage.mockResolvedValue(new Blob(['<svg/>'], { type: 'image/svg+xml' }));
-    const onExportImageSaved = vi.fn();
-    render(<GraphView graphData={GRAPH} graphName="tutorial-1" isActive isConnected onExportImageSaved={onExportImageSaved} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Export SVG' }));
-
-    await waitFor(() => expect(onExportImageSaved).toHaveBeenCalledWith('tutorial-1.svg'));
-    expect(picker.mock.calls[0][0].suggestedName).toBe('tutorial-1.svg');
-    expect(mocks.renderGraphImage.mock.calls[0][2]).toBe('svg');
   });
 
   it('reports a failed render and switches the selection styling back on', async () => {

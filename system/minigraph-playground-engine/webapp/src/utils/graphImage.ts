@@ -1,15 +1,17 @@
-import { toBlob, toSvg } from 'html-to-image';
+import { toBlob } from 'html-to-image';
 import { suggestGraphId } from './graphFile';
 
 /**
- * Image export of the Graph tab: the whole graph as a PNG or an SVG file, whatever part of it the
- * viewport shows. `html-to-image` (React Flow's documented approach) copies the React Flow viewport
- * element with every element's computed style inlined and wraps the copy in an SVG `foreignObject`;
- * the PNG is that SVG drawn on a canvas. The viewport holds only the edges and the nodes - the
- * minimap, the zoom controls and the dotted background are its siblings, so they never appear.
+ * Image export of the Graph tab: the whole graph as a PNG file, whatever part of it the viewport
+ * shows. `html-to-image` (React Flow's documented approach) copies the React Flow viewport element
+ * with every element's computed style inlined, wraps the copy in an SVG `foreignObject` and draws
+ * that on a canvas. The viewport holds only the edges and the nodes - the minimap, the zoom
+ * controls and the dotted background are its siblings, so they never appear.
+ *
+ * PNG only, by design: the intermediate SVG keeps the node cards as HTML inside `foreignObject`,
+ * which browsers draw but most other SVG renderers (vector editors, office suites, librsvg) show
+ * as a blank image, so an SVG file would fail exactly where an exported graph is used.
  */
-
-export type GraphImageFormat = 'png' | 'svg';
 
 /** A rectangle in graph coordinates (React Flow's `Rect`, the unit of node positions). */
 export interface GraphRect {
@@ -38,9 +40,9 @@ export const GRAPH_IMAGE_FALLBACK_BACKGROUND = '#ffffff';
  */
 const EXCLUDED_CLASSES = ['react-flow__handle', 'react-flow__resize-control', 'react-flow__nodesselection'];
 
-/** `<graph-id>.png` or `<graph-id>.svg`, the graph id derived from the display name as Download does. */
-export function graphImageFileName(graphName: string | null | undefined, format: GraphImageFormat): string {
-  return `${suggestGraphId(graphName)}.${format}`;
+/** `<graph-id>.png`, the graph id derived from the display name as Download does. */
+export function graphImageFileName(graphName: string | null | undefined): string {
+  return `${suggestGraphId(graphName)}.png`;
 }
 
 /** The smallest rectangle holding every given one; null for none. */
@@ -59,7 +61,7 @@ export function unionRects(rects: readonly GraphRect[]): GraphRect | null {
   return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
-/** The image size and the viewport transform that draws `bounds` at zoom 1, `padding` from each edge. */
+/** The image size, in graph pixels, and the viewport transform that draws `bounds` at zoom 1, `padding` from each edge. */
 export interface GraphImageFrame {
   width: number;
   height: number;
@@ -118,55 +120,29 @@ export function resolveBackgroundColor(element: Element | null): string {
 }
 
 /**
- * Inserts a full-size rectangle of `color` behind the SVG's content. `html-to-image` paints its
- * background option on the copied viewport, which the frame's transform moves, so without the
- * rectangle the part of the image left or above the moved viewport would be transparent.
- */
-export function withSolidBackground(svgText: string, color: string): string {
-  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
-  const svg = doc.documentElement;
-  const rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  rect.setAttribute('width', '100%');
-  rect.setAttribute('height', '100%');
-  rect.setAttribute('fill', color);
-  svg.insertBefore(rect, svg.firstChild);
-  return new XMLSerializer().serializeToString(doc);
-}
-
-/** The text of a `data:image/svg+xml;charset=utf-8,<percent-encoded SVG>` URL. */
-function svgDataUrlText(dataUrl: string): string {
-  return decodeURIComponent(dataUrl.slice(dataUrl.indexOf(',') + 1));
-}
-
-/**
- * Renders the graph to an image file's content. `viewport` is React Flow's `.react-flow__viewport`
- * element and `bounds` the graph's extent in graph coordinates (nodes and edges). The caller hides
- * selection styling while this runs, because `html-to-image` copies the computed styles of the
- * live elements.
+ * Renders the graph to a PNG. `viewport` is React Flow's `.react-flow__viewport` element and
+ * `bounds` the graph's extent in graph coordinates (nodes and edges). `html-to-image` fills the
+ * whole canvas with `backgroundColor` first, so every pixel is opaque. The caller hides selection
+ * styling while this runs, because `html-to-image` copies the computed styles of the live elements.
  */
 export async function renderGraphImage(
   viewport: HTMLElement,
   bounds: GraphRect,
-  format: GraphImageFormat,
   backgroundColor: string,
 ): Promise<Blob> {
   const frame = graphImageFrame(bounds);
-  const options = {
+  const blob = await toBlob(viewport, {
     backgroundColor,
     width: frame.width,
     height: frame.height,
+    pixelRatio: GRAPH_IMAGE_PIXEL_RATIO,
     style: {
       width: `${frame.width}px`,
       height: `${frame.height}px`,
       transform: frame.transform,
     },
     filter: includeInGraphImage,
-  };
-  if (format === 'png') {
-    const blob = await toBlob(viewport, { ...options, pixelRatio: GRAPH_IMAGE_PIXEL_RATIO });
-    if (!blob) throw new Error('The browser could not draw the image.');
-    return blob;
-  }
-  const svgText = withSolidBackground(svgDataUrlText(await toSvg(viewport, options)), backgroundColor);
-  return new Blob([svgText], { type: 'image/svg+xml' });
+  });
+  if (!blob) throw new Error('The browser could not draw the image.');
+  return blob;
 }

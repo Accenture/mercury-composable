@@ -145,10 +145,10 @@ the canvas in [graph-view.md](graph-view.md) (state machine, matching, pacing, r
   `showSaveFilePicker` where the browser has it (the user picks the folder; a cancel resolves
   `{saved: false}`) and otherwise a Blob + `<a download>` into the download folder. `saveBinaryFile`
   is its binary twin for `<set>.pack` (the `application/octet-stream` type, the same two paths).
-  `saveImageFile(render, fileName, 'png' | 'svg')` saves the Graph tab's image export: it takes a
-  render function instead of the content and calls it only after the "save as" dialog closed (a
-  cancel renders nothing), because the browser opens that dialog only shortly after the click
-  ([graph-view.md](graph-view.md#image-export)).
+  `saveImageFile(render, fileName)` saves the Graph tab's PNG export: it takes a render function
+  instead of the content and calls it only after the "save as" dialog closed (a cancel renders
+  nothing), because the browser opens that dialog only shortly after the click; a save that fails
+  after the dialog removes the empty file the dialog left ([graph-view.md](graph-view.md#image-export)).
 
 ## Graph sets (`hooks/useGraphSetPanel.ts`, `utils/graphSet.ts`)
 

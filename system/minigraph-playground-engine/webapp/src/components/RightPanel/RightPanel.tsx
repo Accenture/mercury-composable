@@ -44,7 +44,7 @@ interface RightPanelProps {
   onImportGraph?:          () => void;
   /** The Download button on the Graph and Raw toolbars: saves the graph as `<graph-id>.json`. */
   onDownloadGraph?:        () => void;
-  /** Called with the file name after the Graph toolbar's Export image menu saved a PNG or SVG. */
+  /** Called with the file name after the Graph toolbar's Export PNG button saved the image. */
   onGraphImageSaved?:      (fileName: string) => void;
   /** Called with the reason when an image export fails. */
   onGraphImageError?:      (message: string) => void;
