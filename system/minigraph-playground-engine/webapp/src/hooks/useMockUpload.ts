@@ -3,10 +3,12 @@ import { useState, useRef, useCallback } from 'react';
 export interface UseMockUploadOptions {
   /** The POST path extracted from the server message, e.g. "/api/mock/ws-417669-24" */
   uploadPath: string;
-  /** The current textarea value — the JSON string to POST (may be empty when headers are given). */
+  /** The current textarea value — the JSON string to POST (may be empty when other mock data is given). */
   json: string;
   /** Mock request headers to POST to `${uploadPath}?namespace=header` after the body; empty = none. */
   headers?: Record<string, string>;
+  /** Mock model variables to POST to `${uploadPath}?namespace=model` after the headers; empty = none. */
+  model?: Record<string, unknown>;
   /** Called with the response body text on a successful (2xx) upload. */
   onSuccess: (responseBody: string) => void;
   /** Called with a human-readable error message on failure. */
@@ -43,6 +45,7 @@ export function useMockUpload({
   uploadPath,
   json,
   headers,
+  model,
   onSuccess,
   onError,
 }: UseMockUploadOptions): UseMockUploadReturn {
@@ -65,6 +68,7 @@ export function useMockUpload({
     setIsUploading(true);
 
     const headerEntries = Object.entries(headers ?? {});
+    const modelEntries = Object.entries(model ?? {});
     const hasBody = json.trim() !== '';
     try {
       let lastBody = '';
@@ -82,19 +86,26 @@ export function useMockUpload({
           return;
         }
       }
-      // the headers go to the header namespace of the same endpoint, after the body, so
-      // a failure names the step that failed
-      if (headerEntries.length > 0) {
-        const response = await fetch(`${uploadPath}?namespace=header`, {
+      // the headers go to the header namespace of the same endpoint, after the body, and the
+      // model variables to the model namespace last - the engine processes the headers as a
+      // request's (the correlation-ID header sets model.cid), so a model variable the author
+      // names wins; a failure names the step that failed
+      const steps: Array<[string, Array<[string, unknown]>, string]> = [
+        ['header', headerEntries, 'mock headers'],
+        ['model', modelEntries, 'mock model variables'],
+      ];
+      for (const [namespace, entries, label] of steps) {
+        if (entries.length === 0) continue;
+        const response = await fetch(`${uploadPath}?namespace=${namespace}`, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify(Object.fromEntries(headerEntries)),
+          body:    JSON.stringify(Object.fromEntries(entries)),
           signal:  controller.signal,
         });
         lastBody = await response.text();
         if (!response.ok) {
           setIsUploading(false);
-          onError(`HTTP ${response.status} — ${lastBody} (mock headers)`);
+          onError(`HTTP ${response.status} — ${lastBody} (${label})`);
           return;
         }
       }
@@ -110,7 +121,7 @@ export function useMockUpload({
       setIsUploading(false);
       onError((err as Error).message ?? 'Network error');
     }
-  }, [uploadPath, json, headers, onSuccess, onError]);
+  }, [uploadPath, json, headers, model, onSuccess, onError]);
 
   return { isUploading, upload, cancel };
 }

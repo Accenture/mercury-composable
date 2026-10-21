@@ -253,13 +253,20 @@ click to dismiss, an optional action button (used for **Undo**). Auto-dismiss (3
 Props: `uploadPath` (e.g. `/api/mock/ws-417669-24`), `onSuccess(body, uploadPath)`,
 `onClose(uploadPath)`, `onError(message)`, and the optional `title`, `description`,
 `inputPathHints`, `inputHeaderHints` and `submitLabel`. `Playground` passes a description (the JSON
-becomes the instance's `input.body` and the optional headers its `input.header`; in a shared session
-every member's instance receives them), the `input.body.*` paths the graph references and the input
-header names it references as hints, for the toolbar's Upload step and the console row's re-open
-button alike. Below the JSON editor an optional **Headers** row editor (name and text value, `+ Add
-header`; a value without a name and a duplicate name, case-insensitively, are refused inline) collects
-mock request headers; `useMockUpload` posts the body first, then the header rows to
-`${uploadPath}?namespace=header`, so a failure names the step. Headers alone are a valid upload.
+becomes the instance's `input.body`, the optional headers its `input.header` and the optional model
+variables its `model.{name}`; in a shared session every member's instance receives them), the
+`input.body.*` paths the graph references and the input header names it references as hints, for the
+toolbar's Upload step and the console row's re-open button alike. The JSON editor is labelled
+**JSON payload (input body)**. Below it an optional **Input header** row editor (name and text value,
+`+ Add header`; a value without a name and a duplicate name, case-insensitively, are refused inline)
+collects mock request headers, which the engine processes as a request's (the names in lower case,
+the correlation-ID header setting `model.cid`); an optional **Model variables** row editor (a name
+under `model.`, a type - text, number, boolean or JSON - and the value, `+ Add model variable`; a value
+without a name, a repeated name, an empty path segment and a value that does not read as its type are
+refused inline, by `modelRowIssues`) collects mock model variables. `useMockUpload` posts the body
+first, then the header rows to `${uploadPath}?namespace=header`, then the model variables to
+`${uploadPath}?namespace=model`, so a failure names the step and a model variable the author names
+wins over one a header derives. Headers or model variables alone are a valid upload.
 
 A ribbon with the path and a close button, the hints (first six as `<code>`), a drop zone with a
 hidden `.json` file input and "Browse file…", the textarea (focused on mount), the status line
