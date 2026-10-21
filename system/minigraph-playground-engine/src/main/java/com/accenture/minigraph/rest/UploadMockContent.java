@@ -59,16 +59,11 @@ public class UploadMockContent implements TypedLambdaFunction<AsyncHttpRequest, 
             namespace = BODY;
         }
         var body = input.getBody();
-        if (HEADER.equals(namespace)) {
-            checkHeaders(body);
-        } else if (MODEL.equals(namespace)) {
-            checkModelVariables(body);
-        } else if (BODY.equals(namespace)) {
-            if (!(body instanceof Map || body instanceof List)) {
-                throw new IllegalArgumentException("Input is not a valid JSON payload that represents a Map or List");
-            }
-        } else {
-            throw new IllegalArgumentException("Unknown mock namespace '" + namespace +
+        switch (namespace) {
+            case BODY -> checkBody(body);
+            case HEADER -> checkHeaders(body);
+            case MODEL -> checkModelVariables(body);
+            default -> throw new IllegalArgumentException("Unknown mock namespace '" + namespace +
                     "' - use body, header or model");
         }
         if (GraphCommandService.uploadContent(id, body, namespace)) {
@@ -76,6 +71,15 @@ public class UploadMockContent implements TypedLambdaFunction<AsyncHttpRequest, 
                     .setBody(Map.of("message", "Content uploaded", "type", "upload", NAMESPACE, namespace));
         } else {
             throw new IllegalArgumentException("Session "+id+" is expired or invalid");
+        }
+    }
+
+    /**
+     * The mock body is a JSON map or list, the shapes a request body can take.
+     */
+    private static void checkBody(Object body) {
+        if (!(body instanceof Map || body instanceof List)) {
+            throw new IllegalArgumentException("Input is not a valid JSON payload that represents a Map or List");
         }
     }
 

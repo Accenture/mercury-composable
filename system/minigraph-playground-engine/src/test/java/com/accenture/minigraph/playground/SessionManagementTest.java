@@ -861,8 +861,7 @@ class SessionManagementTest {
      * The header namespace of the mock upload (POST /api/mock/{id}?namespace=header): a JSON object
      * of text values becomes every member's input.header as a request delivers it - the names in lower
      * case, and the correlation-id header carrying the member's model.cid when the upload has none -
-     * the body untouched; the model namespace sets every member's model variables; the invitation names
-     * the three endpoints.
+     * the body untouched; the invitation names the three endpoints.
      */
     @Test
     void mockHeaderUploadLoadsEveryMemberInstanceTest() throws InterruptedException {
@@ -872,17 +871,7 @@ class SessionManagementTest {
             return;
         }
         try (fx) {
-            po.send(fx.txPathB(), "session subscribe " + fx.sessionA());
-            assertNotNull(waitForMessage(fx.messagesB(), "Subscribed to " + fx.sessionA(), 5));
-            po.send(fx.txPathA(), "create node root");
-            assertNotNull(waitForMessage(fx.messagesB(), "node root created", 5));
-            po.send(fx.txPathA(), "create node end");
-            assertNotNull(waitForMessage(fx.messagesB(), "node end created", 5));
-            po.send(fx.txPathA(), "connect root to end with relates");
-            assertNotNull(waitForMessage(fx.messagesB(), "node root connected to end", 5));
-            po.send(fx.txPathA(), "instantiate graph");
-            assertNotNull(waitForMessage(fx.messagesA(), "Graph instance created", 5));
-            assertNotNull(waitForMessage(fx.messagesB(), "Graph instance created", 5));
+            subscribeAndInstantiate(fx);
             // the subscriber uploads mock headers: forwarded to the primary, loaded there and
             // replayed into every subscriber's instance - into input.header as a request delivers it
             fx.messagesA().clear();
@@ -906,15 +895,6 @@ class SessionManagementTest {
             assertNotNull(waitForMessage(fx.messagesB(), MOCK_DATA_LOADED, 5));
             assertEquals("abc-123", GraphCommandService.downloadContent(fx.sessionB(), "input.header.x-request-id"));
             assertEquals(Map.of("person_id", 300), GraphCommandService.downloadContent(fx.sessionB(), "input.body"));
-            // model variables travel the same way and leave model.cid in place
-            fx.messagesA().clear();
-            fx.messagesB().clear();
-            assertTrue(GraphCommandService.uploadContent(fx.sessionB(), Map.of("tier", "gold"), "model"));
-            assertNotNull(waitForMessage(fx.messagesA(), MOCK_MODEL_LOADED, 5));
-            assertNotNull(waitForMessage(fx.messagesB(), MOCK_MODEL_LOADED, 5));
-            assertEquals("gold", GraphCommandService.downloadContent(fx.sessionA(), "model.tier"));
-            assertEquals("gold", GraphCommandService.downloadContent(fx.sessionB(), "model.tier"));
-            assertEquals(cidB, GraphCommandService.downloadContent(fx.sessionB(), "model.cid"));
             // the console reads the headers back, and the invitation names the three endpoints
             fx.messagesB().clear();
             po.send(fx.txPathB(), "inspect input.header");
@@ -925,6 +905,51 @@ class SessionManagementTest {
             assertNotNull(invitation);
             assertTrue(invitation.contains("?namespace=model"), invitation);
         }
+    }
+
+    /**
+     * The model namespace of the mock upload (POST /api/mock/{id}?namespace=model): a subscriber's
+     * upload is forwarded to the primary and replayed, so every member's instance holds the model
+     * variable, and each member's model.cid stays in place.
+     */
+    @Test
+    void mockModelUploadLoadsEveryMemberInstanceTest() throws InterruptedException {
+        SessionFixture fx = createFixture();
+        if (fx == null) {
+            return;
+        }
+        try (fx) {
+            subscribeAndInstantiate(fx);
+            var cidA = GraphCommandService.downloadContent(fx.sessionA(), "model.cid");
+            var cidB = GraphCommandService.downloadContent(fx.sessionB(), "model.cid");
+            fx.messagesA().clear();
+            fx.messagesB().clear();
+            assertTrue(GraphCommandService.uploadContent(fx.sessionB(), Map.of("tier", "gold"), "model"));
+            assertNotNull(waitForMessage(fx.messagesA(), MOCK_MODEL_LOADED, 5));
+            assertNotNull(waitForMessage(fx.messagesB(), MOCK_MODEL_LOADED, 5));
+            assertEquals("gold", GraphCommandService.downloadContent(fx.sessionA(), "model.tier"));
+            assertEquals("gold", GraphCommandService.downloadContent(fx.sessionB(), "model.tier"));
+            assertEquals(cidA, GraphCommandService.downloadContent(fx.sessionA(), "model.cid"));
+            assertEquals(cidB, GraphCommandService.downloadContent(fx.sessionB(), "model.cid"));
+        }
+    }
+
+    /**
+     * Session B subscribes to session A, A draws root -> end and instantiates it, and both members
+     * confirm the instance.
+     */
+    private void subscribeAndInstantiate(SessionFixture fx) throws InterruptedException {
+        po.send(fx.txPathB(), "session subscribe " + fx.sessionA());
+        assertNotNull(waitForMessage(fx.messagesB(), "Subscribed to " + fx.sessionA(), 5));
+        po.send(fx.txPathA(), "create node root");
+        assertNotNull(waitForMessage(fx.messagesB(), "node root created", 5));
+        po.send(fx.txPathA(), "create node end");
+        assertNotNull(waitForMessage(fx.messagesB(), "node end created", 5));
+        po.send(fx.txPathA(), "connect root to end with relates");
+        assertNotNull(waitForMessage(fx.messagesB(), "node root connected to end", 5));
+        po.send(fx.txPathA(), "instantiate graph");
+        assertNotNull(waitForMessage(fx.messagesA(), "Graph instance created", 5));
+        assertNotNull(waitForMessage(fx.messagesB(), "Graph instance created", 5));
     }
 
     /**

@@ -35,6 +35,7 @@ import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleConnection;
 import org.platformlambda.core.models.SimpleNode;
+import org.platformlambda.core.models.SimpleRelationship;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
@@ -51,6 +52,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @OptionalService("app.env=dev")
 @PreLoad(route = GraphCommandService.ROUTE, instances=50)
@@ -1399,16 +1401,13 @@ public class GraphCommandService extends GraphLambdaFunction {
      * manifest order.
      */
     private DeployedGraph findDeployedGraph(String filename) {
-        var locations = new ArrayList<String>();
+        // insertion order is the search order, and a location appears once
+        var locations = new LinkedHashSet<String>();
         var compiledFrom = CompiledGraphs.getGraphLocation(filename);
         if (compiledFrom != null) {
             locations.add(compiledFrom);
         }
-        for (var location : CompiledGraphs.getDeployedLocations()) {
-            if (!locations.contains(location)) {
-                locations.add(location);
-            }
-        }
+        locations.addAll(CompiledGraphs.getDeployedLocations());
         for (var location : locations) {
             var json = getDeployedGraphAsText(location, filename);
             if (json != null) {
@@ -1794,12 +1793,8 @@ public class GraphCommandService extends GraphLambdaFunction {
     }
 
     private Set<String> getRelations(SimpleConnection connection) {
-        var result = new HashSet<String>();
-        var relations = connection.getRelations();
-        for (var relation : relations) {
-            result.add(relation.getType());
-        }
-        return result;
+        return connection.getRelations().stream().map(SimpleRelationship::getType)
+                .collect(Collectors.toCollection(HashSet::new));
     }
 
     private void describeNode(PostOffice po, String inRoute, String outRoute, String nodeName) {
@@ -1818,16 +1813,8 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private Map<String, Object> getConnections(MiniGraph graph, String nodeName) {
         var map = new HashMap<String, Object>();
-        var forward = graph.getForwardLinks(nodeName);
-        var forwardNodes = new ArrayList<String>();
-        for (var f: forward) {
-            forwardNodes.add(f.getAlias());
-        }
-        var backward = graph.getBackwardLinks(nodeName);
-        var backwardNodes = new ArrayList<String>();
-        for (var f: backward) {
-            backwardNodes.add(f.getAlias());
-        }
+        var forwardNodes = graph.getForwardLinks(nodeName).stream().map(SimpleNode::getAlias).toList();
+        var backwardNodes = graph.getBackwardLinks(nodeName).stream().map(SimpleNode::getAlias).toList();
         if (!forwardNodes.isEmpty()) {
             map.put("to", forwardNodes);
         }
@@ -1922,10 +1909,10 @@ public class GraphCommandService extends GraphLambdaFunction {
                 continue;
             }
             if (map.get(property) instanceof List<?> entries) {
-                List<String> converted = new ArrayList<>();
-                for (Object o : entries) {
-                    converted.add(convertOneMappingLine(property, String.valueOf(o), conversions));
-                }
+                // a mutable list, as before: the node's properties stay editable after the conversion
+                List<String> converted = entries.stream()
+                        .map(o -> convertOneMappingLine(property, String.valueOf(o), conversions))
+                        .collect(Collectors.toCollection(ArrayList::new));
                 keyValues.setElement(property, converted);
             }
         }
