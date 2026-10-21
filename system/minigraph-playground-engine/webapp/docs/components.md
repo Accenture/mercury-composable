@@ -84,6 +84,8 @@ Props: `command`, `onChange`, `onKeyDown` (the history navigation from `useWebSo
 - **History dropup** ("Recent Commands"): `useHistoryAutocomplete` filters the history by a
   case-insensitive prefix of the first line, at most 8 entries; navigated with
   `aria-activedescendant`, focus never leaves the textarea.
+- The box's placeholder is "Enter command" ("Not connected" while offline); the keys are stated once,
+  in the hint below it, as symbols: "⏎ to send · ⇧⏎ for new line · ↑↓ for history".
 - Keys: `Enter` accepts a highlighted suggestion or sends; `Shift+Enter` inserts a newline; `Tab`
   accepts the active (or first) suggestion and is always consumed; `Escape` closes the dropup;
   `ArrowUp`/`ArrowDown` move in the dropup when open, otherwise reach the history only from the
