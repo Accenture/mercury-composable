@@ -147,7 +147,7 @@ public class WsRequestHandler implements Handler<ServerWebSocket> {
             }
         });
         ws.exceptionHandler(e -> {
-            log.warn("Session {} exception - {}", session, e.getMessage());
+            log.warn("Session {} exception - {}: {}", session, e.getClass().getSimpleName(), e.getMessage());
             if (!ws.isClosed()) {
                 ws.close();
             }
