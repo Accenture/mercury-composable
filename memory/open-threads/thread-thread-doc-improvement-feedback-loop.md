@@ -1,73 +1,11 @@
-- [ ] (initiative — **guide-first rule recorded 2026-09-01**; loop design ratified) **Doc-improvement
-  feedback loop** — ongoing tuning of the AI contract provider guides to raise "guide sufficiency rate"
-  (fraction of "how do I" questions answerable from the guide alone, without source reads). Three layers:
-  (1) **in-session capture** — session logs get `## Doc Gaps` (question / guide page / missing detail)
-  whenever source was needed where the guide should have sufficed; (2) **periodic sweep** — at every
-  memory review, tally gaps across recent logs and surface top items as a PR punch-list for the relevant
-  `docs/` guide page; (3) **verification** — after each guide PR, a fresh-agent probe on the same
-  question confirms source is no longer needed. Metric: guide sufficiency rate, measured on the same
-  cadence as the onboarding fresh-agent re-measure. Seed gap from this session: guide-first rule was
-  absent from `instructions.md` (now added); `minimalist-kafka.md` schema section was sufficient but the
-  rule to check it first was not encoded. **First gap CLOSED same session:** `minimalist-kafka.md`
-  §Outbound — `@KernelThreadRunner`/keep-instances-small callout added; body-must-be-`byte[]` named
-  explicitly with `IllegalArgumentException`; misleading `Map` comment in §Produce YAML fixed.
-  **First EXTERNAL-source firing 2026-09-02:** a field AI agent's three-layer build feedback
-  (ai-enabled-repo-demo docs/feedback) drove the async-companion retirement (ADR-0021),
-  the graph.js formal deprecation (ADR-0022), and an 8-guide docs campaign — Java PR #310
-  + Rust PR #224, both merged (origin: 2026-09-02-050213). The loop works on external
-  input, not just self-captured gaps.
-  **MERGED 2026-09-16 (Eric):** [[thread-docs-improvement-backlog]] folded in here — it was this
-  loop's output queue, not a separate initiative. Its acceptance criteria are now this thread's:
-  **for humans, storytelling** (why before how, a narrative arc); **for AI agents, token-efficient**
-  (shortest path, machine-greppable, "generate from this page alone"). Auditing that queue at merge
-  found **8 of 9 items already shipped** with the record never updated — the same
-  stale-nested-checklist failure reported upstream to the agent-memory team the same day.
-  **Open queue (the only survivor of that audit):**
-  - a request-response **RPC demo in `lambda-example`** — `HelloRemoteRelay` is a hop-through relay
-    returning `Void`, so the RPC idiom still lives only in composable-example's `EventOverHttpRpc`.
-  **Next:** surface `## Doc Gaps` at the next review sweep; measure guide sufficiency rate. **And
-  keep the queue honest** — audit it at each sweep rather than only appending, which is what let the
-  merged backlog rot for three months.
-  PR: [#306](https://github.com/Accenture/mercury-composable/pull/306) squash `6f6c3989` — merged.
-  **Guide-first rule propagated 2026-09-01 to all four repos** (Rust
-  [PR #222](https://github.com/Accenture/mercury/pull/222) squash `c730e17e`; python
-  [PR #23](https://github.com/Accenture/mercury-python/pull/23) squash `a12c56b6`; node
-  [PR #91](https://github.com/Accenture/mercury-nodejs/pull/91) squash `0899ad59`).
-  **MEASURED 2026-09-21 (W2, all three layers run once end to end).** Method: a source-blind fresh-agent
-  probe reads only `docs/llms.txt`, `docs/index.md` and `docs/guides/**`, starts from `llms.txt`, and
-  grades each "how do I" question SUFFICIENT / PARTIAL (names the missing detail) / INSUFFICIENT; the
-  rate is SUFFICIENT over total. Fifteen questions across the three layers and the extensions (the set
-  is recorded in the origin log below — reuse it as the baseline): **11/15 sufficient, 4 partial, 0
-  insufficient**; all four partials were Layer 1–2 REST-edge details (direct binding input, typed
-  status/headers, `/health` shape, `List<PoJo>`). Fixed, then a re-probe of those four asked also to
-  flag cross-page contradictions: **4/4 sufficient → 15/15**, plus five wording slips it surfaced,
-  fixed. Sweep: 15 logs since 2026-09-01 carry `## Doc Gaps`, 6 record a gap, **6/6 now closed** (the
-  2026-09-15 graph.task output-mapping source rule was the one still open; closed in `caf93c64` + `5c873df3`;
-  the Rust engine enforces the same rule, so its twins took the same sentence — the Rust parity round
-  R1–R5 shipped as mercury #298, merged 2026-09-21 (`3bd89425`); punch-list in the origin log's Correction section). **Queue closed:** the
-  `lambda-example` RPC demo shipped as `hello.rpc` with a 408 timeout test. All on PR
-  [#434](https://github.com/Accenture/mercury-composable/pull/434), MERGED 2026-09-21 (squash `940994d5`). **Next:** re-measure with a
-  fresh question set at a later review (the same set only proves the fixes stuck); keep grading
-  cross-page agreement, which is where the re-probe found its five slips. Open queue: (none).
-  (origin: this measurement's session log — the 2026-09-21 W2 log)
-  **Gap fired and closed 2026-09-28 (PR #467, squash `8caa3acf`, MERGED 2026-09-28 — Eric's direction after a live demo):** the graph.math
-  expression dialect had no complete catalog — the grammar page said "no function calls" while the
-  skills reference listed a partial function set, and no page named the `**` operator — so the agent
-  read `Evaluator.java` to build `a + b ** 2`. Closed on every surface a fresh agent reads
-  (`skills-reference.md#math-dialect` closed-set list; the grammar summary; the in-band
-  `help graph-math`; an `expression_dialect` object in `minigraph-commands.json`) and GATED: claim
-  `math-expression-dialect` + `ClaimMathExpressionDialectTest` (set-equality on the evaluator's
-  function/constant registry). Lesson: a dialect is a closed set — document it as one and pin the set,
-  or every agent re-derives it from source. Rust twin MERGED the same day (mercury #334, merge `41a7f418`,
-  Increment 143). (origin: 2026-09-28-230310)
-  **Sweep at the 2026-10-02 review (12 logs since 2026-09-28-230310):** 3 carry `## Doc Gaps`, 1 records a gap — whether the playground
-  example needs its own copy of the flow files (`help tutorial 11`, the AI agent guide's manifest) — CLOSED the same day in PR #489
-  (`playground-example-flows-are-sample-config`; the manifest label fixed, `flow-11-doc-label` closed). Still pending from the W2
-  measurement: the re-measure with a fresh question set (not run at this review).
-  **Sweep at the 2026-10-05 review (9 logs since 2026-10-02-185029):** 5 carry `## Doc Gaps`, 2 record gaps - a dynamic key in a graph
-  mapping source and the `-1` of `f:long(null)` (closed by #503), the `$.` JSONPath result shape (closed by #504) - all closed in the
-  session that found them. Open queue: (none). Still pending: the re-measure with a fresh question set (not run at this review).
-  **Sweep at the 2026-10-09 review (20 logs since 2026-10-06-012541):** 1 carries `## Doc Gaps`, 0 record a gap - the window was the
-  v4.12.21 release and the RFC-0007 sprint, whose guide page was written with the feature. Open queue: (none). Still pending: the
-  re-measure with a fresh question set (not run at this review).
+- [x] **Doc-improvement feedback loop** (initiative, 2026-09-01; closed by Eric 2026-10-22 at the stalled-thread gate
+  [[close-stalled-threads-20261022]]).
+  - **Outcome:** all three layers ran. The capture layer is the guide-first rule with `## Doc Gaps` in `memory/instructions.md`, in all
+    four repos (#306, mercury #222, mercury-python #23, mercury-nodejs #91). The review sweeps from 2026-09-21 to 2026-10-09 closed every
+    recorded gap. The W2 fresh-agent probe raised guide sufficiency from 11/15 to 15/15 (#434 `940994d5`). External feedback drove
+    ADR-0021, ADR-0022 and an 8-guide campaign (#310, mercury #224), and the graph.math dialect gap closed with a claim test (#467).
+  - **Dropped deliberately:** the re-measure with a fresh question set, never run. The capture rule stays, so a gap is still recorded
+    and closed in the session that finds it.
+  - **Lesson:** a queue that is only appended to rots; audit it at each sweep (8 of 9 merged-backlog items had shipped unrecorded).
+  - origin: 2026-09-01-032130 (the narrative is in the logs it names; closed in 2026-10-22-234147)
   <!-- id: thread-doc-improvement-feedback-loop | created: 2026-09-01 | last_used: 2026-10-09 | uses: 9 | tier: working | origin: 2026-09-01-032130 -->

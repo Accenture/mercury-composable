@@ -117,16 +117,14 @@
   in the nature of the work and where execution goes; AI gains a **run-time participant** role. **The north star MOVED: the
   next invariant re-verify must check the 2026-09-17 text, not the 2026-06-20 one.** [[bp-agent-orchestration]] is Track 2's
   Blueprint gap; Track 1 and the collaboration foundation are delivered.
-- **last_invariant_check:** 2026-10-09 | 2026-10-09-045453.md (COMPLETE — Eric walked the 19 `core` facts and the Vision — **the 2026-09-17
-  two-track text** — against live-tree evidence at the 2026-10-09 review's gate [[reverify-invariants-20261009]]; ALL CONFIRMED as written, two
-  wordings refreshed (`stack-messaging-kafka`, `conv-serialization-gotchas` — the in-house MsgPack codec of ADR-0028); core stays 19. Cadence 40;
-  the next re-verify is due 40 sessions after 2026-10-09-045453.) Prior: 2026-09-25 | 2026-09-25-022841.md (COMPLETE — Eric walked the 19 `core` facts and the Vision — **the 2026-09-17
-  two-track text** — against live-tree evidence; 18 facts + the Vision CONFIRMED as written, `instant-serialization` DEMOTED
-  from core (Eric: an implementation detail that no longer influences key decisions; unreferenced since 2026-06-27, so it
-  archives as faded in the same review); core 19 → 18; [[reverify-invariants-20260925]] closed. Cadence 40; the next re-verify
-  is due 40 sessions after 2026-09-25-022841. Prior: 2026-09-16 | 2026-09-16-041500.md (COMPLETE — 3 invariants + 5 stack + 5 key decisions +
-  3 conventions + eric-release-rhythm + the Vision; `virtual-threads-rpc` ENRICHED from ADR-0024; `conv-telemetry-presentation-parity`
-  RETIRED; core 18 → 17.) Prior: 2026-09-11 | 2026-09-11-005808.md.)
+- **last_invariant_check:** 2026-10-22 | 2026-10-22-234147.md (COMPLETE — Eric walked the 19 `core` facts and the Vision — **the 2026-09-17
+  two-track text** — against live-tree evidence at the 2026-10-22 review's gate [[reverify-invariants-20261022]]; ALL CONFIRMED, Java 21 still
+  the toolchain until the field runs Java 25; two wordings refreshed: `event-api-local-routes-only` (the routes it reaches itself, the mesh
+  included; never a relay through its own Event-over-HTTP map) and the Vision's Type line (the Rust port catches up with Java, the reference
+  implementation, when its repository has edits); core stays 19. Cadence 40; the next re-verify is due 40 sessions after 2026-10-22-234147.)
+  Prior: 2026-10-09 | 2026-10-09-045453.md (ALL CONFIRMED, `stack-messaging-kafka` and `conv-serialization-gotchas` reworded for ADR-0028;
+  core 19) · 2026-09-25 | 2026-09-25-022841.md (`instant-serialization` demoted from core; core 19 → 18) · 2026-09-16 | 2026-09-16-041500.md
+  (`virtual-threads-rpc` enriched from ADR-0024; core 18 → 17) · 2026-09-11 | 2026-09-11-005808.md.
 
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
@@ -289,9 +287,11 @@
   `model` via the `*` passthrough. Distilled from the sync-over-async composable refactoring (2026-06-27,
   Claude Code). (ADR-0007)
   <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
-- **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
-  the instance does not host answers 404 even when the instance's own
-  `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
+- **EventApiService serves only the routes it reaches itself — local, or over the Kafka mesh when
+  `cloud.connector` is on — and never relays through its own Event-over-HTTP map: an inbound
+  `/api/event` call to any other route answers 404, even when the instance's own
+  `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30; wording
+  refreshed 2026-10-22 at invariant re-verify, substance unchanged).**
   Forwarding would make every app an Event-over-HTTP relay and open routing loops; the
   `x-event-api` wire marker is the existing loop guard (an event that crossed the wire
   once is never re-forwarded), the map is caller-side knowledge (not a promise to third
