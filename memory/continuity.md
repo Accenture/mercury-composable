@@ -608,7 +608,11 @@
   nodes carry one of the three skills"; re-counting before repeating it in the CHANGELOG gave **64**,
   and `e6447ceb~1` shows it was never 67 (the 65th at HEAD is a deliberate negative fixture from that
   PR). Both errors came from writing out of recollection of my own work instead of out of the
-  repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
+  repository. Corrected in both places via PR #411. **Third instance, a placement error (2026-10-21):** #572 and #574 each
+  appended their entry to the first `### Fixed` below `## Unreleased`, which belonged to the SHIPPED 4.12.25 section, because
+  Unreleased had no Fixed heading yet; #575 moved both. Before adding an entry, confirm its heading lies between `## Unreleased`
+  and the first `## Version`, and add the heading when it is missing; after the edit, every released section still diffs empty
+  against `git show <its tag>:CHANGELOG.md`. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
   <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-13 | uses: 31 | tier: active | origin: 2026-09-17-183008 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
