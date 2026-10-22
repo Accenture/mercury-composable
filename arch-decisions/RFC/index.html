@@ -3212,8 +3212,8 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 </code></pre></div>
 <hr />
 <h2 id="rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath">RFC-0010 — An in-house JSONPath engine to RFC 9535: <code>system/minimalist-jsonpath</code> replaces Jayway JsonPath<a class="headerlink" href="#rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-10-22 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>minimalist-jsonpath</code></p>
-<!-- id: rfc-0010 | status: open | thread: minimalist-jsonpath -->
+<p><strong>Status:</strong> Promoted → ADR-0031 · <strong>Raised:</strong> 2026-10-22 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>minimalist-jsonpath</code></p>
+<!-- id: rfc-0010 | status: promoted | thread: minimalist-jsonpath -->
 
 <p><strong>Proposal.</strong> Replace Jayway JsonPath (<code>com.jayway.jsonpath:json-path</code> 3.0.0) with a module of this repository that implements
 <a href="https://www.rfc-editor.org/rfc/rfc9535">RFC 9535</a>, the IETF JSONPath standard (February 2024), with no dependency beyond
@@ -3402,7 +3402,12 @@ time, although the two engines' brace scans differ outside <code>$</code> source
 5. <strong>Agreed.</strong> The thread on json-path's version under the Spring Boot parent (<code>json-path-boot-bom-override</code>, raised with #576)
    becomes moot, and closes when the swap ships.</p>
 <p>Promotion to an ADR follows review and green CI, the RFC-0006 method.</p>
-<p><strong>Resolution.</strong></p>
+<p><strong>Resolution.</strong> Promoted → ADR-0031 (2026-10-22, Eric): option (a), the in-house RFC 9535 engine. Accepted after PR #579 (squash
+<code>68637dd6</code>) merged with green CI, with the Rust engine's mercury #391, #392 and #393 (Increments 185 to 187): WP1 the module (the
+compliance suite 715 of 715, 779 tests, 100% of lines and 95.7% of branches), WP2 the swap with the differential and the benchmark, WP3
+the refusal at deployment, WP4 the substitution checks and WP5 the guides, the help pages and seven claims. The behaviour changes are
+accepted as listed in the CHANGELOG; the WP3 and WP4 rulings above are part of the decision; the <code>json-path-boot-bom-override</code> thread
+closed as moot and the <code>minimalist-jsonpath</code> thread closes with the promotion. Ships in v4.12.26.</p>
 <hr />
 <h2 id="rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment">RFC-0008 — The mini-scheduler's active environment: one site runs the jobs of an active-active deployment<a class="headerlink" href="#rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Promoted → ADR-0030 · <strong>Raised:</strong> 2026-10-09 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>scheduler-active-environment</code></p>
