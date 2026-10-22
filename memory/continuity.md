@@ -87,16 +87,14 @@
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-10-22 | through 2026-10-22-012004.md (CADENCE — 11 sessions since the 2026-10-14 review: `refresh-metadata`
-  refreshed 22 footers in two passes, tier changes 13 (1 → active, 12 → archive-candidate); archived 1 faded fact, `minigraph-dev-mode-app-shape`
-  (sslu 26), after step 6 found the window's commits on its paths to be the two release sweeps, the bundle rebuilds that regenerate
-  `template/playground.html`, #567's graph-set unpack folder and #568's mock namespaces, and the window's logs naming only the regenerated
-  entry page (the deploy layout, which `help-edit-needs-bundle-release` also records and those sessions declared); its rules live in
-  `playground-and-companion.md` and the AI agent guide; swept 2 completed threads (`release-4-12-22`, `release-4-12-23`); reactivated 0,
-  superseded 0; archive-verify pass; invariants not due (34 of 40 — due in 6 sessions); stalled threads none (the oldest,
-  `thread-doc-improvement-feedback-loop`, at 32 of 40); contradictions none; Doc Gaps: 1 window log carries the section, 0 gaps; live
-  facts 47 → 44, lines 890 → 847. Smoke test not run.)
-  Prior: 2026-10-14 | through 2026-10-14-000312.md (CADENCE — refreshed 22 footers, tier changes 10; archived 3 faded facts and KEPT
+- **last_review:** 2026-10-22 | through 2026-10-22-180311.md (CADENCE — 13 sessions since the morning review: `refresh-metadata`
+  refreshed 13 footers, tier changes 7 (4 → active, 3 → archive-candidate); archived 10 faded facts after step 6 found no undeclared
+  use (the window's only commits on their paths were a version sweep and #568, whose log predates the window; the window's logs only
+  mention two of the subjects); swept 2 completed threads (`release-4-12-24`, `release-4-12-25`); reactivated 0, superseded 0;
+  archive-verify pass; **the invariant re-verify is due** (48 of 40) and **a stalled thread** (`thread-doc-improvement-feedback-loop`,
+  51 of 40): both gates raised for Eric; contradictions none; live facts 47 → 37, lines 879 → 655. Smoke test not run.)
+  Prior: 2026-10-22 | through 2026-10-22-012004.md (CADENCE — refreshed 22 footers, tier changes 13; archived 1 faded fact; swept 2
+  threads; live facts 47 → 44, lines 890 → 847) · 2026-10-14 | through 2026-10-14-000312.md (CADENCE — refreshed 22 footers, tier changes 10; archived 3 faded facts and KEPT
   `graph-math-typed-arithmetic` and `scheduler-active-environment-store` as declaration gaps; swept 4 threads; reactivated
   `llm-helper-certification-java`; live facts 50 → 44, lines 851 → 798) · 2026-10-11 | through 2026-10-11-034330.md (ON COMMAND,
   CADENCE + SIZE — refreshed 24 footers, tier changes 16; archived 6 faded facts and KEPT `decimal-statement-exact-arithmetic` as a
@@ -222,7 +220,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-10-22 | uses: 21 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-10-22 | uses: 21 | tier: archive-candidate | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -252,7 +250,7 @@
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-10-21 | uses: 30 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-10-22 | uses: 34 | tier: active | origin: 2026-09-18-174943 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -291,80 +289,6 @@
   `model` via the `*` passthrough. Distilled from the sync-over-async composable refactoring (2026-06-27,
   Claude Code). (ADR-0007)
   <!-- id: event-script-over-code | created: 2026-06-27 | last_used: 2026-06-27 | uses: 1 | tier: core -->
-- **A static decision table is GRAPH DATA — a skill-less node's properties, handed whole to a generic function by ONE
-  `graph.task` input entry; never hard-coded in a function bundled with the graph (Eric, 2026-09-20; a doc gap, no engine
-  change — PR #430; the `lookup` plugin PR #431).** Found when an AI agent compiled a rule-by-state table into a composable
-  function shipped with its graph. Both engines copy every node's properties into the state machine at instantiation
-  (`initializeWithNodeProperties`: skill node → non-reserved keys at `{node}.{key}`; skill-less node → the whole map at
-  `{node}`) and the shared LHS resolver reads any selector, so `state-rules -> table` maps the table in one entry.
-  **Presentation (Eric):** each value is a JSON array written as text — `keys=[ "a", "b" ]`, `a=[ "CA", "TX" ]` — which
-  reads as a table on the node and arrives as a string the function reconstructs with `SimpleMapper`; `key[]=` lines build a
-  real list; a nested table is one triple-quoted JSON text parsed by `f:json(state-rules.table)` at mapping time. **Why:**
-  the product owner certifies the rules on the graph in the business vocabulary, and one table replaces a ladder of
-  IF-THEN-ELSE. **The common case needs no function (Eric's `f:lookup(table, value, default)` simple plugin):** one
-  `graph.data.mapper` entry — `f:lookup(state-rules, input.body.state, text(unknown)) -> output.body.rule` — the optional
-  third argument the default on a miss; a composable function stays for a ruling that needs more than a lookup. The plugin
-  takes the table as a map or JSON text, lists as lists or JSON arrays written as text, compares as text case-insensitively.
-  **Two traps:** (1) a plugin class may not reference `SimpleMapper` — the loader's bytecode gate (`ALLOWED_PACKAGES`) SKIPS
-  it silently and every `f:lookup` mapping fails `SimplePlugin 'lookup' not found`; the serializer is reached only through
-  the allowlisted `SimplePluginUtils` (`SimplePluginGateTest` pins discovery); (2) **a null mapping source — CHANGED
-  2026-09-23 (field issue #453, Eric's ruling; #456, Rust Increment 136):** the graph engine applies Event Script's rule — a
-  null or unresolved source CLEARS a `model.*` target (removed; set to null when the source key exists or the target is
-  indexed) and is IGNORED for any other target — via `GraphLambdaFunction.applyNullSource` in mapper/math/js MAPPING,
-  `for_each`, fetcher/extension parameters (a null parameter is not supplied) and the graph.task/extension/fetcher output
-  mapping; until 4.12.15 it removed ANY target (claim `null-source-removes-target` now states the shared rule). A default for
-  a model variable comes from the source side (the plugin's third argument or `f:defaultValue`), never from
-  default-then-overlay — unsupported in BOTH layers; the same round made graph.math name every unresolved `{selector}`.
-  **Rule:** the product owner reads and certifies the table ON the graph, a new table is a new graph version and never a
-  code change, and the function stays generic by reading rule names from `table.keys`. In `skills-reference.md`
-  (graph.task), the in-Playground help and the AI agent guide's checklist; pinned by `unit-test-task-9` on both engines.
-  Applies [[event-script-over-code]] to DATA and [[clean-knowledge-design-over-engine-coverage]].
-  **Extended 2026-10-11 (a field request, Eric's rulings; Java branch `9ce0a2b0`, Rust `1ac7068e`, both for v4.12.23):** when the rules
-  are BANDS - eligibility thresholds, tiers by amount, time windows - `f:rangeLookup(table, value, default)` answers which band contains
-  the value. One notation, Eric's ruling: `min..max` runs from `min` inclusive up to but EXCLUDING `max`, an omitted end is open (no
-  `..<` marker - it reads the same for numbers, dates and text, and adjacent bands tile a scale with no gap). The TABLE decides the
-  comparison: every bound numeric → the value compared exactly as a decimal (a non-number fails by name, as graph.math does); every
-  bound text → lowercased text (ISO-8601 dates and times, alphabetic bands); a mix → refused. A null value or a miss takes the default.
-  Pinned by 37 shared vectors (`range-lookup-vectors.json`, byte-identical on both engines) and the fixture `unit-test-range-lookup-1`;
-  documented beside `f:lookup` (skills reference *Range tables*). Examples stay neutral: a loyalty tier by spend, credit score bands, a
-  same-day cut-off by time ([[conv-compartment-downstream-secrets]]).
-  **Extended again 2026-10-11 (Eric's follow-up; Java #554 squash `6326f286`, Rust mercury #380 merge `62239b44` - Increment 177, both
-  MERGED 2026-10-11):** a band's bounds are data a
-  mapper or a `graph.math` node reads back - `f:minRange(range, default)` and `f:maxRange(range, default)` return the lower or upper
-  bound TYPED BY THE NOTATION (a numeric bound a number: a whole number a long, any other a double; a text bound text as written; an
-  open end `..2500`/`25000..` the optional default or null), and a dynamic key reads the band the lookup chose
-  (`f:maxRange(loyalty-tiers.{model.tier})`). One notation reader per engine (`RangeNotation`; Rust `Range::parse`) serves the three
-  plugins, so a malformed, mixed or empty range (`3..3` - the upper bound is excluded, so it can never match; Eric's ask) is refused by
-  every one of them, and the lookup checks EVERY band when it reads the table, whatever the value, where it used to check a band only
-  when the walk reached it. **Trap (3), the gate again:** the loader allow-lists the engine's helper CLASSES by name
-  (`ALLOWED_PACKAGES` holds `SimplePluginUtils`, `DecimalPluginUtils`, now `RangeNotation`), not packages - a plugin referencing a
-  helper outside the list is skipped with a WARN and every mapping naming it answers 400; add the class to the list and name the plugin
-  in `SimplePluginGateTest`. Pinned by the shared `range-bounds-vectors.json` (34 vectors) and the fixture `unit-test-range-bounds-1`.
-  **Refined 2026-10-11 after an independent review (Eric's rulings; Java #555 squash `295b2068`, Rust mercury #381 merge `7a3ec55d` -
-  Increment 178, both MERGED 2026-10-11):** a bound
-  is one of THREE KINDS - a canonical number (compared exactly as a decimal), QUOTED text in single or double quotes (`'0020'`,
-  `"2026-11-15"`: compared as written and case-sensitively; the quotes keep a zero-padded code or a case-sensitive band as text, and a
-  quoted bound may contain `..`) or unquoted text (without case, as before - v4.12.23 tables unchanged); one kind per range and per
-  table, a mix refused with the leading-zero hint. A list or map band, a second `..` outside quotes, an unmatched quote and an empty
-  quoted bound are refused by name (the review found a list band read as text, a silently matched `["a..h"]`). `f:minRange`/`f:maxRange`
-  answer a decimal bound as its EXACT TEXT (`2500.50` - the DECIMAL convention; a double would round it; `f:double` converts it in a
-  second mapping for a floating-point output value), a whole number as a long. Text compares as written, so a value must be shaped like
-  the bounds (dates and times in ISO-8601 order, zero-padded; `9:30` is not `09:30`) - DECLARED in the guides, no shape gate: a gate
-  for one text shape would teach that the others are safe. Vectors 52 + 48; the fixture gained a decimal fee-band table and a quoted
-  product-code table.
-  **Second review 2026-10-11 (Eric's rulings; Java #557 commit `904e000c`, Rust mercury #382 commit `5b561472` - Increment 179, both
-  MERGED 2026-10-12: Java squash `b82bdc8d`, Rust merge `108bb34f`):** the documented read-back pattern aborted a run on a miss - `loyalty-tiers.{model.tier}` with the default `unknown` resolves to
-  null and the bound plugins refused a null range by name; now a NULL RANGE ANSWERS NULL, never the default (the default belongs to an open
-  end, a bound the author placed; a missing band has no bounds), so the targets stay unset through the null-source rule. Text orders by
-  Unicode CODE POINT on both engines (`String.compareTo` orders UTF-16 units, which disagree above U+FFFF - `RangeNotation.compare`). A
-  quoted bound ends at its FIRST closing quote in either position: the other quote character is ordinary text inside it (`"O'Brien"` -
-  the YAML convention Eric asked to keep), a bound's own never. The lookup VALUE must be a number or text - a boolean, a list, a map or
-  bytes refused by name on every table (a list compared as its text differed by engine). Docs: "a number written without a decimal point"
-  is the long rule (`1.0` stays text), timestamps need one UTC offset and one precision (declared, not gated), the CHANGELOG's upgrade
-  note names what v4.12.23 accepted (`a..b..c`, a list band in a text table, a list value). Vectors 62 + 55; the fixture's miss run.
-  **Gate note:** the one-liner `cargo test ... --lib range --test range_bounds_vectors ...` filters the vector tests OUT by name - run
-  them without the filter.
-  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-10-16 | uses: 13 | tier: archive-candidate | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
@@ -374,60 +298,6 @@
   parties), and deliberate hop-through is an explicit relay function (demo:
   `hello.remote.relay`). Recorded in the progressive-rendering interop report.
   <!-- id: event-api-local-routes-only | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: core | origin: 2026-08-30-050040 -->
-
-- **graph.math is typed and finite: a boolean is never a number, an unknown function and an overflow fail by name, and
-  exact-decimal money belongs in a `graph.task` function — the math package stays minimal (Eric's rulings on a field
-  installation's nine "wrong answer" behaviours, 2026-09-25; PR #462 squash `0c017d5e` MERGED 2026-09-25; Rust twin mercury #330 squash `d97eab9b`, Increment 141).**
-  The evaluator coerced a boolean to 1/0 in arithmetic, `<`/`>` and function arguments while equality type-checked — in the
-  field one JSON `true` in a threshold slot became a large overcharge with no error. Now one uniform rejection mapped back to
-  the selector (`Boolean operand: model.flag (true) in '…' - a boolean is not a number; store a boolean with CONDITION or
-  assert the type with f:validate`), a bare boolean COMPUTE result included. **`CONDITION: var -> expr`** is the declared
-  boolean statement (evaluated as a boolean whatever operators it carries; `IF` tests it directly); `COMPUTE` keeps yielding
-  a boolean for a comparison — by design, now documented. `Unknown function: mn` replaces the generic message; every
-  arithmetic result is checked finite (`Arithmetic overflow in '*' (result Infinity)`, `Division by zero or arithmetic
-  overflow in '/'`, NaN by name), so `Infinity` never travels on to fail a later node as an unknown identifier. **Ruled
-  documentation, not engine:** a `run` on the same Playground instance keeps `model.*` (a `model.x[]` append appends again)
-  and `instantiate graph`/`start` is the reset; a taken IF inside a `for_each` body ends the walk (per-row rules are
-  arithmetic gates); the end node is the terminus (last writer wins); `BigDecimal` is never added to the dialect. **READ:** a
-  graph that relied on `true` computing as 1 or on a propagating `Infinity` now fails at that statement. Two of the nine
-  were already closed in 4.12.16 (#456). Applies [[clean-knowledge-design-over-engine-coverage]]; extends
-  [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]]. **Partly superseded 2026-09-30 by
-  [[decimal-statement-exact-arithmetic]]:** the "exact-decimal money belongs in a `graph.task` function, `BigDecimal` is never
-  added to the dialect" ruling no longer holds — `DECIMAL:` is that statement; the typed/finite `COMPUTE` rules stand.
-  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-10-14 | uses: 11 | tier: archive-candidate | origin: 2026-09-25-183540 -->
-
-- **Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math` — the high-precision `COMPUTE:`, strings at rest, no graph-level
-  mode (Eric's rulings, 2026-09-30; RFC-0001 promoted to ADR-0025 in PR #473; implemented in PR #471, squash `3b4cad82`; SHIPPED in
-  v4.12.20).** `DECIMAL: var -> expr` evaluates in `BigDecimal` and stores a canonical string at
-  `{node}.result.{var}` (plain notation, computed scale kept, a zero of any scale `"0"`), because the state machine does not keep
-  Java types across `graph.suspend`/`graph.resume` or any event hop. `/` is exact when it terminates, else 34 digits HALF_EVEN;
-  `round(x, scale, mode)` always names its mode; `sqrt`, `log`, trigonometry, `random()`, `PI`, `E` and a boolean result fail by
-  name. `COMPUTE:` keeps its meaning and no `CompileGraph` check exists. **Two changes reach existing graphs (READ at release):**
-  numeric strings compare as numbers in `== != < <= > >=` everywhere (PR #471, Eric: it removes a recurring developer error), and
-  the dialect `round` is half up away from zero, like `f:round` (PR #472: `round(-2.5)` is `-3`). A `Double` operand converts
-  through its shortest decimal text, lenient and DECLARED in the guide (send money as strings). Parity rides 151 shared vectors
-  run in every engine. **Supersedes the decimal half of [[graph-math-typed-arithmetic]]** ("exact-decimal money belongs in a
-  `graph.task` function; `BigDecimal` never enters the dialect"); the rest of that ruling stands. **Method note:** RFC first,
-  implement on one branch, promote to ADR only after review and green CI — the ledger recorded a decision, never a proposal
-  ([[conv-proposals-not-in-adr-ledger]]). Delivered on both engines (Rust twin: mercury #335 + #336, one shared core) and released in v4.12.20; the field-acceptance wait is [[decimal-ports-and-release]] (the python/node packs need no change — they are Event-over-HTTP function hosts; closes [[decimal-mode]]). (ADR-0025)
-  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-10-21 | uses: 9 | tier: active | origin: 2026-09-30-221603 -->
-
-- **A deterministic MsgPack packager: keys sorted by UTF-8 bytes at every depth, `{manifest, maps}`, one canonical profile, integrity left to the
-  application (Eric's rulings, 2026-10-01; RFC-0002 promoted to ADR-0026 in PR #484; Java `CanonicalPackager` #481/#482/#483 and the Rust
-  twin `platform_core::canonical_packager`, mercury #339, Increment 147; SHIPPED in v4.12.20).** The ordering is the packager's own step — Gson has no
-  ordered-keys option and a `String`-order sort is UTF-16, which differs above U+FFFF — and the bytes are written through msgpack-core
-  directly, because `MsgPack.pack` drops nulls unless configured, packs a `Float` as float32 and writes a `BigDecimal` zero as `"0.00"`. The
-  profile: nulls kept, smallest integers (signed 64-bit), finite float64 only (a `Float` is WIDENED through its shortest decimal text — Eric, 2026-10-01, before 4.12.20; it was rejected at first), shortest str/bin headers, exact numbers as strings (zero `"0"`),
-  nothing else; the read is strict by default (re-encode and compare). **Digital signature is OUT — the user application decides whether to
-  protect the exact bytes and with which algorithm; no hash mode, verifier seam or key in the framework.** **The interop proof is one vector file,
-  byte-identical in both repos, whose expected bytes come from an independent encoder written from the spec (not from an engine)** — 73 values, 6
-  packages, 25 rejections and a seeded 60-document corpus; each engine matching it means the engines match each other, and both passed first time.
-  Method worth keeping: an independent oracle plus one shared file beats a cross-engine drive; it also found that `rmpv` counts two depth units
-  per nesting level (its 64 accepted 31), so a library-limit corner needs its own vector. Language packs do not carry it (Event-over-HTTP function
-  hosts). Deferred: trusted timestamps and per-entry manifest records. The folder `pack`/`unpack` tooling and the graph-set loader, deferred
-  here at first, became RFC-0005 and then ADR-0027 ([[graph-set-pack-and-deploy]]; the command line shipped in #508). Relates
-  [[graph-manifest-list-later-wins]] (the loader's precedence). (ADR-0026)
-  <!-- id: canonical-packager-wire-contract | created: 2026-10-01 | last_used: 2026-10-12 | uses: 19 | tier: archive-candidate | origin: 2026-09-30-221603 -->
 
 - **The Playground webapp has one source and two deploy targets, and the help pages are one consolidated set (Eric, 2026-10-02; PR #496 squash `a6dc9ce5`, the Rust twin mercury #347 merge `781fae43`, both MERGED 2026-10-02).** The webapp "graduated": its scoped
   memory bank, steering files and pre-graduation specs under `system/minigraph-playground-engine/webapp/` are retired, its technical documentation is regenerated from the code in `webapp/docs/` (README,
@@ -442,79 +312,7 @@
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-21 | uses: 21 | tier: active | origin: 2026-10-02-175751 -->
-
-- **A graph carries its contract as a `schema` on the root and end nodes, the engine discovers the rest, validates the request at the
-  root by an assumed step and serves OpenAPI 3.0 on demand (Eric's design 2026-10-08; RFC-0007 promoted to ADR-0029 on 2026-10-09 after the
-  four work packages merged on both engines: Java #533/#534/#535/#536, Rust #370–#373, Increments 171–174).** `schema.body` and
-  `schema.header` on the root describe `input.body`/`input.header`, the same on the end node describe the response, stored through the
-  grammar's composite keys so they travel with the graph; the vocabulary is a CLOSED OpenAPI 3.0 subset (`type`, `properties`,
-  `required`, `items`, `enum`, min/max and exclusive variants, `minLength`/`maxLength`, `pattern`, `minItems`/`maxItems`, `nullable`,
-  `additionalProperties`; `title`/`description`/`example`/`format` documentary) and the gate refuses any other or inapplicable keyword
-  ([[clean-knowledge-design-over-engine-coverage]]: a silently ignored constraint teaches that unflagged means safe); types are strict
-  JSON (an integral float is an integer), `additionalProperties` keeps OpenAPI's default. **Validation is assumed, never written into
-  the node:** both walkers send one synchronous request to `graph.schema.validator` with `{body, header, schema}` at the first visit
-  to the root (armed at run start, not on resume); 400 carries up to ten violations (`Input validation failed - input.body.a: expected
-  number; …`) through the task error path, so a dry run and a deployed run refuse the same request; the property
-  `graph.schema.validator` names a substitute. Discovery derives the surface from the shared `describe graph` scanner and the
-  declaration wins (mismatch = WARN at deploy/pack, never a refusal). `GET /api/openapi/{graph_id}` (dev-mode, YAML, `?format=json`) and
-  `/api/openapi/session/{sessionId}` (`?view=contract` for the panel) derive the document each time, never stored; no query parameters
-  by design. The Schema panel edits path/type/required/description/example only (other keywords a read-only chip) and saves as one
-  `update node` re-sending the node's other properties. Pinned by the shared `graph-contract-vectors.json` and
-  `graph-schema-vectors.json` and five claims per engine. **READ at release:** opt-in per graph - a model with a root `schema` now
-  answers 400 at the root for a bad request; `graph.schema.validator` is a reserved route. Guide: `docs/guides/knowledge-graph/graph-contract.md`.
-  Extends [[graph-set-pack-and-deploy]] (the shared gate, the panel precedent) and [[canonical-packager-wire-contract]] (the
-  shared-vector method). (ADR-0029)
-  <!-- id: graph-contract-by-declaration | created: 2026-10-09 | last_used: 2026-10-16 | uses: 3 | tier: archive-candidate | origin: 2026-10-09-041751 -->
-
-- **The mini-scheduler runs its jobs in one site of an active-active deployment, and the active environment's source of truth is a
-  data store read at every scheduled point (Eric's problem statement and rulings, 2026-10-09; RFC-0008 promoted to ADR-0030 the same
-  day; PR #539 squash `74212b1e`).** A field installation ran the scheduler in Production and DR active-active; the DR scheduler's jobs
-  published to the DR Kafka cluster and woke applications that must stay idle. `scheduler.environment` (one word, default `prod`,
-  `${ENV_NAME:prod}` in a deployment) names the instance's environment - not `app.env`, which selects the Playground's dev mode; the
-  active environment lives in the function named by `scheduler.environment.store` (default `v1.environment.store`; `type=get` → the
-  name as text, `type=set` + `environment` + `operator` → `true`), which the application implements against its own database (the
-  example's file-backed `EnvironmentStore` is the template), because a pod restarts without notice. **No second origin:** a first
-  `scheduler.active.environment` property was dropped at Eric's review - a startup value beside a store is a question the operator
-  has to answer; the active environment is `prod` until an operator sets one, the last value read is the fallback for a store that
-  fails to answer, and without a registered store the value is in memory only with a startup WARN. Standby skips at execution with
-  one log line (Quartz keeps firing, a switch needs no restart); an operator's manual run is honoured on a standby instance; the
-  switch is the application's REST endpoint (`GET`/`POST /api/scheduler/environment` in the example). The existing `leader.election`
-  and state resolver are single-site and unchanged. Claim `scheduler-active-environment-standby`; no Rust twin (the port has no
-  scheduler). Relates [[kafka-mesh-opt-in]] (the leader election is in-cluster), [[event-script-over-code]] (the REST edge through
-  rest.yaml). (ADR-0030)
-  <!-- id: scheduler-active-environment-store | created: 2026-10-09 | last_used: 2026-10-14 | uses: 2 | tier: archive-candidate | origin: 2026-10-09-045453 -->
-
-- **The LLM helper is not engine code: it is a Claude-only function host in the Python and Node packs, and the Java engine only points at it (PR #488, squash `7c938ef1`; Eric's rulings,
-  2026-10-01).** `examples/llm-helper` in mercury-python (#38) and mercury-nodejs (#106) serves `llm.chat`, `llm.stream` and `llm.health` on the Anthropic SDK; the engine stays LLM-free and holds no
-  credential, and the playground's `support-triage` graph and the `/api/llm/stream` relay (`LlmStreamRelay`) reach the helper through `event-over-http.yaml` by route name. **The evidence is
-  `docs/test-reports/llm-helper-certification.md`** (byte-identical with the Rust engine's, and registered in the three places the AI contract snapshot needs: the pom include set, `skill/files.list`
-  and `SkillSnapshotTest`'s fixed extras): Java and Rust in front of both helpers through a Layer 1 streaming service, a Layer 2 flow and two Layer 3 graphs, with real Claude calls (40 results per
-  pair, 124 model calls, no failed check). Every batch the helper forwarded reached the edge as its own frame (50 to 101 per stream, 4 to 10 ms of drift) — Eric's rule is that progressive tokens are
-  never buffered into one message — the cadence is the API's and depends on the model (Haiku 4.5 continuous, Opus 5.5 bursts about every 600 ms), the error contract holds on the real SDKs, and all 32
-  traces that touched a helper rebuild as one tree ([[connected-edge-spans]]). The deploy lane did the deploying ([[graph-manifest-list-later-wins]]). **Opus 5.5 stays the helper's default**
-  (Eric): it thinks before it answers and its thinking tokens count against `max_tokens`, so the triage graph now asks for 2000 tokens (512 before) and Haiku 4.5 is the documented choice for smooth
-  rendering; a 48-call probe found no empty result at the old budgets either, so the change removes the question. AWS Bedrock through IAM is the helper's SECOND BACKEND since 2026-10-14 - built and driven live in
-  [[bp-agent-orchestration]]'s sprint 1, the report's Scenario 8 and Finding 7 (#563 squash `cd708eba`, mercury #384 merge `9141cc32`), the packs'
-  thread closed. Rust twin: mercury #342.
-  <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-16 | uses: 5 | tier: archive-candidate | origin: 2026-10-02-001806 -->
-
-- **PostgreSQL runs one statement at a time per connection, so "parallel inserts on a single connection" only queue; the levers are
-  one multi-row statement, one transaction and the pool - `PgRequest.insertRows` is the helper (a field question relayed by Eric,
-  2026-10-14; branch `feat/pg-multi-row-insert`, PR #564 squash `5627748b`, MERGED 2026-10-15 - the helper, the `pg-example` orders demo and a Sonar round from Eric's local scan; ships in the next Java release).** The R2DBC driver serialises a connection's
-  statements through one conversation queue and the backend executes them one by one, so parallelism comes from connections and
-  latency from round trips and commits. Measured on the embedded server, 500 single-row inserts: autocommit loop 650-800 ms, one
-  transaction of 500 statements 250-320 ms, 500 statements in flight over the pool 190-270 ms, ONE multi-row INSERT 94 ms - and the
-  embedded round trip is ~0.1 ms, so a networked field database widens every gap. `insertRows(po, table, columns, rows[, onConflict])`
-  builds `INSERT ... VALUES ($1, ...), ($n, ...)` (public `multiRowInsert`), takes an `ON CONFLICT` clause for an upsert, validates
-  identifiers (they are written into the SQL), refuses a list or map value (the statement classes rewrite a list parameter into the
-  SQL text for IN clauses), and splits a large set into statements of at most 1000 parameters in one `transaction()` - all or none.
-  **The cap is a finding:** Spring's `DatabaseClient` spec is immutable and `PgService` binds one parameter per `bind()` call, each
-  copying the binding set, so a statement's cost is quadratic in its parameter count (13108 rows: 22 s at PostgreSQL's 65535 limit,
-  5 s at 4000, 4.1 s at 1000). For a bulk update the same shape is an upsert or `UPDATE t SET ... FROM (VALUES ...) AS v(...)` through
-  `update()`. `examples/pg-example` shows every helper method and the event form side by side (`DemoOrderEndpoint`, `DemoOrderEvents`). **Across tables (the field's follow-up after testing `insertRows`, 2026-10-15; PR #565 squash `dd75d4d3`, MERGED 2026-10-15):** `PgTransactionBuilder` collects `insertRows` per table, `update` and `batch` steps and `PgRequest.transaction(po, builder)` runs them in ONE transaction - one row count per step, a failing statement rolling back every earlier one (pinned by a duplicate-key test against two tables); the demo's `POST .../with-history`. No Rust twin (the port has no R2DBC module). Applies [[clean-knowledge-design-over-engine-coverage]] (a documented cap,
-  not a rewrite of the binding) and [[conv-sonar-gate-heuristics]].
-  <!-- id: pg-single-connection-is-serial | created: 2026-10-14 | last_used: 2026-10-15 | uses: 2 | tier: archive-candidate | origin: 2026-10-15-000750 -->
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-22 | uses: 22 | tier: active | origin: 2026-10-02-175751 -->
 
 - **The Playground's graph image export is PNG only, rendered by `html-to-image` pinned at 1.11.11, with flat cards (Eric's
   ruling 2026-10-21 on #571).** Export PNG saves the whole graph at zoom 1, 2 image pixels per graph pixel, on a solid
@@ -527,7 +325,7 @@
   `html-to-image`:** re-check upstream issue #516 (1.11.12 and 1.11.13 draw styles wrongly), then re-export a graph in Chrome,
   Firefox and Safari and compare the three images. The 2026-10-21 log has the harness: puppeteer-core for Chrome and Firefox,
   safaridriver for Safari. Applies [[clean-knowledge-design-over-engine-coverage]]; extends [[playground-webapp-single-source]].
-  <!-- id: playground-graph-image-png-only | created: 2026-10-21 | last_used: 2026-10-21 | uses: 1 | tier: working | origin: 2026-10-21-222735 -->
+  <!-- id: playground-graph-image-png-only | created: 2026-10-21 | last_used: 2026-10-21 | uses: 1 | tier: archive-candidate | origin: 2026-10-21-222735 -->
 
 - **JSONPath is RFC 9535 on both engines: Java's `minimalist-jsonpath` replaces Jayway JsonPath and Rust keeps `serde_json_path`;
   a path outside the standard is refused by name before it runs, and a substituted value is checked where it lands (Eric's rulings,
@@ -563,7 +361,7 @@
   pre-filled it. Agent-side guard: when the agent cannot update a PR's title itself, the handoff
   says that the title on GitHub is now wrong and must be replaced in the squash dialog.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-22 | uses: 96 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-22 | uses: 98 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -590,29 +388,7 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-22 | uses: 34 | tier: active | origin: 2026-09-17-183008 -->
-- **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
-  Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
-  deleting a module freezes its findings on the last resolved dependency tree, failing
-  the security gate forever. A parentless dependency-free `packaging=pom` placeholder
-  re-tests to an empty graph (zero findings). Live at `system/rest-spring-3/` +
-  `examples/rest-spring-3-example/` (PR #305) with relocation metadata to the Boot-4 twins;
-  **release version sweeps must include these non-reactor poms deliberately.** Relates
-  [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-10-13 | uses: 30 | tier: archive-candidate | origin: 2026-09-01-022524 -->
-- **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
-  sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
-  identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
-  and node language packs alike: whenever one is next updated, it is tagged at the Java number it
-  caught up to — never at an intermediate number invented to represent partial catch-up. Consequence
-  to read correctly: a port sitting below Java (Rust at v4.12.7, the python/node packs at 4.12.1,
-  while Java shipped v4.12.9 — resolved 2026-09-21 when Rust caught up at v4.12.12 in one step) is **lag awaiting catch-up, not divergence**, and the gap is not a
-  compatibility signal. Corollary for release notes and continuity entries: state a port's number as
-  the content it currently carries, never as a separate cadence. The Java-is-reference principle this
-  rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
-  directly when giving this convention, so it stands on its own. Governs the Rust half of
-  [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-10-14 | uses: 40 | tier: archive-candidate | origin: 2026-09-16-003354 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-22 | uses: 37 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -626,7 +402,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-13 | uses: 28 | tier: archive-candidate | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-22 | uses: 31 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast — the in-house codec writes the smallest integer width, so it holds since
   ADR-0028; use `util.str2int/str2long`). (Wording refreshed 2026-10-09 at invariant re-verify — substance unchanged.)
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -713,7 +489,7 @@
   `netty.version` is set in all 38 poms - and why `json-path` resolves 2.10.0 (Boot's) in 34 modules while platform-core
   declares 3.0.0. Relates
   [[conv-template-version-sweep]] (the other reactor-wide sweep).
-  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-13 | uses: 3 | tier: archive-candidate | origin: 2026-10-12-221919 -->
+  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-22 | uses: 7 | tier: active | origin: 2026-10-12-221919 -->
 
 - **The field's Sonar gate judges NEW code, and five of its heuristics catch prose and framework idioms - write for them (the fifth
   Sonar round, 2026-10-12; the earlier rounds are the archived `thread-sonar-quality-gate-4.6.2`, `thread-sonar-4-9-1-field-rejection`,
@@ -740,7 +516,7 @@
   answers `equals` itself - give the inner handlers their own functional interface. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-21 | uses: 6 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-22 | uses: 10 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
@@ -760,7 +536,7 @@
   (2026-10-22):** it held Vite 8.1.5 against the lockfile's 8.3.5 after #572 was rebuilt in a worktree, and a build from it would not
   have reproduced the committed bundle; `npm ls vite` shows it. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
   only the entry page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-21 | uses: 25 | tier: active | origin: 2026-10-02-015208 -->
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-22 | uses: 27 | tier: active | origin: 2026-10-02-015208 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
