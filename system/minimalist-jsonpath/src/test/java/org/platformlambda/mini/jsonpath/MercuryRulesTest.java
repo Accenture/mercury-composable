@@ -132,19 +132,19 @@ class MercuryRulesTest {
 
     @Test
     void theRewriteIsTheRustOne() {
-        assertEquals("$['fetcher-ext'].result", HyphenNames.bracketize("$.fetcher-ext.result"));
-        assertEquals("$..['node-a'].b", HyphenNames.bracketize("$..node-a.b"));
-        assertEquals("$.a.b[0]", HyphenNames.bracketize("$.a.b[0]"));
+        assertEquals("$['fetcher-ext'].result", HyphenNames.bracket("$.fetcher-ext.result"));
+        assertEquals("$..['node-a'].b", HyphenNames.bracket("$..node-a.b"));
+        assertEquals("$.a.b[0]", HyphenNames.bracket("$.a.b[0]"));
         // nothing inside brackets or quotes is touched
-        assertEquals("$['x.y-z'][?(@.a-b)]", HyphenNames.bracketize("$['x.y-z'][?(@.a-b)]"));
-        assertEquals("$[\"q.r-s\"]", HyphenNames.bracketize("$[\"q.r-s\"]"));
+        assertEquals("$['x.y-z'][?(@.a-b)]", HyphenNames.bracket("$['x.y-z'][?(@.a-b)]"));
+        assertEquals("$[\"q.r-s\"]", HyphenNames.bracket("$[\"q.r-s\"]"));
         // a wildcard and an empty name pass through
-        assertEquals("$.*", HyphenNames.bracketize("$.*"));
-        assertEquals("$..*", HyphenNames.bracketize("$..*"));
+        assertEquals("$.*", HyphenNames.bracket("$.*"));
+        assertEquals("$..*", HyphenNames.bracket("$..*"));
         // the Rust rewrite counts letters and numbers of every script, and stops at anything else
-        assertEquals("$['é-٣'].x", HyphenNames.bracketize("$.é-٣.x"));
-        assertEquals("$['a-'] ", HyphenNames.bracketize("$.a- "));
-        assertEquals("$]['a-b']", HyphenNames.bracketize("$].a-b"));
+        assertEquals("$['é-٣'].x", HyphenNames.bracket("$.é-٣.x"));
+        assertEquals("$['a-'] ", HyphenNames.bracket("$.a- "));
+        assertEquals("$]['a-b']", HyphenNames.bracket("$].a-b"));
     }
 
     @Test

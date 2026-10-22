@@ -55,11 +55,12 @@ record Segment(boolean descendant, List<Selector> selectors) {
     }
 
     /**
-     * @return true for a child segment with one name or one index selector - the segments of a singular query
+     * @return false only for a child segment with one name or one index selector, the one kind of segment a
+     *         singular query is made of
      */
-    boolean isSingular() {
-        return !descendant && selectors.size() == 1 &&
-                (selectors.getFirst() instanceof Selector.Name || selectors.getFirst() instanceof Selector.Index);
+    boolean isNotSingular() {
+        return descendant || selectors.size() != 1 ||
+                (!(selectors.getFirst() instanceof Selector.Name) && !(selectors.getFirst() instanceof Selector.Index));
     }
 
     /*

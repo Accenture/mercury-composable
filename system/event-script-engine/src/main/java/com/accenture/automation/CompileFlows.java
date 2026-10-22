@@ -299,30 +299,38 @@ public class CompileFlows implements EntryPoint {
         boolean isDecisionTask = DECISION.equals(md.execution);
         List<String> filteredOutputMapping = filterDataMapping(outputList);
         for (String raw : filteredOutputMapping) {
-            // convert deprecated "simple type matching" syntax to "simple plugin" syntax
-            String line = converter.convert(raw);
-            if (!line.equals(raw)) {
-                log.warn("Deprecated output syntax in task {} of {} - '{}' converted to '{}'",
-                        md.uniqueTaskName, name, raw, line);
-            }
-            if (helper.validOutput(line, isDecisionTask)) {
-                String rhs = line.substring(line.lastIndexOf(MAP_TO) + 2).trim();
-                if (rejectedReservedTarget(OUTPUT, rhs, name, md, line) || rejectedJsonPath(line, name, md)) {
-                    return false;
-                }
-                task.output.add(line);
-                if (line.contains(MODEL_PARENT) || line.contains(MODEL_ROOT)) {
-                    task.enableOutputParentRef();
-                }
-            } else {
-                log.error("Skip invalid task {} in {} that has invalid output mapping - {}",
-                        md.uniqueTaskName, name, line);
+            if (!addValidatedOutputEntry(name, raw, task, md, isDecisionTask)) {
                 return false;
             }
         }
         if (isDecisionTask && task.nextSteps.size() < 2) {
             log.error("Decision task {} in {} must have at least 2 next tasks", md.uniqueTaskName, name);
             return false;
+        }
+        return true;
+    }
+
+    /** Validate one output data mapping entry and add it to the task (false = the task must be skipped). */
+    private boolean addValidatedOutputEntry(String name, String raw, Task task, FlowConfigMetadata md,
+                                            boolean isDecisionTask) {
+        // convert deprecated "simple type matching" syntax to "simple plugin" syntax
+        String line = converter.convert(raw);
+        if (!line.equals(raw)) {
+            log.warn("Deprecated output syntax in task {} of {} - '{}' converted to '{}'",
+                    md.uniqueTaskName, name, raw, line);
+        }
+        if (!helper.validOutput(line, isDecisionTask)) {
+            log.error("Skip invalid task {} in {} that has invalid output mapping - {}",
+                    md.uniqueTaskName, name, line);
+            return false;
+        }
+        String rhs = line.substring(line.lastIndexOf(MAP_TO) + 2).trim();
+        if (rejectedReservedTarget(OUTPUT, rhs, name, md, line) || rejectedJsonPath(line, name, md)) {
+            return false;
+        }
+        task.output.add(line);
+        if (line.contains(MODEL_PARENT) || line.contains(MODEL_ROOT)) {
+            task.enableOutputParentRef();
         }
         return true;
     }
@@ -789,26 +797,14 @@ public class CompileFlows implements EntryPoint {
     }
 
     private boolean validForStatement(List<String> comparator, List<String> sequencer) {
-        List<String> keys = new ArrayList<>();
-        for (String k: comparator) {
-            if (k.startsWith(MODEL_NAMESPACE)) {
-                keys.add(k);
-            }
-        }
+        List<String> keys = comparator.stream().filter(k -> k.startsWith(MODEL_NAMESPACE)).toList();
         if (keys.isEmpty()) {
             return false;
         }
         if (keys.size() == 2 && keys.getFirst().equals(keys.get(1))) {
             return false;
         }
-        boolean found = false;
-        for (String k: keys) {
-            if (k.equals(sequencer.getFirst())) {
-                found = true;
-                break;
-            }
-        }
-        return found;
+        return keys.contains(sequencer.getFirst());
     }
 
     private List<String> filterDataMapping(List<String> entries) {

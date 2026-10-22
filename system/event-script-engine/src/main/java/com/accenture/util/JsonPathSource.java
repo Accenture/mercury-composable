@@ -53,9 +53,9 @@ public final class JsonPathSource {
     private static final Utility util = Utility.getInstance();
     private static final String MODEL_NAMESPACE = "model.";
     private static final String JSON_PATH_ROOT = "$";
-    private static final Pattern INTEGER = Pattern.compile("-?[0-9]+");
-    private static final Pattern INDEXES = Pattern.compile("(\\[[0-9]+])*");
-    private static final Pattern NUMBER = Pattern.compile("-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][-+]?[0-9]+)?");
+    private static final Pattern INTEGER = Pattern.compile("-?\\d+");
+    private static final Pattern INDEXES = Pattern.compile("(?:\\[\\d++])*+");
+    private static final Pattern NUMBER = Pattern.compile("-?(0|[1-9]\\d*)(\\.\\d+)?([eE][-+]?\\d+)?");
 
     /** Which references the engine substitutes into a source before it reads it. */
     public enum Form {
@@ -184,9 +184,9 @@ public final class JsonPathSource {
      *   <li>in an index, an integer;</li>
      *   <li>inside a string literal the author wrote, its text, escaped for that literal (the quote, the backslash
      *       and the control characters);</li>
-     *   <li>bare inside a filter, a number, a boolean or null as written, and text as a string literal - except
-     *       that Event Script, which has always inserted text as written, keeps text that is already one literal
-     *       (a number, true, false, null or a quoted string) as written.</li>
+     *   <li>bare inside a filter, a number, a boolean or null as written, and text as a string literal. Event
+     *       Script, which has always inserted text as written, is the exception: it keeps text that is already
+     *       one literal (a number, true, false, null or a quoted string) as written.</li>
      * </ul>
      * A list or a map is never substituted: RFC 9535 has no array or object literal. Event Script's [model.i] keeps
      * its integer rendering, and a value renders as text the way each engine form always has.
@@ -384,34 +384,8 @@ public final class JsonPathSource {
      * refuses it. The brackets are scanned here the same way, over the source with each brace reference masked.
      */
     private static List<VarSegment> eventScriptSpans(String source) {
-        List<VarSegment> braces = new ArrayList<>();
-        if (source.contains("{") && source.contains("}")) {
-            for (var segment : util.extractSegments(source, "{", "}")) {
-                if (isModelKey(source.substring(segment.start() + 1, segment.end() - 1).trim())) {
-                    braces.add(segment);
-                }
-            }
-        }
-        var masked = new StringBuilder(source);
-        for (var segment : braces) {
-            for (int i = segment.start(); i < segment.end(); i++) {
-                masked.setCharAt(i, 'x');
-            }
-        }
-        List<VarSegment> indexes = new ArrayList<>();
-        if (source.contains("[") && source.contains("]")) {
-            int start = 0;
-            int open = masked.indexOf("[", start);
-            int close = masked.indexOf("]", start);
-            while (open != -1 && close > open) {
-                if (isModelKey(masked.substring(open + 1, close).trim())) {
-                    indexes.add(new VarSegment(open + 1, close));
-                }
-                start = close + 1;
-                open = masked.indexOf("[", start);
-                close = masked.indexOf("]", start);
-            }
-        }
+        List<VarSegment> braces = modelKeyBraces(source);
+        List<VarSegment> indexes = modelKeyIndexes(masked(source, braces));
         List<VarSegment> result = new ArrayList<>(indexes);
         for (var segment : braces) {
             if (indexes.stream().noneMatch(index -> index.start() <= segment.start() && segment.end() <= index.end())) {
@@ -422,14 +396,45 @@ public final class JsonPathSource {
         return result;
     }
 
-    private static List<VarSegment> graphSpans(String source) {
-        List<VarSegment> result = new ArrayList<>();
-        for (var segment : util.extractSegments(source, "{", "}")) {
-            if (isGraphKey(source.substring(segment.start() + 1, segment.end() - 1))) {
-                result.add(segment);
+    private static List<VarSegment> modelKeyBraces(String source) {
+        if (!source.contains("{") || !source.contains("}")) {
+            return List.of();
+        }
+        return util.extractSegments(source, "{", "}").stream()
+                .filter(segment -> isModelKey(source.substring(segment.start() + 1, segment.end() - 1).trim()))
+                .toList();
+    }
+
+    private static String masked(String source, List<VarSegment> braces) {
+        var masked = new StringBuilder(source);
+        for (var segment : braces) {
+            for (int i = segment.start(); i < segment.end(); i++) {
+                masked.setCharAt(i, 'x');
             }
         }
-        return result;
+        return masked.toString();
+    }
+
+    // each '[' pairs with the first ']' after the previous pair
+    private static List<VarSegment> modelKeyIndexes(String masked) {
+        List<VarSegment> indexes = new ArrayList<>();
+        int open = masked.indexOf('[');
+        int close = masked.indexOf(']');
+        while (open != -1 && close > open) {
+            if (isModelKey(masked.substring(open + 1, close).trim())) {
+                indexes.add(new VarSegment(open + 1, close));
+            }
+            int start = close + 1;
+            open = masked.indexOf('[', start);
+            close = masked.indexOf(']', start);
+        }
+        return indexes;
+    }
+
+    private static List<VarSegment> graphSpans(String source) {
+        return util.extractSegments(source, "{", "}").stream()
+                .filter(segment -> isGraphKey(source.substring(segment.start() + 1, segment.end() - 1)))
+                .toList();
     }
 
     private static boolean isModelKey(String key) {

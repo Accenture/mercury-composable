@@ -46,7 +46,7 @@ record Query(boolean absolute, List<Segment> segments) {
 
     boolean isSingular() {
         for (Segment segment : segments) {
-            if (!segment.isSingular()) {
+            if (segment.isNotSingular()) {
                 return false;
             }
         }

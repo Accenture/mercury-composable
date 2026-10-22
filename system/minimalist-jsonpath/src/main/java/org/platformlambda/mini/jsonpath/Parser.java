@@ -24,9 +24,9 @@ import java.util.List;
 
 /**
  * A recursive descent parser for the grammar of RFC 9535 (its appendix A), over the code points of the query.
- * It also applies the well-typedness rules of RFC 9535 2.4.3, so a query that compiles is one the evaluator can
- * run. Nesting - parentheses, filters and function arguments - is limited to {@value #MAX_DEPTH} levels, so no
- * query text can exhaust the stack.
+ * It also applies the well-typedness rules of RFC 9535 2.4.3, so every query that compiles is one that the
+ * evaluator can run. Nesting - parentheses, filters and function arguments - is limited to {@value #MAX_DEPTH}
+ * levels, so no query text can exhaust the stack.
  */
 final class Parser {
     static final int MAX_DEPTH = 64;
@@ -154,10 +154,9 @@ final class Parser {
     private Expr parseLogical() {
         enter();
         List<Expr> terms = new ArrayList<>();
-        terms.add(parseAnd());
-        while (consumeOperator("||")) {
+        do {
             terms.add(parseAnd());
-        }
+        } while (consumeOperator("||"));
         depth--;
         return terms.size() == 1 ? terms.getFirst() : new Expr.Or(terms);
     }
@@ -165,10 +164,9 @@ final class Parser {
     /** logical-and-expr = basic-expr *(S "&&" S basic-expr). */
     private Expr parseAnd() {
         List<Expr> terms = new ArrayList<>();
-        terms.add(parseBasic());
-        while (consumeOperator("&&")) {
+        do {
             terms.add(parseBasic());
-        }
+        } while (consumeOperator("&&"));
         return terms.size() == 1 ? terms.getFirst() : new Expr.And(terms);
     }
 
@@ -491,7 +489,7 @@ final class Parser {
         return negative ? -value : value;
     }
 
-    /** string-literal: single or double quoted, with the escapes of RFC 9535 2.3.1.1. */
+    /** string-literal: single or double-quoted, with the escapes of RFC 9535 2.3.1.1. */
     private String parseString() {
         int quote = cps[pos++];
         StringBuilder sb = new StringBuilder();
