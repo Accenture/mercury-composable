@@ -2054,6 +2054,8 @@
       
         
       
+        
+      
     
     
     
@@ -2753,6 +2755,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../test-reports/minimalist-jsonpath-differential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — JSONPath, minimalist-jsonpath vs Jayway
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../guides/reserved-names-and-headers/" class="md-nav__link">
         
   
@@ -3256,8 +3286,8 @@ the change unchanged.</p>
      shorthand does not allow one, so this is the one declared extension. Rust already rewrites such names to bracket notation.
 - <strong>Refusal, never a silent null.</strong> A query outside the grammar fails by name, with its position:
   - when it is evaluated;
-  - at deployment, because CompileGraph and the flow compiler parse every <code>$</code> source, so a graph or a flow with an unsupported
-    path is refused before it runs.
+  - at deployment, because CompileGraph and the flow compiler parse every <code>$</code> source, so a graph with an unsupported path is
+    refused, and a flow loses the task that carries one, before it runs (the WP3 rulings below).
   The Rust engine moves from its silent null to the same refusal; it already has the parse error.
 - <strong>Limits.</strong> A nesting bound on filter expressions (parentheses, nested queries) and an iterative descendant walk, so that no
   query text exhausts the stack.
@@ -3321,6 +3351,30 @@ the change unchanged.</p>
 - <strong>WP4.</strong> Substitution first, then parsing, with the checks where each value lands: in Event Script and the knowledge graph,
   on both engines (answer 4).
 - <strong>WP5.</strong> The guides, the help pages, the claims and the upgrade note.</p>
+<p><strong>WP3 rulings (Eric, 2026-10-22).</strong>
+1. <strong>A flow keeps its compiler's unit.</strong> A task whose <code>$</code> source is not RFC 9535 is dropped, as for any other invalid mapping
+   entry, with an ERROR that names RFC 9535 and the position. A graph is rejected: CompileGraph, the packager and the
+   Playground's <code>run</code> refuse it.
+2. <strong>One scanner finds where each reference lands.</strong> WP3 builds it, to parse a source with a stand-in for each reference;
+   WP4 reuses it to check each value before it is inserted.
+3. <strong>A simple plugin's <code>$</code> argument stays supported,</strong> as the Event Script guide promises. The argument splitter ends a <code>$</code>
+   argument at the first comma outside its brackets and string literals, on both engines, so a union (<code>$['a','b']</code>) or a
+   filter's text reaches the plugin whole.
+4. <strong>A <code>{reference}</code> never holds a JSONPath query</strong> (<code>{$.input.body.amount}</code> in a <code>graph.math</code> expression or a mapping
+   source). JSONPath belongs to data mapping, where a source and its target are separated by <code>-&gt;</code>; nothing used the form and
+   no guide promised it. A data dictionary's default value is a source, the first use case of JSONPath in the engine, and is
+   checked like one.</p>
+<p><strong>WP4 rulings (Eric, 2026-10-22).</strong> The checks where each value lands follow <em>The design</em>, with two refinements that keep every
+query that works today:
+1. <strong>Bare inside a filter, Event Script keeps a text value that is already one literal as written</strong> - a number, <code>true</code>,
+   <code>false</code>, <code>null</code>, or a quoted string - and quotes any other text as a string literal. Event Script has always inserted text as
+   written, so <code>@.price &gt; {model.min}</code> with the text <code>10</code> compares as a number, and quoting it would make the comparison
+   silently false. The knowledge graph keeps quoting all text, as it always has.
+2. <strong>In a name, the value is Mercury's dot-bracket key path:</strong> names joined by single dots, each optionally followed by <code>[n]</code>
+   indexes (<code>items[0].name</code>). Such a value adds only child and index steps, never a wildcard, a filter or a descendant segment.</p>
+<p>Found on the way: a nested reference in a <code>$</code> source (<code>{model.{model.k}}</code>) is refused on both engines, at deployment and at run
+time, although the two engines' brace scans differ outside <code>$</code> sources; and the knowledge graph's quoting of a text value in a
+<code>graph.math</code> expression escapes the backslash too, because the expression lexer reads a backslash as an escape.</p>
 <p><strong>Options.</strong>
 - <strong>(a) The in-house RFC 9535 engine. Recommended.</strong> One standard grammar on both engines, the json-smart chain gone for good, and
   the limits and the substitution rule under the project's control. Cost: owning a parser and an evaluator, with the

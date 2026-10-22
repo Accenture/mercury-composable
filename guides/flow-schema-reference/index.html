@@ -2944,6 +2944,8 @@
       
         
       
+        
+      
     
     
     
@@ -3452,6 +3454,34 @@
     
   
     Test Report — MsgPack codec, minimalist-msgpack vs msgpack-core
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../test-reports/minimalist-jsonpath-differential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — JSONPath, minimalist-jsonpath vs Jayway
   
 
     
@@ -5889,16 +5919,21 @@ current value of <code>model.key</code>. Also supports <code>${ENV_VAR}</code> f
 </blockquote>
 <hr />
 <h3 id="jsonpath-expressions">JSONPath expressions<a class="headerlink" href="#jsonpath-expressions" title="Permanent link">&para;</a></h3>
-<p>Use <code>$.</code> to apply a JSONPath expression to the input or result:</p>
+<p>Use <code>$.</code> to apply a JSONPath expression to the input or result. The grammar is
+<a href="https://www.rfc-editor.org/rfc/rfc9535">RFC 9535</a>, the IETF standard, on both engines:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nt">input</span><span class="p">:</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'$.input.body.users[*].id</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">user_ids'</span><span class="w">   </span><span class="c1"># Wildcard generates map of lists</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'$.input.body.users[*].id</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">user_ids'</span><span class="w">   </span><span class="c1"># a wildcard yields a list</span>
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
 <a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="nt">output</span><span class="p">:</span>
 <a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'$.result.items[*].name</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.names'</span>
 </code></pre></div>
 <blockquote>
-<p>Wildcard searches (e.g. <code>[*]</code>) generate a <code>Map&lt;String, List&gt;</code> keyed by the last path
-segment. Use <code>f:listOfMap()</code> to normalize this into a <code>List&lt;Map&gt;</code>.</p>
+<p>A wildcard search (e.g. <code>[*]</code>) yields a list of the matched values. Several such lists mapped under one
+model key (<code>model.list.id</code>, <code>model.list.name</code>) form a <code>Map&lt;String, List&gt;</code>; use <code>f:listOfMap()</code> to turn it
+into a <code>List&lt;Map&gt;</code>.</p>
+<p>A path outside the standard is refused when the flow is compiled, and a reference in it (<code>{model.key}</code>,
+<code>[model.i]</code>) is checked where it lands. See <a href="../event-script/syntax/#json-path">JSON Path</a> for the grammar, the
+result shape, the checks and the replacements for Jayway-only forms.</p>
 </blockquote>
 <hr />
 <h2 id="http-input-dataset">HTTP input dataset<a class="headerlink" href="#http-input-dataset" title="Permanent link">&para;</a></h2>

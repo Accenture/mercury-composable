@@ -2403,6 +2403,8 @@
       
         
       
+        
+      
     
     
     
@@ -2911,6 +2913,34 @@
     
   
     Test Report — MsgPack codec, minimalist-msgpack vs msgpack-core
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../test-reports/minimalist-jsonpath-differential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — JSONPath, minimalist-jsonpath vs Jayway
   
 
     
@@ -3692,8 +3722,14 @@ value is inserted verbatim, never quoted. It composes three things without a plu
   (Event Script accepts <code>model.*</code> only). A <strong>target</strong> is a literal path; braces there are not resolved.</li>
 <li><strong>Rendering.</strong> Text and numbers go in as written, a boolean as <code>true</code> or <code>false</code>, a map or a list as
   compact JSON. A <code>!</code>, <code>&lt;</code>, <code>&gt;</code> or <code>==</code> inside a text constant does not make the source an expression,
-  so nothing is quoted. The one place a text value is quoted is a JSONPath filter, where it must read
-  as a string literal in the query: <code>$.input.body.people[?(@.team == {model.team})].name</code>.</li>
+  so nothing is quoted. A JSONPath source is the exception: each value is checked where it lands, so that
+  it cannot change the query's structure - a key path in a name, an integer in an index, escaped inside a
+  string literal you wrote, and bare in a filter a number or a boolean as written and text as a string
+  literal: <code>$.input.body.people[?(@.team == {model.team})].name</code>. A value that fails is refused by name
+  (<code>Cannot substitute {model.key} into '...' - '*' is not a key path</code>), and a list or a map is never
+  substituted (<a href="../../event-script/syntax/#json-path">JSON Path</a>).</li>
+<li><strong>A reference never holds a JSONPath query.</strong> <code>{$.input.body.amount}</code> is refused in a mapping source and in a
+  <code>graph.math</code> statement; map the value to a model variable first (<code>$.input.body.amount -&gt; model.amount</code>).</li>
 <li><strong>An unresolved reference renders the text <code>null</code>.</strong> A composed key then misses
   (<code>census-2020.null</code>), so the null-source rule above applies, and a constant reads <code>null</code>
   (<code>text(state={model.x})</code> is <code>state=null</code>). A brace pair whose content holds a colon, a tab or a
@@ -3732,7 +3768,7 @@ skills share Event Script's mapping engine):</p>
 <dt><code>f:plugin(args…)</code></dt>
 <dd>a <a href="../../event-script/syntax/#simple-plugins">simple-plugin</a> invocation — the modern replacement for the deprecated <code>:type</code> suffixes. <strong>Arguments accept any mapping source</strong>: constants and any state-machine path — <code>model.*</code>, <code>input.*</code>, <code>output.*</code>, and node namespaces such as <code>{node}.result.{key}</code> (engine-verified). Examples: <code>f:concat(model.a, text(!))</code>, generators <code>f:uuid()</code> and <code>f:now(text(local))</code> (current date-time at execution: <code>iso</code>/<code>local</code>/<code>ms</code>), JSON dataset creation <code>f:json(text([]))</code> → empty list / <code>f:json(text({"a": [1, 2]}))</code> → nested map (parses JSON text from a constant or model variable), arithmetic <code>f:add(...)</code>, logic <code>f:ternary(...)</code>, and <strong>list/map reshapers</strong> <code>f:removeKey(list, text(key))</code> (strip fields from every map in a list), <code>f:listOfMap(...)</code> (maps-of-lists → list-of-maps, order-preserving) and <code>f:length(...)</code> (length by type: list → element count, string → <strong>character</strong> count, bytes → byte count, null → 0). <strong>Full catalog</strong> in the <a href="../../event-script/syntax/#simple-plugins">Event Script syntax page</a></dd>
 <dt><code>$.…</code></dt>
-<dd>a JSONPath expression over the state machine (prefer plain dot-bracket keys; JSONPath only when the query needs it); a definite path yields the value and an indefinite one (a filter, a wildcard, a deep scan) always a list (<a href="../../event-script/syntax/#json-path">result shape</a>)</dd>
+<dd>an RFC 9535 JSONPath query over the state machine (prefer plain dot-bracket keys; JSONPath only when the query needs it); a definite path yields the value and an indefinite one (a filter, a wildcard, a deep scan) always a list (<a href="../../event-script/syntax/#json-path">result shape</a>). A graph whose JSONPath is outside the standard is rejected at deployment, in a data dictionary's default value too, and a simple plugin's <code>$</code> argument is checked the same way</dd>
 </dl>
 <h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
 <p>Each command's exact form. Lines shown stacked are a single <strong>multi-line</strong> command (enter as one
