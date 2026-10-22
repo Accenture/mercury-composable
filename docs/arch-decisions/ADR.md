@@ -33,6 +33,80 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0031 — JSONPath is RFC 9535 on both engines: the zero-dependency `minimalist-jsonpath` module replaces Jayway JsonPath {#adr-0031}
+**Status:** Accepted · **Date:** 2026-10-22 · **Serves:** vision-mercury-composable · **Formalizes:** minimalist-jsonpath-rfc-9535
+<!-- id: adr-0031 | status: accepted -->
+
+**Abstract.** Every `$` path of an Event Script flow or a knowledge graph is an [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535)
+query on both engines. The Java engine evaluates it with `system/minimalist-jsonpath` (`org.platformlambda.mini.jsonpath`), written
+from the standard with no dependency beyond `java.base`, in place of Jayway JsonPath; the Rust engine keeps `serde_json_path`, which
+already implements the standard. A path outside the standard is refused by name, before it runs and when it is evaluated, never
+answered with a silent null; a reference in a path is substituted first and its value checked where it lands. Proposed as RFC-0010 in
+[`RFC.md`](RFC.md) on 2026-10-22, delivered in five work packages the same day - PR #579 (squash `68637dd6`) and the Rust engine's
+mercury #391, #392 and #393 (Increments 185 to 187) - and accepted on 2026-10-22 after review and green CI. The evidence is
+`docs/test-reports/minimalist-jsonpath-differential.md`.
+
+**Context.** The IDE's dependency scan reported `json-smart` 2.6.0 vulnerable (CVE-2026-113602) with no fixed release, and json-path
+3.0.0 calls json-smart's parser directly in its filter engine, so the dependency could be neither bumped nor excluded away; its earlier
+advisories were in the same parser. Jayway also predates the standard and follows the 2007 proposal, while the Rust engine evaluated `$`
+paths with an RFC 9535 implementation, so the two engines had two grammars: a Jayway-only query answered on Java and answered null on
+Rust, where a parse error was indistinguishable from a missing value. And a value substituted into a path was inserted as written, so a
+value carrying query syntax - in a graph it can come from the request - could add a wildcard, a filter or a descendant segment.
+
+**Decision.**
+
+- **One grammar, the standard's.** RFC 9535 in full - name, wildcard, index, slice and filter selectors; child and descendant segments;
+  `||`, `&&`, `!`, comparisons, existence tests, relative and absolute queries; the five functions with their type checking, `match`
+  and `search` over I-Regexp - and type-strict comparisons (`'5' == 5` is false). No Mercury alternative to a Jayway-only form (Eric).
+- **Two Mercury rules, declared and identical on both engines.** The result shape is decided by the kind of path, not the number of
+  matches (a definite path yields the value or null; an indefinite one a list; a missing member name before the first indefinite step
+  null). A dotted member name may hold a hyphen (`$.fetcher-ext.result`): a query the standard refuses is retried once with such names
+  in bracket notation, and the error is the strict parse's.
+- **Refusal by name, never a silent null.** A bad path fails with its reason and position when it is evaluated (Java's
+  `JsonPathException`, an `IllegalArgumentException`; Rust's `Err`) and before it runs: the flow compiler drops the task, its unit for
+  any invalid mapping entry, with an ERROR that names RFC 9535; a graph is rejected by CompileGraph, the graph-set packager and the
+  Playground's `run`.
+- **Where JSONPath may stand.** A data mapping's source (a `MAPPING:` statement included), a simple plugin's `$` argument - the Event
+  Script guide promises it, so the argument splitter ends a `$` argument at the first comma outside its brackets and string literals -
+  and a data dictionary's default value, the first use of JSONPath in the engine. Never inside a knowledge-graph `{reference}`, which
+  names a key or a constant: JSONPath belongs to data mapping, where a source and its target are separated by `->`.
+- **Substitution first, then parsing, each value checked where it lands** (Eric's answer 4 and his rulings). `{model.key}` and
+  `[model.i]` in Event Script and `{namespace.key}` in a graph are replaced before the query is parsed, so existing flows and graphs
+  keep their queries; one scanner per engine (`JsonPathSource`, `jsonpath_source.rs`) finds where each reference lands - a stand-in
+  per site at compile time, the checked value at run time. In a name the value is a key path in Mercury's dot-bracket form; in an index
+  an integer; inside a string literal the author wrote it is escaped (the quote, the backslash, the control characters); bare in a
+  filter a number, a boolean or null is written as is and text becomes a string literal, except that Event Script keeps text that is
+  already one literal as written, as it always has. A list or a map is never substituted; a value that fails fails the mapping by name.
+- **Implementation constraints.** `java.base` only; a compiled query is immutable and thread-safe, cached in `MultiLevelMap` (2,000
+  entries); a nesting bound of 64 and an iterative descendant walk, so no query text exhausts the stack; I-Regexp mapped onto
+  `java.util.regex`. The module lives in `system/`, beside `minimalist-msgpack`, for the same reason: platform-core depends on it.
+- **The evidence standard for a change.** The JSONPath Compliance Test Suite, one vendored file in both repositories (715 cases, 249
+  invalid; pinned commit), answered as the standard says by both engines - `serde_json_path`'s normalized paths lack the standard's
+  escapes in 16 cases the engine never reads, pinned by name; the shared `jsonpath-source-vectors.json` (sources, substitutions,
+  argument splits, reference keys) byte-identical in both; the module's 90% line-and-branch gate; and the differential harness in
+  `benchmark/jsonpath-differential/`, outside the reactor so Jayway never enters a scanned manifest.
+
+**Alternatives.** (b) *Keep Jayway and record the advisory as unfixed,* as the MsgPack 0.9.12 entry once did: no work, but the finding
+recurs on every scan and the engines keep two grammars. (c) *A third-party RFC 9535 library for Java:* one grammar without writing it,
+but another dependency at the engine's foundation for the field's scanners to judge. (d) *Wait for a json-smart fix:* no date, and
+json-path would still carry the parser. Within (a), three variants were rejected at Eric's rulings: a flow-compiler refusal of
+references in a `$` path (substitution first keeps existing queries); refusing JSON-Path in a plugin argument (the guide promised it);
+and quoting every text value bare in an Event Script filter (`10` as text would have compared as a string, silently). (a), the in-house
+engine, was chosen: the json-smart chain is gone for good, one standard grammar serves both engines, and evaluation takes about a third
+of Jayway's time on the repository's paths.
+
+**Consequences.** The project owns a parser and an evaluator, with the compliance suite as their guard; a grammar change is a decision
+here, not a refactor. The behaviour changes hold from the release that carries PR #579 (v4.12.26), with the upgrade note in the
+CHANGELOG: Jayway-only syntax refused, with the standard's replacements in the Event Script guide; type-strict comparisons; a path
+through a present non-array member yields an empty list; a union of names yields a list and a slice follows its step; a bad path refused
+at startup; a value carrying query syntax, a `{$...}` reference and `${model.key}` refused; and an application that used Jayway or
+json-smart directly declares them itself. The next version sweep covers one more pom and platform-core's literal dependency on it. The
+`json-path-boot-bom-override` thread closed as moot. Deferred: a compiled-query cache on the Rust engine (it re-parses and re-converts
+the state on every lookup), and aligning the two engines' brace scans outside `$` sources (a nested `{model.{model.k}}`), which predate
+this decision.
+
+---
+
 ## ADR-0030 — The mini-scheduler's active environment: one site of an active-active deployment runs the jobs, decided by a data store read at every scheduled point {#adr-0030}
 **Status:** Accepted · **Date:** 2026-10-09 · **Serves:** vision-mercury-composable · **Formalizes:** scheduler-active-environment-store
 <!-- id: adr-0030 | status: accepted -->

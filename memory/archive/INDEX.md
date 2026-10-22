@@ -257,3 +257,15 @@
 - minigraph-dev-mode-app-shape — A Layer 3 application is one graph endpoint plus dev mode, and its home page is dev-mode w… — faded — 2026-Q4.md
 - release-4-12-22 — Release v4.12.22 — SHIPPED 2026-10-10: the graph contract on both engines and the mini-sch… — completed thread swept (older than archive_window) — 2026-Q4.md
 - release-4-12-23 — Release v4.12.23 — SHIPPED 2026-10-11: the API playground and `f:rangeLookup` on both engi… — completed thread swept (older than archive_window) — 2026-Q4.md
+- static-decision-table-is-graph-data — A static decision table is GRAPH DATA — a skill-less node's properties, handed whole to a… — faded — 2026-Q4.md
+- graph-math-typed-arithmetic — graph.math is typed and finite: a boolean is never a number, an unknown function and an ov… — faded — 2026-Q4.md
+- canonical-packager-wire-contract — A deterministic MsgPack packager: keys sorted by UTF-8 bytes at every depth, `{manifest, m… — faded — 2026-Q4.md
+- graph-contract-by-declaration — A graph carries its contract as a `schema` on the root and end nodes, the engine discovers… — faded — 2026-Q4.md
+- scheduler-active-environment-store — The mini-scheduler runs its jobs in one site of an active-active deployment, and the activ… — faded — 2026-Q4.md
+- llm-helper-certification-java — The LLM helper is not engine code: it is a Claude-only function host in the Python and Nod… — faded — 2026-Q4.md
+- pg-single-connection-is-serial — PostgreSQL runs one statement at a time per connection, so "parallel inserts on a single c… — faded — 2026-Q4.md
+- snyk-retired-manifest-placeholders — Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team + — faded — 2026-Q4.md
+- conv-ports-adopt-java-release-number — Every port adopts the JAVA release number on catch-up — no downstream repo runs its own ve… — faded — 2026-Q4.md
+- release-4-12-24 — Release v4.12.24 — SHIPPED 2026-10-12: the Guava resolution the field's Snyk gate rejected… — faded — 2026-Q4.md
+- release-4-12-25 — Release v4.12.25 — SHIPPED 2026-10-13 (Java only): the field's Sonar findings on 4.12.24 c… — faded — 2026-Q4.md
+- decimal-statement-exact-arithmetic — Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math` — the high-precision `C… — faded — 2026-Q4.md

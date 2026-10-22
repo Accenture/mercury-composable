@@ -26,12 +26,16 @@ import java.util.function.Consumer;
 
 /**
  * A node of the queried document: its value, and where it is, so that a nodelist can be reported as normalized paths.
+ * <p>
+ * The record is public because it appears in the signatures of public methods: those of the records nested in the
+ * package's evaluation interfaces ({@code Expr}, {@code Selector} and {@code Operand}), which are public as every type
+ * declared in an interface is. No public method of {@link JsonPath} takes or returns a node.
  *
  * @param value the value, null for a JSON null
  * @param parent the parent node, null for the root
  * @param key the member name (a String) or the array index (an Integer) under the parent, null for the root
  */
-record Node(Object value, Node parent, Object key) {
+public record Node(Object value, Node parent, Object key) {
 
     static Node root(Object document) {
         return new Node(document, null, null);

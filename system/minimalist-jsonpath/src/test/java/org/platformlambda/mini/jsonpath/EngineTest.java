@@ -47,14 +47,6 @@ class EngineTest {
         JsonPathException e = refusal("$[?foo(@)]");
         assertEquals("unknown function foo() at position 3 of '$[?foo(@)]'", e.getMessage());
         assertEquals(3, e.getPosition());
-        assertTrue(refusal("$[?@.a[*] == 1]").getMessage().startsWith("a comparison takes a singular query"));
-        assertTrue(refusal("$[?1]").getMessage().startsWith("expected a comparison operator after a literal"));
-        assertTrue(refusal("$[?length(@.a)]").getMessage().startsWith("length() yields a value"));
-        assertTrue(refusal("$[?match(@.a, 'x') == true]").getMessage().startsWith("match() is a test"));
-        assertTrue(refusal("$[?count(@.a, 1) == 1]").getMessage().startsWith("count() takes 1 argument, not 2"));
-        assertTrue(refusal("$[?match(@.a) == 1]").getMessage().startsWith("match() takes 2 arguments, not 1"));
-        assertTrue(refusal("$[?count(1) == 1]").getMessage().startsWith("count() takes a query"));
-        assertTrue(refusal("$[?length(@.*) == 1]").getMessage().startsWith("length() takes a value"));
         assertTrue(refusal("$[?!1]").getMessage().startsWith("expected a query or a function"));
         assertTrue(refusal("$.a b").getMessage().startsWith("unexpected ' '"));
         assertTrue(refusal("$\u0001").getMessage().startsWith("unexpected U+0001"));
@@ -63,7 +55,19 @@ class EngineTest {
     }
 
     @Test
-    void literalsAndIndexesAreRefusedOutsideTheGrammar() {
+    void anIllTypedExpressionIsRefusedByItsRule() {
+        assertTrue(refusal("$[?@.a[*] == 1]").getMessage().startsWith("a comparison takes a singular query"));
+        assertTrue(refusal("$[?1]").getMessage().startsWith("expected a comparison operator after a literal"));
+        assertTrue(refusal("$[?length(@.a)]").getMessage().startsWith("length() yields a value"));
+        assertTrue(refusal("$[?match(@.a, 'x') == true]").getMessage().startsWith("match() is a test"));
+        assertTrue(refusal("$[?count(@.a, 1) == 1]").getMessage().startsWith("count() takes 1 argument, not 2"));
+        assertTrue(refusal("$[?match(@.a) == 1]").getMessage().startsWith("match() takes 2 arguments, not 1"));
+        assertTrue(refusal("$[?count(1) == 1]").getMessage().startsWith("count() takes a query"));
+        assertTrue(refusal("$[?length(@.*) == 1]").getMessage().startsWith("length() takes a value"));
+    }
+
+    @Test
+    void numbersAndIndexesAreRefusedOutsideTheGrammar() {
         assertTrue(refusal("$[?@.a == 1e999999999999]").getMessage().startsWith("the number is out of range"));
         assertTrue(refusal("$[?@.a == 01]").getMessage().startsWith("a number has no leading zero"));
         assertTrue(refusal("$[?@.a == 1.]").getMessage().startsWith("expected a digit after the decimal point"));
@@ -72,6 +76,13 @@ class EngineTest {
         assertTrue(refusal("$[9007199254740992]").getMessage().startsWith("an index is out of the range"));
         assertTrue(refusal("$[12345678901234567]").getMessage().startsWith("an index is out of the range"));
         assertTrue(refusal("$[-0]").getMessage().startsWith("an index is 0 or an integer"));
+        assertEquals(List.of(9007199254740991L, -9007199254740991L), List.of(
+                ((Selector.Index) indexOf("$[9007199254740991]")).index(),
+                ((Selector.Index) indexOf("$[-9007199254740991]")).index()));
+    }
+
+    @Test
+    void stringsAreRefusedOutsideTheGrammar() {
         assertTrue(refusal("$['a\\x']").getMessage().startsWith("invalid escape in a string"));
         assertTrue(refusal("$['a").getMessage().startsWith("the string is not closed"));
         assertTrue(refusal("$['\\u12']").getMessage().startsWith("expected four hexadecimal digits"));
@@ -79,9 +90,6 @@ class EngineTest {
         assertTrue(refusal("$['\\uD800x']").getMessage().startsWith("a high surrogate must be followed"));
         assertTrue(refusal("$['\\uD800\\u0041']").getMessage().startsWith("a high surrogate must be followed"));
         assertTrue(refusal("$['\uD800']").getMessage().startsWith("a string cannot hold"));
-        assertEquals(List.of(9007199254740991L, -9007199254740991L), List.of(
-                ((Selector.Index) indexOf("$[9007199254740991]")).index(),
-                ((Selector.Index) indexOf("$[-9007199254740991]")).index()));
     }
 
     private static Selector indexOf(String query) {

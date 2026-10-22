@@ -21,8 +21,8 @@ package org.platformlambda.mini.jsonpath;
 import java.util.List;
 
 /**
- * Something that yields one value or {@link Values#NOTHING}: a comparable of a comparison, or a value argument of a
- * function (RFC 9535 2.3.5.1 and 2.4.1).
+ * Something that yields one value or {@link Values#NOTHING}: either side of a comparison, or a value argument of
+ * a function (RFC 9535 2.3.5.1 and 2.4.1).
  */
 sealed interface Operand permits Operand.Literal, Operand.SingularQuery, FunctionCall {
 

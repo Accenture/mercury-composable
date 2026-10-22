@@ -133,6 +133,8 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
      reference no longer says that a wildcard search yields a map of lists keyed by the last path segment: it yields a list.
      The Playground bundle is rebuilt for both engines to carry the help (`index-CrqpNrFx.js` became `index-D5Sx-GL2.js`; the
      vendor chunks and the stylesheet are unchanged).
+   - **Code quality.** The findings of a local Sonar scan are closed in the new code and in the methods it touched in the flow
+     compiler, the data mapper, the knowledge graph's validator and skills, and `MultiLevelMap`; none is a behaviour change.
 
    **Upgrade note (READ):**
    - **Jayway-only syntax is refused,** with an error that names the position. This covers the filter operators `in`,
@@ -192,6 +194,11 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    but not the backslash. The expression lexer reads a backslash as an escape, so `C:\temp` became a tab and a value that
    ended with `\` escaped the closing quote and failed the statement. The backslash is now escaped first. Both engines.
    **Upgrade note:** none - an expression that compared such a value read the wrong text or failed.
+5. **A WebSocket session's exception warning names the exception type.** The server's warning logged the exception's message
+   only, which for a `NoClassDefFoundError` is a bare class path: `Session ws.766870.1 exception -
+   io/netty/handler/codec/http/websocketx/WebSocketCloseStatus`. The server and the persistent client now log the type before
+   the message (`exception - NoClassDefFoundError: io/netty/...`), as the serializer loader already does. The Rust engine's
+   warning already names the error kind. **Upgrade note:** none - a log line only.
 
 ---
 ## Version 4.12.25, 10/12/2026

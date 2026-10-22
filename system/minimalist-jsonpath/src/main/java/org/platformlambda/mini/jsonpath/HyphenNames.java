@@ -30,7 +30,7 @@ final class HyphenNames {
 
     private HyphenNames() { }
 
-    static String bracketize(String path) {
+    static String bracket(String path) {
         int[] chars = path.codePoints().toArray();
         StringBuilder out = new StringBuilder(path.length() + 8);
         int inBrackets = 0;

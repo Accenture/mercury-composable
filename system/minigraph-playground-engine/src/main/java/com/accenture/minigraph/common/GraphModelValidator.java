@@ -135,18 +135,23 @@ public class GraphModelValidator {
                     validateMappingSource(node, property, entry);
                 }
             }
-            for (String statement : textEntries(node.getProperty(STATEMENT))) {
-                var text = statement.trim();
-                if (text.toLowerCase().startsWith(GraphLambdaFunction.MAPPING_TAG)) {
-                    validateMappingSource(node, STATEMENT, text.substring(GraphLambdaFunction.MAPPING_TAG.length()));
-                } else {
-                    validateReferences(node, STATEMENT, statement, text);
-                }
-            }
+            validateStatements(node);
             if (dictionaries.contains(node.getAlias())) {
                 for (String entry : textEntries(node.getProperty(INPUT))) {
                     validateDictionaryDefault(node, entry);
                 }
+            }
+        }
+    }
+
+    // a MAPPING statement is a data mapping entry, and any other statement may carry a {reference}
+    private static void validateStatements(SimpleNode node) {
+        for (String statement : textEntries(node.getProperty(STATEMENT))) {
+            var text = statement.trim();
+            if (text.toLowerCase().startsWith(GraphLambdaFunction.MAPPING_TAG)) {
+                validateMappingSource(node, STATEMENT, text.substring(GraphLambdaFunction.MAPPING_TAG.length()));
+            } else {
+                validateReferences(node, STATEMENT, statement, text);
             }
         }
     }
@@ -324,7 +329,7 @@ public class GraphModelValidator {
      * The 'suspend=true' property is retired: a drawn edge to the 'suspend' node is the
      * suspension declaration (edge mode), and a decision jumps to the checkpoint instead
      * (jump mode). The property is accepted and ignored for one deprecation window so
-     * v4.11.x models deploy unmodified - every valid v4.11.x suspensible node already
+     * v4.11.x models deploy unmodified - every valid v4.11.x node that can suspend already
      * draws the checkpoint edge, which now declares the same behavior.
      */
     private static void warnIfRetiredSuspendProperty(MiniGraph graph, SimpleNode node) {
