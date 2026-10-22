@@ -386,7 +386,7 @@ public class WorkerHandler {
             md.output.put(STATUS, status);
             md.output.put(EXCEPTION, error);
             md.inputOutput.put(OUTPUT, md.output);
-            return ps.setException(status, error).setInputOutput(md.inputOutput);
+            return ps.setException(status, error).setExecutionTime(md.diff).setInputOutput(md.inputOutput);
         }
         if (replyTo != null) {
             final EventEnvelope errorResponse = prepareErrorResponse(event, e);
