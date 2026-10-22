@@ -318,6 +318,70 @@ To target a system without an OTLP path, implement your own function at `distrib
 the dataset described in [What a trace records](#metrics) — for example, write it to a metrics database or a
 proprietary APM API.
 
+## Code-level tracing with an agent (experimental) {#live-tracing}
+
+> **Experimental.** This section describes a snapshot built for a field experiment. The settings, the
+> defaults and the two extensions may change before a release.
+
+The forwarder reports a span **after** a function finished. An APM agent's code-level view needs something
+else: a tracer that brackets the real call, on the real call stack, so the agent can nest it inside the
+request it is already tracing. Without one, an agent such as Dynatrace OneAgent sees the HTTP request and the
+outgoing calls, but not the hops between composable functions. Mercury hands an event from the sender to the
+receiving function through the event bus and a per-route queue, and an agent's thread-bound context is lost
+at that handoff.
+
+A **live invocation observer** closes that gap. Platform-core calls it inline, with no vendor code in the
+core: when a function is about to run, on the thread that runs it, and when an event is about to be sent, on
+the sending thread. The linkage between hops rides as a string **tag on the event envelope**, not as thread
+state. The tag is serialized with the envelope, so it also crosses Event-over-HTTP and the cloud connector.
+Two optional extensions implement it:
+
+| Extension | Switch | What it records |
+|---|---|---|
+| `extensions/dynatrace-oneagent` | `dynatrace.oneagent=true` | Each hop with the **OneAgent SDK**, as an incoming message linked by a Dynatrace tag to the sender's outgoing message, giving one connected PurePath per request. Inert without an attached OneAgent. |
+| `extensions/opentelemetry-tracer` | `otel.tracing=true` | Each hop as a live OpenTelemetry **CONSUMER span**, through the vendor-neutral API, with W3C context in the tag. Whatever implements the API records it: OneAgent with its *OpenTelemetry (Java)* feature, or the OpenTelemetry Java agent. |
+
+Both are off by default, so the jar alone does nothing. Run **one at a time**: two live tracers would record
+every hop twice. Do not also export the forwarder's spans to the same backend, which would record each request
+as two unconnected traces.
+
+**Which hops are observed.** A traced request is observed (one with a trace id; see
+[Turning tracing on](#enable)) on every route except the plumbing routes listed below. That includes Event
+Script's two routers, `event.script.manager` and `task.executor`, so a flow stays connected from task to task.
+
+| Property | Default | Meaning |
+|---|---|---|
+| `invocation.observer.include` | *(empty: all)* | Comma-separated routes to observe; an entry ending in `*` matches a prefix |
+| `invocation.observer.exclude` | the telemetry routes and `temporary.inbox` | Routes never observed; setting it replaces the default |
+| `invocation.observer.unlinked` | *(empty)* | **Negative control**: these routes are observed, but they never see the incoming tag, so each of their invocations starts a new trace |
+| `dynatrace.oneagent.destination` | `application` | The OneAgent messaging destination: the application name, or `route` to name every hop after its route |
+| `dynatrace.oneagent.log.context` | `false` | `true` writes OneAgent's own trace and span ids into the [log context](#log-context) as `dt.trace_id` and `dt.span_id` |
+
+**Deferred results.** A function that returns a `Mono` returns before its result exists, and the result
+usually completes on another thread. A OneAgent SDK tracer must start and end on one thread, so the OneAgent
+extension ends the hop when the function returns and resumes it through an *in-process link* when the result
+arrives: the completion appears as a linked node at the time it happened. An OpenTelemetry span is not bound to
+a thread, so the OpenTelemetry extension ends the hop's span when the result is delivered, and the hop shows its
+real duration. A `Flux` stream is not covered by either. As before, log lines written inside a `Mono`
+completion carry no log context.
+
+**Requirements for Dynatrace.** Use OneAgent **1.311 or later**, which propagates context into virtual threads,
+and enable its Java virtual-thread support (an opt-in OneAgent feature). Java 25 is the recommended runtime:
+before Java 24 (JEP 491), a virtual thread that blocks inside `synchronized` code pins its carrier thread. For the
+OpenTelemetry extension, also enable the OneAgent feature *OpenTelemetry (Java)*. By default it takes Server
+and Consumer spans as entry points, and each hop is a Consumer span.
+
+**The field experiment.** Drive one traced request through several function hops and a flow, then check four
+things in Dynatrace:
+
+1. The request shows as **one connected tree**, with a node for every hop.
+2. Every log line of the request carries the trace and span ids of the node that wrote it.
+3. The route in `invocation.observer.unlinked` appears as a **separate fragment**. If it does not, the
+   experiment cannot tell a connected trace from a broken one, and its results prove nothing.
+4. A `Mono` function's node, or span, has the expected duration.
+
+Run the OneAgent extension and the OpenTelemetry extension in turn, with the same requests, and compare.
+
 ## Application log context {#log-context}
 
 Spans tell you the causal path; **application logs** tell you what happened inside each step. The log-context
@@ -518,5 +582,6 @@ trace. A collector configuration must not drop a record that has no `context`.
 
 - [Build, Test & Deploy](build-test-deploy.md) — enabling tracing and the forwarder hook.
 - [Configuration Reference](configuration-reference.md#observability) — the `trace.*` and `otel.*` keys.
+- [Code-level tracing with an agent](#live-tracing) — the experimental OneAgent and OpenTelemetry invocation observers.
 - [Reserved Names & Headers](reserved-names-and-headers.md) — `distributed.trace.forwarder`, `traceparent`.
 - [Architecture Overview](architecture.md) — the three layers the span tree mirrors.

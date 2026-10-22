@@ -770,6 +770,64 @@ Request headers for the `opentelemetry-forwarder` extension — **where backend 
 
 > The `otel.*` values support `${ENV_VAR:default}` substitution, so the forwarder is configured entirely from `application.properties` while secrets stay in the environment.
 
+The next keys belong to the **experimental** live invocation observers, which bracket each composable-function hop for an APM agent's code-level view (see [Code-level tracing with an agent](observability.md#live-tracing)).
+
+### `otel.tracing`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `false` |
+
+**Master switch for the `opentelemetry-tracer` extension** (`@OptionalService("otel.tracing")`): each hop becomes a live OpenTelemetry `CONSUMER` span through the API, recorded by whatever agent implements it. Not to be combined with `dynatrace.oneagent`, or with `otel.forwarding` into the same backend.
+
+### `dynatrace.oneagent`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `false` |
+
+**Master switch for the `dynatrace-oneagent` extension** (`@OptionalService("dynatrace.oneagent")`): each hop is bracketed with the OneAgent SDK, linked by a Dynatrace tag on the event envelope. Without an attached OneAgent the SDK is inactive and nothing is registered.
+
+### `dynatrace.oneagent.destination`
+
+| Type | Default |
+|------|---------|
+| `String` | `application` |
+
+The OneAgent messaging destination of every hop: the application name, or `route` to name each hop after its route (one Dynatrace messaging service per route).
+
+### `dynatrace.oneagent.log.context`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `false` |
+
+`true` writes OneAgent's own trace and span ids into the application log context as `dt.trace_id` and `dt.span_id`. Do not combine it with OneAgent's own log enrichment, which writes the same field names.
+
+### `invocation.observer.include`
+
+| Type | Default |
+|------|---------|
+| `String` (comma-sep routes) | — |
+
+When set, only these routes are observed by a live invocation observer. An entry ending in `*` matches a route prefix.
+
+### `invocation.observer.exclude`
+
+| Type | Default |
+|------|---------|
+| `String` (comma-sep routes) | `distributed.tracing, distributed.trace.forwarder, transaction.journal.recorder, temporary.inbox` |
+
+Routes a live invocation observer never observes; setting the property replaces the default.
+
+### `invocation.observer.unlinked`
+
+| Type | Default |
+|------|---------|
+| `String` (comma-sep routes) | — |
+
+The **negative control** of a tracing experiment: these routes are observed but never see the incoming linkage tag, so each of their invocations starts a new trace. An experiment that cannot see this break cannot tell a connected trace from a broken one.
+
 ---
 
 ## Health & Actuators

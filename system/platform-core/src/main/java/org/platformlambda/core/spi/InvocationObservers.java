@@ -1,0 +1,437 @@
+/*
+
+    Copyright 2018-2026 Accenture Technology
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+ */
+
+package org.platformlambda.core.spi;
+
+import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.util.AppConfigReader;
+import org.platformlambda.core.util.Utility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * The registry of {@link InvocationObserver}s, and the engine's only entry to them. Empty by default:
+ * with no observer registered every engine call returns after one emptiness check.
+ * <p>
+ * An invocation is observed when an observer is registered, the event carries a trace id (the request
+ * is traced), and its route passes the route filter:
+ * <ul>
+ *   <li>{@code invocation.observer.include} - a comma-separated list of routes; when set, only these
+ *       are observed. An entry ending with {@code *} matches a route prefix.</li>
+ *   <li>{@code invocation.observer.exclude} - routes never observed. Defaults to the telemetry routes
+ *       and the RPC reply inbox, which are plumbing; setting the property replaces the default.</li>
+ *   <li>{@code invocation.observer.unlinked} - the negative control of a field experiment: these
+ *       routes are observed, but {@link InvocationObserver#begin} sees no incoming tags, so each of
+ *       their invocations starts a new trace. A test that cannot see that break proves nothing.</li>
+ * </ul>
+ * Every observer call is guarded: an exception is logged (once per observer class at WARN) and the
+ * invocation proceeds unobserved by that observer.
+ */
+public final class InvocationObservers {
+    private static final Logger log = LoggerFactory.getLogger(InvocationObservers.class);
+    public static final String INCLUDE = "invocation.observer.include";
+    public static final String EXCLUDE = "invocation.observer.exclude";
+    public static final String UNLINKED = "invocation.observer.unlinked";
+    private static final String DEFAULT_EXCLUDE =
+            "distributed.tracing, distributed.trace.forwarder, transaction.journal.recorder, temporary.inbox";
+    private static final InvocationScope NONE = () -> { };
+    private static final InvocationCarrier NO_TAGS = new InvocationCarrier() {
+        @Override
+        public String get(String key) {
+            return null;
+        }
+        @Override
+        public void set(String key, String value) {
+            // the negative control drops the incoming linkage
+        }
+        @Override
+        public void remove(String key) {
+            // nothing to remove
+        }
+    };
+    private static final List<InvocationObserver> observers = new CopyOnWriteArrayList<>();
+    private static final Set<String> failingObservers = ConcurrentHashMap.newKeySet();
+    private static volatile RouteFilter filter;
+
+    private InvocationObservers() { }
+
+    /**
+     * Register an observer. An adapter calls this once at startup, typically from a
+     * {@code @BeforeApplication} class gated by {@code @OptionalService}.
+     *
+     * @param observer the observer; registering the same instance twice has no effect
+     */
+    public static void register(InvocationObserver observer) {
+        if (observer != null && !observers.contains(observer)) {
+            observers.add(observer);
+            log.info("Invocation observer {} registered", observer.getClass().getName());
+        }
+    }
+
+    /**
+     * @param observer a registered observer
+     * @return true when it was registered
+     */
+    public static boolean unregister(InvocationObserver observer) {
+        return observers.remove(observer);
+    }
+
+    /**
+     * @return true when at least one observer is registered
+     */
+    public static boolean isActive() {
+        return !observers.isEmpty();
+    }
+
+    /**
+     * Engine call, on the thread that is about to run a function.
+     *
+     * @param event the incoming event
+     * @param route the function's route (without the worker instance suffix)
+     * @param instance the worker instance number
+     * @return the scope to close with {@link #close}; never null
+     */
+    public static InvocationScope begin(EventEnvelope event, String route, int instance) {
+        if (observers.isEmpty() || event.getTraceId() == null) {
+            return NONE;
+        }
+        RouteFilter routes = getFilter();
+        if (!routes.isObserved(route)) {
+            return NONE;
+        }
+        InvocationInfo info = new InvocationInfo(route, event.getFrom(), event.getId(),
+                event.getTraceId(), event.getTracePath(), event.getSpanId(), instance);
+        InvocationCarrier carrier = routes.isUnlinked(route)? NO_TAGS : new EnvelopeCarrier(event);
+        List<InvocationScope> scopes = new ArrayList<>(observers.size());
+        for (InvocationObserver observer : observers) {
+            try {
+                InvocationScope scope = observer.begin(info, carrier);
+                if (scope != null) {
+                    scopes.add(scope);
+                }
+            } catch (Exception e) {
+                failed(observer, "begin", e);
+            }
+        }
+        if (scopes.isEmpty()) {
+            return NONE;
+        }
+        return scopes.size() == 1? scopes.getFirst() : new CompositeScope(scopes);
+    }
+
+    /**
+     * Engine call, on the thread that sends an event, before the event leaves. The event must be the
+     * engine's own copy: an observer may add or replace its tag.
+     *
+     * @param event the outgoing event
+     */
+    public static void send(EventEnvelope event) {
+        if (observers.isEmpty() || event.getTraceId() == null || event.getTo() == null) {
+            return;
+        }
+        String route = routeOf(event.getTo());
+        if (!getFilter().isObserved(route)) {
+            return;
+        }
+        InvocationInfo info = new InvocationInfo(route, event.getFrom(), event.getId(),
+                event.getTraceId(), event.getTracePath(), event.getSpanId(), 1);
+        InvocationCarrier carrier = new EnvelopeCarrier(event);
+        for (InvocationObserver observer : observers) {
+            try {
+                observer.send(info, carrier);
+            } catch (Exception e) {
+                failed(observer, "send", e);
+            }
+        }
+    }
+
+    /**
+     * Engine call: close a scope on its own thread - error first when the function failed.
+     *
+     * @param scope the scope from {@link #begin} or {@link #resume}
+     * @param error the error message, or null when the function succeeded
+     */
+    public static void close(InvocationScope scope, String error) {
+        if (scope == null || scope == NONE) {
+            return;
+        }
+        if (error != null) {
+            try {
+                scope.error(error);
+            } catch (Exception e) {
+                failed(scope, "error", e);
+            }
+        }
+        try {
+            scope.end();
+        } catch (Exception e) {
+            failed(scope, "end", e);
+        }
+    }
+
+    /**
+     * Engine call, on the scope's thread while it is open: the function returned a Mono.
+     *
+     * @param scope the open scope
+     * @return a continuation that resumes at most once, or null when nothing is to be resumed
+     */
+    public static InvocationContinuation detach(InvocationScope scope) {
+        if (scope == null || scope == NONE) {
+            return null;
+        }
+        try {
+            InvocationContinuation continuation = scope.detach();
+            return continuation == null? null : new OnceContinuation(continuation);
+        } catch (Exception e) {
+            failed(scope, "detach", e);
+            return null;
+        }
+    }
+
+    /**
+     * Engine call, on the completion thread: open the continuation's scope, run the delivery of the
+     * deferred result inside it, and close it.
+     *
+     * @param continuation the continuation from {@link #detach}, or null
+     * @param error the error message when the deferred result failed, or null
+     * @param delivery sends the result
+     */
+    public static void resume(InvocationContinuation continuation, String error, Runnable delivery) {
+        InvocationScope scope = continuation == null? null : continuation.resume();
+        try {
+            delivery.run();
+        } finally {
+            close(scope, error);
+        }
+    }
+
+    /**
+     * Engine call when a deferred result will never be delivered (cancelled on timeout): resume the
+     * continuation if no delivery did, and close it as failed.
+     *
+     * @param continuation the continuation from {@link #detach}, or null
+     * @param reason why nothing was delivered
+     */
+    public static void abandon(InvocationContinuation continuation, String reason) {
+        if (continuation != null) {
+            close(continuation.resume(), reason);
+        }
+    }
+
+    /**
+     * Re-read the route filter from the application configuration on next use.
+     */
+    static void reload() {
+        filter = null;
+    }
+
+    /**
+     * Test hook: set the route filter directly.
+     */
+    static void configure(String include, String exclude, String unlinked) {
+        filter = new RouteFilter(include, exclude == null? DEFAULT_EXCLUDE : exclude, unlinked);
+    }
+
+    private static RouteFilter getFilter() {
+        RouteFilter current = filter;
+        if (current == null) {
+            AppConfigReader config = AppConfigReader.getInstance();
+            current = new RouteFilter(config.getProperty(INCLUDE, ""),
+                    config.getProperty(EXCLUDE, DEFAULT_EXCLUDE), config.getProperty(UNLINKED, ""));
+            filter = current;
+        }
+        return current;
+    }
+
+    private static String routeOf(String to) {
+        int at = to.indexOf('@');
+        return at > 0? to.substring(0, at) : to;
+    }
+
+    private static void failed(Object source, String operation, Exception e) {
+        String name = source.getClass().getName();
+        if (failingObservers.add(name)) {
+            log.warn("Invocation observer {} failed in {} - {} (further failures are logged at debug level)",
+                    name, operation, e.getMessage());
+        } else {
+            log.debug("Invocation observer {} failed in {} - {}", name, operation, e.getMessage());
+        }
+    }
+
+    private record EnvelopeCarrier(EventEnvelope event) implements InvocationCarrier {
+        @Override
+        public String get(String key) {
+            return event.getTag(key);
+        }
+
+        @Override
+        public void set(String key, String value) {
+            if (value == null || value.isEmpty()) {
+                event.removeTag(key);
+            } else {
+                event.addTag(key, value);
+            }
+        }
+
+        @Override
+        public void remove(String key) {
+            event.removeTag(key);
+        }
+    }
+
+    /**
+     * The scopes of several observers: closed in reverse order of opening, so a tracer that must
+     * close LIFO on its thread is closed after every tracer opened after it.
+     */
+    private static final class CompositeScope implements InvocationScope {
+        private final List<InvocationScope> scopes;
+
+        CompositeScope(List<InvocationScope> scopes) {
+            this.scopes = scopes;
+        }
+
+        @Override
+        public void error(String message) {
+            for (InvocationScope scope : scopes.reversed()) {
+                try {
+                    scope.error(message);
+                } catch (Exception e) {
+                    failed(scope, "error", e);
+                }
+            }
+        }
+
+        @Override
+        public void end() {
+            for (InvocationScope scope : scopes.reversed()) {
+                try {
+                    scope.end();
+                } catch (Exception e) {
+                    failed(scope, "end", e);
+                }
+            }
+        }
+
+        @Override
+        public InvocationContinuation detach() {
+            List<InvocationContinuation> continuations = new ArrayList<>(scopes.size());
+            for (InvocationScope scope : scopes) {
+                try {
+                    InvocationContinuation continuation = scope.detach();
+                    if (continuation != null) {
+                        continuations.add(continuation);
+                    }
+                } catch (Exception e) {
+                    failed(scope, "detach", e);
+                }
+            }
+            return continuations.isEmpty()? null : () -> {
+                List<InvocationScope> resumed = new ArrayList<>(continuations.size());
+                for (InvocationContinuation continuation : continuations) {
+                    try {
+                        InvocationScope scope = continuation.resume();
+                        if (scope != null) {
+                            resumed.add(scope);
+                        }
+                    } catch (Exception e) {
+                        failed(continuation, "resume", e);
+                    }
+                }
+                return resumed.isEmpty()? null : new CompositeScope(resumed);
+            };
+        }
+    }
+
+    /**
+     * A continuation resumed at most once, whether by the delivery or by {@link #abandon}.
+     */
+    private static final class OnceContinuation implements InvocationContinuation {
+        private final InvocationContinuation continuation;
+        private final AtomicBoolean resumed = new AtomicBoolean(false);
+
+        OnceContinuation(InvocationContinuation continuation) {
+            this.continuation = continuation;
+        }
+
+        @Override
+        public InvocationScope resume() {
+            if (!resumed.compareAndSet(false, true)) {
+                return null;
+            }
+            try {
+                return continuation.resume();
+            } catch (Exception e) {
+                failed(continuation, "resume", e);
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Which routes are observed, and which are the negative control.
+     */
+    static final class RouteFilter {
+        private final List<String> include;
+        private final List<String> exclude;
+        private final List<String> unlinked;
+
+        RouteFilter(String include, String exclude, String unlinked) {
+            this.include = split(include);
+            this.exclude = split(exclude);
+            this.unlinked = split(unlinked);
+        }
+
+        boolean isObserved(String route) {
+            return (include.isEmpty() || matches(include, route)) && !matches(exclude, route);
+        }
+
+        boolean isUnlinked(String route) {
+            return matches(unlinked, route);
+        }
+
+        private static boolean matches(List<String> patterns, String route) {
+            for (String pattern : patterns) {
+                if (pattern.endsWith("*")?
+                        route.startsWith(pattern.substring(0, pattern.length() - 1)) : route.equals(pattern)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static List<String> split(String text) {
+            Set<String> result = new HashSet<>();
+            if (text != null) {
+                for (String entry : Utility.getInstance().split(text, ", ")) {
+                    if (!entry.isEmpty()) {
+                        result.add(entry);
+                    }
+                }
+            }
+            return List.copyOf(result);
+        }
+    }
+}

@@ -39,6 +39,42 @@
 
 ---
 
+## RFC-0009 — Live invocation observers: a vendor-neutral seam in platform-core for an APM agent's code-level view
+**Status:** Open · **Raised:** 2026-10-21 · **Serves:** vision-mercury-composable · **Thread:** `dynatrace-oneagent-field-experiment`
+<!-- id: rfc-0009 | status: open | thread: dynatrace-oneagent-field-experiment -->
+
+**Proposal.** A field installation validated the OpenTelemetry forwarder against Dynatrace, but OneAgent's code-level
+view does not show the hops between composable functions, and its log fields do not tie to the trace it shows. The cause:
+Mercury hands an event from the sender to the receiving function through the event bus and a per-route queue, so an agent's
+thread-bound context is lost at every hop. The forwarder cannot help, because it reports a finished span after the fact, and
+an agent needs a tracer that brackets the real call. **(1) The seam.** `org.platformlambda.core.spi` in platform-core, with
+no vendor dependency: an `InvocationObserver` with `begin` (on the thread that runs a function) and `send` (on the thread that
+sends an event), an `InvocationScope` closed on its own thread (error, then end; several observers close LIFO), and an
+`InvocationContinuation` that a `Mono` result resumes exactly once on its completion thread (or abandons on timeout). The
+linkage between hops rides as a **string tag on the envelope**, never as thread state, and is serialized across
+Event-over-HTTP and the cloud connector. **(2) The hooks.** `WorkerHandler.executeFunction`; `EventEmitter`'s direct dispatch
+of Event Script's `event.script.manager` and `task.executor`; and the five `EventEmitter` send entry points (`send`, two
+`asyncRequest`, two `eRequest`), each on the engine's own copy. A traced request is observed on every route but the
+telemetry routes and the RPC inbox; `invocation.observer.include`/`exclude` adjust that, and
+`invocation.observer.unlinked` is the experiment's **negative control**. **(3) Two optional adapters, off by default.**
+`extensions/dynatrace-oneagent` (`dynatrace.oneagent=true`) models each hop as a message with the OneAgent SDK: an outgoing
+message's Dynatrace tag on the envelope, an incoming message that consumes it, and an in-process link for a `Mono`. All hops
+share one messaging system, and the destination is the application by default, so routes do not become Dynatrace services.
+`extensions/opentelemetry-tracer` (`otel.tracing=true`) opens a live `CONSUMER` span per hop through the vendor-neutral API,
+with W3C context in the tag; OneAgent's *OpenTelemetry (Java)* feature or the OpenTelemetry Java agent records it, and a
+span may end on another thread, so a reactive hop shows its real duration. **(4) One fix found by the linkage test:**
+Event Script's kick-off event to `task.executor` carried no trace id (the executor reads it from the flow instance), so it
+was unobserved and a flow's first task started a new trace; it now carries the flow's trace. Built on branch
+`feature/dynatrace-oneagent-compatibility` for a field snapshot; **no PR until the field experiment** (Eric, 2026-10-21).
+**Options.** (a) The OneAgent SDK adapter alone: native PurePath nodes, but SDK tracers are bound to one thread, so a `Mono`
+completion is a linked node, not a long hop. (b) The OpenTelemetry adapter alone: not tied to one vendor, and spans are not
+bound to a thread, but it depends on an agent capturing OpenTelemetry API spans, and Dynatrace documents that spans may
+display flat. (c) Both, chosen on the field's evidence (this branch ships both). (d) An SDK inside the engine itself:
+rejected, because the engine core stays vendor-free.
+**Resolution.**
+
+---
+
 ## RFC-0008 — The mini-scheduler's active environment: one site runs the jobs of an active-active deployment
 **Status:** Promoted → ADR-0030 · **Raised:** 2026-10-09 · **Serves:** vision-mercury-composable · **Thread:** `scheduler-active-environment`
 <!-- id: rfc-0008 | status: promoted | thread: scheduler-active-environment -->

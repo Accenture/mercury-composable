@@ -27,6 +27,9 @@ import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleObjectMapper;
 import org.platformlambda.core.services.Telemetry;
 import org.platformlambda.core.services.TemporaryInbox;
+import org.platformlambda.core.spi.InvocationContinuation;
+import org.platformlambda.core.spi.InvocationObservers;
+import org.platformlambda.core.spi.InvocationScope;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,7 +110,13 @@ public class WorkerHandler {
         String ref = tracing? po.startTracing(parentRoute, event.getTraceId(), event.getTracePath(), event.getSpanId(), instance) : "?";
         long threadId = Thread.currentThread().threadId();
         registerLogContext(po, event, threadId);
-        ProcessStatus ps = processEvent(event, rpc);
+        // a live invocation observer (an APM agent's SDK, the OpenTelemetry API) brackets the call on this
+        // thread; its scope is passed down by reference and closed here, before the trace and the log
+        // context are torn down. A Mono result resumes it on the completion thread (handleMonoResponse).
+        InvocationScope scope = InvocationObservers.begin(event, parentRoute, instance);
+        ProcessStatus ps = processEvent(event, rpc, scope);
+        // getException, not isSuccess: setExecutionTime resets the success flag after an exception
+        InvocationObservers.close(scope, ps.getException());
         TraceInfo trace = po.stopTracing(ref);
         // processEvent never throws (it has a catch-all), so this always runs - no leak. Cheap no-op
         // when nothing was registered. A Mono/Flux completion after this point has no context (see docs).
@@ -207,7 +216,7 @@ public class WorkerHandler {
     }
 
     @SuppressWarnings("rawtypes")
-    private ProcessStatus processEvent(EventEnvelope event, String rpc) {
+    private ProcessStatus processEvent(EventEnvelope event, String rpc, InvocationScope scope) {
         ProcessStatus ps = new ProcessStatus();
         ProcessMetadata md = new ProcessMetadata();
         md.input.put(HEADERS, event.getHeaders());
@@ -257,7 +266,7 @@ public class WorkerHandler {
             String replyTo = event.getReplyTo();
             if (replyTo != null) {
                 setCorrelation(md, event, rpc);
-                sendResponse(ps, result, event, md, begin);
+                sendResponse(ps, result, event, md, begin, scope);
             } else {
                 saveInputOutput(md, result);
             }
@@ -308,14 +317,15 @@ public class WorkerHandler {
         }
     }
 
-    private void sendResponse(ProcessStatus ps, Object result, EventEnvelope event, ProcessMetadata md, long begin) {
+    private void sendResponse(ProcessStatus ps, Object result, EventEnvelope event, ProcessMetadata md, long begin,
+                              InvocationScope scope) {
         EventEmitter po = EventEmitter.getInstance();
         boolean skipResponse = false;
         if (result instanceof Mono<?> mono) {
             skipResponse = true;
             // set reactive to defer service acknowledgement until Mono is complete
             ps.setReactive();
-            handleMonoResponse(mono, event, md.response, begin, md.expiry);
+            handleMonoResponse(mono, event, md.response, begin, md.expiry, scope);
         }
         var resultSet = result;
         /*
@@ -412,7 +422,8 @@ public class WorkerHandler {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private void handleMonoResponse(Mono mono, EventEnvelope event, EventEnvelope response, long begin, long expiry) {
+    private void handleMonoResponse(Mono mono, EventEnvelope event, EventEnvelope response, long begin, long expiry,
+                                    InvocationScope scope) {
         EventEmitter po = EventEmitter.getInstance();
         Platform platform = Platform.getInstance();
         // Capture the trace context now, on the worker thread. getTrace is keyed by thread-id and its entry
@@ -420,6 +431,9 @@ public class WorkerHandler {
         // different thread, cannot look it up. Capturing here lets the response still carry this function's
         // span_id, so the next flow task can parent to it (otherwise the next task's span is orphaned).
         final TraceInfo traceContext = po.getTrace(parentRoute, instance);
+        // The same rule for a live invocation observer: its scope closes on this thread when processEvent
+        // returns, so it hands over a continuation now, resumed exactly once on the completion thread.
+        final InvocationContinuation continuation = InvocationObservers.detach(scope);
         final AtomicLong timer = new AtomicLong(-1);
         final AtomicBoolean completed = new AtomicBoolean(false);
         // For non-blocking operation, use a new virtual/kernel thread for the subscription
@@ -429,23 +443,30 @@ public class WorkerHandler {
                     if (t1 > 0) {
                         platform.getVertx().cancelTimer(t1);
                     }
+                    // a cancelled Mono (timeout) delivers nothing; any other signal has resumed already
+                    InvocationObservers.abandon(continuation, "Async response " + done);
                     // finally, send service acknowledgement
                     platform.getEventSystem().send(def.getRoute(), READY + route);
                 }).subscribeOn(Schedulers.fromExecutor(executor))
                 .subscribe(data -> {
                     completed.set(true);
-                    sendMonoResponse(traceContext, response, data, begin);
+                    InvocationObservers.resume(continuation, null,
+                            () -> sendMonoResponse(traceContext, response, data, begin));
                 }, e -> {
                     if (e instanceof Throwable ex) {
                         completed.set(true);
                         final EventEnvelope errorResponse = prepareErrorResponse(event, ex);
-                        po.send(applyTraceContext(traceContext, errorResponse).setExecutionTime(getExecTime(begin)));
+                        InvocationObservers.resume(continuation, ex.getMessage() == null?
+                                ex.getClass().getSimpleName() : ex.getMessage(),
+                                () -> po.send(applyTraceContext(traceContext, errorResponse)
+                                        .setExecutionTime(getExecTime(begin))));
                     }
                 }, () -> {
                     // When the Mono emitter sends a null payload, Mono will not return any result.
                     // Therefore, the system must return a null body for this normal use case.
                     if (!completed.get()) {
-                        sendMonoResponse(traceContext, response, null, begin);
+                        InvocationObservers.resume(continuation, null,
+                                () -> sendMonoResponse(traceContext, response, null, begin));
                     }
                 });
         // dispose a pending Mono if timeout
