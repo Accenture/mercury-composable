@@ -58,7 +58,18 @@
     - one runtime flow and one runtime graph exercise it end to end on each engine.
     Found: my WP3 Rust CHANGELOG edit had put Changed 5 below the `---` that closes the Unreleased section; WP4 restores it
     ([[conv-changelog-from-tag-range]]).
-  - **Next:** WP5, the guides, help pages and claims. The syntax guide's plugin-argument sentence is kept and clarified; the
-    `json-path-result-shape` claim says "Jayway's". Then one Java PR for WP1 to WP5, and the merge into the OneAgent branch.
+  - **Rust WP4 opened** as mercury #392.
+  - **WP5 done on both engines, 2026-10-22** (Java on this branch; Rust on `feat/jsonpath-docs-rfc-0010`, stacked on #392,
+    Increment 187).
+    - The Event Script syntax guide's JSON Path section: the grammar, the result shape, the refusal, a table of Jayway-only
+      forms and their replacements, and the substitution checks.
+    - The plugin-argument sentence is kept and explained.
+    - Updated as well: the flow schema reference (its map-of-lists error fixed), the flow grammar, the command reference, the
+      commands catalog, the AI agent checklist and two help pages.
+    - Claims: 2 updated and 5 new, on both engines; the result-shape test is renamed from Jayway to Mercury.
+    - The Playground bundle is rebuilt after `npm ci` (Eric's go-ahead) and deployed to both engines: only the main chunk
+      changed (`index-D5Sx-GL2.js`).
+  - **Next:** the one Java PR for WP1 to WP5 (`feature/minimalist-jsonpath`), and the Rust WP5 PR after #392. After the merge,
+    RFC-0010 is promoted to an ADR (the RFC-0006 method) and `main` is merged into the OneAgent branch (Eric's instruction).
   - If accepted, it makes [[json-path-boot-bom-override]] moot. Relates [[conv-library-pins-are-direct-dependencies]].
   <!-- id: minimalist-jsonpath | created: 2026-10-22 | last_used: 2026-10-22 | uses: 1 | tier: working | origin: 2026-10-22-040817 -->

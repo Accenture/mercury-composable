@@ -113,6 +113,14 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
      literal (`10`, `true`, `'abc'`) as written, as it always has. A list or a map is never substituted. A value that fails
      its check fails the mapping by name: `Cannot substitute {model.key} into '$.input.body.{model.key}' - '*' is not a key
      path`. The same checks apply to a simple plugin's `$` argument. Both engines, pinned by 39 shared substitution vectors.
+   - **Documentation.** The Event Script syntax guide's JSON Path section states the grammar, the result shape, the refusal
+     before a flow or a graph runs, a replacement for each Jayway-only form and the checks on a substituted value. The flow
+     schema reference, the flow grammar, the knowledge graph's command reference, the Playground's help (`help
+     graph-data-mapper`, `help tutorial 8`) and the AI agent guide's pre-send checklist follow it. Seven claims pin the
+     behaviour: `json-path-result-shape` and `mapping-source-dynamic-variables` are updated, and five are new. The flow schema
+     reference no longer says that a wildcard search yields a map of lists keyed by the last path segment: it yields a list.
+     The Playground bundle is rebuilt for both engines to carry the help (`index-CrqpNrFx.js` became `index-D5Sx-GL2.js`; the
+     vendor chunks and the stylesheet are unchanged).
 
    **Upgrade note (READ):**
    - **Jayway-only syntax is refused,** with an error that names the position. This covers the filter operators `in`,

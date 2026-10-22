@@ -718,18 +718,24 @@ Use these functions on the left-hand side of any input mapping to inject a liter
 
 ### JSONPath expressions
 
-Use `$.` to apply a JSONPath expression to the input or result:
+Use `$.` to apply a JSONPath expression to the input or result. The grammar is
+[RFC 9535](https://www.rfc-editor.org/rfc/rfc9535), the IETF standard, on both engines:
 
 ```yaml
 input:
-  - '$.input.body.users[*].id -> user_ids'   # Wildcard generates map of lists
+  - '$.input.body.users[*].id -> user_ids'   # a wildcard yields a list
 
 output:
   - '$.result.items[*].name -> model.names'
 ```
 
-> Wildcard searches (e.g. `[*]`) generate a `Map<String, List>` keyed by the last path
-> segment. Use `f:listOfMap()` to normalize this into a `List<Map>`.
+> A wildcard search (e.g. `[*]`) yields a list of the matched values. Several such lists mapped under one
+> model key (`model.list.id`, `model.list.name`) form a `Map<String, List>`; use `f:listOfMap()` to turn it
+> into a `List<Map>`.
+>
+> A path outside the standard is refused when the flow is compiled, and a reference in it (`{model.key}`,
+> `[model.i]`) is checked where it lands. See [JSON Path](event-script/syntax.md#json-path) for the grammar, the
+> result shape, the checks and the replacements for Jayway-only forms.
 
 ---
 

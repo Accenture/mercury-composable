@@ -1,8 +1,10 @@
 # Minimalist JSONPath
 
 A JSONPath engine written from [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535), the IETF JSONPath standard,
-with no dependency beyond `java.base`. It is to replace Jayway JsonPath in `platform-core`, where `MultiLevelMap`
+with no dependency beyond `java.base`. It replaces Jayway JsonPath in `platform-core`, where `MultiLevelMap`
 evaluates every `$` path of an Event Script flow or a knowledge graph (RFC-0010 in `docs/arch-decisions/RFC.md`).
+Event Script's `JsonPathSource` uses the same compile to refuse a path outside the standard when a flow or a graph
+is compiled, and to check each value substituted into a path.
 
 ## Why it exists
 
