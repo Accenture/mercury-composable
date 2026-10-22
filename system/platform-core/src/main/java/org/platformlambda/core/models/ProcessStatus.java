@@ -49,8 +49,8 @@ public class ProcessStatus {
     }
 
     public ProcessStatus setExecutionTime(float executionTime) {
+        // the execution time never touches the outcome: an exception recorded by setException stands
         this.executionTime = executionTime;
-        this.success = true;
         return this;
     }
 
