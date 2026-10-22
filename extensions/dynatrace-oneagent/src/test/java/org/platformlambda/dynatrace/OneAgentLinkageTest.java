@@ -28,6 +28,7 @@ import org.platformlambda.core.spi.InvocationObservers;
 import org.platformlambda.core.system.AutoStart;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
 
 import java.net.URI;
@@ -75,11 +76,13 @@ class OneAgentLinkageTest {
 
     @Test
     void anHttpRequestIsOneConnectedChain() throws Exception {
-        int port = Utility.getInstance().str2int(
-                org.platformlambda.core.util.AppConfigReader.getInstance().getProperty("server.port", "8305"));
-        HttpResponse<String> response = HttpClient.newHttpClient().send(
-                HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/demo/hello")).GET().build(),
-                HttpResponse.BodyHandlers.ofString());
+        int port = Utility.getInstance().str2int(AppConfigReader.getInstance().getProperty("server.port", "8305"));
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            response = client.send(
+                    HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/demo/hello")).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
+        }
 
         assertEquals(200, response.statusCode());
         assertTrue(response.body().contains("hello"));
@@ -99,7 +102,8 @@ class OneAgentLinkageTest {
         dataset.put("body", Map.of("hello", "world"));
 
         EventEnvelope result = FlowExecutor.getInstance()
-                .request("unit.test", util.getUuid(), "TEST /api/flow", "oneagent-demo", dataset, util.getUuid(), TIMEOUT)
+                .request("unit.test", util.getUuid(), "TEST /api/flow", "oneagent-demo", dataset,
+                        util.getUuid(), TIMEOUT)
                 .get(TIMEOUT, TimeUnit.MILLISECONDS);
 
         assertEquals(200, result.getStatus());
@@ -116,7 +120,8 @@ class OneAgentLinkageTest {
         assertTrue(engineThreads.contains(agent.tagThreads.get(task1.tag)), diagnostics);
         assertTrue(engineThreads.contains(agent.tagThreads.get(task2.tag)), diagnostics);
         String task1Response = agent.hopsOf("task.executor").stream()
-                .map(h -> h.tag).filter(t -> task1.startThread.equals(agent.tagThreads.get(t))).findFirst().orElse(null);
+                .map(h -> h.tag).filter(t -> task1.startThread.equals(agent.tagThreads.get(t)))
+                .findFirst().orElse(null);
         assertNotNull(task1Response, "no task.executor hop consumed demo.task.1's response");
     }
 
@@ -128,7 +133,7 @@ class OneAgentLinkageTest {
 
         assertEquals("late news", response.getBody());
         FakeOneAgent.Hop hop = awaitEnded("demo.mono");
-        List<FakeOneAgent.Call> links = awaitCalls("link-tracer", 2);
+        List<FakeOneAgent.Call> links = awaitLinkTracerStartAndEnd();
         assertTrue(agent.callsOf("sdk").stream().anyMatch(c ->
                 c.method().equals("createInProcessLink") && c.thread().equals(hop.startThread)));
         assertEquals("start", links.get(0).method());
@@ -161,14 +166,14 @@ class OneAgentLinkageTest {
         throw new AssertionError("no ended hop for " + route);
     }
 
-    private static List<FakeOneAgent.Call> awaitCalls(String object, int count) {
+    private static List<FakeOneAgent.Call> awaitLinkTracerStartAndEnd() {
         for (int i = 0; i < 100; i++) {
-            List<FakeOneAgent.Call> calls = agent.callsOf(object);
-            if (calls.size() >= count) {
+            List<FakeOneAgent.Call> calls = agent.callsOf("link-tracer");
+            if (calls.size() >= 2) {
                 return calls;
             }
             Utility.getInstance().sleep(50);
         }
-        throw new AssertionError("fewer than " + count + " calls on " + object);
+        throw new AssertionError("the in-process link tracer was not started and ended");
     }
 }

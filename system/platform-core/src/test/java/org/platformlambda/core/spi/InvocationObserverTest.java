@@ -99,7 +99,7 @@ class InvocationObserverTest extends TestBase {
         // the sender's tag reached the receiving function: the linkage rides on the envelope
         assertEquals("sent-to-" + ECHO, begin.tag);
         assertEquals(begin.thread, end.thread);
-        assertTrue(recorder.find(r -> r.is("send", ECHO)) != null);
+        assertNotNull(recorder.find(r -> r.is("send", ECHO)));
         assertNull(recorder.find(r -> r.is("error", ECHO)));
     }
 
@@ -108,7 +108,8 @@ class InvocationObserverTest extends TestBase {
         Recorder recorder = register(new Recorder("a"));
 
         EventEnvelope response = EventEmitter.getInstance()
-                .eRequest(new EventEnvelope().setTo(ECHO).setBody("plain"), TIMEOUT).get(TIMEOUT, TimeUnit.MILLISECONDS);
+                .eRequest(new EventEnvelope().setTo(ECHO).setBody("plain"), TIMEOUT)
+                .get(TIMEOUT, TimeUnit.MILLISECONDS);
 
         assertEquals("plain", response.getBody());
         Utility.getInstance().sleep(200);
@@ -150,7 +151,7 @@ class InvocationObserverTest extends TestBase {
     }
 
     @Test
-    void abandonsAMonoThatNeverCompletes() throws Exception {
+    void abandonsAMonoThatNeverCompletes() {
         Recorder recorder = register(new Recorder("a"));
         EventEnvelope event = new EventEnvelope().setTo(NEVER).setBody("x").setTrace("trace-104", "GET /never");
 

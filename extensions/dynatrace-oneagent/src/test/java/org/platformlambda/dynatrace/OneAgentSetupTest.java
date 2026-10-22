@@ -77,6 +77,6 @@ class OneAgentSetupTest {
     }
 
     private static BinaryOperator<String> settings(Map<String, String> values) {
-        return (key, defaultValue) -> values.getOrDefault(key, defaultValue);
+        return values::getOrDefault;
     }
 }

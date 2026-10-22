@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The registry of {@link InvocationObserver}s, and the engine's only entry to them. Empty by default:
@@ -74,7 +75,7 @@ public final class InvocationObservers {
     };
     private static final List<InvocationObserver> observers = new CopyOnWriteArrayList<>();
     private static final Set<String> failingObservers = ConcurrentHashMap.newKeySet();
-    private static volatile RouteFilter filter;
+    private static final AtomicReference<RouteFilter> filter = new AtomicReference<>();
 
     private InvocationObservers() { }
 
@@ -97,13 +98,6 @@ public final class InvocationObservers {
      */
     public static boolean unregister(InvocationObserver observer) {
         return observers.remove(observer);
-    }
-
-    /**
-     * @return true when at least one observer is registered
-     */
-    public static boolean isActive() {
-        return !observers.isEmpty();
     }
 
     /**
@@ -245,23 +239,23 @@ public final class InvocationObservers {
      * Re-read the route filter from the application configuration on next use.
      */
     static void reload() {
-        filter = null;
+        filter.set(null);
     }
 
     /**
      * Test hook: set the route filter directly.
      */
     static void configure(String include, String exclude, String unlinked) {
-        filter = new RouteFilter(include, exclude == null? DEFAULT_EXCLUDE : exclude, unlinked);
+        filter.set(new RouteFilter(include, exclude == null? DEFAULT_EXCLUDE : exclude, unlinked));
     }
 
     private static RouteFilter getFilter() {
-        RouteFilter current = filter;
+        RouteFilter current = filter.get();
         if (current == null) {
             AppConfigReader config = AppConfigReader.getInstance();
             current = new RouteFilter(config.getProperty(INCLUDE, ""),
                     config.getProperty(EXCLUDE, DEFAULT_EXCLUDE), config.getProperty(UNLINKED, ""));
-            filter = current;
+            filter.set(current);
         }
         return current;
     }
@@ -306,12 +300,7 @@ public final class InvocationObservers {
      * The scopes of several observers: closed in reverse order of opening, so a tracer that must
      * close LIFO on its thread is closed after every tracer opened after it.
      */
-    private static final class CompositeScope implements InvocationScope {
-        private final List<InvocationScope> scopes;
-
-        CompositeScope(List<InvocationScope> scopes) {
-            this.scopes = scopes;
-        }
+    private record CompositeScope(List<InvocationScope> scopes) implements InvocationScope {
 
         @Override
         public void error(String message) {
@@ -348,20 +337,25 @@ public final class InvocationObservers {
                     failed(scope, "detach", e);
                 }
             }
-            return continuations.isEmpty()? null : () -> {
-                List<InvocationScope> resumed = new ArrayList<>(continuations.size());
-                for (InvocationContinuation continuation : continuations) {
-                    try {
-                        InvocationScope scope = continuation.resume();
-                        if (scope != null) {
-                            resumed.add(scope);
-                        }
-                    } catch (Exception e) {
-                        failed(continuation, "resume", e);
+            if (continuations.isEmpty()) {
+                return null;
+            }
+            return () -> resumeAll(continuations);
+        }
+
+        private static InvocationScope resumeAll(List<InvocationContinuation> continuations) {
+            List<InvocationScope> resumed = new ArrayList<>(continuations.size());
+            for (InvocationContinuation continuation : continuations) {
+                try {
+                    InvocationScope scope = continuation.resume();
+                    if (scope != null) {
+                        resumed.add(scope);
                     }
+                } catch (Exception e) {
+                    failed(continuation, "resume", e);
                 }
-                return resumed.isEmpty()? null : new CompositeScope(resumed);
-            };
+            }
+            return resumed.isEmpty()? null : new CompositeScope(resumed);
         }
     }
 

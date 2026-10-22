@@ -59,7 +59,8 @@ public class OtelTracerSetup implements EntryPoint {
     static OtelInvocationObserver configure(OpenTelemetry openTelemetry, BinaryOperator<String> property) {
         log.info("OpenTelemetry invocation tracer - API implementation {}", openTelemetry.getClass().getName());
         if (TRUE.equalsIgnoreCase(property.apply(DYNATRACE_ONEAGENT, "false"))) {
-            log.warn("{}=true as well - two live tracers record every hop twice; run one at a time", DYNATRACE_ONEAGENT);
+            log.warn("{}=true as well - two live tracers record every hop twice; run one at a time",
+                    DYNATRACE_ONEAGENT);
         }
         if (TRUE.equalsIgnoreCase(property.apply(OTEL_FORWARDING, "false"))) {
             log.warn("{}=true as well - the forwarder exports a second, post-hoc copy of every hop; " +

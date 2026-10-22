@@ -51,7 +51,8 @@ class OtelInvocationObserverTest {
 
     private final InMemorySpanExporter exporter = InMemorySpanExporter.create();
     private final OpenTelemetrySdk sdk = OpenTelemetrySdk.builder()
-            .setTracerProvider(SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(exporter)).build())
+            .setTracerProvider(SdkTracerProvider.builder()
+                    .addSpanProcessor(SimpleSpanProcessor.create(exporter)).build())
             .build();
     private final OtelInvocationObserver observer = new OtelInvocationObserver(sdk);
 

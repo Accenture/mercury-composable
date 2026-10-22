@@ -78,8 +78,8 @@ public class OneAgentSetup implements EntryPoint {
         sdk.setLoggingCallback(new SdkLog());
         SDKState state = sdk.getCurrentState();
         if (state == SDKState.PERMANENTLY_INACTIVE) {
-            log.warn("Dynatrace OneAgent is not attached to this JVM (SDK state {}) - invocation observer not registered",
-                    state);
+            log.warn("Dynatrace OneAgent is not attached to this JVM (SDK state {}) - " +
+                    "invocation observer not registered", state);
             return null;
         }
         boolean perRoute = ROUTE.equalsIgnoreCase(property.apply(DESTINATION, "application"));
@@ -92,7 +92,8 @@ public class OneAgentSetup implements EntryPoint {
         }
         if (TRUE.equalsIgnoreCase(property.apply(OTEL_FORWARDING, FALSE))) {
             log.warn("{}=true as well - do not export the OTLP spans to the same Dynatrace tenant: " +
-                    "the forwarder's trace and the PurePath are two unconnected traces of one request", OTEL_FORWARDING);
+                    "the forwarder's trace and the PurePath are two unconnected traces of one request",
+                    OTEL_FORWARDING);
         }
         return new OneAgentObserver(sdk, application, perRoute, logContext);
     }

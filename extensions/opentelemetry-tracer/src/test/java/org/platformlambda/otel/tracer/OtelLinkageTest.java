@@ -73,9 +73,12 @@ class OtelLinkageTest {
     @Test
     void anHttpRequestIsOneConnectedTree() throws Exception {
         int port = Utility.getInstance().str2int(AppConfigReader.getInstance().getProperty("server.port", "8306"));
-        HttpResponse<String> response = HttpClient.newHttpClient().send(
-                HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/demo/hello")).GET().build(),
-                HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            response = client.send(
+                    HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/demo/hello")).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
+        }
 
         assertEquals(200, response.statusCode());
         SpanData hello = await("demo.hello", null);
@@ -134,7 +137,8 @@ class OtelLinkageTest {
         // the linked route joins the caller's trace; the unlinked one does not, by design
         assertEquals(request.getSpanContext().getSpanId(), await("demo.echo", traceId).getParentSpanId());
         Utility.getInstance().sleep(300);
-        assertTrue(spans().stream().noneMatch(s -> s.getName().equals("demo.unlinked") && s.getTraceId().equals(traceId)));
+        assertTrue(spans().stream().noneMatch(s ->
+                s.getName().equals("demo.unlinked") && s.getTraceId().equals(traceId)));
         assertNotNull(await("demo.unlinked", null));
     }
 

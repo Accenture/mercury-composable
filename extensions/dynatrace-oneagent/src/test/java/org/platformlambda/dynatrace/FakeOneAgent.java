@@ -42,6 +42,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  * ({@code tag-1}, {@code tag-2} ...), as an agent with an active PurePath would.
  */
 final class FakeOneAgent {
+    /**
+     * What a proxy does for one SDK method. The proxy answers {@code equals}, {@code hashCode} and an unanswered
+     * {@code toString} itself, so a handler never sees them.
+     */
+    @FunctionalInterface
+    private interface Handler {
+        Object handle(String method, Object[] args);
+    }
+
     /** One SDK call. */
     record Call(int seq, String object, String method, String argument, String thread) { }
 
@@ -74,9 +83,9 @@ final class FakeOneAgent {
     volatile LoggingCallback logging;
     private final AtomicInteger sequence = new AtomicInteger();
     private final AtomicInteger tags = new AtomicInteger();
-    final OneAgentSDK sdk = proxy(OneAgentSDK.class, (proxy, method, args) -> {
-        record("sdk", method.getName(), args);
-        return switch (method.getName()) {
+    final OneAgentSDK sdk = proxy(OneAgentSDK.class, (method, args) -> {
+        recordCall("sdk", method, args);
+        return switch (method) {
             case "getCurrentState" -> state;
             case "setLoggingCallback" -> {
                 logging = (LoggingCallback) args[0];
@@ -85,16 +94,16 @@ final class FakeOneAgent {
             case "createMessagingSystemInfo" -> {
                 String destination = (String) args[1];
                 infos.add(destination);
-                yield proxy(MessagingSystemInfo.class, (p, m, a) -> m.getName().equals("toString")? destination : null);
+                yield proxy(MessagingSystemInfo.class, (m, a) -> m.equals("toString")? destination : null);
             }
             case "traceIncomingMessageProcess" -> incoming(String.valueOf(args[0]));
             case "traceOutgoingMessage" -> outgoing();
-            case "createInProcessLink" -> proxy(InProcessLink.class, (p, m, a) -> m.getName().equals("toString")? "link" : null);
-            case "traceInProcessLink" -> proxy(InProcessLinkTracer.class, (p, m, a) -> {
-                record("link-tracer", m.getName(), a);
+            case "createInProcessLink" -> proxy(InProcessLink.class, (m, a) -> m.equals("toString")? "link" : null);
+            case "traceInProcessLink" -> proxy(InProcessLinkTracer.class, (m, a) -> {
+                recordCall("link-tracer", m, a);
                 return null;
             });
-            case "getTraceContextInfo" -> proxy(TraceContextInfo.class, (p, m, a) -> switch (m.getName()) {
+            case "getTraceContextInfo" -> proxy(TraceContextInfo.class, (m, a) -> switch (m) {
                 case "isValid" -> validTraceContext;
                 case "getTraceId" -> "dt-trace-1";
                 case "getSpanId" -> "dt-span-1";
@@ -107,10 +116,10 @@ final class FakeOneAgent {
     private IncomingMessageProcessTracer incoming(String destination) {
         Hop hop = new Hop(destination);
         hops.add(hop);
-        return proxy(IncomingMessageProcessTracer.class, (proxy, method, args) -> {
-            record("incoming", method.getName(), args);
+        return proxy(IncomingMessageProcessTracer.class, (method, args) -> {
+            recordCall("incoming", method, args);
             String thread = threadOf();
-            switch (method.getName()) {
+            switch (method) {
                 case "setDynatraceStringTag" -> hop.tag = (String) args[0];
                 case "setVendorMessageId" -> hop.messageId = (String) args[0];
                 case "setCorrelationId" -> hop.correlationId = (String) args[0];
@@ -123,16 +132,18 @@ final class FakeOneAgent {
                     hop.endThread = thread;
                 }
                 case "error" -> hop.error = String.valueOf(args[0]);
-                default -> { }
+                default -> {
+                    // the tracer's other methods are recorded only
+                }
             }
             return null;
         });
     }
 
     private OutgoingMessageTracer outgoing() {
-        return proxy(OutgoingMessageTracer.class, (proxy, method, args) -> {
-            record("outgoing", method.getName(), args);
-            if (method.getName().equals("getDynatraceStringTag")) {
+        return proxy(OutgoingMessageTracer.class, (method, args) -> {
+            recordCall("outgoing", method, args);
+            if (method.equals("getDynatraceStringTag")) {
                 if (!pathActive) {
                     return "";
                 }
@@ -157,24 +168,25 @@ final class FakeOneAgent {
         }
     }
 
-    private void record(String object, String method, Object[] args) {
-        if (!method.equals("toString") && !method.equals("hashCode") && !method.equals("equals")) {
+    private void recordCall(String object, String method, Object[] args) {
+        if (!method.equals("toString")) {
             calls.add(new Call(sequence.incrementAndGet(), object, method,
                     args == null || args.length == 0? null : String.valueOf(args[0]), threadOf()));
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T proxy(Class<T> type, java.lang.reflect.InvocationHandler handler) {
+    private static <T> T proxy(Class<T> type, Handler handler) {
         return (T) Proxy.newProxyInstance(FakeOneAgent.class.getClassLoader(), new Class<?>[]{type}, (p, m, a) -> {
-            if (m.getName().equals("hashCode")) {
+            String method = m.getName();
+            if (method.equals("hashCode")) {
                 return System.identityHashCode(p);
             }
-            if (m.getName().equals("equals")) {
+            if (method.equals("equals")) {
                 return p == a[0];
             }
-            Object result = handler.invoke(p, m, a);
-            if (m.getName().equals("toString") && result == null) {
+            Object result = handler.handle(method, a);
+            if (method.equals("toString") && result == null) {
                 return type.getSimpleName();
             }
             return result;
