@@ -2219,6 +2219,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0010 — An in-house JSONPath engine to RFC 9535: system/minimalist-jsonpath replaces Jayway JsonPath
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3015,6 +3026,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0010 — An in-house JSONPath engine to RFC 9535: system/minimalist-jsonpath replaces Jayway JsonPath
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3158,6 +3180,175 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>**Options.** The alternatives on the table, with their trade-offs.
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>**Resolution.** Empty while open; `Promoted → ADR-NNNN (date)` or `Withdrawn (date): &lt;reason&gt;`.
 </code></pre></div>
+<hr />
+<h2 id="rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath">RFC-0010 — An in-house JSONPath engine to RFC 9535: <code>system/minimalist-jsonpath</code> replaces Jayway JsonPath<a class="headerlink" href="#rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-10-22 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>minimalist-jsonpath</code></p>
+<!-- id: rfc-0010 | status: open | thread: minimalist-jsonpath -->
+
+<p><strong>Proposal.</strong> Replace Jayway JsonPath (<code>com.jayway.jsonpath:json-path</code> 3.0.0) with a module of this repository that implements
+<a href="https://www.rfc-editor.org/rfc/rfc9535">RFC 9535</a>, the IETF JSONPath standard (February 2024), with no dependency beyond
+<code>java.base</code>. The module has two parts:
+- a parser that compiles a query into an immutable, thread-safe form;
+- an evaluator that runs it directly over the engine's own <code>Map</code>/<code>List</code> trees, with no conversion step.</p>
+<p>platform-core's <code>MultiLevelMap</code> is the only caller; it evaluates every <code>$</code> path, so Event Script and the knowledge graph inherit
+the change unchanged.</p>
+<p>A decision commits the project to three things:
+- <strong>RFC 9535 as Mercury's one JSONPath grammar, on both engines.</strong> Eric's preference (2026-10-22): the standard gives
+  cross-language predictability. Jayway was built long before it, on Stefan Gössner's 2007 proposal, so for Java the standard is
+  a transition.
+- <strong>Owning a parser and an evaluator.</strong>
+- <strong>The behaviour changes below.</strong></p>
+<p><strong>Why.</strong>
+1. <strong>Supply chain.</strong> <code>json-smart</code> 2.6.0 is reported vulnerable (CVE-2026-113602, 5.3), by the IDE's dependency scan on
+   2026-10-22; no details are published.
+   - No upgrade exists: 2.6.0 is the latest release (August 2025).
+   - json-path 3.0.0, the latest release (February 2026), calls json-smart's <code>JSONParser</code> directly in its filter engine
+     (<code>ValueNode.isJson</code>, <code>ValueNodes$JsonNode.parse</code>), whatever JSON provider is configured. So an exclusion cannot remove it.
+   - json-smart's earlier advisories (CVE-2023-1370, and the incomplete fix of it in 2.5.0 to 2.5.1) were in that same parser.
+   - The ASM 9.7.1 node that came through <code>accessors-smart</code> was closed by an exclusion in #576. This proposal removes the
+     whole chain.
+2. <strong>Parity.</strong> The Rust engine evaluates <code>$</code> paths with <code>serde_json_path</code> 0.7, an RFC 9535 implementation, and shapes the
+   result the way Jayway does (<code>crates/event-script/src/mlm.rs</code>).
+   - A path both grammars accept gives the same answer on both engines.
+   - A Jayway-only path is evaluated by Java but silently answers null on Rust, which discards the parse error. Examples: <code>in</code>,
+     <code>nin</code>, <code>subsetof</code>, <code>anyof</code>, <code>noneof</code>, <code>size</code>, <code>empty</code>, <code>=~</code>, or a trailing <code>.length()</code>, <code>.min()</code>, <code>.sum()</code> or <code>.keys()</code>.
+   - One grammar on both engines removes that difference.
+3. <strong>Control.</strong> The engine decides:
+   - the grammar it supports;
+   - the errors it reports;
+   - the limits it enforces;
+   - how a substituted value is checked before the query is parsed (see <em>The design</em>).</p>
+<p>The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is replaced by a module written from its specification.</p>
+<p><strong>Scope today.</strong>
+- <strong>The code.</strong> One call, <code>JsonPath.read(multiLevels, path)</code> in <code>MultiLevelMap.getElementFromMap</code>, which also converts
+  json-smart's <code>JSONArray</code> to an <code>ArrayList</code>. Two exception types: <code>PathNotFoundException</code> there, and <code>InvalidPathException</code> in
+  the Playground's <code>GraphCommandService</code>. Nothing else in the code or the tests imports json-path.
+- <strong>The guides.</strong> They document dotted paths, <code>[*]</code> and <code>.*</code>, an index, a slice, deep scan <code>..</code>, unions and <code>==</code> filters. They
+  pin Jayway's result shape: the claim <code>json-path-result-shape</code>, and the shared fixture <code>unit-test-jsonpath-1</code> on both engines.
+- <strong>All of it is RFC 9535 syntax.</strong> Jayway's <code>[?(@.team == 'red')]</code> is a filter whose expression is parenthesized, which RFC 9535
+  accepts.</p>
+<p><strong>The design.</strong>
+- <strong>Module.</strong> <code>system/minimalist-jsonpath</code>, beside <code>minimalist-msgpack</code>, because platform-core depends on it; package
+  <code>org.platformlambda.mini.jsonpath</code> (answer 1). Its API, with the class names settled in WP1:
+  - a compile call that returns an immutable query;
+  - a select call that returns the nodelist;
+  - one <code>JsonPathException extends IllegalArgumentException</code>, carrying the position and the reason.
+  <code>MultiLevelMap</code> keeps a bounded cache of compiled queries, because a flow evaluates the same path on every event, as Jayway's
+  path cache does.
+- <strong>Grammar: RFC 9535 in full.</strong>
+  - Selectors: name, wildcard, index (negative too), slice and filter.
+  - Segments: child and descendant.
+  - Filter expressions: <code>||</code>, <code>&amp;&amp;</code>, <code>!</code>, parentheses, the comparisons <code>==</code> <code>!=</code> <code>&lt;</code> <code>&lt;=</code> <code>&gt;</code> <code>&gt;=</code>, existence tests, and
+    relative (<code>@</code>) and absolute (<code>$</code>) queries.
+  - Literals: strings (single or double quoted), numbers, <code>true</code>, <code>false</code> and <code>null</code>.
+  - Functions: the standard's five, <code>length</code>, <code>count</code>, <code>match</code>, <code>search</code> and <code>value</code>, with its type checking. <code>match</code> and
+    <code>search</code> take I-Regexp (<a href="https://www.rfc-editor.org/rfc/rfc9485">RFC 9485</a>), mapped onto <code>java.util.regex</code> and pinned
+    by tests.
+  - Comparisons are type-strict, as the standard specifies: numbers compare by value (<code>1 == 1.0</code>), strings by Unicode scalar
+    value, and <code>"5" == 5</code> is false.
+- <strong>Two Mercury rules are kept, declared and identical on both engines.</strong>
+  1. <strong>The result shape is Jayway's rule, as Mercury documents it.</strong> RFC 9535 returns a nodelist and leaves shaping to the
+     application, so this is Mercury's shaping layer, as it already is on Rust:
+     - a definite path yields the value, or null;
+     - an indefinite path always yields a list;
+     - a missing member name before the first indefinite step yields null.
+  2. <strong>A dot-notation name may contain a hyphen</strong> (<code>$.fetcher-ext.result</code>), because graph node names carry hyphens. RFC 9535's
+     shorthand does not allow one, so this is the one declared extension. Rust already rewrites such names to bracket notation.
+- <strong>Refusal, never a silent null.</strong> A query outside the grammar fails by name, with its position:
+  - when it is evaluated;
+  - at deployment, because CompileGraph and the flow compiler parse every <code>$</code> source, so a graph or a flow with an unsupported
+    path is refused before it runs.
+  The Rust engine moves from its silent null to the same refusal; it already has the parse error.
+- <strong>Limits.</strong> A nesting bound on filter expressions (parentheses, nested queries) and an iterative descendant walk, so that no
+  query text exhausts the stack.
+- <strong>Substitution first, then parsing</strong> (answer 4). A reference in a <code>$</code> source is replaced by its value before the query is
+  parsed, as today, so existing graphs and flows keep their queries. Both kinds of reference work this way: Event Script's
+  <code>{model.key}</code> and <code>[model.i]</code> (<code>TaskExecutor.substituteDynamicIndex</code>), and the knowledge graph's <code>{namespace.key}</code>
+  (<code>GraphLambdaFunction.substituteMappingSource</code>). For example, <code>$.input.body.{model.key}</code> with <code>model.key</code> = <code>item</code> is the
+  query <code>$.input.body.item</code>.</p>
+<p>Each substituted value is checked where it lands, so that it cannot change the query's structure:
+  - <strong>in a path,</strong> it must be a plain key path or an integer index. A plain key path is member names joined by single dots,
+    each name RFC 9535's shorthand plus the hyphen of rule 2.
+  - <strong>inside a string literal the author wrote</strong> (<code>'{model.team}'</code>), it is escaped for that literal: its quote and its
+    backslash.
+  - <strong>bare inside a filter,</strong> a text value becomes a string literal, as the knowledge graph quotes it today, and a number or a
+    boolean is inserted as written.
+  - <strong>a list or a map</strong> cannot be substituted into a <code>$</code> source, because RFC 9535 has no array or object literals.</p>
+<p>A value that fails its check fails the mapping by name.</p>
+<p>This closes two gaps found on 2026-10-22:
+  - <strong>A value next to a dot is inserted as written,</strong> so a value carrying query syntax can add segments, a wildcard or a filter
+    to the query. In a graph, that value can come from the request. The guides' advice to put a fixed prefix before a request
+    value does not prevent it.
+  - <strong>The knowledge graph's quoting escapes the quote but not the backslash,</strong> so a value that ends with <code>\</code> escapes the closing
+    quote, and the literal runs on into the rest of the query.</p>
+<p><strong>Behaviour changes a decision accepts.</strong>
+1. <strong>Jayway-only syntax is refused.</strong>
+   - The refused forms: the filter operators <code>in</code>, <code>nin</code>, <code>subsetof</code>, <code>anyof</code>, <code>noneof</code>, <code>size</code>, <code>empty</code> and <code>=~</code>; the path
+     functions <code>.length()</code>, <code>.min()</code>, <code>.max()</code>, <code>.avg()</code>, <code>.stddev()</code>, <code>.sum()</code>, <code>.keys()</code>, <code>.first()</code>, <code>.last()</code>, <code>.index()</code>,
+     <code>.concat()</code> and <code>.append()</code>; and array or object literals in a filter.
+   - Where the standard has a form, it replaces them: <code>match(@.code, '…')</code> or <code>search(…)</code> for <code>=~</code>; <code>length(@.list)</code> and
+     <code>count(@.list[*])</code> inside a filter; <code>@.code == 'a' || @.code == 'b'</code> for a small <code>in</code>.
+   - All of these already answer null on Rust.
+2. <strong>Filter comparisons are type-strict.</strong>
+3. <strong>A substituted value cannot change a query's structure</strong> (see <em>The design</em>). Every value a working flow or graph
+   substitutes today (a key name, a key path, an index, a filter value) gives the same query as before. A value carrying query
+   syntax, or a list or a map in a <code>$</code> source, now fails the mapping by name.
+4. <strong>Queries both grammars accept but implementations answer differently.</strong> Examples: a filter applied to an object rather than
+   an array, the order of descendant results, and slices at the edges. The differential run (<em>Evidence plan</em>) lists every such
+   difference before the swap, and each is declared in the guide or fixed.
+5. <strong>Transitive dependencies go.</strong> <code>com.jayway.jsonpath</code>, <code>net.minidev</code>, and ASM through <code>accessors-smart</code> no longer arrive
+   transitively. An application that uses json-path directly declares it itself. The engine still declares ASM, because Event
+   Script's plugin loader reads bytecode with it.
+6. <strong>The Playground's error for a bad path changes:</strong> it states the position and the reason, in place of Jayway's message.</p>
+<p><strong>Evidence plan.</strong>
+1. <strong>The compliance suite.</strong> The JSONPath Compliance Test Suite
+   (<a href="https://github.com/jsonpath-standard/jsonpath-compliance-test-suite">jsonpath-standard/jsonpath-compliance-test-suite</a>,
+   BSD-2) holds 715 cases; 249 of them are invalid selectors that must be refused.
+   - It is vendored as one file in the module's tests, with its licence: the independent oracle, the RFC-0006 method.
+   - The Rust repository runs <code>serde_json_path</code> against the same file, so the two engines answer from one test file.
+2. <strong>The shared fixture.</strong> <code>unit-test-jsonpath-1</code> and the claim <code>json-path-result-shape</code> stay unchanged on both engines.
+3. <strong>A differential run.</strong> Jayway and the new engine evaluate every <code>$</code> path in the repository's flows, graph models, fixtures,
+   tutorials and tests, over a seeded corpus of documents, and every difference is listed. The run is kept outside the reactor,
+   as <code>benchmark/msgpack-codec-harness/</code> was, because it needs json-path on its classpath.
+4. <strong>A benchmark against Jayway</strong> on the engine's own paths: compile once, evaluate many.
+5. <strong>A JaCoCo line and branch gate</strong> on the module.</p>
+<p><strong>Size.</strong> The precedent, minimalist-msgpack, is 1,136 lines of code and 1,058 lines of tests. This module is estimated at 1,500 to
+2,000 lines of code (a parser, an evaluator and the five functions), with the compliance suite carrying most of the test weight.</p>
+<p><strong>Work packages.</strong>
+- <strong>WP1.</strong> The module and the compliance suite.
+- <strong>WP2.</strong> The swap in <code>MultiLevelMap</code> and the Playground, the dependency removal, the differential run and the benchmark.
+- <strong>WP3.</strong> Refusal at deployment (CompileGraph and the flow compiler), on both engines.
+- <strong>WP4.</strong> Substitution first, then parsing, with the checks where each value lands: in Event Script and the knowledge graph,
+  on both engines (answer 4).
+- <strong>WP5.</strong> The guides, the help pages, the claims and the upgrade note.</p>
+<p><strong>Options.</strong>
+- <strong>(a) The in-house RFC 9535 engine. Recommended.</strong> One standard grammar on both engines, the json-smart chain gone for good, and
+  the limits and the substitution rule under the project's control. Cost: owning a parser and an evaluator, with the
+  compliance suite as their guard.
+- <strong>(b) Keep Jayway and record the json-smart advisory as unfixed</strong>, as the MsgPack 0.9.12 entry in 4.12.18 did. No work, but the
+  finding recurs on every scan, and the engines keep two grammars.
+- <strong>(c) A third-party RFC 9535 library for Java.</strong> One grammar without writing it, but another dependency at the engine's
+  foundation for the field's scanners to judge. None was evaluated for this draft.
+- <strong>(d) Wait for a json-smart fix.</strong> It has no date, and json-path would still carry the parser.</p>
+<p><strong>Open questions, answered (Eric, 2026-10-22).</strong>
+1. <strong>Names.</strong> The module is <code>minimalist-jsonpath</code> (<code>system/minimalist-jsonpath</code>). Its package follows the <code>minimalist-msgpack</code>
+   precedent: <code>org.platformlambda.mini.jsonpath</code>, because a Java package name cannot carry the hyphen.
+2. <strong>Release vehicle: v4.12.26, the next release.</strong> One release swaps the engine and refuses Jayway-only syntax, with no
+   warning release first, because the JSONPath surface is under the project's control. The differential run's findings are
+   still listed and declared before the swap.
+3. <strong>RFC 9535 is adhered to.</strong> There is no Mercury-declared alternative to <code>in</code> or any other Jayway-only form; the standard's
+   forms are the replacements. The two declared Mercury rules (the result shape, and a hyphen in a dotted name) stay.
+4. <strong>Substitution first, then JSONPath parsing, for backward compatibility</strong> (Eric's adjustment, the same day). Existing
+   knowledge graphs and event scripts must not break. A model reference yields a concrete value, and it is replaced before the
+   query is parsed: <code>$.input.body.{model.key}</code> with <code>model.key</code> = <code>item</code> is the query <code>$.input.body.item</code>. This holds in both
+   layers and on both engines.
+   - The flow-compiler refusal first proposed under this question is dropped.
+   - The checks where each value lands (<em>The design</em>) keep that compatibility, while preventing a value from changing the
+     query's structure. <strong>Accepted by Eric the same day.</strong>
+5. <strong>Agreed.</strong> The thread on json-path's version under the Spring Boot parent (<code>json-path-boot-bom-override</code>, raised with #576)
+   becomes moot, and closes when the swap ships.</p>
+<p>Promotion to an ADR follows review and green CI, the RFC-0006 method.</p>
+<p><strong>Resolution.</strong></p>
 <hr />
 <h2 id="rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment">RFC-0008 — The mini-scheduler's active environment: one site runs the jobs of an active-active deployment<a class="headerlink" href="#rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Promoted → ADR-0030 · <strong>Raised:</strong> 2026-10-09 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>scheduler-active-environment</code></p>
