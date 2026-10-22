@@ -217,7 +217,7 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
    layers and on both engines.
    - The flow-compiler refusal first proposed under this question is dropped.
    - The checks where each value lands (*The design*) keep that compatibility, while preventing a value from changing the
-     query's structure.
+     query's structure. **Accepted by Eric the same day.**
 5. **Agreed.** The thread on json-path's version under the Spring Boot parent (`json-path-boot-bom-override`, raised with #576)
    becomes moot, and closes when the swap ships.
 

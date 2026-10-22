@@ -13,7 +13,8 @@
     - **ships in v4.12.26**, swapping and refusing in one release (no warning release);
     - strict RFC 9535, no alternative to `in`;
     - substitution first, then JSONPath parsing, so that no existing graph or flow breaks: `$.input.body.{model.key}` with
-      `item` is `$.input.body.item`. This was Eric's adjustment, replacing the flow-compiler refusal first proposed.
+      `item` is `$.input.body.item`. This was Eric's adjustment, replacing the flow-compiler refusal first proposed. The check where each value lands
+      was **accepted** the same day.
     - [[json-path-boot-bom-override]] closes with the swap.
   - **Next:** RFC-0010's PR (#577), then WP1, the module and the suite.
   - If accepted, it makes [[json-path-boot-bom-override]] moot. Relates [[conv-library-pins-are-direct-dependencies]].
