@@ -115,8 +115,7 @@ public class WorkerHandler {
         // context are torn down. A Mono result resumes it on the completion thread (handleMonoResponse).
         InvocationScope scope = InvocationObservers.begin(event, parentRoute, instance);
         ProcessStatus ps = processEvent(event, rpc, scope);
-        // getException, not isSuccess: setExecutionTime resets the success flag after an exception
-        InvocationObservers.close(scope, ps.getException());
+        InvocationObservers.close(scope, ps.isSuccess() ? null : ps.getException());
         TraceInfo trace = po.stopTracing(ref);
         // processEvent never throws (it has a catch-all), so this always runs - no leak. Cheap no-op
         // when nothing was registered. A Mono/Flux completion after this point has no context (see docs).
