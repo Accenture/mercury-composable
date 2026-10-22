@@ -92,8 +92,8 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
   accepts.
 
 **The design.**
-- **Module.** `system/minimalist-jsonpath`, beside `minimalist-msgpack`, because platform-core depends on it. Its API, with names
-  still open:
+- **Module.** `system/minimalist-jsonpath`, beside `minimalist-msgpack`, because platform-core depends on it; package
+  `org.platformlambda.mini.jsonpath` (answer 1). Its API, with the class names settled in WP1:
   - a compile call that returns an immutable query;
   - a select call that returns the nodelist;
   - one `JsonPathException extends IllegalArgumentException`, carrying the position and the reason.
@@ -130,7 +130,8 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
   - a text value becomes a quoted string inside a filter, or a bracketed, quoted name `['…']` in a path;
   - a list or a map is refused in a `$` source, because RFC 9535 has no array or object literals.
   Today a text value next to a dot is inserted as written, so a request value can add segments or a filter to the query (found
-  2026-10-22). The guides' advice to put a fixed prefix before a request value does not prevent it.
+  2026-10-22). The guides' advice to put a fixed prefix before a request value does not prevent it. Event Script's own
+  substitution is not a way to compose a query (answer 4).
 
 **Behaviour changes a decision accepts.**
 1. **Jayway-only syntax is refused.**
@@ -171,7 +172,8 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
 - **WP1.** The module and the compliance suite.
 - **WP2.** The swap in `MultiLevelMap` and the Playground, the dependency removal, the differential run and the benchmark.
 - **WP3.** Refusal at deployment (CompileGraph and the flow compiler), on both engines.
-- **WP4.** Substitution as data, on both engines.
+- **WP4.** Substitution as data in the knowledge graph, on both engines; and, if confirmed, the flow compiler's refusal of a
+  model reference inside a `$` source (answer 4).
 - **WP5.** The guides, the help pages, the claims and the upgrade note.
 
 **Options.**
@@ -184,15 +186,21 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
   foundation for the field's scanners to judge. None was evaluated for this draft.
 - **(d) Wait for a json-smart fix.** It has no date, and json-path would still carry the parser.
 
-**Open questions.**
-1. Module and package names.
-2. Release vehicle. Either one release swaps the engine and refuses Jayway-only syntax, or one release warns first. The
-   differential run's findings decide.
-3. Whether `in`, the Jayway operator a field graph is most likely to use, gets a Mercury-declared alternative beyond `||`. The
-   recommendation is no, given the preference for the standard.
-4. Whether Event Script's own `{model.key}` substitution reaches `$` sources the way the graph's does (to check in WP4).
-5. The thread on json-path's version under the Spring Boot parent (`json-path-boot-bom-override`, raised with #576) becomes moot
-   if this is accepted.
+**Open questions, answered (Eric, 2026-10-22).**
+1. **Names.** The module is `minimalist-jsonpath` (`system/minimalist-jsonpath`). Its package follows the `minimalist-msgpack`
+   precedent: `org.platformlambda.mini.jsonpath`, because a Java package name cannot carry the hyphen.
+2. **Release vehicle: v4.12.26, the next release.** One release swaps the engine and refuses Jayway-only syntax, with no
+   warning release first, because the JSONPath surface is under the project's control. The differential run's findings are
+   still listed and declared before the swap.
+3. **RFC 9535 is adhered to.** There is no Mercury-declared alternative to `in` or any other Jayway-only form; the standard's
+   forms are the replacements. The two declared Mercury rules (the result shape, and a hyphen in a dotted name) stay.
+4. **Event Script's `{model.key}` substitution yields a concrete value; it is not a way to compose a JSONPath query** (for
+   simplicity). The guide already scopes it to a constant or a segment of a key. Today the code also substitutes inside a `$`
+   source (`TaskExecutor.substituteDynamicIndex`), so a model value copied from a request could add query syntax there.
+   **Proposed for WP4, to confirm:** the flow compiler refuses a `{model.…}` or `[model.…]` reference inside a `$` source, so
+   the rule is enforced. Substitution as data then concerns the knowledge graph only.
+5. **Agreed.** The thread on json-path's version under the Spring Boot parent (`json-path-boot-bom-override`, raised with #576)
+   becomes moot, and closes when the swap ships.
 
 Promotion to an ADR follows review and green CI, the RFC-0006 method.
 
