@@ -5,4 +5,4 @@
   the same rule's other half ([[conv-sonar-gate-heuristics]]). Next: record the field's deployment of 4.12.25 on `latest_release`.
   origin: 2026-10-13-020033; close 2026-10-13-021606.
   → serves: vision-mercury-composable
-  <!-- id: release-4-12-25 | created: 2026-10-13 | last_used: 2026-10-13 | uses: 2 | tier: active | origin: 2026-10-13-020033 -->
+  <!-- id: release-4-12-25 | created: 2026-10-13 | last_used: 2026-10-13 | uses: 2 | tier: archive-candidate | origin: 2026-10-13-020033 -->

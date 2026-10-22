@@ -254,3 +254,6 @@
 - graph-contract-schema — The graph contract (RFC-0007) — CLOSED 2026-10-09 at the promotion to ADR-0029 (PR #537 sq… — completed thread swept (older than archive_window) — 2026-Q4.md
 - reverify-invariants-20261009 — Re-verify invariants (due) — WALKED 2026-10-09 (Eric): the 19 `core` facts and the Vision… — completed thread swept (older than archive_window) — 2026-Q4.md
 - scheduler-active-environment — The mini-scheduler's active environment (RFC-0008) — CLOSED 2026-10-09 at the promotion to… — completed thread swept (older than archive_window) — 2026-Q4.md
+- minigraph-dev-mode-app-shape — A Layer 3 application is one graph endpoint plus dev mode, and its home page is dev-mode w… — faded — 2026-Q4.md
+- release-4-12-22 — Release v4.12.22 — SHIPPED 2026-10-10: the graph contract on both engines and the mini-sch… — completed thread swept (older than archive_window) — 2026-Q4.md
+- release-4-12-23 — Release v4.12.23 — SHIPPED 2026-10-11: the API playground and `f:rangeLookup` on both engi… — completed thread swept (older than archive_window) — 2026-Q4.md
