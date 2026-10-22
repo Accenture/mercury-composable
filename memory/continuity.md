@@ -529,6 +529,22 @@
   safaridriver for Safari. Applies [[clean-knowledge-design-over-engine-coverage]]; extends [[playground-webapp-single-source]].
   <!-- id: playground-graph-image-png-only | created: 2026-10-21 | last_used: 2026-10-21 | uses: 1 | tier: working | origin: 2026-10-21-222735 -->
 
+- **JSONPath is RFC 9535 on both engines: Java's `minimalist-jsonpath` replaces Jayway JsonPath and Rust keeps `serde_json_path`;
+  a path outside the standard is refused by name before it runs, and a substituted value is checked where it lands (Eric's rulings,
+  2026-10-22; RFC-0010 promoted to ADR-0031; PR #579 squash `68637dd6`, mercury #391, #392 and #393).** **Why:** `json-smart`
+  2.6.0's advisory has no fix and json-path calls its parser directly; the engines had two grammars, and Rust hid a parse error as a
+  null; and a value inserted as written could change a query. **What a change must keep:** (1) Mercury's two rules, the result shape
+  by kind of path and a hyphen in a dotted name, identical on both engines; (2) a flow drops the task and a graph is rejected, the
+  compilers' own units; (3) JSONPath stands only in a data mapping's source, a simple plugin's `$` argument (the splitter keeps it
+  whole) and a data dictionary's default, never inside a `{reference}`; (4) substitution first, then the checks by site - a
+  dot-bracket key path in a name, an integer in an index, escaped in a literal, and bare in a filter a literal, Event Script keeping
+  text that is already one literal as written (numeric text compares as a number). **The guard** for any change is the compliance
+  suite on both engines plus the shared `jsonpath-source-vectors.json`, byte-identical. **Gotchas met on the way:** a partial
+  `-am test` run fails the AI contract snapshot (no packaged `pom.properties`), so verify with the reactor; the Java and Rust test
+  runs collide on port 8090. Applies [[clean-knowledge-design-over-engine-coverage]] (the whole `$` surface, one rule per site);
+  extends [[conv-library-pins-are-direct-dependencies]] (the dependency left instead of being pinned). (ADR-0031)
+  <!-- id: minimalist-jsonpath-rfc-9535 | created: 2026-10-22 | last_used: 2026-10-22 | uses: 1 | tier: working | origin: 2026-10-22-175132 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
@@ -740,7 +756,9 @@
   carry the result. **A bundler bump changes the bundle too (2026-10-21, #572):** Vite 8.1.5 → 8.3.5 moved Rolldown 1.1 → 1.2
   and changed every JavaScript chunk, its CommonJS interop helper included. A Dependabot PR cannot rebuild the bundle, so a
   maintainer pushes the rebuilt bundle onto that PR, A/B-tests the two bundles in a browser (the unit tests run against the
-  source, never the bundle), and deploys the same files to Rust. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
+  source, never the bundle), and deploys the same files to Rust. **Run `npm ci` before a release when `node_modules` may be stale
+  (2026-10-22):** it held Vite 8.1.5 against the lockfile's 8.3.5 after #572 was rebuilt in a worktree, and a build from it would not
+  have reproduced the committed bundle; `npm ls vite` shows it. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
   only the entry page moved out of `public/`).
   <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-21 | uses: 25 | tier: active | origin: 2026-10-02-015208 -->
 

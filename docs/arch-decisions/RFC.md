@@ -40,8 +40,8 @@
 ---
 
 ## RFC-0010 — An in-house JSONPath engine to RFC 9535: `system/minimalist-jsonpath` replaces Jayway JsonPath
-**Status:** Open · **Raised:** 2026-10-22 · **Serves:** vision-mercury-composable · **Thread:** `minimalist-jsonpath`
-<!-- id: rfc-0010 | status: open | thread: minimalist-jsonpath -->
+**Status:** Promoted → ADR-0031 · **Raised:** 2026-10-22 · **Serves:** vision-mercury-composable · **Thread:** `minimalist-jsonpath`
+<!-- id: rfc-0010 | status: promoted | thread: minimalist-jsonpath -->
 
 **Proposal.** Replace Jayway JsonPath (`com.jayway.jsonpath:json-path` 3.0.0) with a module of this repository that implements
 [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535), the IETF JSONPath standard (February 2024), with no dependency beyond
@@ -250,7 +250,12 @@ time, although the two engines' brace scans differ outside `$` sources; and the 
 
 Promotion to an ADR follows review and green CI, the RFC-0006 method.
 
-**Resolution.**
+**Resolution.** Promoted → ADR-0031 (2026-10-22, Eric): option (a), the in-house RFC 9535 engine. Accepted after PR #579 (squash
+`68637dd6`) merged with green CI, with the Rust engine's mercury #391, #392 and #393 (Increments 185 to 187): WP1 the module (the
+compliance suite 715 of 715, 779 tests, 100% of lines and 95.7% of branches), WP2 the swap with the differential and the benchmark, WP3
+the refusal at deployment, WP4 the substitution checks and WP5 the guides, the help pages and seven claims. The behaviour changes are
+accepted as listed in the CHANGELOG; the WP3 and WP4 rulings above are part of the decision; the `json-path-boot-bom-override` thread
+closed as moot and the `minimalist-jsonpath` thread closes with the promotion. Ships in v4.12.26.
 
 ---
 
