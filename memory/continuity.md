@@ -513,7 +513,18 @@
   NESTED, so move the lambda's body into a method (which also cleared S3776); S108 - an empty `default -> { }` carries a comment
   saying why; S6213 again, a method named `record`; S5785 `assertNotNull` over `assertTrue(x != null)`; S1130 a `throws` the body
   cannot throw. IntelliJ also flags every `InvocationHandler` lambda that can return null for `equals`, even behind a wrapper that
-  answers `equals` itself - give the inner handlers their own functional interface. A pre-existing finding counts as new the next
+  answers `equals` itself - give the inner handlers their own functional interface. **Eighth round (a local scan of the RFC-0010
+  code, 2026-10-22):** S1221 - a method named `equal` reads as a misspelt `equals`, so `isEqual`; a loop that counts down with
+  `i += by` for a negative `by` is reported as "Correct this loop's end condition", so pass the step's magnitude and write
+  `i -= by`; S6885 - `Math.clamp` over `Math.min(Math.max(...))`, which throws when min > max, so confirm the bounds are ordered;
+  S6353 - `\\d` over `[0-9]`; S5998 - a repeated regex group takes a possessive quantifier (`(?:\\[\\d++])*+`); S5961 counts a
+  helper that asserts (`refusal()` around `assertThrows`) as an assertion, so each line that calls it counts twice. **Review the
+  IDE's own quick fixes before keeping them:** its grammar fixes broke four javadoc sentences, and "boolean method is always
+  inverted" renamed `isSingular` to `isNotSingular` but left the javadoc describing the old result. **But one fix that looked
+  wrong was right:** IntelliJ's `ClassEscapesDefinedScope` reports a package-private type in a public method's signature, and a
+  record nested in an interface is always public, so its methods are too; the package-private `Node` in those signatures gave 27
+  warnings in `Expr` and `Selector` alone, and making `Node` public, with its javadoc saying why, is the fix. Reverting it on API-surface grounds brought them
+  back. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-22 | uses: 10 | tier: active | origin: 2026-10-13-001452 -->

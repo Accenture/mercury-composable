@@ -394,11 +394,7 @@ public class DataMappingHelper {
      * @return the arguments as written, untrimmed
      */
     public List<String> splitTopLevelArguments(String text) {
-        List<String> result = new ArrayList<>();
-        for (int[] span : argumentSpans(text)) {
-            result.add(text.substring(span[0], span[1]));
-        }
-        return result;
+        return argumentSpans(text).stream().map(span -> text.substring(span[0], span[1])).toList();
     }
 
     private List<int[]> argumentSpans(String text) {
@@ -442,8 +438,10 @@ public class DataMappingHelper {
                 quote = c == quote? 0 : quote;
             } else if (c == '\'' || c == '"') {
                 quote = c;
-            } else if (c == '[' || c == ']') {
-                brackets += c == '['? 1 : -1;
+            } else if (c == '[') {
+                brackets++;
+            } else if (c == ']') {
+                brackets--;
             } else if (c == ',' && brackets <= 0) {
                 return i;
             }

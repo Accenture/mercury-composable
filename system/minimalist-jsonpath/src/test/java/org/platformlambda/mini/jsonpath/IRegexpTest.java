@@ -39,6 +39,12 @@ class IRegexpTest {
         return p.matcher(text).matches();
     }
 
+    private static boolean finds(String regex, String text) {
+        Pattern p = IRegexp.compile(regex);
+        assertNotNull(p, regex);
+        return p.matcher(text).find();
+    }
+
     @Test
     void aDotMatchesAnythingButALineFeedOrACarriageReturn() {
         // Java's own '.' refuses these three
@@ -53,11 +59,11 @@ class IRegexpTest {
 
     @Test
     void caretAndDollarAnchorTheWholeString() {
-        assertTrue(IRegexp.compile("bc$").matcher("abc").find());
+        assertTrue(finds("bc$", "abc"));
         // Java's '$' would also match before a final line terminator
-        assertFalse(IRegexp.compile("bc$").matcher("abc\n").find());
-        assertFalse(IRegexp.compile("^bc").matcher("abc").find());
-        assertTrue(IRegexp.compile("^ab").matcher("abc").find());
+        assertFalse(finds("bc$", "abc\n"));
+        assertFalse(finds("^bc", "abc"));
+        assertTrue(finds("^ab", "abc"));
     }
 
     @Test

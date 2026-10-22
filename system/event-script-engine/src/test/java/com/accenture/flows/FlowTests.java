@@ -667,7 +667,7 @@ class FlowTests extends TestBase {
         final long timeout = 8000;
         var people = List.of(Map.of("name", "Ann", "team", "it's", "age", 30),
                 Map.of("name", "Bob", "team", "blue", "age", 9));
-        var body = new HashMap<String, Object>(Map.of("data", Map.of("item", "found"), "people", people,
+        var body = new HashMap<>(Map.of("data", Map.of("item", "found"), "people", people,
                 "key", "item", "team", "it's", "min", "10"));
         EventEmitter po = EventEmitter.getInstance();
         var request = new AsyncHttpRequest().setTargetHost(host).setMethod("POST")
@@ -2098,7 +2098,7 @@ class FlowTests extends TestBase {
         assertEquals(" World!", result.get("negative_ternary"));
         assertEquals(true, result.get("positive_eq"));
         assertEquals(false, result.get("negative_eq"));
-        // eq/ne modifiers: 'ignoreCase' for strings, 'ignoreType' for text-form comparison
+        // 'eq' or 'ne' modifiers: 'ignoreCase' for strings, 'ignoreType' for text-form comparison
         assertEquals(false, result.get("eq_case_sensitive"));
         assertEquals(true, result.get("eq_ignore_case"));
         assertEquals(true, result.get("eq_int_ignore_type"));

@@ -133,12 +133,12 @@ sealed interface Expr permits Expr.Or, Expr.And, Expr.Not, Expr.Exists, Expr.Tes
 
         boolean apply(Object a, Object b) {
             return switch (this) {
-                case EQ -> Values.equal(a, b);
-                case NE -> !Values.equal(a, b);
-                case LT -> Values.less(a, b);
-                case GT -> Values.less(b, a);
-                case LE -> Values.less(a, b) || Values.equal(a, b);
-                case GE -> Values.less(b, a) || Values.equal(a, b);
+                case EQ -> Values.isEqual(a, b);
+                case NE -> !Values.isEqual(a, b);
+                case LT -> Values.isLess(a, b);
+                case GT -> Values.isLess(b, a);
+                case LE -> Values.isLess(a, b) || Values.isEqual(a, b);
+                case GE -> Values.isLess(b, a) || Values.isEqual(a, b);
             };
         }
     }

@@ -21,6 +21,7 @@ package org.platformlambda.mini.jsonpath;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A compiled JSONPath query (RFC 9535). A query is immutable and thread-safe: compile it once and evaluate it
@@ -47,7 +48,7 @@ public final class JsonPath {
         this.singular = query.isSingular();
         List<Selector> prefix = new ArrayList<>();
         for (Segment segment : query.segments()) {
-            if (!segment.isSingular()) {
+            if (segment.isNotSingular()) {
                 break;
             }
             prefix.add(segment.selectors().getFirst());
@@ -83,7 +84,7 @@ public final class JsonPath {
         try {
             return compile(query);
         } catch (JsonPathException strict) {
-            String rewritten = HyphenNames.bracketize(query);
+            String rewritten = HyphenNames.bracket(query);
             if (rewritten.equals(query)) {
                 throw strict;
             }
@@ -110,12 +111,7 @@ public final class JsonPath {
      * @return the values of the selected nodes, in the order RFC 9535 defines
      */
     public List<Object> select(Object document) {
-        List<Node> nodes = evaluate(document);
-        List<Object> values = new ArrayList<>(nodes.size());
-        for (Node node : nodes) {
-            values.add(node.value());
-        }
-        return values;
+        return evaluate(document).stream().map(Node::value).collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
@@ -125,12 +121,7 @@ public final class JsonPath {
      * @return the normalized path of each selected node (RFC 9535 2.7), in the order of {@link #select(Object)}
      */
     public List<String> selectPaths(Object document) {
-        List<Node> nodes = evaluate(document);
-        List<String> paths = new ArrayList<>(nodes.size());
-        for (Node node : nodes) {
-            paths.add(node.normalizedPath());
-        }
-        return paths;
+        return evaluate(document).stream().map(Node::normalizedPath).collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**

@@ -42,32 +42,36 @@ final class Values {
     private Values() { }
 
     /**
-     * Two values are equal when both are Nothing, both are null, both are numbers of the same mathematical value,
-     * both are equal strings or booleans, both are arrays of pairwise equal elements, or both are objects with the
-     * same member names and equal member values. Nothing equals only Nothing.
+     * Two values are equal when they are:
+     * <ul>
+     *   <li>both Nothing, or both null</li>
+     *   <li>numbers of the same mathematical value</li>
+     *   <li>equal strings, or equal booleans</li>
+     *   <li>arrays of pairwise equal elements</li>
+     *   <li>objects with the same member names and equal member values</li>
+     * </ul>
+     * Nothing equals only Nothing.
      */
-    static boolean equal(Object a, Object b) {
+    static boolean isEqual(Object a, Object b) {
         if (a == NOTHING || b == NOTHING || a == null || b == null) {
             return a == b;
         }
-        if (a instanceof Number x && b instanceof Number y) {
-            OptionalInt order = compareNumbers(x, y);
-            return order.isPresent() && order.getAsInt() == 0;
-        }
-        if (a instanceof List<?> x && b instanceof List<?> y) {
-            return listsEqual(x, y);
-        }
-        if (a instanceof Map<?, ?> x && b instanceof Map<?, ?> y) {
-            return mapsEqual(x, y);
-        }
-        return a.equals(b);
+        return switch (a) {
+            case Number x when b instanceof Number y -> {
+                OptionalInt order = compareNumbers(x, y);
+                yield order.isPresent() && order.getAsInt() == 0;
+            }
+            case List<?> x when b instanceof List<?> y -> listsEqual(x, y);
+            case Map<?, ?> x when b instanceof Map<?, ?> y -> mapsEqual(x, y);
+            default -> a.equals(b);
+        };
     }
 
     /**
-     * @return true when a and b are both numbers, or both strings, and a is the smaller; strings are ordered by
+     * @return true when both are numbers, or both strings, and the first is the smaller; strings are ordered by
      *         their Unicode scalar values
      */
-    static boolean less(Object a, Object b) {
+    static boolean isLess(Object a, Object b) {
         if (a instanceof Number x && b instanceof Number y) {
             OptionalInt order = compareNumbers(x, y);
             return order.isPresent() && order.getAsInt() < 0;
@@ -132,7 +136,7 @@ final class Values {
             return false;
         }
         for (int i = 0; i < a.size(); i++) {
-            if (!equal(a.get(i), b.get(i))) {
+            if (!isEqual(a.get(i), b.get(i))) {
                 return false;
             }
         }
@@ -144,7 +148,7 @@ final class Values {
             return false;
         }
         for (Map.Entry<?, ?> entry : a.entrySet()) {
-            if (!b.containsKey(entry.getKey()) || !equal(entry.getValue(), b.get(entry.getKey()))) {
+            if (!b.containsKey(entry.getKey()) || !isEqual(entry.getValue(), b.get(entry.getKey()))) {
                 return false;
             }
         }

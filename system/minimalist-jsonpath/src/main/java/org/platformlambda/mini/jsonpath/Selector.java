@@ -107,36 +107,32 @@ sealed interface Selector permits Selector.Name, Selector.Wildcard, Selector.Ind
             if (by > 0) {
                 forward(list, node, by, out);
             } else if (by < 0) {
-                backward(list, node, by, out);
+                backward(list, node, -by, out);
             }
         }
 
         // RFC 9535 2.3.4.2.2, a positive step: the bounds default to 0 and the length
         private void forward(List<?> list, Node node, long by, List<Node> out) {
             long len = list.size();
-            long lower = bound(normalize(start == null ? 0 : start, len), 0, len);
-            long upper = bound(normalize(end == null ? len : end, len), 0, len);
+            long lower = Math.clamp(normalize(start == null ? 0 : start, len), 0, len);
+            long upper = Math.clamp(normalize(end == null ? len : end, len), 0, len);
             for (long i = lower; i < upper; i += by) {
                 out.add(new Node(list.get((int) i), node, (int) i));
             }
         }
 
-        // a negative step: the bounds default to the last element and to before the first
+        // a negative step, of magnitude by: the bounds default to the last element and to before the first
         private void backward(List<?> list, Node node, long by, List<Node> out) {
             long len = list.size();
-            long upper = bound(normalize(start == null ? len - 1 : start, len), -1, len - 1);
-            long lower = bound(normalize(end == null ? -len - 1 : end, len), -1, len - 1);
-            for (long i = upper; lower < i; i += by) {
+            long upper = Math.clamp(normalize(start == null ? len - 1 : start, len), -1, len - 1);
+            long lower = Math.clamp(normalize(end == null ? -len - 1 : end, len), -1, len - 1);
+            for (long i = upper; i > lower; i -= by) {
                 out.add(new Node(list.get((int) i), node, (int) i));
             }
         }
 
         private static long normalize(long i, long len) {
             return i >= 0 ? i : len + i;
-        }
-
-        private static long bound(long i, long min, long max) {
-            return Math.min(Math.max(i, min), max);
         }
     }
 

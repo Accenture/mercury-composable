@@ -58,7 +58,7 @@ final class FunctionCall implements Operand {
     public Object value(Node current, Node root) {
         return switch (function) {
             case LENGTH -> length(valueOf(0, current, root));
-            case COUNT -> Long.valueOf(nodesOf(current, root).size());
+            case COUNT -> (long) nodesOf(current, root).size();
             case VALUE -> {
                 List<Node> nodes = nodesOf(current, root);
                 yield nodes.size() == 1 ? nodes.getFirst().value() : Values.NOTHING;
@@ -94,9 +94,9 @@ final class FunctionCall implements Operand {
     // the number of Unicode scalar values of a string, of elements of an array or of members of an object
     private static Object length(Object value) {
         return switch (value) {
-            case String s -> Long.valueOf(s.codePointCount(0, s.length()));
-            case List<?> list -> Long.valueOf(list.size());
-            case Map<?, ?> map -> Long.valueOf(map.size());
+            case String s -> (long) s.codePointCount(0, s.length());
+            case List<?> list -> (long) list.size();
+            case Map<?, ?> map -> (long) map.size();
             case null, default -> Values.NOTHING;
         };
     }
