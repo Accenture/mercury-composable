@@ -103,6 +103,17 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    that handles its own exceptions (`MappingExceptionHandler`) now records its execution time, which was zero. The Rust port was
    not affected. **Upgrade note:** a dashboard, alert or query on the trace log's `success` or on span status now sees failed
    flow tasks and async functions as failures, with their exception message.
+3. **Dependency advisories closed - ASM 9.11.1, Vert.x 5.2.1 and Netty 4.2.19.Final.** OW2 ASM before 9.11 allocates memory
+   quadratically in `MethodWriter` when a crafted class file carries thousands of overlapping exception handlers, enough to exhaust
+   the heap (CVE-2026-110260, 5.5). Event Script's simple-plugin loader reads class files with it. `platform-core` declared ASM
+   9.10.1, and `json-smart` 2.6.0 still brought 9.7.1 through `accessors-smart` 2.6.0: Maven built with the direct version, but
+   the 9.7.1 node stayed in the dependency graph a scanner reads. ASM is now 9.11.1 and excluded from `json-smart`, and
+   `json-path` no longer brings a `json-smart` of its own, so the tree holds one of each. Vert.x core moves from 5.2.0, which is
+   reported vulnerable, to 5.2.1. Netty moves to 4.2.19.Final, the version Vert.x 5.2.1 is built against, in every pom that sets
+   `netty.version` (38, the starter templates among them). `dependency:tree` over the whole reactor resolves one version of each
+   artifact, and none of them carries ASM 9.7.1. **Upgrade note:** an application whose parent is `spring-boot-starter-parent`
+   takes Netty's version from Spring Boot unless its own pom sets `netty.version`; set it to `4.2.19.Final`, as the starter
+   templates do. An application that pins its own versions of these libraries should move to at least these.
 
 ---
 ## Version 4.12.25, 10/12/2026
