@@ -16,6 +16,13 @@
       `item` is `$.input.body.item`. This was Eric's adjustment, replacing the flow-compiler refusal first proposed. The check where each value lands
       was **accepted** the same day.
     - [[json-path-boot-bom-override]] closes with the swap.
-  - **Next:** RFC-0010's PR (#577), then WP1, the module and the suite.
+  - **RFC-0010 merged** (#577, squash `89cb2ea1`).
+  - **WP1 done** on branch `feature/minimalist-jsonpath`, 2026-10-22:
+    - the module `system/minimalist-jsonpath`, registered in the root pom after minimalist-msgpack;
+    - **the compliance suite 715 of 715 with no deviation,** values and normalized paths both;
+    - the Rust engine's shape and hyphen cases ported;
+    - 779 tests in all, 100% of lines and 95.7% of branches covered.
+  - **Next:** WP2, the swap in `MultiLevelMap` and the Playground, the dependency removal, the Jayway differential and
+    the benchmark.
   - If accepted, it makes [[json-path-boot-bom-override]] moot. Relates [[conv-library-pins-are-direct-dependencies]].
   <!-- id: minimalist-jsonpath | created: 2026-10-22 | last_used: 2026-10-22 | uses: 1 | tier: working | origin: 2026-10-22-040817 -->
