@@ -29,6 +29,23 @@
       answered not found or threw), and evaluation is about 3x faster;
     - report `docs/test-reports/minimalist-jsonpath-differential.md`, harness `benchmark/jsonpath-differential/`;
     - the whole reactor passes, 2,622 tests.
-  - **Next:** WP3, refusal at deployment (CompileGraph and the flow compiler), on both engines.
+  - **Next: WP3, refusal at deployment, on both engines. Designed 2026-10-22, not started (Eric resumes it; three
+    decisions pending).**
+    - Today neither engine parses a `$` source before it runs: both flow compilers accept one on a prefix test, neither
+      graph gate looks at one, and Rust's `json_path_query` (`mlm.rs:166`) drops the parse error, so a typo reads as null.
+    - One check per engine, the evaluator's own compile (`compileLenient`; Rust `parse` + the bracketize retry), over the
+      WHOLE surface ([[clean-knowledge-design-over-engine-coverage]]): Event Script input and output sources; the graph's
+      `mapping`/`input`/`output`/`for_each`, `graph.math` statements (`MAPPING:` and `{$...}` selectors), plugin
+      arguments, fetcher dictionary defaults. On Java the graph half goes into `GraphModelValidator`, which serves
+      CompileGraph, the packager and the Playground's `run`.
+    - A source with a reference is parsed with a stand-in chosen by where the reference lands (a name, `0`, letters, a
+      string literal); the scanner that finds the landing site is the one WP4 needs.
+    - Rust also: an invalid path becomes an error at evaluation (`get_lhs_element` already returns a `Result`), and the
+      same `cts.json` runs against `serde_json_path`. Evidence: a shared vector file, negative fixtures on both engines.
+    - **Decisions pending:** (1) a flow with a bad `$` source: drop the task like every other invalid entry (today's rule,
+      recommended; the RFC's "the flow is refused" then needs correcting), reject the flow for `$` only, or reject it for
+      any invalid entry; (2) build the landing-site scanner in WP3 and reuse it in WP4 (recommended); (3) teach the
+      plugin-argument splitter brackets and quotes on both engines, since it cuts `f:x($.a['b','c'])` at the comma
+      (recommended).
   - If accepted, it makes [[json-path-boot-bom-override]] moot. Relates [[conv-library-pins-are-direct-dependencies]].
   <!-- id: minimalist-jsonpath | created: 2026-10-22 | last_used: 2026-10-22 | uses: 1 | tier: working | origin: 2026-10-22-040817 -->
