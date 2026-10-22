@@ -231,7 +231,7 @@ public class PersistentWsClient extends Thread {
         });
         ws.exceptionHandler(e -> {
             if (connected.get()) {
-                log.warn("Session {} - {}", session, e.getMessage());
+                log.warn("Session {} - {}: {}", session, e.getClass().getSimpleName(), e.getMessage());
                 connected.set(false);
                 ws.close((short) 1000, e.getMessage());
             }

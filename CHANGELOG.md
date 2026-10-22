@@ -182,6 +182,11 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    but not the backslash. The expression lexer reads a backslash as an escape, so `C:\temp` became a tab and a value that
    ended with `\` escaped the closing quote and failed the statement. The backslash is now escaped first. Both engines.
    **Upgrade note:** none - an expression that compared such a value read the wrong text or failed.
+5. **A WebSocket session's exception warning names the exception type.** The server's warning logged the exception's message
+   only, which for a `NoClassDefFoundError` is a bare class path: `Session ws.766870.1 exception -
+   io/netty/handler/codec/http/websocketx/WebSocketCloseStatus`. The server and the persistent client now log the type before
+   the message (`exception - NoClassDefFoundError: io/netty/...`), as the serializer loader already does. The Rust engine's
+   warning already names the error kind. **Upgrade note:** none - a log line only.
 
 ---
 ## Version 4.12.25, 10/12/2026

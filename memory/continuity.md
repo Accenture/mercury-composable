@@ -549,6 +549,19 @@
   only the entry page moved out of `public/`).
   <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-22 | uses: 27 | tier: active | origin: 2026-10-02-015208 -->
 
+- **A reactor build rewrites every example's `target/*.jar` in place, so an app running from one fails at the next class it loads
+  for the first time (2026-10-22).** `mvn verify` repackages `examples/*/target/<name>-<version>.jar`. A JVM running from that jar
+  keeps working on the classes it has already loaded, then throws `NoClassDefFoundError` (a `ClassNotFoundException` from Spring
+  Boot's `JarUrlClassLoader`) for a class the jar does contain. Met when the Playground example ran from `target/` during an agent's
+  reactor build: closing the browser tab sent the run's first WebSocket close frame (`WebSocketCloseStatus`), log4j then failed to
+  print the error, and the Vert.x event loop thread died. **How to apply:** run an example from a copy of its jar outside
+  `target/`. Before a reactor build, an agent checks for a running example (`pgrep -fl 'target/.*\.jar'`) and says so rather than
+  rebuild under it. When a running app reports a missing class that its jar contains, compare the jar's change time
+  (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
+  sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
+  seconds. Since 4.12.26 the WebSocket warning names the exception type.
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-10-22 | uses: 1 | tier: working | origin: 2026-10-22-232342 -->
+
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
 - [ ] (blueprint) **AI agent orchestration ("graph engineering")** — the Active Knowledge
