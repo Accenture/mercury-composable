@@ -686,7 +686,13 @@
   the artifact. `platform-core` declares no Guava (Caffeine is its cache; no source in the repo imports `com.google.common`). **The
   verification that holds:** `mvn install` the edited modules first (a consumer's tree reads the INSTALLED pom), then
   `mvn dependency:tree -Dincludes=<groups>` over the WHOLE reactor, counting versions - one of each - and the consuming modules' tests
-  (the CSFLE round trip exercises Tink). A module's own clean build proves nothing about its consumers. Relates
+  (the CSFLE round trip exercises Tink). A module's own clean build proves nothing about its consumers. **Two more cases
+  (2026-10-21, the ASM/Vert.x/Netty fix):** (1) a direct pin that WINS still leaves the losing version in the verbose graph -
+  `accessors-smart`'s ASM 9.7.1 stayed "omitted for conflict" under platform-core's 9.10.1 and IntelliJ's dependency scanner
+  reported it - so exclude it from the artifact that declares it and check with `dependency:tree -Dverbose`; (2) every module's
+  parent is `spring-boot-starter-parent`, whose BOM overrides a transitive version for each consumer, which is why
+  `netty.version` is set in all 38 poms - and why `json-path` resolves 2.10.0 (Boot's) in 34 modules while platform-core
+  declares 3.0.0. Relates
   [[conv-template-version-sweep]] (the other reactor-wide sweep).
   <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-13 | uses: 3 | tier: archive-candidate | origin: 2026-10-12-221919 -->
 
@@ -707,7 +713,12 @@
   with no output - plain `Unit` would serialize the Unit object as the response body. **Sixth round (a local scan, 2026-10-14):** S5778 - an `assertThrows` lambda holds ONE
   invocation, so build `List.of(...)` arguments outside it; S1192 counts a literal inside `List.of` against a constant of the same
   value; S6204 - a loop that only maps into a list is a stream; S6035 - `\\w` over `[A-Za-z0-9_]`; S103 - 120 columns, which a
-  `throws` list widened past. A pre-existing finding counts as new the next
+  `throws` list widened past. **Seventh round (a local scan of the OneAgent branch, 2026-10-21):** S3077 - a `volatile` object
+  reference is a final `AtomicReference`, the S1450 shape; S3358 - a lambda written as a ternary's branch that holds a ternary is
+  NESTED, so move the lambda's body into a method (which also cleared S3776); S108 - an empty `default -> { }` carries a comment
+  saying why; S6213 again, a method named `record`; S5785 `assertNotNull` over `assertTrue(x != null)`; S1130 a `throws` the body
+  cannot throw. IntelliJ also flags every `InvocationHandler` lambda that can return null for `equals`, even behind a wrapper that
+  answers `equals` itself - give the inner handlers their own functional interface. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-21 | uses: 6 | tier: active | origin: 2026-10-13-001452 -->
