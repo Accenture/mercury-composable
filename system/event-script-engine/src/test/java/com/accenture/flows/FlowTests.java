@@ -87,6 +87,25 @@ class FlowTests extends TestBase {
         assertFalse(control.tasks.isEmpty());
     }
 
+    @Test
+    void jsonPathOutsideRfc9535DropsTheTaskAtCompileTime() {
+        // RFC-0010: a JSONPath source must follow RFC 9535. Like every other invalid mapping, the task is
+        // dropped at compile time with an ERROR naming the standard: parser-test-33 has a Jayway-only filter
+        // operator in an input source, parser-test-34 a Jayway-only path function in an output source and
+        // parser-test-35 a Jayway-only operator in a simple plugin's argument
+        for (var id : List.of("parser-test-33", "parser-test-34", "parser-test-35")) {
+            var flow = com.accenture.models.Flows.getFlow(id);
+            assertNotNull(flow, id);
+            assertFalse(flow.tasks.containsKey("greeting.test"), id + " - the task must be dropped");
+        }
+        // parser-test-36 keeps its task: references where a value can stand, a union and a quoted comma in a
+        // plugin argument
+        var accepted = com.accenture.models.Flows.getFlow("parser-test-36");
+        assertNotNull(accepted);
+        assertTrue(accepted.tasks.containsKey("greeting.test"), "the accepted JSONPath forms keep the task");
+        assertEquals(6, accepted.tasks.get("greeting.test").input.size());
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void dynamicModelTargetResolvingToReservedKeyFailsAtRuntime() throws Exception {
@@ -639,6 +658,38 @@ class FlowTests extends TestBase {
         assertEquals("AAA", result.getHeader("X-Tag"));
         assertEquals("async-http-client", result.getHeader("x-agent"));
         assertEquals("com.accenture.models.PoJo", result.getHeader("x-datatype"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void modelVariablesAreSubstitutedIntoJsonPathWithTheirChecks() throws ExecutionException, InterruptedException {
+        // RFC-0010: a model variable is substituted before the JSONPath is parsed, checked where it lands
+        final long timeout = 8000;
+        var people = List.of(Map.of("name", "Ann", "team", "it's", "age", 30),
+                Map.of("name", "Bob", "team", "blue", "age", 9));
+        var body = new HashMap<String, Object>(Map.of("data", Map.of("item", "found"), "people", people,
+                "key", "item", "team", "it's", "min", "10"));
+        EventEmitter po = EventEmitter.getInstance();
+        var request = new AsyncHttpRequest().setTargetHost(host).setMethod("POST")
+                .setHeader("accept", "application/json").setHeader("content-type", "application/json")
+                .setBody(body).setUrl("/api/json-path/substitution");
+        EventEnvelope result = po.request(new EventEnvelope().setTo(HTTP_CLIENT).setBody(request), timeout).get();
+        assertEquals(200, result.getStatus());
+        Map<String, Object> mapped = (Map<String, Object>) result.getBody();
+        // a key in a name, a quote escaped inside the author's literal, text quoted bare in a filter, and a
+        // numeric text value compared as the number it has always been in Event Script
+        assertEquals("found", mapped.get("by_key"));
+        assertEquals(List.of("Ann"), mapped.get("in_literal"));
+        assertEquals(List.of("Ann"), mapped.get("in_filter"));
+        assertEquals(List.of("Ann"), mapped.get("older"));
+        // a value that would add a wildcard to the query fails the mapping by name
+        body.put("key", "*");
+        request.setBody(body);
+        EventEnvelope refused = po.request(new EventEnvelope().setTo(HTTP_CLIENT).setBody(request), timeout).get();
+        assertEquals(400, refused.getStatus());
+        assertTrue(String.valueOf(refused.getError()).contains(
+                "Cannot substitute {model.key} into '$.input.body.data.{model.key}' - '*' is not a key path"),
+                String.valueOf(refused.getError()));
     }
 
     @SuppressWarnings("unchecked")

@@ -171,6 +171,7 @@ nav:
     - Test Report — OpenTelemetry forwarder (Dynatrace): test-reports/otel-dynatrace-certification.md
     - Test Report — The LLM helper (Claude): test-reports/llm-helper-certification.md
     - Test Report — MsgPack codec, minimalist-msgpack vs msgpack-core: test-reports/minimalist-msgpack-benchmark.md
+    - Test Report — JSONPath, minimalist-jsonpath vs Jayway: test-reports/minimalist-jsonpath-differential.md
     - Reserved Names & Headers: guides/reserved-names-and-headers.md
     - Actuators & HTTP Client: guides/actuators-and-http-client.md
     - Code Conventions: guides/code-conventions.md

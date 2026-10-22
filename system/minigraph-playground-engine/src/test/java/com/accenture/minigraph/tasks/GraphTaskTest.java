@@ -410,9 +410,34 @@ class GraphTaskTest {
     }
 
     @Test
-    void jsonPathSourceTakesTheJaywayShape() throws TimeoutException {
+    void aValueSubstitutedIntoJsonPathIsCheckedWhereItLands() throws TimeoutException {
+        // unit-test-jsonpath-2 (shared with the Rust engine): a reference in a JSONPath source is substituted
+        // before the query is parsed, each value checked where it lands (RFC-0010) - a quote and a trailing
+        // backslash are escaped inside the author's literal and in the literal a bare filter value becomes, so
+        // they stay text; the graph.math CONDITION quotes the same value with its backslash escaped
+        for (var team : List.of("it's", "back\\")) {
+            var people = List.of(Map.of("name", "Ann", "team", team), Map.of("name", "Bob", "team", "blue"));
+            var response = runGraph("unit-test-jsonpath-2", Map.of("data", Map.of("item", "found"),
+                    "key", "item", "team", team, "people", people), Map.of());
+            assertEquals(200, response.getStatus(), team);
+            var mm = bodyMap(response);
+            assertEquals("found", mm.getElement("by_key"));
+            assertEquals(List.of("Ann"), mm.getElement("in_literal"), team);
+            assertEquals(List.of("Ann"), mm.getElement("in_filter"), team);
+            assertEquals(true, mm.getElement("same"), team);
+        }
+        // a value that would add a wildcard to the query fails the mapping by name
+        var response = runGraph("unit-test-jsonpath-2", Map.of("data", Map.of("item", "found"),
+                "key", "*", "team", "blue", "people", List.of()), Map.of());
+        assertEquals(400, response.getStatus());
+        assertTrue(String.valueOf(response.getError()).contains("Cannot substitute {input.body.key} into " +
+                "'$.input.body.data.{input.body.key}' - '*' is not a key path"), String.valueOf(response.getError()));
+    }
+
+    @Test
+    void jsonPathSourceTakesTheMercuryShape() throws TimeoutException {
         // unit-test-jsonpath-1 (shared with the Rust engine, which shapes its JSONPath results the same way):
-        // Jayway shapes a $. result by the kind of path, not the number of matches. A definite path yields the
+        // Mercury shapes a $. result by the kind of path, not the number of matches. A definite path yields the
         // value, or null when it is absent; an indefinite path always yields a list - one match is a one-element
         // list and none an empty list - unless a member name before its first indefinite step is missing, which
         // yields null, so the null-source rule leaves an output target untouched
@@ -431,7 +456,7 @@ class GraphTaskTest {
         assertEquals(List.of(), mm.getElement("missing_index"));
         assertEquals("kept", mm.getElement("missing_name"));
         assertEquals("kept", mm.getElement("definite_missing"));
-        log.info("a JSONPath mapping source takes the Jayway shape");
+        log.info("a JSONPath mapping source takes the Mercury shape");
     }
 
     @Test

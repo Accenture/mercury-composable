@@ -27,6 +27,12 @@ rest:
     timeout: 12s
 
   - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/json-path/substitution"
+    flow: 'json-path-substitution-test'
+    timeout: 10s
+
+  - service: "http.flow.adapter"
     methods: ['GET']
     url: "/api/file/vault"
     flow: 'file-vault-test'

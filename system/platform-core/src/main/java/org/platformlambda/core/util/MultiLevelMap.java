@@ -18,8 +18,9 @@
 
 package org.platformlambda.core.util;
 
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.PathNotFoundException;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import org.platformlambda.mini.jsonpath.JsonPath;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +30,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class MultiLevelMap {
     private static final NotFound NOT_FOUND = NotFound.of();
+    // compiled JSONPath queries, shared by every map: a compiled query is immutable and thread-safe
+    private static final Cache<String, JsonPath> JSON_PATHS = Caffeine.newBuilder().maximumSize(2000).build();
     private final Map<String, Object> multiLevels = new HashMap<>();
     private static final ReentrantLock SAFETY = new ReentrantLock();
 
@@ -185,12 +188,8 @@ public class MultiLevelMap {
             return map.get(path);
         }
         if (path.startsWith("$")) {
-            try {
-                var v = JsonPath.read(multiLevels, path);
-                return v instanceof net.minidev.json.JSONArray array? new ArrayList<>(array) : v;
-            } catch (PathNotFoundException e) {
-                return NOT_FOUND;
-            }
+            // RFC 9535 with Mercury's two rules: a hyphen in a dotted name, and the result shaped by the kind of query
+            return JSON_PATHS.get(path, JsonPath::compileLenient).read(multiLevels, NOT_FOUND);
         }
         if (!isComposite(path)) {
             return NOT_FOUND;

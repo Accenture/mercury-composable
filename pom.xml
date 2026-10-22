@@ -14,6 +14,7 @@
     <modules>
         <!-- Core libraries -->
         <module>system/minimalist-msgpack</module>
+        <module>system/minimalist-jsonpath</module>
         <module>system/platform-core</module>
         <module>system/rest-spring-4</module>
         <module>system/event-script-engine</module>

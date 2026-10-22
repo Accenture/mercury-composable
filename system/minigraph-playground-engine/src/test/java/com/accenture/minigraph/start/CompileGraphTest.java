@@ -179,6 +179,33 @@ class CompileGraphTest {
     }
 
     @Test
+    void aJsonPathOutsideRfc9535FailsTheGate() {
+        // RFC-0010: a data mapping's '$' source, a simple plugin's '$' argument and a data dictionary's '$'
+        // default value follow RFC 9535, and a {reference} never holds a JSONPath query. The manifest lists
+        // the accepted forms (compiled) and err1 (rejected, so it answers 404)
+        assertTrue(CompiledGraphs.graphExists("unit-test-jsonpath-ok"));
+        assertFalse(CompiledGraphs.graphExists("unit-test-jsonpath-err1"));
+        // err1 a Jayway-only filter operator, err2 a Jayway-only path function in a plugin argument, err3 a
+        // {$...} reference in a graph.math expression, err4 one in a mapping source, err5 a dictionary default
+        var expected = Map.of(
+                "unit-test-jsonpath-err1", "node worker - mapping '$.input.body.items[?(@.code in ['a', 'b'])] " +
+                        "-> output.body.codes' has a JSONPath not compliant with RFC 9535 - ",
+                "unit-test-jsonpath-err2", "node worker - mapping 'f:length($.input.body.items.length()) " +
+                        "-> output.body.count' has a JSONPath not compliant with RFC 9535 - ",
+                "unit-test-jsonpath-err3", "node worker - statement 'COMPUTE: total -> {$.input.body.amount} + 1' " +
+                        "- JSONPath is not supported in a reference - {$.input.body.amount}",
+                "unit-test-jsonpath-err4", "node worker - mapping '$.input.body.{$.input.body.key} " +
+                        "-> output.body.value' - JSONPath is not supported in a reference",
+                "unit-test-jsonpath-err5", "node person-name - input 'country:$.input.body.countries.first()' " +
+                        "has a JSONPath not compliant with RFC 9535 - ");
+        for (var entry : expected.entrySet()) {
+            var graph = importGraph(entry.getKey());
+            var ex = assertThrows(IllegalArgumentException.class, () -> GraphModelValidator.validate(graph));
+            assertTrue(ex.getMessage().startsWith(entry.getValue()), entry.getKey() + ": " + ex.getMessage());
+        }
+    }
+
+    @Test
     void aTaskRouteAndItsSkillMustAgree() {
         // The pairing is bidirectional: a 'task' route is called ONLY by graph.task, graph.suspend
         // and graph.resume (the latter two are supersets whose task names the state-store function),

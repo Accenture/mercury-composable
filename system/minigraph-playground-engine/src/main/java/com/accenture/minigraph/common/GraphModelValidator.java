@@ -27,12 +27,15 @@ import com.accenture.minigraph.skills.GraphMath;
 import com.accenture.minigraph.skills.GraphResume;
 import com.accenture.minigraph.skills.GraphSuspend;
 import com.accenture.minigraph.skills.GraphTask;
+import com.accenture.util.DataMappingHelper;
+import com.accenture.util.JsonPathSource;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.SimpleNode;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -87,6 +90,8 @@ public class GraphModelValidator {
     private static final String OUTPUT = "output";
     // the mapping-list node properties a data mapping can appear in
     private static final List<String> MAPPING_PROPERTIES = List.of("mapping", INPUT, OUTPUT, "for_each");
+    private static final String DICTIONARY = "dictionary";
+    private static final DataMappingHelper helper = DataMappingHelper.getInstance();
 
     private GraphModelValidator() {}
 
@@ -106,7 +111,98 @@ public class GraphModelValidator {
         validateSuspendResume(graph);
         validateNodeTtl(graph);
         validateModelMetadataImmutability(graph);
+        validateJsonPaths(graph);
         validateSchemas(graph);
+    }
+
+    /**
+     * The JSONPath sources compile (RFC-0010): a data mapping's source written as '$...', a simple plugin's
+     * '$...' argument and a data dictionary's '$...' default value follow RFC 9535 with Mercury's hyphen rule.
+     * JSONPath belongs to data mapping, where a source and its target are separated by '->', so a {reference}
+     * names a state-machine key or a constant, never a JSONPath - in a mapping source and in a statement alike.
+     *
+     * @param graph an imported MiniGraph
+     * @throws IllegalArgumentException naming the node, the entry and the reason
+     */
+    private static void validateJsonPaths(MiniGraph graph) {
+        var dictionaries = new HashSet<String>();
+        for (SimpleNode node : graph.getNodes()) {
+            dictionaries.addAll(textEntries(node.getProperty(DICTIONARY)));
+        }
+        for (SimpleNode node : graph.getNodes()) {
+            for (String property : MAPPING_PROPERTIES) {
+                for (String entry : textEntries(node.getProperty(property))) {
+                    validateMappingSource(node, property, entry);
+                }
+            }
+            for (String statement : textEntries(node.getProperty(STATEMENT))) {
+                var text = statement.trim();
+                if (text.toLowerCase().startsWith(GraphLambdaFunction.MAPPING_TAG)) {
+                    validateMappingSource(node, STATEMENT, text.substring(GraphLambdaFunction.MAPPING_TAG.length()));
+                } else {
+                    validateReferences(node, STATEMENT, statement, text);
+                }
+            }
+            if (dictionaries.contains(node.getAlias())) {
+                for (String entry : textEntries(node.getProperty(INPUT))) {
+                    validateDictionaryDefault(node, entry);
+                }
+            }
+        }
+    }
+
+    private static void validateMappingSource(SimpleNode node, String property, String entry) {
+        int sep = entry.lastIndexOf(MAP_TO);
+        if (sep == -1) {
+            // an 'input' entry without '->' is skill vocabulary, not a data mapping
+            return;
+        }
+        var lhs = entry.substring(0, sep).trim();
+        validateReferences(node, property, entry, lhs);
+        try {
+            helper.validateJsonPaths(lhs, JsonPathSource.Form.GRAPH);
+        } catch (IllegalArgumentException e) {
+            throw notCompliant(node, property, entry, e);
+        }
+    }
+
+    private static void validateDictionaryDefault(SimpleNode node, String entry) {
+        // a data dictionary's 'key:default' - the default is read from the state machine when it names a source
+        int colon = entry.indexOf(':');
+        if (colon != -1 && !entry.contains(MAP_TO)) {
+            try {
+                helper.validateJsonPaths(entry.substring(colon + 1).trim(), JsonPathSource.Form.PLAIN);
+            } catch (IllegalArgumentException e) {
+                throw notCompliant(node, INPUT, entry, e);
+            }
+        }
+    }
+
+    private static void validateReferences(SimpleNode node, String property, String entry, String text) {
+        for (var segment : Utility.getInstance().extractSegments(text, "{", "}")) {
+            var key = text.substring(segment.start() + 1, segment.end() - 1);
+            if (JsonPathSource.isGraphKey(key)) {
+                try {
+                    JsonPathSource.refuseJsonPathKey(key);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " - " + property + " '" +
+                            entry.trim() + "' - " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private static IllegalArgumentException notCompliant(SimpleNode node, String property, String entry,
+                                                         IllegalArgumentException e) {
+        return new IllegalArgumentException(NODE_NAME + node.getAlias() + " - " + property + " '" + entry.trim() +
+                "' has a JSONPath not compliant with RFC 9535 - " + e.getMessage());
+    }
+
+    private static List<String> textEntries(Object value) {
+        if (value instanceof List<?> entries) {
+            return entries.stream().map(String::valueOf).toList();
+        }
+        return List.of();
     }
 
     /**

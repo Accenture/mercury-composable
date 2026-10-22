@@ -28,7 +28,6 @@ import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.GraphSession;
 import com.accenture.models.Flows;
-import com.jayway.jsonpath.InvalidPathException;
 import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.graph.MiniGraph;
@@ -139,7 +138,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             var data = (Map<String, Object>) input.getBody();
             try {
                 handleRequest(po, data);
-            } catch (IllegalArgumentException | IOException | InvalidPathException e) {
+            } catch (IllegalArgumentException | IOException e) {
                 if (data.get(OUT) instanceof String outRoute) {
                     po.send(new EventEnvelope().setTo(outRoute).setBody("ERROR: " + e.getMessage()));
                 }
