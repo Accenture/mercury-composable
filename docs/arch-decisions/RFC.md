@@ -78,7 +78,7 @@ A decision commits the project to three things:
    - the grammar it supports;
    - the errors it reports;
    - the limits it enforces;
-   - how a `{namespace.key}` substitution becomes a literal the parser reads as data (see *The design*).
+   - how a substituted value is checked before the query is parsed (see *The design*).
 
 The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is replaced by a module written from its specification.
 
@@ -125,13 +125,29 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
   The Rust engine moves from its silent null to the same refusal; it already has the parse error.
 - **Limits.** A nesting bound on filter expressions (parentheses, nested queries) and an iterative descendant walk, so that no
   query text exhausts the stack.
-- **Substitution as data.** Where the knowledge graph renders a `{namespace.key}` value into a `$` source
-  (`GraphLambdaFunction.substituteMappingSource`), the value becomes a literal the parser reads as data:
-  - a text value becomes a quoted string inside a filter, or a bracketed, quoted name `['…']` in a path;
-  - a list or a map is refused in a `$` source, because RFC 9535 has no array or object literals.
-  Today a text value next to a dot is inserted as written, so a request value can add segments or a filter to the query (found
-  2026-10-22). The guides' advice to put a fixed prefix before a request value does not prevent it. Event Script's own
-  substitution is not a way to compose a query (answer 4).
+- **Substitution first, then parsing** (answer 4). A reference in a `$` source is replaced by its value before the query is
+  parsed, as today, so existing graphs and flows keep their queries. Both kinds of reference work this way: Event Script's
+  `{model.key}` and `[model.i]` (`TaskExecutor.substituteDynamicIndex`), and the knowledge graph's `{namespace.key}`
+  (`GraphLambdaFunction.substituteMappingSource`). For example, `$.input.body.{model.key}` with `model.key` = `item` is the
+  query `$.input.body.item`.
+
+  Each substituted value is checked where it lands, so that it cannot change the query's structure:
+  - **in a path,** it must be a plain key path or an integer index. A plain key path is member names joined by single dots,
+    each name RFC 9535's shorthand plus the hyphen of rule 2.
+  - **inside a string literal the author wrote** (`'{model.team}'`), it is escaped for that literal: its quote and its
+    backslash.
+  - **bare inside a filter,** a text value becomes a string literal, as the knowledge graph quotes it today, and a number or a
+    boolean is inserted as written.
+  - **a list or a map** cannot be substituted into a `$` source, because RFC 9535 has no array or object literals.
+
+  A value that fails its check fails the mapping by name.
+
+  This closes two gaps found on 2026-10-22:
+  - **A value next to a dot is inserted as written,** so a value carrying query syntax can add segments, a wildcard or a filter
+    to the query. In a graph, that value can come from the request. The guides' advice to put a fixed prefix before a request
+    value does not prevent it.
+  - **The knowledge graph's quoting escapes the quote but not the backslash,** so a value that ends with `\` escapes the closing
+    quote, and the literal runs on into the rest of the query.
 
 **Behaviour changes a decision accepts.**
 1. **Jayway-only syntax is refused.**
@@ -142,8 +158,9 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
      `count(@.list[*])` inside a filter; `@.code == 'a' || @.code == 'b'` for a small `in`.
    - All of these already answer null on Rust.
 2. **Filter comparisons are type-strict.**
-3. **A substituted text value cannot add query syntax** (see *The design*). A substituted value meant to supply several path
-   segments no longer does.
+3. **A substituted value cannot change a query's structure** (see *The design*). Every value a working flow or graph
+   substitutes today (a key name, a key path, an index, a filter value) gives the same query as before. A value carrying query
+   syntax, or a list or a map in a `$` source, now fails the mapping by name.
 4. **Queries both grammars accept but implementations answer differently.** Examples: a filter applied to an object rather than
    an array, the order of descendant results, and slices at the edges. The differential run (*Evidence plan*) lists every such
    difference before the swap, and each is declared in the guide or fixed.
@@ -172,8 +189,8 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
 - **WP1.** The module and the compliance suite.
 - **WP2.** The swap in `MultiLevelMap` and the Playground, the dependency removal, the differential run and the benchmark.
 - **WP3.** Refusal at deployment (CompileGraph and the flow compiler), on both engines.
-- **WP4.** Substitution as data in the knowledge graph, on both engines; and, if confirmed, the flow compiler's refusal of a
-  model reference inside a `$` source (answer 4).
+- **WP4.** Substitution first, then parsing, with the checks where each value lands: in Event Script and the knowledge graph,
+  on both engines (answer 4).
 - **WP5.** The guides, the help pages, the claims and the upgrade note.
 
 **Options.**
@@ -194,11 +211,13 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
    still listed and declared before the swap.
 3. **RFC 9535 is adhered to.** There is no Mercury-declared alternative to `in` or any other Jayway-only form; the standard's
    forms are the replacements. The two declared Mercury rules (the result shape, and a hyphen in a dotted name) stay.
-4. **Event Script's `{model.key}` substitution yields a concrete value; it is not a way to compose a JSONPath query** (for
-   simplicity). The guide already scopes it to a constant or a segment of a key. Today the code also substitutes inside a `$`
-   source (`TaskExecutor.substituteDynamicIndex`), so a model value copied from a request could add query syntax there.
-   **Proposed for WP4, to confirm:** the flow compiler refuses a `{model.…}` or `[model.…]` reference inside a `$` source, so
-   the rule is enforced. Substitution as data then concerns the knowledge graph only.
+4. **Substitution first, then JSONPath parsing, for backward compatibility** (Eric's adjustment, the same day). Existing
+   knowledge graphs and event scripts must not break. A model reference yields a concrete value, and it is replaced before the
+   query is parsed: `$.input.body.{model.key}` with `model.key` = `item` is the query `$.input.body.item`. This holds in both
+   layers and on both engines.
+   - The flow-compiler refusal first proposed under this question is dropped.
+   - The checks where each value lands (*The design*) keep that compatibility, while preventing a value from changing the
+     query's structure.
 5. **Agreed.** The thread on json-path's version under the Spring Boot parent (`json-path-boot-bom-override`, raised with #576)
    becomes moot, and closes when the swap ships.
 
