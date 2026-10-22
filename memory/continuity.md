@@ -87,44 +87,24 @@
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-10-14 | through 2026-10-14-000312.md (CADENCE — 11 sessions since the 2026-10-11 review: `refresh-metadata`
-  refreshed 22 footers, tier changes 10 (6 → active, 4 → archive-candidate); archived 3 faded facts, `playground-file-import-download`
-  (sslu 30), `playground-three-step-run-controls` (28) and `graph-set-pack-and-deploy` (25), after step 6 found no window commit on the
-  import and run-control paths and only #560's behaviour-free Sonar smells and the release sweeps on the graph-set paths (ADR-0027 holds
-  its rules); KEPT two as declaration gaps, re-affirmed in the review's log - `graph-math-typed-arithmetic` (the range-lookup design
-  cited graph.math's fail-by-name rule in 2026-10-11-020411 and the lookup's boolean refusal was ruled on its typed posture in
-  2026-10-12-011056, neither declared) and `scheduler-active-environment-store` (#561 in 2026-10-13-001452 renamed `ActiveEnvironment`'s
-  field on the store's contract, undeclared); swept 4 completed threads (`close-stalled-threads-20261009`, `graph-contract-schema`,
-  `reverify-invariants-20261009`, `scheduler-active-environment`); reactivated 1 earlier in the same session,
-  `llm-helper-certification-java` (the over-archival guard fired when the AI SDLC sprint retrieved it); superseded 0; archive-verify pass
-  (lint twice, no change); invariants not due (23 of 40); stalled threads none; contradictions none; Doc Gaps: no window log carries the
-  section; live facts 50 → 44, lines 851 → 798. Smoke test not run.)
-  Prior: 2026-10-11 | through 2026-10-11-034330.md (ON COMMAND, CADENCE + SIZE — 16 sessions since the 2026-10-09 review and 37
-  decay-eligible facts against a cap of 35: `refresh-metadata` refreshed 24 footers, tier changes 16 (2 → active, 14 → archive-candidate);
-  archived 6 faded facts, `graph-manifest-list-later-wins` (sslu 31), `msgpack-nesting-limit-64` (27), `minimalist-msgpack-codec` (26),
-  `msgpack-hostile-header-vectors` (27), `conv-boot-managed-version-overrides` (33) and `conv-tests-remove-temp-files` (29), after step 6
-  found the window's commits on their paths to be the two release sweeps and unrelated doc edits, and no reliance in the window's logs
-  (ADR-0028 and the claims hold the codec rules); KEPT `decimal-statement-exact-arithmetic` as a declaration gap — the range-lookup
-  design (2026-10-11-020411) relied on the exact-decimal ruling without declaring it, re-affirmed in the review's log; swept 6 completed
-  threads (`decimal-ports-and-release`, `graph-set-packaging`, `minimalist-msgpack`, `msgpack-core-cve-upgrade`, `release-4-12-21`,
-  `test-temp-file-housekeeping`); reactivated 0, superseded 0, archive-verify pass (lint twice, no change between passes); invariants not
-  due (12 of 40); stalled threads none; contradictions none; Doc Gaps: no window log carries the section; live facts 58 → 46,
-  lines 865 → 741. Smoke test not run.)
-  Prior: 2026-10-09 | through 2026-10-09-032243.md (CADENCE + SIZE — 20 sessions since the 2026-10-06 review and 41 decay-eligible facts
-  against a cap of 35: `refresh-metadata` refreshed 35 footers, tier changes 28 (14 → active, 14 → archive-candidate); archived 5 faded
-  facts, `llm-helper-certification-java` (sslu 26), `graph-null-property-filtered` (21), `playground-session-broker` (34),
-  `graph-js-deprecated-removal` (40) and `mapping-source-verbatim-substitution` (33), after step 6 found the window's commits on their
-  paths unrelated to the rules and no reliance in the window's logs (three of the five surfaced only on a second lint pass); swept 7 closed threads
-  (`close-stalled-threads-20261005`, `playground-split-describe-skill-rust-twin`, `playground-subscriber-run-controls-rust-twin`,
-  `playground-usability-sprint`, `post-4-12-15-carry-overs`, `step6-release-sweep-gaps`, `webapp-tests-webstorage-rust-twin`);
-  reactivated 0, superseded 0, archive-verify pass; invariants DUE (59 of 40) → [[reverify-invariants-20261009]] raised; stalled
-  threads 1 → [[close-stalled-threads-20261009]] raised (`bp-agent-orchestration`, 46 sessions); contradictions none; Doc Gaps: 1 log
-  carries the section, 0 gaps. Smoke test not run.)
-  Prior: 2026-10-06 | through 2026-10-06-012541.md (SIZE — the new `graph-set-pack-and-deploy` fact made 36 decay-eligible facts
-  against a cap of 35; 6 sessions since the 2026-10-05 review: `refresh-metadata` refreshed 19 footers, tier changes 14; archived 2 faded
-  Key Decisions, `connected-edge-spans` and `playground-example-flows-are-sample-config`; swept 4 closed threads; invariants not due (38 of
-  40); live facts 59 → 53.)
-  Prior: 2026-10-05 | through 2026-10-05-230033.md (ON COMMAND — the first step-6 declaration-gap run at v4.42.3: refreshed 30 footers,
+- **last_review:** 2026-10-22 | through 2026-10-22-012004.md (CADENCE — 11 sessions since the 2026-10-14 review: `refresh-metadata`
+  refreshed 22 footers in two passes, tier changes 13 (1 → active, 12 → archive-candidate); archived 1 faded fact, `minigraph-dev-mode-app-shape`
+  (sslu 26), after step 6 found the window's commits on its paths to be the two release sweeps, the bundle rebuilds that regenerate
+  `template/playground.html`, #567's graph-set unpack folder and #568's mock namespaces, and the window's logs naming only the regenerated
+  entry page (the deploy layout, which `help-edit-needs-bundle-release` also records and those sessions declared); its rules live in
+  `playground-and-companion.md` and the AI agent guide; swept 2 completed threads (`release-4-12-22`, `release-4-12-23`); reactivated 0,
+  superseded 0; archive-verify pass; invariants not due (34 of 40 — due in 6 sessions); stalled threads none (the oldest,
+  `thread-doc-improvement-feedback-loop`, at 32 of 40); contradictions none; Doc Gaps: 1 window log carries the section, 0 gaps; live
+  facts 47 → 44, lines 890 → 847. Smoke test not run.)
+  Prior: 2026-10-14 | through 2026-10-14-000312.md (CADENCE — refreshed 22 footers, tier changes 10; archived 3 faded facts and KEPT
+  `graph-math-typed-arithmetic` and `scheduler-active-environment-store` as declaration gaps; swept 4 threads; reactivated
+  `llm-helper-certification-java`; live facts 50 → 44, lines 851 → 798) · 2026-10-11 | through 2026-10-11-034330.md (ON COMMAND,
+  CADENCE + SIZE — refreshed 24 footers, tier changes 16; archived 6 faded facts and KEPT `decimal-statement-exact-arithmetic` as a
+  declaration gap; swept 6 threads; live facts 58 → 46, lines 865 → 741) · 2026-10-09 | through 2026-10-09-032243.md (CADENCE + SIZE —
+  refreshed 35 footers, tier changes 28; archived 5 faded facts; swept 7 threads; the invariant re-verify and a stalled-thread gate
+  raised) · 2026-10-06 | through 2026-10-06-012541.md (SIZE — refreshed 19 footers, tier changes 14; archived 2 faded Key Decisions;
+  swept 4 threads; live facts 59 → 53)
+  · 2026-10-05 | through 2026-10-05-230033.md (ON COMMAND — the first step-6 declaration-gap run at v4.42.3: refreshed 30 footers,
   archived 0 with two facts KEPT as declaration gaps, the stalled-thread gate raised; facts 56 → 57) · 2026-10-02 | through
   2026-10-02-185029.md (CADENCE + SIZE — refreshed 35 footers, tier changes 25, archived 8 faded Key Decisions,
   swept 4 threads; facts 62 → 50, lines 867 → 683) · 2026-09-28 | through 2026-09-28-230310.md (CADENCE — refreshed 6 footers, tier changes 3, archived 0, swept 0; two stale statements
@@ -242,7 +222,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-10-10 | uses: 19 | tier: archive-candidate | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-10-22 | uses: 21 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -272,30 +252,7 @@
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-10-13 | uses: 26 | tier: active | origin: 2026-09-18-174943 -->
-
-- **A Layer 3 application is one graph endpoint plus dev mode, and its home page is dev-mode wiring too (2026-09-15, Eric's
-  polish round on the starter template + the cache example; P10 ruling 2026-09-22, SHIPPED in v4.12.15).** Three shape
-  rules. **(1) One endpoint, every graph:** `POST /api/graph/{graph_id}` takes the id from the URL path, so a Layer 3 app
-  needs exactly one `rest.yaml` entry and the stock `graph-executor` flow no matter how many models it deploys — adding a
-  graph means adding its id to `graphs.yaml`, never a bespoke route. **(2) Dev mode is settings that travel together:**
-  `app.env=dev` AND the dev-mode rest.yaml entries — every Playground/companion service is `@OptionalService("app.env=dev")`
-  and `RoutingEntry.resolveServices` SKIPS a rest entry whose service is unregistered, so routes without the switch are dead
-  and the switch without routes leaves only a WebSocket; both ship pre-wired in `templates/starter-graph` and
-  `examples/distributed-cache-example`, and removing the one line closes the surface for production. **(3) A graph app
-  declares ONE Mercury dependency — `minigraph-playground-engine`** (event-script-engine and platform-core come transitively,
-  Gradle too); the classpath-order collision that once made a wrongly ordered dependency list serve platform-core's
-  placeholder page is RETIRED by P10, and the one-dependency advice stands for tidiness. **P10 (Eric; Java #449, Rust
-  #319):** the React Playground's `index.html` WAS the engine jar's static `public/index.html`, so a Layer 3 app served the
-  Playground at `/` in EVERY environment ("the user would panic"). The entry page is now `template/playground.html`,
-  reachable only through the `get.index.html` route (at `/index.html`, reached by `/`) and only when `app.env=dev`; an
-  ABSENT `app.env` is production (the function used to default to dev). The engine's static `public/index.html` is the plain
-  "MiniGraph Service" page; both starters gained the route; `deploy.js`/`clean.js` split the bundle (assets →
-  `public/assets/`, page → `template/playground.html`). **READ at 4.12.15:** an app without the route gets the plain page at
-  `/` in dev too — add the route; an app with no `app.env` gets the plain page. Documented in
-  `playground-and-companion.md` (#enabling) and `ai-agent-guide.md` (#scaffolding). Relates [[playground-session-broker]];
-  applies to [[ot-distributed-cache]]'s worked example.
-  <!-- id: minigraph-dev-mode-app-shape | created: 2026-09-15 | last_used: 2026-10-10 | uses: 26 | tier: archive-candidate | origin: 2026-09-15-221451 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-10-21 | uses: 30 | tier: active | origin: 2026-09-18-174943 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -407,7 +364,7 @@
   note names what v4.12.23 accepted (`a..b..c`, a list band in a text table, a list value). Vectors 62 + 55; the fixture's miss run.
   **Gate note:** the one-liner `cargo test ... --lib range --test range_bounds_vectors ...` filters the vector tests OUT by name - run
   them without the filter.
-  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-10-12 | uses: 12 | tier: active | origin: 2026-09-20-152704 -->
+  <!-- id: static-decision-table-is-graph-data | created: 2026-09-20 | last_used: 2026-10-16 | uses: 13 | tier: archive-candidate | origin: 2026-09-20-152704 -->
 - **EventApiService serves LOCAL routes only — an inbound `/api/event` call to a route
   the instance does not host answers 404 even when the instance's own
   `yaml.event.over.http` map points that route at a peer (Eric ratified 2026-08-30).**
@@ -437,7 +394,7 @@
   [[static-decision-table-is-graph-data]] and [[minigraph-guarded-async-completion]]. **Partly superseded 2026-09-30 by
   [[decimal-statement-exact-arithmetic]]:** the "exact-decimal money belongs in a `graph.task` function, `BigDecimal` is never
   added to the dialect" ruling no longer holds — `DECIMAL:` is that statement; the typed/finite `COMPUTE` rules stand.
-  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-10-14 | uses: 11 | tier: active | origin: 2026-09-25-183540 -->
+  <!-- id: graph-math-typed-arithmetic | created: 2026-09-25 | last_used: 2026-10-14 | uses: 11 | tier: archive-candidate | origin: 2026-09-25-183540 -->
 
 - **Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math` — the high-precision `COMPUTE:`, strings at rest, no graph-level
   mode (Eric's rulings, 2026-09-30; RFC-0001 promoted to ADR-0025 in PR #473; implemented in PR #471, squash `3b4cad82`; SHIPPED in
@@ -453,7 +410,7 @@
   `graph.task` function; `BigDecimal` never enters the dialect"); the rest of that ruling stands. **Method note:** RFC first,
   implement on one branch, promote to ADR only after review and green CI — the ledger recorded a decision, never a proposal
   ([[conv-proposals-not-in-adr-ledger]]). Delivered on both engines (Rust twin: mercury #335 + #336, one shared core) and released in v4.12.20; the field-acceptance wait is [[decimal-ports-and-release]] (the python/node packs need no change — they are Event-over-HTTP function hosts; closes [[decimal-mode]]). (ADR-0025)
-  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-10-12 | uses: 7 | tier: active | origin: 2026-09-30-221603 -->
+  <!-- id: decimal-statement-exact-arithmetic | created: 2026-09-30 | last_used: 2026-10-21 | uses: 9 | tier: active | origin: 2026-09-30-221603 -->
 
 - **A deterministic MsgPack packager: keys sorted by UTF-8 bytes at every depth, `{manifest, maps}`, one canonical profile, integrity left to the
   application (Eric's rulings, 2026-10-01; RFC-0002 promoted to ADR-0026 in PR #484; Java `CanonicalPackager` #481/#482/#483 and the Rust
@@ -470,7 +427,7 @@
   hosts). Deferred: trusted timestamps and per-entry manifest records. The folder `pack`/`unpack` tooling and the graph-set loader, deferred
   here at first, became RFC-0005 and then ADR-0027 ([[graph-set-pack-and-deploy]]; the command line shipped in #508). Relates
   [[graph-manifest-list-later-wins]] (the loader's precedence). (ADR-0026)
-  <!-- id: canonical-packager-wire-contract | created: 2026-10-01 | last_used: 2026-10-12 | uses: 19 | tier: active | origin: 2026-09-30-221603 -->
+  <!-- id: canonical-packager-wire-contract | created: 2026-10-01 | last_used: 2026-10-12 | uses: 19 | tier: archive-candidate | origin: 2026-09-30-221603 -->
 
 - **The Playground webapp has one source and two deploy targets, and the help pages are one consolidated set (Eric, 2026-10-02; PR #496 squash `a6dc9ce5`, the Rust twin mercury #347 merge `781fae43`, both MERGED 2026-10-02).** The webapp "graduated": its scoped
   memory bank, steering files and pre-graduation specs under `system/minigraph-playground-engine/webapp/` are retired, its technical documentation is regenerated from the code in `webapp/docs/` (README,
@@ -485,7 +442,7 @@
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-12 | uses: 15 | tier: active | origin: 2026-10-02-175751 -->
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-21 | uses: 21 | tier: active | origin: 2026-10-02-175751 -->
 
 - **A graph carries its contract as a `schema` on the root and end nodes, the engine discovers the rest, validates the request at the
   root by an assumed step and serves OpenAPI 3.0 on demand (Eric's design 2026-10-08; RFC-0007 promoted to ADR-0029 on 2026-10-09 after the
@@ -508,7 +465,7 @@
   answers 400 at the root for a bad request; `graph.schema.validator` is a reserved route. Guide: `docs/guides/knowledge-graph/graph-contract.md`.
   Extends [[graph-set-pack-and-deploy]] (the shared gate, the panel precedent) and [[canonical-packager-wire-contract]] (the
   shared-vector method). (ADR-0029)
-  <!-- id: graph-contract-by-declaration | created: 2026-10-09 | last_used: 2026-10-10 | uses: 2 | tier: archive-candidate | origin: 2026-10-09-041751 -->
+  <!-- id: graph-contract-by-declaration | created: 2026-10-09 | last_used: 2026-10-16 | uses: 3 | tier: archive-candidate | origin: 2026-10-09-041751 -->
 
 - **The mini-scheduler runs its jobs in one site of an active-active deployment, and the active environment's source of truth is a
   data store read at every scheduled point (Eric's problem statement and rulings, 2026-10-09; RFC-0008 promoted to ADR-0030 the same
@@ -526,7 +483,7 @@
   and state resolver are single-site and unchanged. Claim `scheduler-active-environment-standby`; no Rust twin (the port has no
   scheduler). Relates [[kafka-mesh-opt-in]] (the leader election is in-cluster), [[event-script-over-code]] (the REST edge through
   rest.yaml). (ADR-0030)
-  <!-- id: scheduler-active-environment-store | created: 2026-10-09 | last_used: 2026-10-14 | uses: 2 | tier: active | origin: 2026-10-09-045453 -->
+  <!-- id: scheduler-active-environment-store | created: 2026-10-09 | last_used: 2026-10-14 | uses: 2 | tier: archive-candidate | origin: 2026-10-09-045453 -->
 
 - **The LLM helper is not engine code: it is a Claude-only function host in the Python and Node packs, and the Java engine only points at it (PR #488, squash `7c938ef1`; Eric's rulings,
   2026-10-01).** `examples/llm-helper` in mercury-python (#38) and mercury-nodejs (#106) serves `llm.chat`, `llm.stream` and `llm.health` on the Anthropic SDK; the engine stays LLM-free and holds no
@@ -540,7 +497,7 @@
   rendering; a 48-call probe found no empty result at the old budgets either, so the change removes the question. AWS Bedrock through IAM is the helper's SECOND BACKEND since 2026-10-14 - built and driven live in
   [[bp-agent-orchestration]]'s sprint 1, the report's Scenario 8 and Finding 7 (#563 squash `cd708eba`, mercury #384 merge `9141cc32`), the packs'
   thread closed. Rust twin: mercury #342.
-  <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-14 | uses: 4 | tier: active | origin: 2026-10-02-001806 -->
+  <!-- id: llm-helper-certification-java | created: 2026-10-01 | last_used: 2026-10-16 | uses: 5 | tier: archive-candidate | origin: 2026-10-02-001806 -->
 
 - **PostgreSQL runs one statement at a time per connection, so "parallel inserts on a single connection" only queue; the levers are
   one multi-row statement, one transaction and the pool - `PgRequest.insertRows` is the helper (a field question relayed by Eric,
@@ -557,7 +514,7 @@
   5 s at 4000, 4.1 s at 1000). For a bulk update the same shape is an upsert or `UPDATE t SET ... FROM (VALUES ...) AS v(...)` through
   `update()`. `examples/pg-example` shows every helper method and the event form side by side (`DemoOrderEndpoint`, `DemoOrderEvents`). **Across tables (the field's follow-up after testing `insertRows`, 2026-10-15; PR #565 squash `dd75d4d3`, MERGED 2026-10-15):** `PgTransactionBuilder` collects `insertRows` per table, `update` and `batch` steps and `PgRequest.transaction(po, builder)` runs them in ONE transaction - one row count per step, a failing statement rolling back every earlier one (pinned by a duplicate-key test against two tables); the demo's `POST .../with-history`. No Rust twin (the port has no R2DBC module). Applies [[clean-knowledge-design-over-engine-coverage]] (a documented cap,
   not a rewrite of the binding) and [[conv-sonar-gate-heuristics]].
-  <!-- id: pg-single-connection-is-serial | created: 2026-10-14 | last_used: 2026-10-14 | uses: 1 | tier: working | origin: 2026-10-15-000750 -->
+  <!-- id: pg-single-connection-is-serial | created: 2026-10-14 | last_used: 2026-10-15 | uses: 2 | tier: archive-candidate | origin: 2026-10-15-000750 -->
 
 - **The Playground's graph image export is PNG only, rendered by `html-to-image` pinned at 1.11.11, with flat cards (Eric's
   ruling 2026-10-21 on #571).** Export PNG saves the whole graph at zoom 1, 2 image pixels per graph pixel, on a solid
@@ -590,7 +547,7 @@
   pre-filled it. Agent-side guard: when the agent cannot update a PR's title itself, the handoff
   says that the title on GitHub is now wrong and must be replaced in the squash dialog.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-14 | uses: 94 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-22 | uses: 96 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -608,9 +565,13 @@
   nodes carry one of the three skills"; re-counting before repeating it in the CHANGELOG gave **64**,
   and `e6447ceb~1` shows it was never 67 (the 65th at HEAD is a deliberate negative fixture from that
   PR). Both errors came from writing out of recollection of my own work instead of out of the
-  repository. Corrected in both places via PR #411. Relates [[conv-template-version-sweep]] (the
+  repository. Corrected in both places via PR #411. **Third instance, a placement error (2026-10-21):** #572 and #574 each
+  appended their entry to the first `### Fixed` below `## Unreleased`, which belonged to the SHIPPED 4.12.25 section, because
+  Unreleased had no Fixed heading yet; #575 moved both. Before adding an entry, confirm its heading lies between `## Unreleased`
+  and the first `## Version`, and add the heading when it is missing; after the edit, every released section still diffs empty
+  against `git show <its tag>:CHANGELOG.md`. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-13 | uses: 31 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-22 | uses: 34 | tier: active | origin: 2026-09-17-183008 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing
@@ -619,7 +580,7 @@
   `examples/rest-spring-3-example/` (PR #305) with relocation metadata to the Boot-4 twins;
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]].
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-10-13 | uses: 30 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-10-13 | uses: 30 | tier: archive-candidate | origin: 2026-09-01-022524 -->
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
   identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
@@ -632,7 +593,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-10-14 | uses: 40 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-10-14 | uses: 40 | tier: archive-candidate | origin: 2026-09-16-003354 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -646,7 +607,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-13 | uses: 28 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-13 | uses: 28 | tier: archive-candidate | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast — the in-house codec writes the smallest integer width, so it holds since
   ADR-0028; use `util.str2int/str2long`). (Wording refreshed 2026-10-09 at invariant re-verify — substance unchanged.)
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -725,9 +686,15 @@
   the artifact. `platform-core` declares no Guava (Caffeine is its cache; no source in the repo imports `com.google.common`). **The
   verification that holds:** `mvn install` the edited modules first (a consumer's tree reads the INSTALLED pom), then
   `mvn dependency:tree -Dincludes=<groups>` over the WHOLE reactor, counting versions - one of each - and the consuming modules' tests
-  (the CSFLE round trip exercises Tink). A module's own clean build proves nothing about its consumers. Relates
+  (the CSFLE round trip exercises Tink). A module's own clean build proves nothing about its consumers. **Two more cases
+  (2026-10-21, the ASM/Vert.x/Netty fix):** (1) a direct pin that WINS still leaves the losing version in the verbose graph -
+  `accessors-smart`'s ASM 9.7.1 stayed "omitted for conflict" under platform-core's 9.10.1 and IntelliJ's dependency scanner
+  reported it - so exclude it from the artifact that declares it and check with `dependency:tree -Dverbose`; (2) every module's
+  parent is `spring-boot-starter-parent`, whose BOM overrides a transitive version for each consumer, which is why
+  `netty.version` is set in all 38 poms - and why `json-path` resolves 2.10.0 (Boot's) in 34 modules while platform-core
+  declares 3.0.0. Relates
   [[conv-template-version-sweep]] (the other reactor-wide sweep).
-  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-13 | uses: 3 | tier: active | origin: 2026-10-12-221919 -->
+  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-13 | uses: 3 | tier: archive-candidate | origin: 2026-10-12-221919 -->
 
 - **The field's Sonar gate judges NEW code, and five of its heuristics catch prose and framework idioms - write for them (the fifth
   Sonar round, 2026-10-12; the earlier rounds are the archived `thread-sonar-quality-gate-4.6.2`, `thread-sonar-4-9-1-field-rejection`,
@@ -746,10 +713,15 @@
   with no output - plain `Unit` would serialize the Unit object as the response body. **Sixth round (a local scan, 2026-10-14):** S5778 - an `assertThrows` lambda holds ONE
   invocation, so build `List.of(...)` arguments outside it; S1192 counts a literal inside `List.of` against a constant of the same
   value; S6204 - a loop that only maps into a list is a stream; S6035 - `\\w` over `[A-Za-z0-9_]`; S103 - 120 columns, which a
-  `throws` list widened past. A pre-existing finding counts as new the next
+  `throws` list widened past. **Seventh round (a local scan of the OneAgent branch, 2026-10-21):** S3077 - a `volatile` object
+  reference is a final `AtomicReference`, the S1450 shape; S3358 - a lambda written as a ternary's branch that holds a ternary is
+  NESTED, so move the lambda's body into a method (which also cleared S3776); S108 - an empty `default -> { }` carries a comment
+  saying why; S6213 again, a method named `record`; S5785 `assertNotNull` over `assertTrue(x != null)`; S1130 a `throws` the body
+  cannot throw. IntelliJ also flags every `InvocationHandler` lambda that can return null for `equals`, even behind a wrapper that
+  answers `equals` itself - give the inner handlers their own functional interface. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-13 | uses: 3 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-21 | uses: 6 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
@@ -767,7 +739,7 @@
   maintainer pushes the rebuilt bundle onto that PR, A/B-tests the two bundles in a browser (the unit tests run against the
   source, never the bundle), and deploys the same files to Rust. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
   only the entry page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-12 | uses: 19 | tier: active | origin: 2026-10-02-015208 -->
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-21 | uses: 25 | tier: active | origin: 2026-10-02-015208 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -847,7 +819,7 @@
   stays LLM/vendor-free with adapters as functions ON the wrappers: the gateway/MCP edge is where
   vendor specifics live, never in the engine.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-10-14 | uses: 26 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-10-16 | uses: 27 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;
