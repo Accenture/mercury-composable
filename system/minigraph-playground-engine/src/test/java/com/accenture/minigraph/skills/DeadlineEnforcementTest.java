@@ -88,9 +88,9 @@ class DeadlineEnforcementTest {
 
     @Test
     void endlessJsScriptIsInterruptedAtNodeDeadline() throws TimeoutException {
-        long started = System.currentTimeMillis();
+        long started = System.nanoTime();
         var response = runGraph("unit-test-js-deadline", Map.of());
-        long elapsed = System.currentTimeMillis() - started;
+        long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
         // the endless script must die at the node's 2s deadline (GraalVM context
         // interrupt), well before the flow-level timer would abort the whole run
         assertEquals(408, response.getStatus(),
@@ -104,9 +104,12 @@ class DeadlineEnforcementTest {
 
     @Test
     void jsScriptDefaultDeadlineIsFiveSeconds() throws TimeoutException {
-        long started = System.currentTimeMillis();
+        // measured on the monotonic clock the deadline timer runs on (a Vert.x timer fires when System.nanoTime
+        // reaches its deadline, armed after this start); the wall clock can be slewed by time synchronization and
+        // once read 4998 ms here
+        long started = System.nanoTime();
         var response = runGraph("unit-test-js-default-deadline", Map.of());
-        long elapsed = System.currentTimeMillis() - started;
+        long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
         // without a node ttl, graph.js does NOT inherit model.ttl: scripts are meant for
         // very simple computation or IF-THEN-ELSE, so the default deadline is a tight 5s
         assertEquals(408, response.getStatus(),

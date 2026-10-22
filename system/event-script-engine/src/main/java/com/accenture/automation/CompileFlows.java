@@ -22,6 +22,7 @@ import com.accenture.models.Flow;
 import com.accenture.models.Flows;
 import com.accenture.models.Task;
 import com.accenture.util.DataMappingHelper;
+import com.accenture.util.JsonPathSource;
 import org.platformlambda.core.annotations.BeforeApplication;
 import org.platformlambda.core.models.EntryPoint;
 import org.platformlambda.core.system.AppStarter;
@@ -275,6 +276,9 @@ public class CompileFlows implements EntryPoint {
                     md.uniqueTaskName, name, line);
             return false;
         }
+        if (rejectedJsonPath(line, name, md)) {
+            return false;
+        }
         int sep = line.lastIndexOf(MAP_TO);
         String rhs = line.substring(sep + 2).trim();
         if (rhs.startsWith(INPUT_NAMESPACE) || rhs.equals(INPUT)) {
@@ -303,7 +307,7 @@ public class CompileFlows implements EntryPoint {
             }
             if (helper.validOutput(line, isDecisionTask)) {
                 String rhs = line.substring(line.lastIndexOf(MAP_TO) + 2).trim();
-                if (rejectedReservedTarget(OUTPUT, rhs, name, md, line)) {
+                if (rejectedReservedTarget(OUTPUT, rhs, name, md, line) || rejectedJsonPath(line, name, md)) {
                     return false;
                 }
                 task.output.add(line);
@@ -321,6 +325,22 @@ public class CompileFlows implements EntryPoint {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Log and reject a data mapping entry whose JSONPath does not follow RFC 9535 (RFC-0010): the source, or a
+     * simple plugin's argument, written as '$...'. Like every other invalid entry, it drops the task.
+     */
+    private boolean rejectedJsonPath(String line, String name, FlowConfigMetadata md) {
+        String lhs = line.substring(0, line.lastIndexOf(MAP_TO)).trim();
+        try {
+            helper.validateJsonPaths(lhs, JsonPathSource.Form.EVENT_SCRIPT);
+            return false;
+        } catch (IllegalArgumentException e) {
+            log.error("Skip invalid task {} in {} that has a JSONPath not compliant with RFC 9535 - {} ({})",
+                    md.uniqueTaskName, name, line, e.getMessage());
+            return true;
+        }
     }
 
     /** Log and reject a data mapping entry whose target overwrites a reserved state-machine key. */

@@ -96,6 +96,67 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
 3. **The Playground's command input states its keys once.** The input box's placeholder repeated the hint printed below it and
    was clipped at the box's edge. It now reads "Enter command", and the hint below uses symbols: "⏎ to send · ⇧⏎ for new line ·
    ↑↓ for history". Both engines; the bundle is regenerated for both. **Upgrade note:** none.
+4. **JSONPath follows RFC 9535: an in-house engine, `minimalist-jsonpath`, replaces Jayway JsonPath (RFC-0010).** Every `$`
+   path of an Event Script flow or a knowledge graph is now evaluated by `system/minimalist-jsonpath`, written from RFC 9535,
+   the IETF JSONPath standard, with no dependency beyond `java.base`.
+   - **Conformance and parity.** It passes the standard's compliance suite, all 715 cases. The Rust engine already evaluates
+     `$` paths with an RFC 9535 implementation, so both engines now accept the same queries and give the same answers.
+     Mercury's result shape and a hyphen in a dotted name (`$.fetcher-ext.result`) are kept, pinned by the Rust engine's own
+     cases.
+   - **Dependencies.** `com.jayway.jsonpath:json-path`, `net.minidev:json-smart` (reported vulnerable, CVE-2026-113602, with
+     no fixed release) and `accessors-smart` leave every module's dependency tree.
+   - **Speed.** Evaluation takes about a third of Jayway's time on the repository's paths. Compiled queries are cached.
+   - **Evidence.** The differential and the benchmark are in `docs/test-reports/minimalist-jsonpath-differential.md`.
+   - **Refused before it runs.** A `$` path outside RFC 9535 is refused when a flow or a graph is compiled. The flow compiler
+     drops the task, as it does for any invalid mapping entry, with an ERROR that names RFC 9535 and the position. A graph is
+     rejected by CompileGraph, the graph-set packager and the Playground's `run`. The check covers a data mapping's source, a
+     simple plugin's `$` argument and a data dictionary's default value. A reference in the path (`{model.key}`, `[model.i]`,
+     `{namespace.key}`) is checked by where it lands, and its value is still substituted before the query is parsed. Both
+     engines: the Rust engine, which answered such a path with a silent null, refuses it the same way when it is evaluated and
+     when it is deployed, and runs the same compliance suite against its RFC 9535 implementation.
+   - **A simple plugin's `$` argument reaches the plugin whole.** The argument splitter cut it at a comma inside its brackets
+     or a string literal, so `f:length($['a','b'])` or a filter on `'a,b'` failed. It now ends a `$` argument at the first
+     comma outside them; every other argument splits as before.
+   - **A substituted value cannot change a query's structure.** A reference in a `$` path is still replaced before the query
+     is parsed, and its value is now checked where it lands. In a name it must be a key path, names joined by dots, each
+     optionally with `[n]` indexes (`items[0].name`). In an index it must be an integer. Inside a string literal the author
+     wrote, it is escaped for that literal: its quote, its backslash and its control characters. Bare in a filter, a number,
+     a boolean or null is inserted as written, and text becomes a string literal; Event Script keeps text that is already one
+     literal (`10`, `true`, `'abc'`) as written, as it always has. A list or a map is never substituted. A value that fails
+     its check fails the mapping by name: `Cannot substitute {model.key} into '$.input.body.{model.key}' - '*' is not a key
+     path`. The same checks apply to a simple plugin's `$` argument. Both engines, pinned by 39 shared substitution vectors.
+   - **Documentation.** The Event Script syntax guide's JSON Path section states the grammar, the result shape, the refusal
+     before a flow or a graph runs, a replacement for each Jayway-only form and the checks on a substituted value. The flow
+     schema reference, the flow grammar, the knowledge graph's command reference, the Playground's help (`help
+     graph-data-mapper`, `help tutorial 8`) and the AI agent guide's pre-send checklist follow it. Seven claims pin the
+     behaviour: `json-path-result-shape` and `mapping-source-dynamic-variables` are updated, and five are new. The flow schema
+     reference no longer says that a wildcard search yields a map of lists keyed by the last path segment: it yields a list.
+     The Playground bundle is rebuilt for both engines to carry the help (`index-CrqpNrFx.js` became `index-D5Sx-GL2.js`; the
+     vendor chunks and the stylesheet are unchanged).
+
+   **Upgrade note (READ):**
+   - **Jayway-only syntax is refused,** with an error that names the position. This covers the filter operators `in`,
+     `nin`, `subsetof`, `anyof`, `noneof`, `size`, `empty` and `=~`, trailing functions such as `.length()` or `.sum()`, and
+     array literals in a filter. The standard's forms replace them: `@.code == 'a' || @.code == 'b'`,
+     `match(@.code, 'a|b')`, `length(@.tags) == 1`, `count(@.tags[*]) == 0`. The Rust engine answered these queries with a
+     silent null.
+   - **Filter comparisons are type-strict:** `'5' == 5` is false.
+   - **A path through a present member that is not an array** yields an empty list when it indexes, slices or filters that
+     member. Jayway answered not found or failed the mapping.
+   - **A union of names** (`$['a','b']`) yields a list, as the guides said; Jayway returned an object.
+   - **A slice follows its step and its sign.**
+   - **Direct use.** An application that used Jayway or json-smart directly now declares them itself.
+   - **Error text.** The error for a bad path now names a reason and a position.
+   - **Refused at startup.** A flow or a graph with a `$` path outside RFC 9535 now fails when it is compiled, not at the
+     first request that reaches the path. The flow loses that task (`Skip invalid task ... that has a JSONPath not compliant
+     with RFC 9535`), and the graph answers 404 (`Rejected graph ... has a JSONPath not compliant with RFC 9535`).
+   - **A `{reference}` never holds a JSONPath query.** In a knowledge graph, `{$.input.body.amount}` in a `graph.math`
+     expression or a mapping source is refused. Map the value to a model variable first (`$.input.body.amount ->
+     model.amount`), then use `{model.amount}`.
+   - **A reference directly after the root,** as in `${model.key}`, is refused, because no value can make a query there.
+   - **A value that carried query syntax** into a `$` path - a wildcard, a filter, `..` or a quote - now fails the mapping
+     instead of changing the query. In a knowledge graph, a text value inside a literal the author quoted
+     (`'{model.team}'`) is no longer quoted a second time, so that form now works.
 
 ### Fixed
 
@@ -126,6 +187,11 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    artifact, and none of them carries ASM 9.7.1. **Upgrade note:** an application whose parent is `spring-boot-starter-parent`
    takes Netty's version from Spring Boot unless its own pom sets `netty.version`; set it to `4.2.19.Final`, as the starter
    templates do. An application that pins its own versions of these libraries should move to at least these.
+4. **A text value with a backslash keeps it in a knowledge graph's quoted expression.** In a `graph.math` expression (`IF`,
+   `CONDITION`, `COMPUTE`), a `{reference}` to a text value is quoted as a string literal, and the quoting escaped the quote
+   but not the backslash. The expression lexer reads a backslash as an escape, so `C:\temp` became a tab and a value that
+   ended with `\` escaped the closing quote and failed the statement. The backslash is now escaped first. Both engines.
+   **Upgrade note:** none - an expression that compared such a value read the wrong text or failed.
 
 ---
 ## Version 4.12.25, 10/12/2026

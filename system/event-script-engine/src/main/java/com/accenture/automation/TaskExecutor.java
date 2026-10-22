@@ -20,6 +20,7 @@ package com.accenture.automation;
 
 import com.accenture.models.*;
 import com.accenture.util.DataMappingHelper;
+import com.accenture.util.JsonPathSource;
 import com.accenture.models.SimpleFileDescriptor;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
@@ -1343,6 +1344,16 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     private String substituteDynamicIndex(String statement, MultiLevelMap source, boolean isRhs) {
+        if (!isRhs && helper.hasJsonPath(statement)) {
+            // RFC-0010 WP4: a value substituted into a JSONPath source is checked where it lands, so that it
+            // cannot change the query's structure; the rest of the source is substituted as before
+            return helper.substituteJsonPaths(statement, JsonPathSource.Form.EVENT_SCRIPT, source::getElement,
+                    part -> substituteReferences(part, source, false));
+        }
+        return substituteReferences(statement, source, isRhs);
+    }
+
+    private String substituteReferences(String statement, MultiLevelMap source, boolean isRhs) {
         String text = substituteRuntimeVarsIfAny(statement, source);
         if (text.contains("[") && text.contains("]")) {
             StringBuilder sb = new StringBuilder();

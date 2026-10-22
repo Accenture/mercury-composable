@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Intentional singleton
@@ -384,31 +386,152 @@ public class DataMappingHelper {
 
     /**
      * Split plugin arguments by top-level comma only, ignoring commas nested inside
-     * parentheses (e.g. a "text(,)" constant used as one of the arguments).
+     * parentheses (e.g. a "text(,)" constant used as one of the arguments). A JSONPath
+     * argument ('$...') ends at the first comma outside its brackets and string literals,
+     * so a union such as $.a['b','c'] or a filter's text stays one argument.
+     *
+     * @param text the text between a plugin's parentheses
+     * @return the arguments as written, untrimmed
      */
-    private List<String> splitTopLevelArguments(String text) {
+    public List<String> splitTopLevelArguments(String text) {
         List<String> result = new ArrayList<>();
+        for (int[] span : argumentSpans(text)) {
+            result.add(text.substring(span[0], span[1]));
+        }
+        return result;
+    }
+
+    private List<int[]> argumentSpans(String text) {
+        List<int[]> result = new ArrayList<>();
+        int start = 0;
+        while (start < text.length()) {
+            int end = text.substring(start).stripLeading().startsWith(JSON_PATH_TYPE)?
+                        endOfJsonPathArgument(text, start) : endOfArgument(text, start);
+            result.add(new int[] {start, end});
+            start = end + 1;
+        }
+        return result;
+    }
+
+    private int endOfArgument(String text, int start) {
+        // an unbalanced close-parenthesis in a text constant keeps the commas after it in that argument
         int depth = 0;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
+        for (int i = start; i < text.length(); i++) {
             char c = text.charAt(i);
             if (c == '(') {
                 depth++;
-            }
-            if (c == ')') {
+            } else if (c == ')') {
                 depth--;
+            } else if (c == ',' && depth == 0) {
+                return i;
             }
-            if (c == ',' && depth == 0) {
-                result.add(sb.toString());
-                sb.setLength(0);
+        }
+        return text.length();
+    }
+
+    private int endOfJsonPathArgument(String text, int start) {
+        int brackets = 0;
+        char quote = 0;
+        boolean escaped = false;
+        for (int i = start; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (escaped) {
+                escaped = false;
+            } else if (quote != 0) {
+                escaped = c == '\\';
+                quote = c == quote? 0 : quote;
+            } else if (c == '\'' || c == '"') {
+                quote = c;
+            } else if (c == '[' || c == ']') {
+                brackets += c == '['? 1 : -1;
+            } else if (c == ',' && brackets <= 0) {
+                return i;
+            }
+        }
+        return text.length();
+    }
+
+    /**
+     * @param lhs the source (left-hand side) of a data mapping entry
+     * @return true when it is a JSONPath query or a simple plugin with a JSONPath argument
+     */
+    public boolean hasJsonPath(String lhs) {
+        if (JsonPathSource.isJsonPath(lhs)) {
+            return true;
+        }
+        int startParen = lhs.indexOf('(');
+        int endParen = lhs.lastIndexOf(')');
+        if (isPluggableFunction(lhs) && startParen > 0 && endParen > startParen) {
+            return splitTopLevelArguments(lhs.substring(startParen + 1, endParen)).stream()
+                    .anyMatch(arg -> JsonPathSource.isJsonPath(arg.trim()));
+        }
+        return false;
+    }
+
+    /**
+     * Substitute the references in a data-mapping source (RFC-0010 WP4): a JSONPath query, and each JSONPath
+     * argument of a simple plugin, through {@link JsonPathSource#substitute}, which checks each value where it
+     * lands; every other part of the source through the engine's own substitution.
+     *
+     * @param lhs the source (left-hand side) of a data mapping entry
+     * @param form the references the engine substitutes into it
+     * @param values the value of a key, null when it has none
+     * @param other the engine's substitution for any other text
+     * @return the source with its references substituted
+     * @throws IllegalArgumentException naming the reference and the reason when a value fails its check
+     */
+    public String substituteJsonPaths(String lhs, JsonPathSource.Form form, Function<String, Object> values,
+                                      UnaryOperator<String> other) {
+        if (JsonPathSource.isJsonPath(lhs)) {
+            return JsonPathSource.substitute(lhs, form, values);
+        }
+        int startParen = lhs.indexOf('(');
+        int endParen = lhs.lastIndexOf(')');
+        if (!isPluggableFunction(lhs) || startParen <= 0 || endParen <= startParen) {
+            return other.apply(lhs);
+        }
+        var arguments = lhs.substring(startParen + 1, endParen);
+        var sb = new StringBuilder(other.apply(lhs.substring(0, startParen + 1)));
+        int last = 0;
+        for (int[] span : argumentSpans(arguments)) {
+            sb.append(arguments, last, span[0]);
+            var argument = arguments.substring(span[0], span[1]);
+            var query = argument.stripLeading();
+            if (JsonPathSource.isJsonPath(query)) {
+                sb.append(argument, 0, argument.length() - query.length())
+                        .append(JsonPathSource.substitute(query, form, values));
             } else {
-                sb.append(c);
+                sb.append(other.apply(argument));
+            }
+            last = span[1];
+        }
+        return sb.append(arguments.substring(last)).append(other.apply(lhs.substring(endParen))).toString();
+    }
+
+    /**
+     * Refuse a data-mapping source whose JSONPath is not RFC 9535 (RFC-0010): the source itself when it is a
+     * JSONPath query, and each argument of a simple plugin that is one. Nested plugin calls are not resolved,
+     * so their arguments are not read.
+     *
+     * @param lhs the source (left-hand side) of a data mapping entry
+     * @param form the references the engine substitutes into it
+     * @throws IllegalArgumentException naming the reason and the position
+     */
+    public void validateJsonPaths(String lhs, JsonPathSource.Form form) {
+        if (JsonPathSource.isJsonPath(lhs)) {
+            JsonPathSource.check(lhs, form);
+        } else if (isPluggableFunction(lhs)) {
+            int startParen = lhs.indexOf('(');
+            int endParen = lhs.lastIndexOf(')');
+            if (startParen > 0 && endParen > startParen) {
+                for (var argument : splitTopLevelArguments(lhs.substring(startParen + 1, endParen))) {
+                    var arg = argument.trim();
+                    if (JsonPathSource.isJsonPath(arg)) {
+                        JsonPathSource.check(arg, form);
+                    }
+                }
             }
         }
-        if (!sb.isEmpty()) {
-            result.add(sb.toString());
-        }
-        return result;
     }
 
     public Object getValueByType(String type, Object value, String path, MultiLevelMap data) {
