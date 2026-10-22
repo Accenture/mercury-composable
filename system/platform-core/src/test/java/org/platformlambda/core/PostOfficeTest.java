@@ -1018,6 +1018,101 @@ class PostOfficeTest extends TestBase {
     }
 
     @Test
+    void failedAsyncInvocationIsTracedAsAFailure() throws InterruptedException {
+        // a fire-and-forget event: the worker sends the trace record (the RPC caller's inbox does not)
+        LambdaFunction failing = (headers, input, instance) -> {
+            throw new AppException(400, "demo failure");
+        };
+        MultiLevelMap trace = new MultiLevelMap(traceOfFailure("failing.async.function", failing, null));
+
+        // regression: ProcessStatus.setExecutionTime used to reset the success flag after the exception
+        assertEquals(false, trace.getElement("trace.success"));
+        assertEquals(400, trace.getElement("trace.status"));
+        assertEquals("demo failure", trace.getElement("trace.exception"));
+    }
+
+    @Test
+    void failedCallbackInvocationIsTracedAsAFailure() throws InterruptedException {
+        // a reply-to callback without an RPC tag, the way Event Script's task executor dispatches a task
+        String callback = "failure.test.callback";
+        LambdaFunction failing = (headers, input, instance) -> {
+            throw new AppException(400, "demo failure");
+        };
+        LambdaFunction ignore = (headers, input, instance) -> null;
+        Platform platform = Platform.getInstance();
+        platform.registerPrivate(callback, ignore, 1);
+        try {
+            MultiLevelMap trace = new MultiLevelMap(traceOfFailure("failing.callback.function", failing, callback));
+
+            assertEquals(false, trace.getElement("trace.success"));
+            assertEquals(400, trace.getElement("trace.status"));
+            assertEquals("demo failure", trace.getElement("trace.exception"));
+        } finally {
+            platform.release(callback);
+        }
+    }
+
+    @Test
+    void aMappingExceptionHandlerFailureRecordsItsExecutionTime() throws InterruptedException {
+        MultiLevelMap trace = new MultiLevelMap(traceOfFailure("failing.handled.function", new FailingWithHandler(), null));
+
+        assertEquals(false, trace.getElement("trace.success"));
+        assertEquals("handled failure", trace.getElement("trace.exception"));
+        // the handler path used to skip the execution time entirely and record zero
+        assertTrue(util.str2float(String.valueOf(trace.getElement("trace.exec_time"))) >= 10f);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> traceOfFailure(String route, TypedLambdaFunction<?, ?> function, String callback)
+            throws InterruptedException {
+        String traceForwarder = "distributed.trace.forwarder";
+        BlockingQueue<Map<String, Object>> bench = new ArrayBlockingQueue<>(1);
+        Platform platform = Platform.getInstance();
+        String traceId = util.getUuid();
+        LambdaFunction forwarder = (headers, input, instance) -> {
+            Map<String, Object> dataset = (Map<String, Object>) input;
+            MultiLevelMap map = new MultiLevelMap(dataset);
+            if (traceId.equals(map.getElement("trace.id")) && route.equals(map.getElement("trace.service"))) {
+                bench.add(dataset);
+            }
+            return null;
+        };
+        platform.registerPrivate(traceForwarder, forwarder, 1);
+        platform.registerPrivate(route, function, 1);
+        try {
+            PostOffice po = new PostOffice("unit.test", traceId, "GET /api/failure");
+            EventEnvelope event = new EventEnvelope().setTo(route).setBody("x");
+            if (callback != null) {
+                event.setReplyTo(callback);
+            }
+            po.send(event);
+            Map<String, Object> result = bench.poll(10, TimeUnit.SECONDS);
+            assertNotNull(result, "no trace record for " + route);
+            return result;
+        } finally {
+            platform.release(traceForwarder);
+            platform.release(route);
+        }
+    }
+
+    /**
+     * A function that handles its own exceptions: the worker calls onError instead of answering.
+     */
+    private static class FailingWithHandler implements TypedLambdaFunction<Object, Object>, MappingExceptionHandler {
+
+        @Override
+        public Object handleEvent(Map<String, String> headers, Object input, int instance) throws AppException {
+            Utility.getInstance().sleep(20);
+            throw new AppException(400, "handled failure");
+        }
+
+        @Override
+        public void onError(String incomingRoute, AppException error, EventEnvelope event, int instance) {
+            // the failure is the test's subject; nothing to answer
+        }
+    }
+
+    @Test
     void accidentalMetadataEchoIsSanitizedAtExit() throws InterruptedException, ExecutionException {
         // Eric's scenario: a function accidentally copies its input headers - including the
         // injected read-only metadata - onto a returned EventEnvelope. The exit-side
