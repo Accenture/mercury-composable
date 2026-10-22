@@ -121,8 +121,8 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
      reference no longer says that a wildcard search yields a map of lists keyed by the last path segment: it yields a list.
      The Playground bundle is rebuilt for both engines to carry the help (`index-CrqpNrFx.js` became `index-D5Sx-GL2.js`; the
      vendor chunks and the stylesheet are unchanged).
-   - **Code quality.** The findings of a local Sonar scan of the new code are closed, with the flow compiler's and the data
-     mapper's methods that the work touched; none of them is a behaviour change.
+   - **Code quality.** The findings of a local Sonar scan are closed in the new code and in the methods it touched in the flow
+     compiler, the data mapper, the knowledge graph's validator and skills, and `MultiLevelMap`; none is a behaviour change.
 
    **Upgrade note (READ):**
    - **Jayway-only syntax is refused,** with an error that names the position. This covers the filter operators `in`,

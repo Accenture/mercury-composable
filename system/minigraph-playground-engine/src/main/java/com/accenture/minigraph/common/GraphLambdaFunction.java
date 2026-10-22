@@ -309,12 +309,9 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
      * @param stateMachine the graph state machine
      */
     protected void assertVariablesResolved(String expression, MultiLevelMap stateMachine) {
-        var unresolved = new ArrayList<String>();
-        for (var key : selectorsIn(expression)) {
-            if (helper.getLhsOrConstant(key, stateMachine) == null) {
-                unresolved.add(key);
-            }
-        }
+        var unresolved = selectorsIn(expression).stream()
+                .filter(key -> helper.getLhsOrConstant(key, stateMachine) == null)
+                .toList();
         if (!unresolved.isEmpty()) {
             throw unknownIdentifier(unresolved, expression);
         }
@@ -387,12 +384,14 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
 
     private RuntimeException nameBooleanSelectors(RuntimeException e, String expression,
                                                   MultiLevelMap stateMachine) {
-        var culprits = new ArrayList<String>();
-        for (var key : selectorsIn(expression)) {
-            if (helper.getLhsOrConstant(key, stateMachine) instanceof Boolean b) {
-                culprits.add(key + " (" + b + ")");
-            }
-        }
+        // one lookup per selector: mapMulti filters and names in the same step
+        var culprits = selectorsIn(expression).stream()
+                .<String>mapMulti((key, out) -> {
+                    if (helper.getLhsOrConstant(key, stateMachine) instanceof Boolean b) {
+                        out.accept(key + " (" + b + ")");
+                    }
+                })
+                .toList();
         if (culprits.isEmpty()) {
             return e;
         }
@@ -1050,7 +1049,7 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
      *
      * @param nodeName the node's alias
      * @param statements the node's statements
-     * @param decimal true for a graph.math node, the only skill that takes a DECIMAL statement
+     * @param decimal true for a {@code graph.math} node, the only skill that takes a DECIMAL statement
      * @return the number of EXECUTE statements
      */
     protected int countExecuteStatements(String nodeName, List<String> statements, boolean decimal) {

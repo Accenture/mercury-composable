@@ -519,9 +519,12 @@
   `i -= by`; S6885 - `Math.clamp` over `Math.min(Math.max(...))`, which throws when min > max, so confirm the bounds are ordered;
   S6353 - `\\d` over `[0-9]`; S5998 - a repeated regex group takes a possessive quantifier (`(?:\\[\\d++])*+`); S5961 counts a
   helper that asserts (`refusal()` around `assertThrows`) as an assertion, so each line that calls it counts twice. **Review the
-  IDE's own quick fixes before keeping them:** its grammar fixes broke four javadoc sentences, one made a package-private record
-  public, and "boolean method is always inverted" renamed `isSingular` to `isNotSingular` but left the javadoc describing the old
-  result. A pre-existing finding counts as new the next
+  IDE's own quick fixes before keeping them:** its grammar fixes broke four javadoc sentences, and "boolean method is always
+  inverted" renamed `isSingular` to `isNotSingular` but left the javadoc describing the old result. **But one fix that looked
+  wrong was right:** IntelliJ's `ClassEscapesDefinedScope` reports a package-private type in a public method's signature, and a
+  record nested in an interface is always public, so its methods are too; the package-private `Node` in those signatures gave 27
+  warnings in `Expr` and `Selector` alone, and making `Node` public, with its javadoc saying why, is the fix. Reverting it on API-surface grounds brought them
+  back. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-22 | uses: 10 | tier: active | origin: 2026-10-13-001452 -->

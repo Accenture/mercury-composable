@@ -455,12 +455,7 @@ public class MultiLevelMap {
 
     private List<Integer> getIndexes(String indexSegment) {
         Utility util = Utility.getInstance();
-        List<String> indexes = util.split(indexSegment, "[]");
-        List<Integer> result = new ArrayList<>();
-        for (String s: indexes) {
-            result.add(util.str2int(s));
-        }
-        return result;
+        return util.split(indexSegment, "[]").stream().map(util::str2int).toList();
     }
 
     /**
