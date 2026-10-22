@@ -120,8 +120,8 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
      shorthand does not allow one, so this is the one declared extension. Rust already rewrites such names to bracket notation.
 - **Refusal, never a silent null.** A query outside the grammar fails by name, with its position:
   - when it is evaluated;
-  - at deployment, because CompileGraph and the flow compiler parse every `$` source, so a graph or a flow with an unsupported
-    path is refused before it runs.
+  - at deployment, because CompileGraph and the flow compiler parse every `$` source, so a graph with an unsupported path is
+    refused, and a flow loses the task that carries one, before it runs (the WP3 rulings below).
   The Rust engine moves from its silent null to the same refusal; it already has the parse error.
 - **Limits.** A nesting bound on filter expressions (parentheses, nested queries) and an iterative descendant walk, so that no
   query text exhausts the stack.
@@ -192,6 +192,20 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
 - **WP4.** Substitution first, then parsing, with the checks where each value lands: in Event Script and the knowledge graph,
   on both engines (answer 4).
 - **WP5.** The guides, the help pages, the claims and the upgrade note.
+
+**WP3 rulings (Eric, 2026-10-22).**
+1. **A flow keeps its compiler's unit.** A task whose `$` source is not RFC 9535 is dropped, as for any other invalid mapping
+   entry, with an ERROR that names RFC 9535 and the position. A graph is rejected: CompileGraph, the packager and the
+   Playground's `run` refuse it.
+2. **One scanner finds where each reference lands.** WP3 builds it, to parse a source with a stand-in for each reference;
+   WP4 reuses it to check each value before it is inserted.
+3. **A simple plugin's `$` argument stays supported,** as the Event Script guide promises. The argument splitter ends a `$`
+   argument at the first comma outside its brackets and string literals, on both engines, so a union (`$['a','b']`) or a
+   filter's text reaches the plugin whole.
+4. **A `{reference}` never holds a JSONPath query** (`{$.input.body.amount}` in a `graph.math` expression or a mapping
+   source). JSONPath belongs to data mapping, where a source and its target are separated by `->`; nothing used the form and
+   no guide promised it. A data dictionary's default value is a source, the first use case of JSONPath in the engine, and is
+   checked like one.
 
 **Options.**
 - **(a) The in-house RFC 9535 engine. Recommended.** One standard grammar on both engines, the json-smart chain gone for good, and

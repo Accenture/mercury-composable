@@ -87,6 +87,25 @@ class FlowTests extends TestBase {
         assertFalse(control.tasks.isEmpty());
     }
 
+    @Test
+    void jsonPathOutsideRfc9535DropsTheTaskAtCompileTime() {
+        // RFC-0010: a JSONPath source must follow RFC 9535. Like every other invalid mapping, the task is
+        // dropped at compile time with an ERROR naming the standard: parser-test-33 has a Jayway-only filter
+        // operator in an input source, parser-test-34 a Jayway-only path function in an output source and
+        // parser-test-35 a Jayway-only operator in a simple plugin's argument
+        for (var id : List.of("parser-test-33", "parser-test-34", "parser-test-35")) {
+            var flow = com.accenture.models.Flows.getFlow(id);
+            assertNotNull(flow, id);
+            assertFalse(flow.tasks.containsKey("greeting.test"), id + " - the task must be dropped");
+        }
+        // parser-test-36 keeps its task: references where a value can stand, a union and a quoted comma in a
+        // plugin argument
+        var accepted = com.accenture.models.Flows.getFlow("parser-test-36");
+        assertNotNull(accepted);
+        assertTrue(accepted.tasks.containsKey("greeting.test"), "the accepted JSONPath forms keep the task");
+        assertEquals(6, accepted.tasks.get("greeting.test").input.size());
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void dynamicModelTargetResolvingToReservedKeyFailsAtRuntime() throws Exception {

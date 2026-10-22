@@ -384,31 +384,87 @@ public class DataMappingHelper {
 
     /**
      * Split plugin arguments by top-level comma only, ignoring commas nested inside
-     * parentheses (e.g. a "text(,)" constant used as one of the arguments).
+     * parentheses (e.g. a "text(,)" constant used as one of the arguments). A JSONPath
+     * argument ('$...') ends at the first comma outside its brackets and string literals,
+     * so a union such as $.a['b','c'] or a filter's text stays one argument.
+     *
+     * @param text the text between a plugin's parentheses
+     * @return the arguments as written, untrimmed
      */
-    private List<String> splitTopLevelArguments(String text) {
+    public List<String> splitTopLevelArguments(String text) {
         List<String> result = new ArrayList<>();
+        int start = 0;
+        while (start < text.length()) {
+            int end = text.substring(start).stripLeading().startsWith(JSON_PATH_TYPE)?
+                        endOfJsonPathArgument(text, start) : endOfArgument(text, start);
+            result.add(text.substring(start, end));
+            start = end + 1;
+        }
+        return result;
+    }
+
+    private int endOfArgument(String text, int start) {
+        // an unbalanced close-parenthesis in a text constant keeps the commas after it in that argument
         int depth = 0;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
+        for (int i = start; i < text.length(); i++) {
             char c = text.charAt(i);
             if (c == '(') {
                 depth++;
-            }
-            if (c == ')') {
+            } else if (c == ')') {
                 depth--;
-            }
-            if (c == ',' && depth == 0) {
-                result.add(sb.toString());
-                sb.setLength(0);
-            } else {
-                sb.append(c);
+            } else if (c == ',' && depth == 0) {
+                return i;
             }
         }
-        if (!sb.isEmpty()) {
-            result.add(sb.toString());
+        return text.length();
+    }
+
+    private int endOfJsonPathArgument(String text, int start) {
+        int brackets = 0;
+        char quote = 0;
+        boolean escaped = false;
+        for (int i = start; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (escaped) {
+                escaped = false;
+            } else if (quote != 0) {
+                escaped = c == '\\';
+                quote = c == quote? 0 : quote;
+            } else if (c == '\'' || c == '"') {
+                quote = c;
+            } else if (c == '[' || c == ']') {
+                brackets += c == '['? 1 : -1;
+            } else if (c == ',' && brackets <= 0) {
+                return i;
+            }
         }
-        return result;
+        return text.length();
+    }
+
+    /**
+     * Refuse a data-mapping source whose JSONPath is not RFC 9535 (RFC-0010): the source itself when it is a
+     * JSONPath query, and each argument of a simple plugin that is one. Nested plugin calls are not resolved,
+     * so their arguments are not read.
+     *
+     * @param lhs the source (left-hand side) of a data mapping entry
+     * @param form the references the engine substitutes into it
+     * @throws IllegalArgumentException naming the reason and the position
+     */
+    public void validateJsonPaths(String lhs, JsonPathSource.Form form) {
+        if (JsonPathSource.isJsonPath(lhs)) {
+            JsonPathSource.check(lhs, form);
+        } else if (isPluggableFunction(lhs)) {
+            int startParen = lhs.indexOf('(');
+            int endParen = lhs.lastIndexOf(')');
+            if (startParen > 0 && endParen > startParen) {
+                for (var argument : splitTopLevelArguments(lhs.substring(startParen + 1, endParen))) {
+                    var arg = argument.trim();
+                    if (JsonPathSource.isJsonPath(arg)) {
+                        JsonPathSource.check(arg, form);
+                    }
+                }
+            }
+        }
     }
 
     public Object getValueByType(String type, Object value, String path, MultiLevelMap data) {

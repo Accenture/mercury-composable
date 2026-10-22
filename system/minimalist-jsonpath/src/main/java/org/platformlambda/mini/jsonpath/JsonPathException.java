@@ -26,6 +26,7 @@ package org.platformlambda.mini.jsonpath;
  * handles a bad query on the same path.
  */
 public class JsonPathException extends IllegalArgumentException {
+    private final String reason;
     private final int position;
 
     /**
@@ -35,7 +36,15 @@ public class JsonPathException extends IllegalArgumentException {
      */
     public JsonPathException(String reason, String query, int position) {
         super(reason + " at position " + position + " of '" + query + "'");
+        this.reason = reason;
         this.position = position;
+    }
+
+    /**
+     * @return what is wrong, without the position and the query
+     */
+    public String getReason() {
+        return reason;
     }
 
     /**

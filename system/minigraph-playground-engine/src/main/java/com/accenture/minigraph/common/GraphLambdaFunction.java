@@ -22,6 +22,7 @@ import com.accenture.minigraph.contract.GraphSchemaValidator;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.GraphSession;
 import com.accenture.util.DataMappingHelper;
+import com.accenture.util.JsonPathSource;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.serializers.SimpleMapper;
@@ -330,9 +331,10 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         var keys = new ArrayList<String>();
         for (var segment : util.extractSegments(expression, "{", "}")) {
             var key = expression.substring(segment.start() + 1, segment.end() - 1);
-            if (key.contains("\r") || key.contains("\n") || key.contains("\t") || key.contains(":")) {
+            if (!JsonPathSource.isGraphKey(key)) {
                 continue;
             }
+            JsonPathSource.refuseJsonPathKey(key);
             if (!keys.contains(key)) {
                 keys.add(key);
             }
@@ -462,10 +464,11 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
                                      MultiLevelMap stateMachine, boolean logical) {
         boolean dot = hasDot(segment, sb, start, text);
         var key = text.substring(segment.start() + 1, segment.end() - 1);
-        if (key.contains("\r") || key.contains("\n") || key.contains("\t") || key.contains(":")) {
+        if (!JsonPathSource.isGraphKey(key)) {
             // it is likely a JavaScript function or a JSON object instead of a variable
             sb.append(text, segment.start(), segment.end());
         } else {
+            JsonPathSource.refuseJsonPathKey(key);
             var parameter = helper.getLhsOrConstant(key, stateMachine);
             if (parameter == null) {
                 sb.append("null");

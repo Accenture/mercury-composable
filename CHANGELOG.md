@@ -95,6 +95,16 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
      no fixed release) and `accessors-smart` leave every module's dependency tree.
    - **Speed.** Evaluation takes about a third of Jayway's time on the repository's paths. Compiled queries are cached.
    - **Evidence.** The differential and the benchmark are in `docs/test-reports/minimalist-jsonpath-differential.md`.
+   - **Refused before it runs.** A `$` path outside RFC 9535 is refused when a flow or a graph is compiled. The flow compiler
+     drops the task, as it does for any invalid mapping entry, with an ERROR that names RFC 9535 and the position. A graph is
+     rejected by CompileGraph, the graph-set packager and the Playground's `run`. The check covers a data mapping's source, a
+     simple plugin's `$` argument and a data dictionary's default value. A reference in the path (`{model.key}`, `[model.i]`,
+     `{namespace.key}`) is checked by where it lands, and its value is still substituted before the query is parsed. Both
+     engines: the Rust engine, which answered such a path with a silent null, refuses it the same way when it is evaluated and
+     when it is deployed, and runs the same compliance suite against its RFC 9535 implementation.
+   - **A simple plugin's `$` argument reaches the plugin whole.** The argument splitter cut it at a comma inside its brackets
+     or a string literal, so `f:length($['a','b'])` or a filter on `'a,b'` failed. It now ends a `$` argument at the first
+     comma outside them; every other argument splits as before.
 
    **Upgrade note (READ):**
    - **Jayway-only syntax is refused,** with an error that names the position. This covers the filter operators `in`,
@@ -109,6 +119,13 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    - **A slice follows its step and its sign.**
    - **Direct use.** An application that used Jayway or json-smart directly now declares them itself.
    - **Error text.** The error for a bad path now names a reason and a position.
+   - **Refused at startup.** A flow or a graph with a `$` path outside RFC 9535 now fails when it is compiled, not at the
+     first request that reaches the path. The flow loses that task (`Skip invalid task ... that has a JSONPath not compliant
+     with RFC 9535`), and the graph answers 404 (`Rejected graph ... has a JSONPath not compliant with RFC 9535`).
+   - **A `{reference}` never holds a JSONPath query.** In a knowledge graph, `{$.input.body.amount}` in a `graph.math`
+     expression or a mapping source is refused. Map the value to a model variable first (`$.input.body.amount ->
+     model.amount`), then use `{model.amount}`.
+   - **A reference directly after the root,** as in `${model.key}`, is refused, because no value can make a query there.
 
 ### Fixed
 
