@@ -569,7 +569,10 @@
   appended their entry to the first `### Fixed` below `## Unreleased`, which belonged to the SHIPPED 4.12.25 section, because
   Unreleased had no Fixed heading yet; #575 moved both. Before adding an entry, confirm its heading lies between `## Unreleased`
   and the first `## Version`, and add the heading when it is missing; after the edit, every released section still diffs empty
-  against `git show <its tag>:CHANGELOG.md`. Relates [[conv-template-version-sweep]] (the
+  against `git show <its tag>:CHANGELOG.md`. **Fourth instance, a separator (2026-10-22, the Rust repo):** RFC-0010 WP3's
+  Changed 5, appended at the end of the Unreleased section, landed below the `---` that closes it (merged in mercury #391; WP4
+  moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
+  Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
   <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-22 | uses: 34 | tier: active | origin: 2026-09-17-183008 -->
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +

@@ -207,6 +207,19 @@ The precedent is RFC-0006 (ADR-0028): a flagged library at a foundation is repla
    no guide promised it. A data dictionary's default value is a source, the first use case of JSONPath in the engine, and is
    checked like one.
 
+**WP4 rulings (Eric, 2026-10-22).** The checks where each value lands follow *The design*, with two refinements that keep every
+query that works today:
+1. **Bare inside a filter, Event Script keeps a text value that is already one literal as written** - a number, `true`,
+   `false`, `null`, or a quoted string - and quotes any other text as a string literal. Event Script has always inserted text as
+   written, so `@.price > {model.min}` with the text `10` compares as a number, and quoting it would make the comparison
+   silently false. The knowledge graph keeps quoting all text, as it always has.
+2. **In a name, the value is Mercury's dot-bracket key path:** names joined by single dots, each optionally followed by `[n]`
+   indexes (`items[0].name`). Such a value adds only child and index steps, never a wildcard, a filter or a descendant segment.
+
+Found on the way: a nested reference in a `$` source (`{model.{model.k}}`) is refused on both engines, at deployment and at run
+time, although the two engines' brace scans differ outside `$` sources; and the knowledge graph's quoting of a text value in a
+`graph.math` expression escapes the backslash too, because the expression lexer reads a backslash as an escape.
+
 **Options.**
 - **(a) The in-house RFC 9535 engine. Recommended.** One standard grammar on both engines, the json-smart chain gone for good, and
   the limits and the substitution rule under the project's control. Cost: owning a parser and an evaluator, with the

@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Intentional singleton
@@ -393,11 +395,19 @@ public class DataMappingHelper {
      */
     public List<String> splitTopLevelArguments(String text) {
         List<String> result = new ArrayList<>();
+        for (int[] span : argumentSpans(text)) {
+            result.add(text.substring(span[0], span[1]));
+        }
+        return result;
+    }
+
+    private List<int[]> argumentSpans(String text) {
+        List<int[]> result = new ArrayList<>();
         int start = 0;
         while (start < text.length()) {
             int end = text.substring(start).stripLeading().startsWith(JSON_PATH_TYPE)?
                         endOfJsonPathArgument(text, start) : endOfArgument(text, start);
-            result.add(text.substring(start, end));
+            result.add(new int[] {start, end});
             start = end + 1;
         }
         return result;
@@ -439,6 +449,63 @@ public class DataMappingHelper {
             }
         }
         return text.length();
+    }
+
+    /**
+     * @param lhs the source (left-hand side) of a data mapping entry
+     * @return true when it is a JSONPath query or a simple plugin with a JSONPath argument
+     */
+    public boolean hasJsonPath(String lhs) {
+        if (JsonPathSource.isJsonPath(lhs)) {
+            return true;
+        }
+        int startParen = lhs.indexOf('(');
+        int endParen = lhs.lastIndexOf(')');
+        if (isPluggableFunction(lhs) && startParen > 0 && endParen > startParen) {
+            return splitTopLevelArguments(lhs.substring(startParen + 1, endParen)).stream()
+                    .anyMatch(arg -> JsonPathSource.isJsonPath(arg.trim()));
+        }
+        return false;
+    }
+
+    /**
+     * Substitute the references in a data-mapping source (RFC-0010 WP4): a JSONPath query, and each JSONPath
+     * argument of a simple plugin, through {@link JsonPathSource#substitute}, which checks each value where it
+     * lands; every other part of the source through the engine's own substitution.
+     *
+     * @param lhs the source (left-hand side) of a data mapping entry
+     * @param form the references the engine substitutes into it
+     * @param values the value of a key, null when it has none
+     * @param other the engine's substitution for any other text
+     * @return the source with its references substituted
+     * @throws IllegalArgumentException naming the reference and the reason when a value fails its check
+     */
+    public String substituteJsonPaths(String lhs, JsonPathSource.Form form, Function<String, Object> values,
+                                      UnaryOperator<String> other) {
+        if (JsonPathSource.isJsonPath(lhs)) {
+            return JsonPathSource.substitute(lhs, form, values);
+        }
+        int startParen = lhs.indexOf('(');
+        int endParen = lhs.lastIndexOf(')');
+        if (!isPluggableFunction(lhs) || startParen <= 0 || endParen <= startParen) {
+            return other.apply(lhs);
+        }
+        var arguments = lhs.substring(startParen + 1, endParen);
+        var sb = new StringBuilder(other.apply(lhs.substring(0, startParen + 1)));
+        int last = 0;
+        for (int[] span : argumentSpans(arguments)) {
+            sb.append(arguments, last, span[0]);
+            var argument = arguments.substring(span[0], span[1]);
+            var query = argument.stripLeading();
+            if (JsonPathSource.isJsonPath(query)) {
+                sb.append(argument, 0, argument.length() - query.length())
+                        .append(JsonPathSource.substitute(query, form, values));
+            } else {
+                sb.append(other.apply(argument));
+            }
+            last = span[1];
+        }
+        return sb.append(arguments.substring(last)).append(other.apply(lhs.substring(endParen))).toString();
     }
 
     /**

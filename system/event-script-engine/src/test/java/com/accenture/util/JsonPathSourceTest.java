@@ -25,6 +25,7 @@ import org.junit.jupiter.api.TestFactory;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.mini.jsonpath.JsonPath;
 import org.platformlambda.mini.jsonpath.JsonPathException;
 
 import java.io.InputStream;
@@ -79,7 +80,7 @@ class JsonPathSourceTest extends TestBase {
                 }
             }));
         }
-        assertEquals(33, tests.size(), "source vector count");
+        assertEquals(35, tests.size(), "source vector count");
         return tests;
     }
 
@@ -114,6 +115,46 @@ class JsonPathSourceTest extends TestBase {
         }
         assertEquals(5, tests.size(), "reference key vector count");
         return tests;
+    }
+
+    @SuppressWarnings("unchecked")
+    @TestFactory
+    List<DynamicTest> substitutionsAreCheckedWhereEachValueLands() {
+        List<DynamicTest> tests = new ArrayList<>();
+        for (var v : section("substitutions")) {
+            var source = (String) v.get("source");
+            var form = form((String) v.get("form"));
+            var values = (Map<String, Object>) v.get("values");
+            tests.add(DynamicTest.dynamicTest(v.get("form") + " " + source + " " + values, () -> {
+                if (v.containsKey("error")) {
+                    var ex = assertThrows(IllegalArgumentException.class,
+                            () -> JsonPathSource.substitute(source, form, values::get));
+                    assertEquals(v.get("error"), ex.getMessage());
+                } else {
+                    var query = JsonPathSource.substitute(source, form, values::get);
+                    assertEquals(v.get("query"), query);
+                    assertDoesNotThrow(() -> JsonPath.compileLenient(query), "the query compiles");
+                }
+            }));
+        }
+        assertEquals(39, tests.size(), "substitution vector count");
+        return tests;
+    }
+
+    @Test
+    void aPluginsJsonPathArgumentIsSubstitutedWithItsChecks() {
+        Map<String, Object> values = Map.of("model.team", "alpha", "model.b", "x");
+        // the JSONPath argument is substituted with its checks, the other arguments as the engine always has
+        var lhs = "f:concat($.people[?(@.team == {model.team})].name, text({model.b}))";
+        assertEquals("f:concat($.people[?(@.team == 'alpha')].name, text(X))",
+                helper.substituteJsonPaths(lhs, JsonPathSource.Form.EVENT_SCRIPT, values::get,
+                        part -> part.replace("{model.b}", "X")));
+        var ex = assertThrows(IllegalArgumentException.class, () -> helper.substituteJsonPaths(
+                "f:length( $.items[{model.team}])", JsonPathSource.Form.EVENT_SCRIPT, values::get, part -> part));
+        assertEquals("Cannot substitute {model.team} into '$.items[{model.team}]' - 'alpha' is not an integer index",
+                ex.getMessage());
+        assertEquals("model.a", helper.substituteJsonPaths("model.a", JsonPathSource.Form.EVENT_SCRIPT,
+                values::get, part -> part));
     }
 
     @Test

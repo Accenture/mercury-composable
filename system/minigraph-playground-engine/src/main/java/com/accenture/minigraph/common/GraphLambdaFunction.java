@@ -414,15 +414,23 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     /**
      * Render {selectors} into the source of a data mapping - a key path, a constant or a plugin call.
      * The value is inserted verbatim: a mapping source is never a boolean expression, so a '!', '<',
-     * '>' or '==' inside a text constant does not make it one. A JSONPath filter is the exception: a
-     * text value is quoted there so that it reads as a string literal in the query.
+     * '>' or '==' inside a text constant does not make it one. A JSONPath source, and a simple plugin's
+     * JSONPath argument, are the exception (RFC-0010 WP4): each value is checked where it lands, so that it
+     * cannot change the query's structure - a key path in a name, an integer in an index, escaped inside a
+     * string literal, and a text value quoted as a string literal bare in a filter.
      *
      * @param text the mapping source before substitution
      * @param stateMachine the graph state machine
      * @return the rendered source
      */
     protected String substituteMappingSource(String text, MultiLevelMap stateMachine) {
-        return substituteVarIfAny(text, stateMachine, text.startsWith("$.") && text.contains("@"));
+        if (helper.hasJsonPath(text)) {
+            return helper.substituteJsonPaths(text, JsonPathSource.Form.GRAPH, key -> {
+                JsonPathSource.refuseJsonPathKey(key);
+                return helper.getLhsOrConstant(key, stateMachine);
+            }, part -> substituteVarIfAny(part, stateMachine, false));
+        }
+        return substituteVarIfAny(text, stateMachine, false);
     }
 
     /**
@@ -503,8 +511,8 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     }
     
     private String escapeVar(Object parameter) {
-        var v = String.valueOf(parameter);
-        return v.contains("'")? v.replace("'", "\\'") : v;
+        // the expression lexer reads a backslash as an escape, so it is escaped first, then the quote
+        return String.valueOf(parameter).replace("\\", "\\\\").replace("'", "\\'");
     }
 
     protected void handleDataMappingEntry(String nodeName, String command, GraphInstance graphInstance) {

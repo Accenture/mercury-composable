@@ -105,6 +105,14 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    - **A simple plugin's `$` argument reaches the plugin whole.** The argument splitter cut it at a comma inside its brackets
      or a string literal, so `f:length($['a','b'])` or a filter on `'a,b'` failed. It now ends a `$` argument at the first
      comma outside them; every other argument splits as before.
+   - **A substituted value cannot change a query's structure.** A reference in a `$` path is still replaced before the query
+     is parsed, and its value is now checked where it lands. In a name it must be a key path, names joined by dots, each
+     optionally with `[n]` indexes (`items[0].name`). In an index it must be an integer. Inside a string literal the author
+     wrote, it is escaped for that literal: its quote, its backslash and its control characters. Bare in a filter, a number,
+     a boolean or null is inserted as written, and text becomes a string literal; Event Script keeps text that is already one
+     literal (`10`, `true`, `'abc'`) as written, as it always has. A list or a map is never substituted. A value that fails
+     its check fails the mapping by name: `Cannot substitute {model.key} into '$.input.body.{model.key}' - '*' is not a key
+     path`. The same checks apply to a simple plugin's `$` argument. Both engines, pinned by 39 shared substitution vectors.
 
    **Upgrade note (READ):**
    - **Jayway-only syntax is refused,** with an error that names the position. This covers the filter operators `in`,
@@ -126,6 +134,9 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
      expression or a mapping source is refused. Map the value to a model variable first (`$.input.body.amount ->
      model.amount`), then use `{model.amount}`.
    - **A reference directly after the root,** as in `${model.key}`, is refused, because no value can make a query there.
+   - **A value that carried query syntax** into a `$` path - a wildcard, a filter, `..` or a quote - now fails the mapping
+     instead of changing the query. In a knowledge graph, a text value inside a literal the author quoted
+     (`'{model.team}'`) is no longer quoted a second time, so that form now works.
 
 ### Fixed
 
@@ -156,6 +167,11 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    artifact, and none of them carries ASM 9.7.1. **Upgrade note:** an application whose parent is `spring-boot-starter-parent`
    takes Netty's version from Spring Boot unless its own pom sets `netty.version`; set it to `4.2.19.Final`, as the starter
    templates do. An application that pins its own versions of these libraries should move to at least these.
+4. **A text value with a backslash keeps it in a knowledge graph's quoted expression.** In a `graph.math` expression (`IF`,
+   `CONDITION`, `COMPUTE`), a `{reference}` to a text value is quoted as a string literal, and the quoting escaped the quote
+   but not the backslash. The expression lexer reads a backslash as an escape, so `C:\temp` became a tab and a value that
+   ended with `\` escaped the closing quote and failed the statement. The backslash is now escaped first. Both engines.
+   **Upgrade note:** none - an expression that compared such a value read the wrong text or failed.
 
 ---
 ## Version 4.12.25, 10/12/2026

@@ -45,8 +45,20 @@
       refused; 16 normalized paths lack RFC 9535's escapes, unused by the engine and pinned.
     - Parity checked (Eric's question): Rust already substitutes before it parses, at every site. Nested braces differ; that
       is left for WP4.
-  - **Next:** WP4, substitution checks where each value lands, on both engines, including the backslash escape and the
-    nested-brace difference. Then WP5: the guides, help pages and claims, with the syntax guide's plugin-argument sentence
-    kept and clarified.
+  - **Rust WP3 merged:** mercury #391, 2026-10-22.
+  - **WP4 done on both engines, 2026-10-22** (Java on this branch; Rust on `feat/jsonpath-substitution-rfc-0010`, Increment
+    186). Each value substituted into a `$` source is checked where it lands. Eric's two rulings, recorded in RFC-0010:
+    - Event Script keeps a text value bare in a filter as written when it is already one literal (`10`, `true`, `'abc'`), so
+      numeric text still compares as a number; the knowledge graph quotes all text, as it always has.
+    - A name takes Mercury's dot-bracket key path (`items[0].name`).
+    Also done:
+    - the graph's `graph.math` quoting escapes the backslash, a Fixed item on both engines;
+    - nested references inside a `$` source are refused on both engines;
+    - 39 shared substitution vectors give the same queries and messages on both engines;
+    - one runtime flow and one runtime graph exercise it end to end on each engine.
+    Found: my WP3 Rust CHANGELOG edit had put Changed 5 below the `---` that closes the Unreleased section; WP4 restores it
+    ([[conv-changelog-from-tag-range]]).
+  - **Next:** WP5, the guides, help pages and claims. The syntax guide's plugin-argument sentence is kept and clarified; the
+    `json-path-result-shape` claim says "Jayway's". Then one Java PR for WP1 to WP5, and the merge into the OneAgent branch.
   - If accepted, it makes [[json-path-boot-bom-override]] moot. Relates [[conv-library-pins-are-direct-dependencies]].
   <!-- id: minimalist-jsonpath | created: 2026-10-22 | last_used: 2026-10-22 | uses: 1 | tier: working | origin: 2026-10-22-040817 -->
