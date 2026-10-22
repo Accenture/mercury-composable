@@ -22,7 +22,13 @@
     - **the compliance suite 715 of 715 with no deviation,** values and normalized paths both;
     - the Rust engine's shape and hyphen cases ported;
     - 779 tests in all, 100% of lines and 95.7% of branches covered.
-  - **Next:** WP2, the swap in `MultiLevelMap` and the Playground, the dependency removal, the Jayway differential and
-    the benchmark.
+  - **WP2 done,** same branch, 2026-10-22:
+    - `MultiLevelMap` evaluates `$` paths through `compileLenient` + `read`, with a 2,000-entry Caffeine cache;
+    - json-path, json-smart and accessors-smart are out of every module;
+    - the Jayway differential found one intended difference (a present non-array member yields `[]`, where Jayway
+      answered not found or threw), and evaluation is about 3x faster;
+    - report `docs/test-reports/minimalist-jsonpath-differential.md`, harness `benchmark/jsonpath-differential/`;
+    - the whole reactor passes, 2,622 tests.
+  - **Next:** WP3, refusal at deployment (CompileGraph and the flow compiler), on both engines.
   - If accepted, it makes [[json-path-boot-bom-override]] moot. Relates [[conv-library-pins-are-direct-dependencies]].
   <!-- id: minimalist-jsonpath | created: 2026-10-22 | last_used: 2026-10-22 | uses: 1 | tier: working | origin: 2026-10-22-040817 -->

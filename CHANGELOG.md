@@ -84,6 +84,31 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
 3. **The Playground's command input states its keys once.** The input box's placeholder repeated the hint printed below it and
    was clipped at the box's edge. It now reads "Enter command", and the hint below uses symbols: "⏎ to send · ⇧⏎ for new line ·
    ↑↓ for history". Both engines; the bundle is regenerated for both. **Upgrade note:** none.
+4. **JSONPath follows RFC 9535: an in-house engine, `minimalist-jsonpath`, replaces Jayway JsonPath (RFC-0010).** Every `$`
+   path of an Event Script flow or a knowledge graph is now evaluated by `system/minimalist-jsonpath`, written from RFC 9535,
+   the IETF JSONPath standard, with no dependency beyond `java.base`.
+   - **Conformance and parity.** It passes the standard's compliance suite, all 715 cases. The Rust engine already evaluates
+     `$` paths with an RFC 9535 implementation, so both engines now accept the same queries and give the same answers.
+     Mercury's result shape and a hyphen in a dotted name (`$.fetcher-ext.result`) are kept, pinned by the Rust engine's own
+     cases.
+   - **Dependencies.** `com.jayway.jsonpath:json-path`, `net.minidev:json-smart` (reported vulnerable, CVE-2026-113602, with
+     no fixed release) and `accessors-smart` leave every module's dependency tree.
+   - **Speed.** Evaluation takes about a third of Jayway's time on the repository's paths. Compiled queries are cached.
+   - **Evidence.** The differential and the benchmark are in `docs/test-reports/minimalist-jsonpath-differential.md`.
+
+   **Upgrade note (READ):**
+   - **Jayway-only syntax is refused,** with an error that names the position. This covers the filter operators `in`,
+     `nin`, `subsetof`, `anyof`, `noneof`, `size`, `empty` and `=~`, trailing functions such as `.length()` or `.sum()`, and
+     array literals in a filter. The standard's forms replace them: `@.code == 'a' || @.code == 'b'`,
+     `match(@.code, 'a|b')`, `length(@.tags) == 1`, `count(@.tags[*]) == 0`. The Rust engine answered these queries with a
+     silent null.
+   - **Filter comparisons are type-strict:** `'5' == 5` is false.
+   - **A path through a present member that is not an array** yields an empty list when it indexes, slices or filters that
+     member. Jayway answered not found or failed the mapping.
+   - **A union of names** (`$['a','b']`) yields a list, as the guides said; Jayway returned an object.
+   - **A slice follows its step and its sign.**
+   - **Direct use.** An application that used Jayway or json-smart directly now declares them itself.
+   - **Error text.** The error for a bad path now names a reason and a position.
 
 ### Fixed
 

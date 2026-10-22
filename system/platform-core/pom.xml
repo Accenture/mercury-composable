@@ -89,28 +89,11 @@
             <version>9.11.1</version>
         </dependency>
 
+        <!-- The JSONPath engine (RFC 9535): a zero-dependency module of this repository (system/minimalist-jsonpath). -->
         <dependency>
-            <groupId>net.minidev</groupId>
-            <artifactId>json-smart</artifactId>
-            <version>2.6.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.ow2.asm</groupId>
-                    <artifactId>asm</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>com.jayway.jsonpath</groupId>
-            <artifactId>json-path</artifactId>
-            <version>3.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>net.minidev</groupId>
-                    <artifactId>json-smart</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>minimalist-jsonpath</artifactId>
+            <version>4.12.25</version>
         </dependency>
 
         <!-- The MessagePack codec: a zero-dependency module of this repository (system/minimalist-msgpack). -->

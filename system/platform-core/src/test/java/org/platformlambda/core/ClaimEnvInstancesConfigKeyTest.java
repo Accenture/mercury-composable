@@ -79,9 +79,11 @@ class ClaimEnvInstancesConfigKeyTest extends TestBase {
         // throws from the composite-key parser rather than returning null, and the
         // preload path does not catch it, so it would be fatal at application startup
         AppConfigReader config = AppConfigReader.getInstance();
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        // (since RFC-0010 the JSONPath engine names the character and its position, where Jayway's message
+        // said "Illegal character")
+        RuntimeException ex = assertThrows(IllegalArgumentException.class,
                 () -> config.getProperty("${NON_EXIST_CLAIM_ENV_KEY:99}"));
-        assertTrue(String.valueOf(ex.getMessage()).contains("Illegal character"),
+        assertTrue(String.valueOf(ex.getMessage()).startsWith("unexpected '{' at position 1"),
                 "the composite-key parser must reject the '$'-rooted literal: " + ex);
     }
 }
