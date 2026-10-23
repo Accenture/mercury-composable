@@ -1,4 +1,4 @@
-# Dynatrace OneAgent invocation observer (experimental)
+# Dynatrace OneAgent invocation observer
 
 Code-level tracing for Dynatrace OneAgent. Mercury hands an event from one composable function to the next
 through its event bus and a per-route queue, so OneAgent's own instrumentation loses the request at every hop.
@@ -6,7 +6,7 @@ This extension brackets each hop with the **OneAgent SDK**: a send is an outgoin
 rides on the event envelope, and the receiving function is an incoming message that consumes it. A request
 then shows as one connected PurePath, across function calls, RPCs, Event Script flows and Event-over-HTTP.
 
-The design, the settings, the limits and the field-experiment procedure are in the Observability guide,
+The design, the settings, the limits and how to check it are in the Observability guide,
 section *Code-level tracing with an agent* (`docs/guides/observability.md#live-tracing`).
 
 ## Use it

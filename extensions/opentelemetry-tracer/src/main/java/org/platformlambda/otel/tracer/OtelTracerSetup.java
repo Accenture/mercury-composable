@@ -35,7 +35,7 @@ import java.util.function.BinaryOperator;
  * {@code otel.tracing=true} (default off).
  * <p>
  * It uses {@link GlobalOpenTelemetry}: whatever the attached agent installs. The implementation's class is
- * logged at startup, so a field experiment can see which agent is recording; the observer is registered
+ * logged at startup, so an operator can see which agent is recording; the observer is registered
  * either way, because an agent may implement the API by instrumenting it in place.
  */
 @OptionalService("otel.tracing")

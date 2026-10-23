@@ -50,7 +50,7 @@ import java.util.concurrent.ConcurrentMap;
  * new entry point. All hops share one messaging system (vendor {@code Mercury}); the destination is the
  * application name by default, so a route does not become a Dynatrace service - the route travels as the
  * custom request attribute {@code mercury.route}. {@code dynatrace.oneagent.destination=route} makes each
- * route its own destination, for a field experiment that wants every hop named in the PurePath.
+ * route its own destination, for a check that wants every hop named in the PurePath.
  * <p>
  * <b>Thread affinity.</b> SDK tracers must start and end on one thread, LIFO. The engine guarantees it: a
  * hop's scope opens and closes on the worker thread, and an outgoing tracer opens and closes inside one

@@ -318,10 +318,7 @@ To target a system without an OTLP path, implement your own function at `distrib
 the dataset described in [What a trace records](#metrics) — for example, write it to a metrics database or a
 proprietary APM API.
 
-## Code-level tracing with an agent (experimental) {#live-tracing}
-
-> **Experimental.** This section describes a snapshot built for a field experiment. The settings, the
-> defaults and the two extensions may change before a release.
+## Code-level tracing with an agent {#live-tracing}
 
 The forwarder reports a span **after** a function finished. An APM agent's code-level view needs something
 else: a tracer that brackets the real call, on the real call stack, so the agent can nest it inside the
@@ -371,13 +368,13 @@ before Java 24 (JEP 491), a virtual thread that blocks inside `synchronized` cod
 OpenTelemetry extension, also enable the OneAgent feature *OpenTelemetry (Java)*. By default it takes Server
 and Consumer spans as entry points, and each hop is a Consumer span.
 
-**The field experiment.** Drive one traced request through several function hops and a flow, then check four
+**Checking it.** Drive one traced request through several function hops and a flow, then check four
 things in Dynatrace:
 
 1. The request shows as **one connected tree**, with a node for every hop.
 2. Every log line of the request carries the trace and span ids of the node that wrote it.
 3. The route in `invocation.observer.unlinked` appears as a **separate fragment**. If it does not, the
-   experiment cannot tell a connected trace from a broken one, and its results prove nothing.
+   check cannot tell a connected trace from a broken one, and its results prove nothing.
 4. A `Mono` function's node, or span, has the expected duration.
 
 Run the OneAgent extension and the OpenTelemetry extension in turn, with the same requests, and compare.
@@ -582,6 +579,6 @@ trace. A collector configuration must not drop a record that has no `context`.
 
 - [Build, Test & Deploy](build-test-deploy.md) — enabling tracing and the forwarder hook.
 - [Configuration Reference](configuration-reference.md#observability) — the `trace.*` and `otel.*` keys.
-- [Code-level tracing with an agent](#live-tracing) — the experimental OneAgent and OpenTelemetry invocation observers.
+- [Code-level tracing with an agent](#live-tracing) — the OneAgent and OpenTelemetry invocation observers.
 - [Reserved Names & Headers](reserved-names-and-headers.md) — `distributed.trace.forwarder`, `traceparent`.
 - [Architecture Overview](architecture.md) — the three layers the span tree mirrors.

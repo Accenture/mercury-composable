@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *       are observed. An entry ending with {@code *} matches a route prefix.</li>
  *   <li>{@code invocation.observer.exclude} - routes never observed. Defaults to the telemetry routes
  *       and the RPC reply inbox, which are plumbing; setting the property replaces the default.</li>
- *   <li>{@code invocation.observer.unlinked} - the negative control of a field experiment: these
+ *   <li>{@code invocation.observer.unlinked} - the negative control of a tracing check: these
  *       routes are observed, but {@link InvocationObserver#begin} sees no incoming tags, so each of
  *       their invocations starts a new trace. A test that cannot see that break proves nothing.</li>
  * </ul>

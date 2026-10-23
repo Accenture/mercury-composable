@@ -63,7 +63,7 @@
         <module>examples/distributed-cache-example</module>
         <module>examples/twin-kafka-demo</module>
 
-        <!-- The Dynatrace OneAgent lab of the field experiment (RFC-0009): two test applications
+        <!-- The Dynatrace OneAgent lab (RFC-0009): two test applications
              that run in containers with OneAgent attached; see lab/dynatrace-oneagent/README.md -->
         <module>lab/dynatrace-oneagent/lab-edge</module>
         <module>lab/dynatrace-oneagent/lab-worker</module>

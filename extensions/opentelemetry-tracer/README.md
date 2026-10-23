@@ -1,4 +1,4 @@
-# OpenTelemetry invocation tracer (experimental)
+# OpenTelemetry invocation tracer
 
 Code-level tracing through the vendor-neutral **OpenTelemetry API**. Each composable-function hop becomes a
 live `CONSUMER` span named after its route. Its parent is the W3C context the sender wrote into the event
@@ -14,7 +14,7 @@ This module depends on the API only. Whatever implements the API in the JVM reco
 This is different from `extensions/opentelemetry-forwarder`, which exports finished spans after the fact. Do not
 run both into the same backend.
 
-The design, the settings, the limits and the field-experiment procedure are in the Observability guide,
+The design, the settings, the limits and how to check it are in the Observability guide,
 section *Code-level tracing with an agent* (`docs/guides/observability.md#live-tracing`).
 
 ## Use it

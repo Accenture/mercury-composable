@@ -11,7 +11,7 @@
     <description>
         Code-level tracing for Dynatrace OneAgent: an invocation observer that brackets every composable
         function hop with the OneAgent SDK (each hop a message, linked by a tag on the event envelope), so a
-        request shows as one connected PurePath. Inert without an attached OneAgent. EXPERIMENTAL.
+        request shows as one connected PurePath. Inert without an attached OneAgent.
     </description>
 
     <parent>

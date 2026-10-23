@@ -1,8 +1,9 @@
 # Dynatrace OneAgent lab
 
-A local lab for the field experiment of RFC-0009: a Kafka broker and two Mercury applications run in
-containers on Colima, with Dynatrace OneAgent installed full-stack in Colima's Linux VM. One request enters
-over REST, runs an Event Script flow, is published to Kafka, and runs a second flow in the other application.
+A local lab for the OneAgent integration (RFC-0009), run from a dev machine against a Dynatrace environment:
+a Kafka broker and two Mercury applications run in containers on Colima, with Dynatrace OneAgent installed
+full-stack in Colima's Linux VM. One request enters over REST, runs an Event Script flow, is published to
+Kafka, and runs a second flow in the other application.
 
 | Container | Role |
 |---|---|

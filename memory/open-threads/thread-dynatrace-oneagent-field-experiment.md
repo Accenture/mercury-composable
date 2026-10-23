@@ -2,9 +2,12 @@
   (→ proposal: RFC-0009; serves [[vision-mercury-composable]]). The branch adds the live invocation-observer seam to
   platform-core (`org.platformlambda.core.spi`, hooked in `WorkerHandler`, `EventEmitter`'s Event Script dispatch and its five send
   entry points) plus two optional adapters, `extensions/dynatrace-oneagent` (OneAgent SDK, hops as linked messages) and
-  `extensions/opentelemetry-tracer` (live OpenTelemetry API spans). **The field-snapshot gate is LIFTED (Eric, 2026-10-23).** His
-  rule of 2026-10-21 was no PR until the field had tested a snapshot; the sandbox run below proved enough to drop it, and the
-  branch goes to main through its PR, with the lab committed to it, so the next release carries the feature. Next: Eric's
+  `extensions/opentelemetry-tracer` (live OpenTelemetry API spans). **The field-snapshot gate is LIFTED, and the feature is REGULAR
+  feature development, no longer experimental (Eric, 2026-10-23).** The plan of 2026-10-21 was to certify it in the field on
+  a locally built snapshot, with no PR before that. With the support of Dynatrace's engineering team, the experiment runs
+  instead from the dev machine against a Dynatrace sandbox environment, so a dev cycle is a rebuild, not a field release. The
+  run below proved enough, so the branch goes to main through PR #583, with the lab committed to it, and the next release
+  carries the feature. Next: Eric's
   decisions on the run's findings below, then the OpenTelemetry adapter's run in the lab. A run's checklist:
   `docs/guides/observability.md#live-tracing` - the PurePath tree, the `invocation.observer.unlinked` fragment (the negative
   control), the log ids per line, a Mono hop's duration, any `OneAgent SDK:` warnings, and the overhead. The branch keeps

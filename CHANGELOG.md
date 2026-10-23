@@ -61,18 +61,17 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
 6. **The MiniGraph Playground engine has a favicon - the Mercury atom.** `public/favicon.ico` holds 16, 32 and 48 px images of
    the white atom that the documentation site and the API playground use, on the API playground's deep purple. It answers the
    `/favicon.ico` request that every Playground page load answered with 404. Both engines. **Upgrade note:** none.
-7. **EXPERIMENTAL - code-level tracing for an APM agent: live invocation observers (RFC-0009).** An agent such as Dynatrace
-   OneAgent loses a request at each hop between composable functions, because Mercury hands the event through its event bus and
-   a per-route queue. Platform-core gains a vendor-neutral seam, `org.platformlambda.core.spi`. A live observer is called inline
-   when a function is about to run, on the thread that runs it, and when an event is about to be sent; the linkage between hops
-   rides as a tag on the event envelope, so it also crosses Event-over-HTTP. Two optional extensions use it, both off by default:
+7. **Code-level tracing for an APM agent: live invocation observers (RFC-0009).** An agent such as Dynatrace OneAgent loses a
+   request at each hop between composable functions, because Mercury hands the event through its event bus and a per-route queue.
+   Platform-core gains a vendor-neutral seam, `org.platformlambda.core.spi`. A live observer is called inline when a function is
+   about to run, on the thread that runs it, and when an event is about to be sent; the linkage between hops rides as a tag on
+   the event envelope, so it also crosses Event-over-HTTP. Two optional extensions use it, both off by default:
    `dynatrace-oneagent` (`dynatrace.oneagent=true`) brackets each hop with the OneAgent SDK as a linked message, for one
    connected PurePath per request; `opentelemetry-tracer` (`otel.tracing=true`) opens a live OpenTelemetry span per hop through
    the vendor-neutral API, for an agent that implements it. A traced request is observed on every route but the telemetry routes
-   and the RPC inbox (`invocation.observer.include`/`exclude`); `invocation.observer.unlinked` is a field experiment's negative
-   control. Event Script's kick-off event to `task.executor` now carries the flow's trace id, so a flow's first task stays linked.
-   Built for a field experiment; the settings may change before the release. **Upgrade note:** none - nothing is observed unless
-   an extension is added and switched on.
+   and the RPC inbox (`invocation.observer.include`/`exclude`); `invocation.observer.unlinked` is the negative control of a
+   tracing check. Event Script's kick-off event to `task.executor` now carries the flow's trace id, so a flow's first task stays
+   linked. **Upgrade note:** none - nothing is observed unless an extension is added and switched on.
 
 ### Changed
 

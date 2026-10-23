@@ -12,7 +12,7 @@
         Code-level tracing through the vendor-neutral OpenTelemetry API: an invocation observer that opens a
         live span per composable function hop (linked by a W3C context tag on the event envelope). An agent
         that implements the API in-process - Dynatrace OneAgent with its OpenTelemetry (Java) feature, or the
-        OpenTelemetry Java agent - records the spans. EXPERIMENTAL.
+        OpenTelemetry Java agent - records the spans.
     </description>
 
     <parent>

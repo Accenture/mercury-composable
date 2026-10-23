@@ -770,7 +770,7 @@ Request headers for the `opentelemetry-forwarder` extension — **where backend 
 
 > The `otel.*` values support `${ENV_VAR:default}` substitution, so the forwarder is configured entirely from `application.properties` while secrets stay in the environment.
 
-The next keys belong to the **experimental** live invocation observers, which bracket each composable-function hop for an APM agent's code-level view (see [Code-level tracing with an agent](observability.md#live-tracing)).
+The next keys belong to the live invocation observers, which bracket each composable-function hop for an APM agent's code-level view (see [Code-level tracing with an agent](observability.md#live-tracing)).
 
 ### `otel.tracing`
 
@@ -826,7 +826,7 @@ Routes a live invocation observer never observes; setting the property replaces 
 |------|---------|
 | `String` (comma-sep routes) | — |
 
-The **negative control** of a tracing experiment: these routes are observed but never see the incoming linkage tag, so each of their invocations starts a new trace. An experiment that cannot see this break cannot tell a connected trace from a broken one.
+The **negative control** of a tracing check: these routes are observed but never see the incoming linkage tag, so each of their invocations starts a new trace. A check that cannot see this break cannot tell a connected trace from a broken one.
 
 ---
 

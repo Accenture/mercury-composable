@@ -285,11 +285,14 @@ with W3C context in the tag; OneAgent's *OpenTelemetry (Java)* feature or the Op
 span may end on another thread, so a reactive hop shows its real duration. **(4) One fix found by the linkage test:**
 Event Script's kick-off event to `task.executor` carried no trace id (the executor reads it from the flow instance), so it
 was unobserved and a flow's first task started a new trace; it now carries the flow's trace. Built on branch
-`feature/dynatrace-oneagent-compatibility`. **The field-snapshot gate is lifted (Eric, 2026-10-23).** The rule of
-2026-10-21 was no PR until the field had tested a snapshot. The sandbox run of 2026-10-22 proved enough to drop it: with
-the OneAgent adapter, a request was one connected, nested PurePath through every hop, the RPC and the `Mono` included,
-and every log line carried `dt.trace_id` and `dt.span_id`. The branch goes to main through its PR; the run's findings
-are on the thread.
+`feature/dynatrace-oneagent-compatibility`. **Tested from a dev machine, not in the field (Eric, 2026-10-23).** The plan
+of 2026-10-21 was to certify the integration end to end in the field, on a snapshot built locally, with no PR before
+that. With the support of Dynatrace's engineering team, the experiment runs instead from a dev machine against a
+Dynatrace sandbox environment, so a dev cycle is a rebuild rather than a field release. The first run (2026-10-22)
+proved enough to lift the gate: with the OneAgent adapter, a request was one connected, nested PurePath through every
+hop, the RPC and the `Mono` included, and every log line carried `dt.trace_id` and `dt.span_id`. The feature moves from
+experimental to regular feature development, and the branch goes to main through its PR; the run's findings are on the
+thread.
 **Options.** (a) The OneAgent SDK adapter alone: native PurePath nodes, but SDK tracers are bound to one thread, so a `Mono`
 completion is a linked node, not a long hop. (b) The OpenTelemetry adapter alone: not tied to one vendor, and spans are not
 bound to a thread, but it depends on an agent capturing OpenTelemetry API spans, and Dynatrace documents that spans may
