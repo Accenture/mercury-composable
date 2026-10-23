@@ -3614,7 +3614,7 @@
   <a href="#scheduler-environment" class="md-nav__link">
     <span class="md-ellipsis">
       
-        scheduler.environment
+        scheduler.environment.name
       
     </span>
   </a>
@@ -6411,7 +6411,7 @@
   <a href="#scheduler-environment" class="md-nav__link">
     <span class="md-ellipsis">
       
-        scheduler.environment
+        scheduler.environment.name
       
     </span>
   </a>
@@ -9029,7 +9029,7 @@ for a setup walkthrough.</p>
 </tbody>
 </table>
 <p>Location(s) of the cron job definition file(s). Multiple files are merged.</p>
-<h3 id="scheduler-environment"><code>scheduler.environment</code><a class="headerlink" href="#scheduler-environment" title="Permanent link">&para;</a></h3>
+<h3 id="scheduler-environment"><code>scheduler.environment.name</code><a class="headerlink" href="#scheduler-environment" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -9044,10 +9044,14 @@ for a setup walkthrough.</p>
 </tr>
 </tbody>
 </table>
-<p>This instance's environment in an active-active deployment, e.g. <code>scheduler.environment=${ENV_NAME:prod}</code>; one word of letters,
+<p>This instance's environment in an active-active deployment, e.g. <code>scheduler.environment.name=${ENV_NAME:prod}</code>; one word of letters,
 digits, hyphens and underscores, compared case-insensitively with the <em>active environment</em> - the one whose scheduler runs the jobs,
 <code>prod</code> until the operations team sets another. When this instance's environment is not the active one, the scheduler stands by: a scheduled job is skipped with one log line, and an operator's manual run is still honoured. The operations team moves the active environment through the application's REST endpoint (the example's
 <code>POST /api/scheduler/environment</code>), which writes the store below.</p>
+<p>Before 4.12.26 the name was set as <code>scheduler.environment</code>. A key cannot be both a value and the parent of other keys, so beside
+<code>scheduler.environment.store</code> that value was lost and the application failed to start. <code>scheduler.environment</code> is now a parent only. Its
+plain value is still read, with a deprecation warning; next to the store, the application refuses to start and asks for
+<code>scheduler.environment.name</code>, rather than taking <code>prod</code> on a DR site.</p>
 <h3 id="scheduler-environment-store"><code>scheduler.environment.store</code><a class="headerlink" href="#scheduler-environment-store" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
