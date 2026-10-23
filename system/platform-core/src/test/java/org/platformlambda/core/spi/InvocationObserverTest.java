@@ -242,6 +242,21 @@ class InvocationObserverTest extends TestBase {
     }
 
     @Test
+    void theFirstValidAgentTraceIdIsAdopted() {
+        assertNull(InvocationObservers.traceId(), "no observer, no agent trace id");
+        register(new AgentTraceId(() -> {
+            throw new IllegalStateException("agent failure");
+        }));
+        register(new AgentTraceId(() -> "not-a-w3c-trace-id"));
+        register(new AgentTraceId(() -> "00000000000000000000000000000000"));
+        assertNull(InvocationObservers.traceId(), "a failing observer and invalid ids are passed over");
+
+        register(new AgentTraceId(() -> "4bf92f3577b34da6a3ce929d0e0e4736"));
+        register(new AgentTraceId(() -> "0af7651916cd43dd8448eb211c80319c"));
+        assertEquals("4bf92f3577b34da6a3ce929d0e0e4736", InvocationObservers.traceId());
+    }
+
+    @Test
     void aFailingObserverNeverBreaksDelivery() throws Exception {
         register(new Failing());
         Recorder recorder = register(new Recorder("a"));
@@ -312,6 +327,26 @@ class InvocationObserverTest extends TestBase {
         InvocationObservers.abandon(null, "x");
         assertEquals(1, delivered.get());
         assertFalse(InvocationObservers.unregister(new Recorder("never registered")));
+    }
+
+    /**
+     * An observer that only answers the agent's trace id.
+     */
+    private record AgentTraceId(java.util.function.Supplier<String> id) implements InvocationObserver {
+        @Override
+        public InvocationScope begin(InvocationInfo info, InvocationCarrier carrier) {
+            return null;
+        }
+
+        @Override
+        public void send(InvocationInfo info, InvocationCarrier carrier) {
+            // links nothing
+        }
+
+        @Override
+        public String traceId() {
+            return id.get();
+        }
     }
 
     private <T extends InvocationObserver> T register(T observer) {

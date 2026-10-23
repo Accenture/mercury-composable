@@ -31,6 +31,6 @@
   no span); its PurePath is not the OTel current context at the REST entry. Eric chose option B: the adapter is REMOVED
   from #583 (the seam stays vendor-neutral), and he asks Dynatrace whether OneAgent can honour a W3C parent on API spans.
   Production shape in the lab (no unlinked route): ONE Mercury trace = ONE Dynatrace trace across both applications; with a
-  client `traceparent` the ids are even identical. Without one, the ids differ: Mercury mints its own at `HttpRouter` -
-  aligning it with the agent's trace id is proposed to Eric.
+  client `traceparent` the ids are even identical. Without one, Mercury now ADOPTS the agent's trace id at `HttpRouter`
+  (`InvocationObserver.traceId`, DONE on #583; lab 3 of 3): a Mercury trace id IS the Dynatrace trace id.
   <!-- id: dynatrace-oneagent-field-experiment | created: 2026-10-21 | last_used: 2026-10-21 | uses: 1 | tier: working | origin: 2026-10-22-003118 -->

@@ -172,6 +172,19 @@ class OneAgentObserverTest {
     }
 
     @Test
+    void theAgentsTraceIdIsOfferedWhileAPurePathIsActive() {
+        FakeOneAgent agent = new FakeOneAgent();
+        OneAgentObserver observer = new OneAgentObserver(agent.sdk, "demo-app", false, false);
+
+        assertEquals("dt-trace-1", observer.traceId());
+        agent.validTraceContext = false;
+        assertNull(observer.traceId(), "no PurePath on this thread");
+        agent.validTraceContext = true;
+        agent.state = SDKState.TEMPORARILY_INACTIVE;
+        assertNull(observer.traceId(), "an inactive agent offers nothing");
+    }
+
+    @Test
     void theLogContextCarriesOneAgentsIdsWhenEnabled() {
         FakeOneAgent agent = new FakeOneAgent();
         long thread = Thread.currentThread().threadId();

@@ -35,6 +35,7 @@ import org.platformlambda.core.annotations.ZeroTracing;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.spi.InvocationObservers;
 import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
@@ -738,18 +739,14 @@ public class HttpRouter {
         if (!route.info.tracing) {
             return new TraceContext(null, null, null, businessCorrelationId);
         }
-        String traceId = getTraceId(request, route.info.traceIdHeader);
         String tracePath = request.method().name() + " " + uri;
         if (req.getQueryString() != null) {
             tracePath += "?" + req.getQueryString();
         }
         // W3C trace context: continue an upstream trace and adopt the caller's span as our parent
-        String parentSpanId = null;
         String[] traceParent = parseInboundTraceparent(request, route);
-        if (traceParent.length > 0) {
-            traceId = traceParent[0];
-            parentSpanId = traceParent[1];
-        }
+        String traceId = traceParent.length > 0? traceParent[0] : getTraceId(request, route.info.traceIdHeader);
+        String parentSpanId = traceParent.length > 0? traceParent[1] : null;
         String traceHeaderName = route.info.traceIdHeader != null ? route.info.traceIdHeader : traceIdHeader;
         if (generatedCid && traceHeaderName.equalsIgnoreCase(cidHeaderName)) {
             businessCorrelationId = traceId;
@@ -1168,10 +1165,11 @@ public class HttpRouter {
     }
 
     /**
-     * Get the trace ID from the effective trace-id HTTP request header if present, otherwise
-     * generate a fresh one. The endpoint's 'trace.id.header' override wins over the global
-     * http.trace.id.header (default X-Trace-Id). (A well-formed W3C "traceparent" takes
-     * precedence over this at the call site.)
+     * Get the trace ID from the effective trace-id HTTP request header if present, otherwise the
+     * trace ID of an APM agent already tracing this request (a live invocation observer), so the
+     * agent's trace and Mercury's share one id, otherwise a fresh one. The endpoint's
+     * 'trace.id.header' override wins over the global http.trace.id.header (default X-Trace-Id).
+     * (A well-formed W3C "traceparent" takes precedence over this at the call site.)
      *
      * @param request HTTP
      * @param headerOverride the endpoint's trace-id header override, or null for the global name
@@ -1179,7 +1177,11 @@ public class HttpRouter {
      */
     private String getTraceId(HttpServerRequest request, String headerOverride) {
         String id = request.getHeader(headerOverride != null ? headerOverride : traceIdHeader);
-        return id != null ? id : util.getUuid();
+        if (id != null) {
+            return id;
+        }
+        String agentTraceId = InvocationObservers.traceId();
+        return agentTraceId != null ? agentTraceId : util.getUuid();
     }
 
     private String getHeaderCase(String header) {

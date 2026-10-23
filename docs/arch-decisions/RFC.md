@@ -298,7 +298,9 @@ thread. **The OpenTelemetry adapter was removed (Eric, 2026-10-23), as option (b
 recorded but never linked across the event bus, because OneAgent links an API span only through its own context on the
 thread and ignores a W3C parent set by the caller (the `SERVER` kind behaves the same, `INTERNAL` yields no span), and its
 PurePath is not OpenTelemetry's current context at the REST entry. The seam stays vendor-neutral, so an adapter for an agent
-that honours W3C parents can come back with that agent to test against.
+that honours W3C parents can come back with that agent to test against. **One trace id (Eric, 2026-10-23):** a REST request
+without a `traceparent` or a trace-id header adopts the agent's trace id through `InvocationObserver.traceId`, so a Mercury
+trace id is the Dynatrace trace id (lab: 3 of 3 orders, both applications).
 **Options.** (a) The OneAgent SDK adapter alone: native PurePath nodes, but SDK tracers are bound to one thread, so a `Mono`
 completion is a linked node, not a long hop. (b) The OpenTelemetry adapter alone: not tied to one vendor, and spans are not
 bound to a thread, but it depends on an agent capturing OpenTelemetry API spans, and Dynatrace documents that spans may

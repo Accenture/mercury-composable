@@ -60,4 +60,15 @@ public interface InvocationObserver {
      * @param carrier the outgoing event's tags
      */
     void send(InvocationInfo info, InvocationCarrier carrier);
+
+    /**
+     * The trace id of the agent's trace on the current thread. Mercury adopts it at an entry point that
+     * would otherwise mint a new trace id (a REST request without a {@code traceparent} or a trace-id
+     * header), so the agent's trace and Mercury's share one id.
+     *
+     * @return a W3C trace id (32 lowercase hex digits), or null when the thread has none
+     */
+    default String traceId() {
+        return null;
+    }
 }

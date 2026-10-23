@@ -72,7 +72,11 @@ public class W3cTrace {
         return new String[0];
     }
 
-    private static boolean validTraceId(String id) {
+    /**
+     * @param id a candidate trace id
+     * @return true for a W3C trace id: 32 lowercase hex digits, not all zero
+     */
+    public static boolean validTraceId(String id) {
         return id != null && TRACE_ID.matcher(id).matches() && !ZERO_TRACE.equals(id);
     }
 

@@ -21,6 +21,7 @@ package org.platformlambda.core.spi;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.core.util.W3cTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,6 +142,27 @@ public final class InvocationObservers {
         }
         InvocationScope scope = scopes.size() == 1? scopes.getFirst() : new CompositeScope(scopes);
         return carrier == NO_TAGS? new UnlinkedScope(scope) : scope;
+    }
+
+    /**
+     * Engine call at an entry point that would mint a new trace id: the trace id of an agent already tracing
+     * this thread, so Mercury's trace and the agent's share one id. The first observer that answers a valid
+     * W3C trace id wins.
+     *
+     * @return a W3C trace id, or null when no observer has one
+     */
+    public static String traceId() {
+        for (InvocationObserver observer : observers) {
+            try {
+                String id = observer.traceId();
+                if (W3cTrace.validTraceId(id)) {
+                    return id;
+                }
+            } catch (Exception e) {
+                failed(observer, "traceId", e);
+            }
+        }
+        return null;
     }
 
     /**

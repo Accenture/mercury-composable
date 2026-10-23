@@ -652,7 +652,7 @@ HTTP header carrying the business correlation-id (enterprise-specific; case-inse
 |------|---------|
 | `String` | `X-Trace-Id` |
 
-HTTP header recognized (inbound, when no W3C `traceparent` is present) and emitted (outbound by the async HTTP client) as the trace-id. A well-formed `traceparent` always takes precedence inbound. Overridable per endpoint with `trace.id.header` in a rest.yaml entry.
+HTTP header recognized (inbound, when no W3C `traceparent` is present) and emitted (outbound by the async HTTP client) as the trace-id. A well-formed `traceparent` always takes precedence inbound. When neither is present, REST automation adopts the trace id of an APM agent already tracing the request (a [live invocation observer](observability.md#live-tracing)), else it generates a fresh one. Overridable per endpoint with `trace.id.header` in a rest.yaml entry.
 
 ### `http.traceparent.header`
 

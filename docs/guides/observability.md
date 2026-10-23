@@ -346,6 +346,12 @@ it under OneAgent:** OneAgent links an API span only through its own context on 
 W3C parent carried on the event, so spans opened across Mercury's event bus stay separate requests. The seam is
 vendor-neutral: an adapter for another agent implements `InvocationObserver`.
 
+**One trace id.** A REST request that arrives without a `traceparent` or a trace-id header takes the trace id of
+the agent's trace, which OneAgent's HTTP instrumentation has already started. So Mercury's trace id - in log lines,
+telemetry and the forwarder's spans - is the Dynatrace trace id of the request, in every application it reaches. A
+request that carries a `traceparent` keeps its id, and OneAgent continues the same `traceparent`, so the two agree
+there too. The precedence is: `traceparent`, then the trace-id header, then the agent's trace id, then a fresh id.
+
 **Which hops are observed.** A traced request is observed (one with a trace id; see
 [Turning tracing on](#enable)) on every route except the plumbing routes listed below. That includes Event
 Script's two routers, `event.script.manager` and `task.executor`, so a flow stays connected from task to task.
@@ -377,6 +383,7 @@ things in Dynatrace:
    the request stays in the connected tree: the route's reply keeps the caller's tag. If the route is not
    separate, the check cannot tell a connected trace from a broken one, and its results prove nothing.
 4. A `Mono` function's completion appears as a node linked to its hop, at the time the result arrived.
+5. Mercury's `trace_id` on a log line is the Dynatrace trace id of the request.
 
 ## Application log context {#log-context}
 

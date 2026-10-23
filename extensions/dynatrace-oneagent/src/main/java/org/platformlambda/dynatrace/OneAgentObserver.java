@@ -62,6 +62,10 @@ import java.util.concurrent.ConcurrentMap;
  * own trace and span ids for it are written into Mercury's log context as {@code dt.trace_id} and
  * {@code dt.span_id}, so the JSON log lines of the function carry the ids of the PurePath node that ran it.
  * Do not combine it with OneAgent's own log enrichment, which writes the same field names.
+ * <p>
+ * <b>One trace id.</b> At a REST request that arrives without a trace id, Mercury adopts the trace id of
+ * the PurePath that OneAgent's HTTP instrumentation already started ({@link #traceId}), so a Mercury trace
+ * id is also the Dynatrace trace id.
  */
 public class OneAgentObserver implements InvocationObserver {
     public static final String TAG = "dt_tag";
@@ -127,6 +131,15 @@ public class OneAgentObserver implements InvocationObserver {
         } finally {
             tracer.end();
         }
+    }
+
+    @Override
+    public String traceId() {
+        if (sdk.getCurrentState() != SDKState.ACTIVE) {
+            return null;
+        }
+        TraceContextInfo trace = sdk.getTraceContextInfo();
+        return trace != null && trace.isValid()? trace.getTraceId() : null;
     }
 
     private MessagingSystemInfo destination(String route) {
