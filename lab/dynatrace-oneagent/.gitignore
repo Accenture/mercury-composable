@@ -1,0 +1,7 @@
+# tokens and the sandbox's address stay local
+.env
+*.env
+# the test applications' jars are built, not committed
+apps/*.jar
+# the OneAgent installer and its signing certificate are downloaded, never committed
+oneagent/

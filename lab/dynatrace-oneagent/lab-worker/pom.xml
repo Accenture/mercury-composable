@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.platformlambda</groupId>
+    <artifactId>lab-worker</artifactId>
+    <packaging>jar</packaging>
+    <version>4.12.25</version>
+    <name>Dynatrace OneAgent lab: the Kafka entry point</name>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.1</version>
+        <relativePath/>
+    </parent>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <tomcat.version>11.0.26</tomcat.version>
+        <junit-jupiter.version>6.1.3</junit-jupiter.version>
+        <netty.version>4.2.19.Final</netty.version>
+        <jackson-2-bom.version>2.22.3</jackson-2-bom.version>
+        <jackson-bom.version>3.2.3</jackson-bom.version>
+        <log4j2.version>2.26.1</log4j2.version>
+        <!-- Security override for the transitive httpcore5/httpcore5-h2 (Snyk HIGH, CWE-770) pulled
+             in via minimalist-kafka's Confluent registry client. Spring Boot's dependencyManagement
+             pins the vulnerable 5.4.2 (management beats nearest-wins), so each module resolving the
+             Confluent chain must override the property itself - see minimalist-kafka's pom. -->
+        <httpcore5.version>5.4.3</httpcore5.version>
+        <kafka.version>4.3.1</kafka.version>
+        <gson.version>2.14.0</gson.version>
+        <java.version>21</java.version>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
+    </repositories>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-bom</artifactId>
+                <version>2025.0.7</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Converge Guava to platform-core's version: Confluent's serdes (via minimalist-kafka)
+                 otherwise win with an older 32.0.1. The failureaccess companion already arrives
+                 transitively from minimalist-kafka; this keeps the demo on the same Guava as the reactor. -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>33.7.2-jre</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- minimalist-kafka brings the Kafka flow adapter and simple.kafka.notification, and transitively
+             event-script-engine, platform-core and kafka-clients -->
+        <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>minimalist-kafka</artifactId>
+            <version>4.12.25</version>
+        </dependency>
+        <!-- the two live tracers under test: each is inert until its switch is set, so one jar runs both rounds -->
+        <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>dynatrace-oneagent</artifactId>
+            <version>4.12.25</version>
+        </dependency>
+        <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>opentelemetry-tracer</artifactId>
+            <version>4.12.25</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit</groupId>
+            <artifactId>junit-bom</artifactId>
+            <version>6.1.3</version>
+            <type>pom</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.16.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>java-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-proc:full</arg>
+                                <arg>-Xlint:deprecation</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>java-test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-proc:full</arg>
+                                <arg>-Xlint:deprecation</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.5.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.5.1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>3.2.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.6.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <!-- AutoStart will find your Main Application(s) -->
+                <configuration>
+                    <mainClass>org.platformlambda.core.system.AutoStart</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>build-info</id>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.15</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
