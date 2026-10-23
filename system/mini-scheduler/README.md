@@ -28,8 +28,10 @@ publishes to the site's Kafka cluster then wakes the DR applications that must s
 is up. One property names this instance's environment:
 
 ```
-scheduler.environment=${ENV_NAME:prod}
+scheduler.environment.name=${ENV_NAME:prod}
 ```
+
+Before 4.12.26 the key was `scheduler.environment`, which is still read with a warning when it stands alone.
 
 The scheduler is **active** when its environment is the *active environment* and on **standby** otherwise:
 a scheduled job is skipped with one log line (`Standby: job demo-task skipped - the active environment is
