@@ -242,18 +242,19 @@ class InvocationObserverTest extends TestBase {
     }
 
     @Test
-    void theFirstValidAgentTraceIdIsAdopted() {
-        assertNull(InvocationObservers.traceId(), "no observer, no agent trace id");
-        register(new AgentTraceId(() -> {
+    void theFirstValidAgentTraceparentIsContinued() {
+        assertNull(InvocationObservers.traceparent(), "no observer, no agent trace context");
+        register(new AgentTraceparent(() -> {
             throw new IllegalStateException("agent failure");
         }));
-        register(new AgentTraceId(() -> "not-a-w3c-trace-id"));
-        register(new AgentTraceId(() -> "00000000000000000000000000000000"));
-        assertNull(InvocationObservers.traceId(), "a failing observer and invalid ids are passed over");
+        register(new AgentTraceparent(() -> "not-a-traceparent"));
+        register(new AgentTraceparent(() -> "00-00000000000000000000000000000000-00f067aa0ba902b7-01"));
+        assertNull(InvocationObservers.traceparent(), "a failing observer and invalid values are passed over");
 
-        register(new AgentTraceId(() -> "4bf92f3577b34da6a3ce929d0e0e4736"));
-        register(new AgentTraceId(() -> "0af7651916cd43dd8448eb211c80319c"));
-        assertEquals("4bf92f3577b34da6a3ce929d0e0e4736", InvocationObservers.traceId());
+        String first = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
+        register(new AgentTraceparent(() -> first));
+        register(new AgentTraceparent(() -> "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"));
+        assertEquals(first, InvocationObservers.traceparent());
     }
 
     @Test
@@ -330,9 +331,9 @@ class InvocationObserverTest extends TestBase {
     }
 
     /**
-     * An observer that only answers the agent's trace id.
+     * An observer that only answers the agent's trace context.
      */
-    private record AgentTraceId(java.util.function.Supplier<String> id) implements InvocationObserver {
+    private record AgentTraceparent(java.util.function.Supplier<String> value) implements InvocationObserver {
         @Override
         public InvocationScope begin(InvocationInfo info, InvocationCarrier carrier) {
             return null;
@@ -344,8 +345,8 @@ class InvocationObserverTest extends TestBase {
         }
 
         @Override
-        public String traceId() {
-            return id.get();
+        public String traceparent() {
+            return value.get();
         }
     }
 

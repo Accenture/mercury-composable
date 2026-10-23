@@ -745,7 +745,13 @@ public class HttpRouter {
         }
         // W3C trace context: continue an upstream trace and adopt the caller's span as our parent
         String[] traceParent = parseInboundTraceparent(request, route);
-        String traceId = traceParent.length > 0? traceParent[0] : getTraceId(request, route.info.traceIdHeader);
+        String headerTraceId = traceParent.length > 0? null : getTraceIdHeader(request, route.info.traceIdHeader);
+        if (traceParent.length == 0 && headerTraceId == null) {
+            // an APM agent already tracing this request: continue its trace as if the caller had sent it
+            traceParent = W3cTrace.parse(InvocationObservers.traceparent());
+        }
+        String traceId = traceParent.length > 0? traceParent[0] :
+                headerTraceId != null? headerTraceId : util.getUuid();
         String parentSpanId = traceParent.length > 0? traceParent[1] : null;
         String traceHeaderName = route.info.traceIdHeader != null ? route.info.traceIdHeader : traceIdHeader;
         if (generatedCid && traceHeaderName.equalsIgnoreCase(cidHeaderName)) {
@@ -1165,23 +1171,17 @@ public class HttpRouter {
     }
 
     /**
-     * Get the trace ID from the effective trace-id HTTP request header if present, otherwise the
-     * trace ID of an APM agent already tracing this request (a live invocation observer), so the
-     * agent's trace and Mercury's share one id, otherwise a fresh one. The endpoint's
+     * Get the trace ID from the effective trace-id HTTP request header. The endpoint's
      * 'trace.id.header' override wins over the global http.trace.id.header (default X-Trace-Id).
-     * (A well-formed W3C "traceparent" takes precedence over this at the call site.)
+     * At the call site the precedence is: a well-formed W3C "traceparent", this header, the trace
+     * context of an APM agent already tracing the request (a live invocation observer), a fresh ID.
      *
      * @param request HTTP
      * @param headerOverride the endpoint's trace-id header override, or null for the global name
-     * @return the trace ID
+     * @return the trace ID, or null when the header is absent
      */
-    private String getTraceId(HttpServerRequest request, String headerOverride) {
-        String id = request.getHeader(headerOverride != null ? headerOverride : traceIdHeader);
-        if (id != null) {
-            return id;
-        }
-        String agentTraceId = InvocationObservers.traceId();
-        return agentTraceId != null ? agentTraceId : util.getUuid();
+    private String getTraceIdHeader(HttpServerRequest request, String headerOverride) {
+        return request.getHeader(headerOverride != null ? headerOverride : traceIdHeader);
     }
 
     private String getHeaderCase(String header) {

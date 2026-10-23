@@ -36,6 +36,7 @@ import org.platformlambda.core.spi.InvocationContinuation;
 import org.platformlambda.core.spi.InvocationInfo;
 import org.platformlambda.core.spi.InvocationObserver;
 import org.platformlambda.core.spi.InvocationScope;
+import org.platformlambda.core.util.W3cTrace;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -63,9 +64,10 @@ import java.util.concurrent.ConcurrentMap;
  * {@code dt.span_id}, so the JSON log lines of the function carry the ids of the PurePath node that ran it.
  * Do not combine it with OneAgent's own log enrichment, which writes the same field names.
  * <p>
- * <b>One trace id.</b> At a REST request that arrives without a trace id, Mercury adopts the trace id of
- * the PurePath that OneAgent's HTTP instrumentation already started ({@link #traceId}), so a Mercury trace
- * id is also the Dynatrace trace id.
+ * <b>One trace.</b> At a REST request or a Kafka message that arrives without a trace id, Mercury continues the
+ * trace of the current PurePath ({@link #traceparent}), started by OneAgent's HTTP instrumentation or by the flow
+ * adapter's own hop, so a Mercury trace id is also the Dynatrace trace id, and Mercury's first span is a child of
+ * OneAgent's node.
  */
 public class OneAgentObserver implements InvocationObserver {
     public static final String TAG = "dt_tag";
@@ -134,12 +136,12 @@ public class OneAgentObserver implements InvocationObserver {
     }
 
     @Override
-    public String traceId() {
+    public String traceparent() {
         if (sdk.getCurrentState() != SDKState.ACTIVE) {
             return null;
         }
         TraceContextInfo trace = sdk.getTraceContextInfo();
-        return trace != null && trace.isValid()? trace.getTraceId() : null;
+        return trace != null && trace.isValid()? W3cTrace.format(trace.getTraceId(), trace.getSpanId()) : null;
     }
 
     private MessagingSystemInfo destination(String route) {

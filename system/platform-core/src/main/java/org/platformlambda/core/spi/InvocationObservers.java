@@ -145,21 +145,21 @@ public final class InvocationObservers {
     }
 
     /**
-     * Engine call at an entry point that would mint a new trace id: the trace id of an agent already tracing
-     * this thread, so Mercury's trace and the agent's share one id. The first observer that answers a valid
-     * W3C trace id wins.
+     * Engine call at an entry point that would start a new trace: the trace context of an agent already
+     * tracing this thread, to continue as if the caller had sent it, so Mercury's trace and the agent's are
+     * one. The first observer that answers a valid W3C {@code traceparent} wins.
      *
-     * @return a W3C trace id, or null when no observer has one
+     * @return a W3C traceparent value, or null when no observer has one
      */
-    public static String traceId() {
+    public static String traceparent() {
         for (InvocationObserver observer : observers) {
             try {
-                String id = observer.traceId();
-                if (W3cTrace.validTraceId(id)) {
-                    return id;
+                String traceparent = observer.traceparent();
+                if (W3cTrace.parse(traceparent).length > 0) {
+                    return traceparent;
                 }
             } catch (Exception e) {
-                failed(observer, "traceId", e);
+                failed(observer, "traceparent", e);
             }
         }
         return null;

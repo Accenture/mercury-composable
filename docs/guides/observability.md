@@ -346,11 +346,14 @@ it under OneAgent:** OneAgent links an API span only through its own context on 
 W3C parent carried on the event, so spans opened across Mercury's event bus stay separate requests. The seam is
 vendor-neutral: an adapter for another agent implements `InvocationObserver`.
 
-**One trace id.** A REST request that arrives without a `traceparent` or a trace-id header takes the trace id of
-the agent's trace, which OneAgent's HTTP instrumentation has already started. So Mercury's trace id - in log lines,
-telemetry and the forwarder's spans - is the Dynatrace trace id of the request, in every application it reaches. A
-request that carries a `traceparent` keeps its id, and OneAgent continues the same `traceparent`, so the two agree
-there too. The precedence is: `traceparent`, then the trace-id header, then the agent's trace id, then a fresh id.
+**One trace.** A REST request or a Kafka message that arrives without a `traceparent` or a trace-id header
+continues the agent's trace context, as if the caller had sent it as a `traceparent`. At a REST request the agent's
+trace was started by OneAgent's HTTP instrumentation; at a Kafka message, by the flow adapter's own hop. The agent's
+trace id becomes Mercury's, and the agent's span the parent of Mercury's first span. So Mercury's trace id - in log
+lines, telemetry and the forwarder's spans - is the Dynatrace trace id of the request, and the span lineage runs on
+unbroken across applications. A request that carries a `traceparent` keeps it, and OneAgent continues the same one, so
+the two agree there too. The precedence is: `traceparent`, then the trace-id header, then the agent's trace context,
+then a fresh id.
 
 **Which hops are observed.** A traced request is observed (one with a trace id; see
 [Turning tracing on](#enable)) on every route except the plumbing routes listed below. That includes Event

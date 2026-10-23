@@ -77,6 +77,8 @@ final class FakeOneAgent {
     /** The thread each tag was produced on: the sender's thread. */
     final Map<String, String> tagThreads = new ConcurrentHashMap<>();
     final List<String> infos = Collections.synchronizedList(new ArrayList<>());
+    static final String TRACE_ID = "4bf92f3577b34da6a3ce929d0e0e4736";
+    static final String SPAN_ID = "00f067aa0ba902b7";
     volatile SDKState state = SDKState.ACTIVE;
     volatile boolean pathActive = true;
     volatile boolean validTraceContext = true;
@@ -105,8 +107,8 @@ final class FakeOneAgent {
             });
             case "getTraceContextInfo" -> proxy(TraceContextInfo.class, (m, a) -> switch (m) {
                 case "isValid" -> validTraceContext;
-                case "getTraceId" -> "dt-trace-1";
-                case "getSpanId" -> "dt-span-1";
+                case "getTraceId" -> TRACE_ID;
+                case "getSpanId" -> SPAN_ID;
                 default -> null;
             });
             default -> null;

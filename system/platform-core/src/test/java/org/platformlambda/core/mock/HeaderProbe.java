@@ -28,7 +28,8 @@ import java.util.Map;
 
 /**
  * Test probe for the REST automation header-name overrides: echoes the resolved trace-id and business
- * correlation-id as observed by the target function, so a test can assert that a per-endpoint
+ * correlation-id (and the parent span id, when the trace continues one) as observed by the target function, so a
+ * test can assert that a per-endpoint
  * 'trace.id.header' / 'correlation.id.header' override in rest.yaml captured the caller's custom headers.
  */
 @PreLoad(route = "header.probe", instances = 10)
@@ -40,6 +41,10 @@ public class HeaderProbe implements TypedLambdaFunction<AsyncHttpRequest, Object
         Map<String, Object> result = new HashMap<>();
         result.put("traceId", po.getTraceId());
         result.put("cid", po.getMyCorrelationId());
+        var trace = po.getTrace();
+        if (trace != null && trace.parentSpanId != null) {
+            result.put("parentSpanId", trace.parentSpanId);
+        }
         return result;
     }
 }

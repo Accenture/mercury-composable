@@ -652,7 +652,7 @@ HTTP header carrying the business correlation-id (enterprise-specific; case-inse
 |------|---------|
 | `String` | `X-Trace-Id` |
 
-HTTP header recognized (inbound, when no W3C `traceparent` is present) and emitted (outbound by the async HTTP client) as the trace-id. A well-formed `traceparent` always takes precedence inbound. When neither is present, REST automation adopts the trace id of an APM agent already tracing the request (a [live invocation observer](observability.md#live-tracing)), else it generates a fresh one. Overridable per endpoint with `trace.id.header` in a rest.yaml entry.
+HTTP header recognized (inbound, when no W3C `traceparent` is present) and emitted (outbound by the async HTTP client) as the trace-id. A well-formed `traceparent` always takes precedence inbound. When neither is present, REST automation continues the trace context of an APM agent already tracing the request (a [live invocation observer](observability.md#live-tracing)), else it generates a fresh trace id. Overridable per endpoint with `trace.id.header` in a rest.yaml entry.
 
 ### `http.traceparent.header`
 
@@ -686,7 +686,7 @@ Kafka message header carrying the business correlation-id (no cross-vendor stand
 |------|---------|
 | `String` | — |
 
-Optional Kafka message header for the trace-id. Inbound: a fallback trace-id source when the upstream sends no W3C `traceparent` (which always takes precedence). Outbound: `simple.kafka.notification` stamps the current trace-id under this name alongside `traceparent`, for legacy downstream consumers. Unset = traceparent-only behavior (unchanged). Overridable per binding with `trace.id.header` in a kafka-flow-adapter.yaml entry.
+Optional Kafka message header for the trace-id. Inbound: a fallback trace-id source when the upstream sends no W3C `traceparent` (which always takes precedence); without either, the flow adapter continues the trace context of an APM agent tracing the delivery (a [live invocation observer](observability.md#live-tracing)), else it generates a fresh trace id. Outbound: `simple.kafka.notification` stamps the current trace-id under this name alongside `traceparent`, for legacy downstream consumers. Unset = traceparent-only behavior (unchanged). Overridable per binding with `trace.id.header` in a kafka-flow-adapter.yaml entry.
 
 ### `kafka.traceparent.header`
 

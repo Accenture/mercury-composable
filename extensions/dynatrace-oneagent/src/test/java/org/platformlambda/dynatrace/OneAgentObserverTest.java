@@ -172,16 +172,16 @@ class OneAgentObserverTest {
     }
 
     @Test
-    void theAgentsTraceIdIsOfferedWhileAPurePathIsActive() {
+    void theAgentsTraceparentIsOfferedWhileAPurePathIsActive() {
         FakeOneAgent agent = new FakeOneAgent();
         OneAgentObserver observer = new OneAgentObserver(agent.sdk, "demo-app", false, false);
 
-        assertEquals("dt-trace-1", observer.traceId());
+        assertEquals("00-" + FakeOneAgent.TRACE_ID + "-" + FakeOneAgent.SPAN_ID + "-01", observer.traceparent());
         agent.validTraceContext = false;
-        assertNull(observer.traceId(), "no PurePath on this thread");
+        assertNull(observer.traceparent(), "no PurePath on this thread");
         agent.validTraceContext = true;
         agent.state = SDKState.TEMPORARILY_INACTIVE;
-        assertNull(observer.traceId(), "an inactive agent offers nothing");
+        assertNull(observer.traceparent(), "an inactive agent offers nothing");
     }
 
     @Test
@@ -200,8 +200,8 @@ class OneAgentObserverTest {
 
             agent.validTraceContext = true;
             new OneAgentObserver(agent.sdk, "demo-app", false, true).begin(HOP, new MapCarrier(Map.of())).end();
-            assertEquals("dt-trace-1", context.getCustomKeys().get(OneAgentObserver.LOG_TRACE_ID));
-            assertEquals("dt-span-1", context.getCustomKeys().get(OneAgentObserver.LOG_SPAN_ID));
+            assertEquals(FakeOneAgent.TRACE_ID, context.getCustomKeys().get(OneAgentObserver.LOG_TRACE_ID));
+            assertEquals(FakeOneAgent.SPAN_ID, context.getCustomKeys().get(OneAgentObserver.LOG_SPAN_ID));
         } finally {
             LogContextManager.remove(thread);
         }

@@ -62,13 +62,14 @@ public interface InvocationObserver {
     void send(InvocationInfo info, InvocationCarrier carrier);
 
     /**
-     * The trace id of the agent's trace on the current thread. Mercury adopts it at an entry point that
-     * would otherwise mint a new trace id (a REST request without a {@code traceparent} or a trace-id
-     * header), so the agent's trace and Mercury's share one id.
+     * The W3C trace context of the agent's current node on this thread. Mercury continues it at an entry
+     * point that would otherwise start a new trace (a REST request without a {@code traceparent} or a
+     * trace-id header), as if the caller had sent it: the agent's trace id becomes Mercury's, and the
+     * agent's span the parent of Mercury's first span.
      *
-     * @return a W3C trace id (32 lowercase hex digits), or null when the thread has none
+     * @return a W3C {@code traceparent} value, or null when the thread has no trace
      */
-    default String traceId() {
+    default String traceparent() {
         return null;
     }
 }

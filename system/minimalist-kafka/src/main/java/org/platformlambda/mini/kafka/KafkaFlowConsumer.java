@@ -52,6 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 /**
@@ -64,9 +65,10 @@ import java.util.regex.Pattern;
  * trace-id and parent span-id; the request to the flow engine is sent with {@code setSpanId(parentSpanId)}
  * so the flow chains onto the upstream span (the receiver adopts the event's span-id as its parent). The
  * low-level {@link PostOffice} API is used directly rather than the FlowExecutor convenience methods,
- * which do not expose the inbound span-id. For a live invocation observer, the delivery is an incoming hop on
- * {@code kafka.flow.adapter}: the publisher's tags, carried as {@link KafkaHeaders#OBSERVER_TAG_PREFIX}
- * headers, are restored on the event and link it to the publisher's trace, and the request into the flow is
+ * which do not expose the inbound span-id. For a live invocation observer, a message is one incoming hop on
+ * {@code kafka.flow.adapter}, opened before the trace is chosen: the publisher's tags, carried as
+ * {@link KafkaHeaders#OBSERVER_TAG_PREFIX} headers, link it to the publisher's trace, and a message that
+ * carries no trace continues the agent's, as a REST request does. Every attempt's request into the flow is
  * sent inside it. The flow's {@code header} map does not include those headers.</p>
  *
  * <p><b>Flow input dataset.</b> Every message hands the flow a {@code Map} with {@code header} (Kafka
@@ -344,14 +346,33 @@ public class KafkaFlowConsumer implements AutoCloseable {
         RoutingRuleSet.Target target = binding.routingRules() != null
                 ? binding.routingRules().select(headers, dataset.get(BODY))
                 : RoutingRuleSet.Target.flow(binding.flowId());
+        // trace-id precedence: W3C traceparent > configured trace-id header (legacy upstream) > the trace context
+        // of an APM agent tracing this delivery > fresh UUID
         String[] trace = parseInboundTraceparent(headers);
-        // trace-id precedence: W3C traceparent > configured trace-id header (legacy upstream) > fresh UUID
-        String traceId = trace.length > 0 ? trace[0] : traceIdFromHeaderOrNew(headers);
+        String headerTraceId = trace.length > 0 || traceIdHeader == null ? null : headers.get(traceIdHeader);
+        String traceId = trace.length > 0 ? trace[0] : headerTraceId;
         String tracePath = "KAFKA /" + consumerRecord.topic();
-        EventEnvelope forward = target.task()
-                ? toTaskRequest(target.destination(), dataset, headers, trace, traceId, tracePath)
-                : toFlowRequest(target.destination(), dataset, headers, trace, traceId, tracePath);
-        return deliver(consumerRecord, forward, observerTags, target.label(), traceId, tracePath);
+        // the message is one incoming hop for a live invocation observer, linked to the publisher by its tags;
+        // the hop opens under a provisional id when the message carries none, because only an open hop gives
+        // the agent a trace to continue
+        EventEnvelope hop = new EventEnvelope().setTo(ADAPTER_ROUTE).setTracePath(tracePath)
+                .setTraceId(traceId != null ? traceId : Utility.getInstance().getUuid());
+        observerTags.forEach(hop::addTag);
+        InvocationScope scope = InvocationObservers.begin(hop, ADAPTER_ROUTE, 1);
+        AtomicReference<String> failure = new AtomicReference<>();
+        try {
+            if (traceId == null) {
+                String[] agent = W3cTrace.parse(InvocationObservers.traceparent());
+                trace = agent.length > 0 ? agent : trace;
+                traceId = agent.length > 0 ? agent[0] : hop.getTraceId();
+            }
+            EventEnvelope forward = target.task()
+                    ? toTaskRequest(target.destination(), dataset, headers, trace, traceId, tracePath)
+                    : toFlowRequest(target.destination(), dataset, headers, trace, traceId, tracePath);
+            return deliver(consumerRecord, forward, failure, target.label(), traceId, tracePath);
+        } finally {
+            InvocationObservers.close(scope, failure.get());
+        }
     }
 
     /**
@@ -405,12 +426,6 @@ public class KafkaFlowConsumer implements AutoCloseable {
             parsed = W3cTrace.parse(headers.get(traceparentHeader));
         }
         return parsed;
-    }
-
-    /** The inbound trace-id from the effective trace-id header when configured, else a fresh UUID. */
-    private String traceIdFromHeaderOrNew(Map<String, String> headers) {
-        String upstreamTraceId = traceIdHeader == null ? null : headers.get(traceIdHeader);
-        return upstreamTraceId != null ? upstreamTraceId : Utility.getInstance().getUuid();
     }
 
     /** Build the flow-engine request from the decoded dataset, chaining onto the inbound trace/span. */
@@ -472,13 +487,14 @@ public class KafkaFlowConsumer implements AutoCloseable {
      * @return whether the offset may be committed (see {@link #writeToDeadLetter}); false only on shutdown.
      */
     private boolean deliver(ConsumerRecord<String, byte[]> consumerRecord, EventEnvelope forward,
-                            Map<String, String> observerTags, String targetLabel, String traceId, String tracePath) {
+                            AtomicReference<String> failure, String targetLabel, String traceId, String tracePath) {
         int attempt = 0;
         while (true) {
             Throwable cause;
             try {
-                EventEnvelope response = invokeObserved(forward, observerTags, traceId, tracePath);
+                EventEnvelope response = invokeFlow(forward, traceId, tracePath);
                 if (response.getStatus() < 400) {
+                    failure.set(null);
                     return true;   // the target finished normally (2xx/3xx) -> acknowledge (commit) and move on
                 }
                 cause = new IllegalStateException(
@@ -486,6 +502,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 running = false;
+                failure.set("interrupted");
                 return false;   // do not commit a message that was interrupted mid-processing
             } catch (ExecutionException e) {
                 cause = rootCause(e);
@@ -495,6 +512,8 @@ public class KafkaFlowConsumer implements AutoCloseable {
                 // poll loop, which would kill the consumer thread and stall the binding permanently
                 cause = e;
             }
+            // the observer's hop reports the last failure unless a later attempt succeeds
+            failure.set(cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage());
             if (attempt >= retryPolicy.maxRetries()) {
                 log.warn("{} failed for a '{}' message after {} attempt(s); routing to {}",
                         targetLabel, consumerRecord.topic(), attempt + 1, deadLetterTopic, cause);
@@ -506,31 +525,6 @@ public class KafkaFlowConsumer implements AutoCloseable {
             if (!backoff()) {
                 return false;   // interrupted during backoff -> redeliver, do not commit
             }
-        }
-    }
-
-    /**
-     * {@link #invokeFlow} as an incoming hop for a live invocation observer, opened and closed on this
-     * thread. The publisher's tags go back on the event first, at every attempt, because the request
-     * replaces them with the tags of its own outgoing message.
-     */
-    private EventEnvelope invokeObserved(EventEnvelope forward, Map<String, String> observerTags,
-                                         String traceId, String tracePath)
-            throws InterruptedException, ExecutionException {
-        observerTags.forEach(forward::addTag);
-        InvocationScope scope = InvocationObservers.begin(forward, ADAPTER_ROUTE, 1);
-        String error = null;
-        try {
-            EventEnvelope response = invokeFlow(forward, traceId, tracePath);
-            if (response.getStatus() >= 400) {
-                error = "status " + response.getStatus();
-            }
-            return response;
-        } catch (InterruptedException | ExecutionException | RuntimeException e) {
-            error = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-            throw e;
-        } finally {
-            InvocationObservers.close(scope, error);
         }
     }
 

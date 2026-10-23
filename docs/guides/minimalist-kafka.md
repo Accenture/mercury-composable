@@ -615,8 +615,9 @@ notification hops are the bridge spans. See [Observability](observability.md).
 A [live invocation observer](observability.md#live-tracing) (an APM agent's code-level view) is linked across
 Kafka too. The notification function writes the observer's tags for the outgoing message as headers named
 `x-mercury-tag-<tag>` (for example `x-mercury-tag-dt_tag`), and the adapter restores them on the event it
-dispatches: the delivery is an incoming hop on `kafka.flow.adapter`, linked to the publisher's trace, and the
-request into the flow is sent inside it, at every retry too. The flow's `input.header` map does not include
+dispatches: each message is one incoming hop on `kafka.flow.adapter`, linked to the publisher's trace, and the
+request into the flow is sent inside it, retries included. A message that carries no `traceparent` and no trace-id
+header continues the agent's trace context, as a REST request does. The flow's `input.header` map does not include
 these headers, and a stale one mapped into a notification is not forwarded.
 
 ## Health check {#health}

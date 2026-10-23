@@ -68,9 +68,9 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    the event envelope, so it also crosses Event-over-HTTP, and `minimalist-kafka` carries it as `x-mercury-tag-*` Kafka
    headers from `simple.kafka.notification` to the flow adapter. An optional extension uses it, off by default:
    `dynatrace-oneagent` (`dynatrace.oneagent.enabled=true`) brackets each hop with the OneAgent SDK as a linked message, for one
-   connected PurePath per request, and a REST request without a trace id adopts the agent's trace id
-   (`InvocationObserver.traceId`), so Mercury's trace id is the Dynatrace trace id. A traced request is observed on every
-   route but the telemetry routes
+   connected PurePath per request. A REST request or Kafka message without a trace continues the agent's trace context
+   (`InvocationObserver.traceparent`), so Mercury's trace id is the Dynatrace trace id and the span lineage is unbroken. A
+   traced request is observed on every route but the telemetry routes
    and the RPC inbox (`invocation.observer.include`/`exclude`); `invocation.observer.unlinked` is the negative control of a
    tracing check: the route alone becomes a separate fragment, because its reply keeps the caller's tag. Event Script's
    kick-off event to `task.executor` now carries the flow's trace id, so a flow's first task stays linked. **Upgrade note:**
