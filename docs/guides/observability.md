@@ -331,11 +331,14 @@ A **live invocation observer** closes that gap. Platform-core calls it inline, w
 core: when a function is about to run, on the thread that runs it, and when an event is about to be sent, on
 the sending thread. The linkage between hops rides as a string **tag on the event envelope**, not as thread
 state. The tag is serialized with the envelope, so it also crosses Event-over-HTTP and the cloud connector.
+Across `minimalist-kafka` it travels as Kafka headers (`x-mercury-tag-<tag>`): `simple.kafka.notification`
+writes them and the flow adapter restores them, so the consuming application's hops join the publisher's trace
+([details](minimalist-kafka.md#tracing)).
 Two optional extensions implement it:
 
 | Extension | Switch | What it records |
 |---|---|---|
-| `extensions/dynatrace-oneagent` | `dynatrace.oneagent=true` | Each hop with the **OneAgent SDK**, as an incoming message linked by a Dynatrace tag to the sender's outgoing message, giving one connected PurePath per request. Inert without an attached OneAgent. |
+| `extensions/dynatrace-oneagent` | `dynatrace.oneagent.enabled=true` | Each hop with the **OneAgent SDK**, as an incoming message linked by a Dynatrace tag to the sender's outgoing message, giving one connected PurePath per request. Inert without an attached OneAgent. |
 | `extensions/opentelemetry-tracer` | `otel.tracing=true` | Each hop as a live OpenTelemetry **CONSUMER span**, through the vendor-neutral API, with W3C context in the tag. Whatever implements the API records it: OneAgent with its *OpenTelemetry (Java)* feature, or the OpenTelemetry Java agent. |
 
 Both are off by default, so the jar alone does nothing. Run **one at a time**: two live tracers would record

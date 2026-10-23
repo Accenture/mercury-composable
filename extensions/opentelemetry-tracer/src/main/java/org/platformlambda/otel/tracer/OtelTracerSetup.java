@@ -42,7 +42,7 @@ import java.util.function.BinaryOperator;
 @BeforeApplication(sequence = 3)
 public class OtelTracerSetup implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(OtelTracerSetup.class);
-    private static final String DYNATRACE_ONEAGENT = "dynatrace.oneagent";
+    private static final String DYNATRACE_ONEAGENT = "dynatrace.oneagent.enabled";
     private static final String OTEL_FORWARDING = "otel.forwarding";
     private static final String TRUE = "true";
 

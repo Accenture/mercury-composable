@@ -20,7 +20,9 @@ package org.platformlambda.dynatrace;
 
 import com.dynatrace.oneagent.sdk.api.enums.SDKState;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.core.annotations.OptionalService;
 import org.platformlambda.core.spi.InvocationInfo;
+import org.platformlambda.core.util.AppConfigReader;
 
 import java.util.Map;
 import java.util.function.BinaryOperator;
@@ -63,6 +65,16 @@ class OneAgentSetupTest {
         assertNotNull(observer);
         observer.begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
         assertEquals("demo.route", agent.infos.getFirst());
+    }
+
+    @Test
+    void theSwitchSurvivesBesideTheSettingsItGates() {
+        // the test configuration sets the switch and dynatrace.oneagent.destination together, as an
+        // application does; a bare dynatrace.oneagent=true would be replaced by the map of its settings
+        AppConfigReader config = AppConfigReader.getInstance();
+        assertEquals("true", config.getProperty(OneAgentSetup.ENABLED));
+        assertEquals("route", config.getProperty(OneAgentSetup.DESTINATION));
+        assertEquals(OneAgentSetup.ENABLED, OneAgentSetup.class.getAnnotation(OptionalService.class).value());
     }
 
     @Test

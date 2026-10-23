@@ -35,7 +35,10 @@ import java.util.function.BinaryOperator;
 
 /**
  * Registers the {@link OneAgentObserver} at startup. The jar alone does nothing: the master switch is
- * {@code dynatrace.oneagent=true} (default off), so one artifact ships and each environment decides.
+ * {@code dynatrace.oneagent.enabled=true} (default off), so one artifact ships and each environment decides.
+ * The switch ends in {@code .enabled} because the settings below share its prefix: a configuration key
+ * cannot be both a value and the parent of other keys, so a bare {@code dynatrace.oneagent=true} would be
+ * lost beside them.
  * <p>
  * Settings:
  * <ul>
@@ -46,10 +49,11 @@ import java.util.function.BinaryOperator;
  * the SDK is permanently inactive and the observer is not registered. The SDK's own warnings (a tracer
  * used on a wrong thread, for example) go to this application's log.
  */
-@OptionalService("dynatrace.oneagent")
+@OptionalService(OneAgentSetup.ENABLED)
 @BeforeApplication(sequence = 3)
 public class OneAgentSetup implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(OneAgentSetup.class);
+    public static final String ENABLED = "dynatrace.oneagent.enabled";
     public static final String DESTINATION = "dynatrace.oneagent.destination";
     public static final String LOG_CONTEXT = "dynatrace.oneagent.log.context";
     private static final String OTEL_TRACING = "otel.tracing";

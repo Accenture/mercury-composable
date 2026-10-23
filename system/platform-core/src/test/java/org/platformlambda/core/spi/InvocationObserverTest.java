@@ -33,6 +33,7 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -226,6 +227,17 @@ class InvocationObserverTest extends TestBase {
         Record secondBegin = second.await(r -> r.is("begin", ECHO));
         assertTrue(firstBegin.seq < secondBegin.seq);
         assertTrue(secondEnd.seq < firstEnd.seq);
+    }
+
+    @Test
+    void exportsTheTagsForATransportOutsideTheEventBus() {
+        register(new Recorder("a"));
+
+        assertEquals(Map.of(TAG, "sent-to-" + ONLY), InvocationObservers.export(ONLY, "trace-301", "KAFKA /topic"));
+        assertTrue(InvocationObservers.export(ONLY, null, null).isEmpty(), "an untraced message carries no tags");
+        InvocationObservers.configure(null, ONLY, null);
+        assertTrue(InvocationObservers.export(ONLY, "trace-301", null).isEmpty(),
+                "an excluded destination carries no tags");
     }
 
     @Test

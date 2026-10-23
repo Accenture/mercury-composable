@@ -18,10 +18,20 @@
 
 package org.platformlambda.mini.kafka;
 
+import org.apache.kafka.clients.producer.MockProducer;
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.spi.InvocationCarrier;
+import org.platformlambda.core.spi.InvocationInfo;
+import org.platformlambda.core.spi.InvocationObserver;
+import org.platformlambda.core.spi.InvocationObservers;
+import org.platformlambda.core.spi.InvocationScope;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +48,48 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * proven end-to-end in {@link KafkaFlowAdapterTest}.
  */
 class SimpleKafkaNotificationTest {
+
+    @Test
+    void anObserversTagsCrossKafkaAsHeaders() {
+        String tagHeader = KafkaHeaders.OBSERVER_TAG_PREFIX + "dt_tag";
+        MockProducer<String, byte[]> producer =
+                new MockProducer<>(true, null, new StringSerializer(), new ByteArraySerializer());
+        InvocationObserver observer = new InvocationObserver() {
+            @Override
+            public InvocationScope begin(InvocationInfo info, InvocationCarrier carrier) {
+                return null;
+            }
+
+            @Override
+            public void send(InvocationInfo info, InvocationCarrier carrier) {
+                carrier.set("dt_tag", "tag-for-" + info.route());
+            }
+        };
+        Map<String, String> headers = new HashMap<>(Map.of(KafkaHeaders.TOPIC, "orders",
+                "my_trace_id", "trace-401", "my_trace_path", "POST /api/orders"));
+        // a tag mapped in from an earlier message is stale: this hop exports its own, or none
+        headers.put(tagHeader, "stale");
+        try (KafkaRequestPublisher publisher = new KafkaRequestPublisher(producer)) {
+            SimpleKafkaNotification notification = new SimpleKafkaNotification() {
+                @Override
+                protected KafkaRequestPublisher publisher() {
+                    return publisher;
+                }
+            };
+            InvocationObservers.register(observer);
+            try {
+                notification.handleEvent(headers, Map.of("item", "widget"), 1).block();
+            } finally {
+                InvocationObservers.unregister(observer);
+            }
+            notification.handleEvent(headers, Map.of("item", "widget"), 1).block();
+        }
+
+        Header observed = producer.history().get(0).headers().lastHeader(tagHeader);
+        assertEquals("tag-for-orders", new String(observed.value(), StandardCharsets.UTF_8));
+        assertNull(producer.history().get(1).headers().lastHeader(tagHeader),
+                "without an observer, the stale tag is not forwarded");
+    }
 
     @Test
     void mapAndListBodiesAutoSerializeToJsonBytes() {

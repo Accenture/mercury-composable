@@ -152,7 +152,7 @@ class OtelInvocationObserverTest {
     @Test
     void theSetupUsesTheGivenImplementation() {
         BinaryOperator<String> settings = (key, defaultValue) ->
-                Map.of("dynatrace.oneagent", "true", "otel.forwarding", "true").getOrDefault(key, defaultValue);
+                Map.of("dynatrace.oneagent.enabled", "true", "otel.forwarding", "true").getOrDefault(key, defaultValue);
 
         assertNotNull(OtelTracerSetup.configure(sdk, settings));
         assertNotNull(OtelTracerSetup.configure(OpenTelemetry.noop(), (key, defaultValue) -> defaultValue));

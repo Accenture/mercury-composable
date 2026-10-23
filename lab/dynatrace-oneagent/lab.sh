@@ -28,7 +28,7 @@ case "${1:-}" in
   up)
     case "${2:-oneagent}" in
       # DESTINATION=route names every hop after its route; the default names it after the application
-      oneagent) tracer=(-e "JAVA_OPTS=-Ddynatrace.oneagent=true -Ddynatrace.oneagent.destination=${DESTINATION:-application}") ;;
+      oneagent) tracer=(-e DYNATRACE_ONEAGENT_ENABLED=true -e "DYNATRACE_ONEAGENT_DESTINATION=${DESTINATION:-application}") ;;
       otel)     tracer=(-e OTEL_TRACING=true) ;;
       none)     tracer=() ;;
       *)        usage ;;

@@ -778,15 +778,15 @@ The next keys belong to the live invocation observers, which bracket each compos
 |------|---------|
 | `boolean` | `false` |
 
-**Master switch for the `opentelemetry-tracer` extension** (`@OptionalService("otel.tracing")`): each hop becomes a live OpenTelemetry `CONSUMER` span through the API, recorded by whatever agent implements it. Not to be combined with `dynatrace.oneagent`, or with `otel.forwarding` into the same backend.
+**Master switch for the `opentelemetry-tracer` extension** (`@OptionalService("otel.tracing")`): each hop becomes a live OpenTelemetry `CONSUMER` span through the API, recorded by whatever agent implements it. Not to be combined with `dynatrace.oneagent.enabled`, or with `otel.forwarding` into the same backend.
 
-### `dynatrace.oneagent`
+### `dynatrace.oneagent.enabled`
 
 | Type | Default |
 |------|---------|
 | `boolean` | `false` |
 
-**Master switch for the `dynatrace-oneagent` extension** (`@OptionalService("dynatrace.oneagent")`): each hop is bracketed with the OneAgent SDK, linked by a Dynatrace tag on the event envelope. Without an attached OneAgent the SDK is inactive and nothing is registered.
+**Master switch for the `dynatrace-oneagent` extension** (`@OptionalService("dynatrace.oneagent.enabled")`): each hop is bracketed with the OneAgent SDK, linked by a Dynatrace tag on the event envelope. Without an attached OneAgent the SDK is inactive and nothing is registered. The key ends in `.enabled` because the extension's settings share its prefix: a key cannot be both a value and the parent of other keys, so a bare `dynatrace.oneagent=true` beside `dynatrace.oneagent.destination` would be lost.
 
 ### `dynatrace.oneagent.destination`
 

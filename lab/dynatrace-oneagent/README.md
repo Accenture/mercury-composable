@@ -50,9 +50,8 @@ download folder and any OneAgent installer (`Dynatrace-OneAgent-Linux*`, `-Windo
 - **Build with `-am`.** The branch keeps version 4.12.25. Without `-am` Maven takes the released
   platform-core from `~/.m2`, which has no invocation-observer interface, and the applications fail at
   startup with `NoClassDefFoundError: org/platformlambda/core/spi/InvocationObserver`. `lab.sh build` does it.
-- **The OneAgent switch is a system property** (`-Ddynatrace.oneagent=true`, set by `lab.sh`). In
-  `application.properties` it collides with the `dynatrace.oneagent.*` settings, because a key cannot be
-  both a value and the parent of other keys: the switch is silently lost.
+- **The tracer is chosen by environment variables** that `lab.sh up` sets (`DYNATRACE_ONEAGENT_ENABLED`,
+  `DYNATRACE_ONEAGENT_DESTINATION`, `OTEL_TRACING`), which both applications' `application.properties` read.
 - **One network namespace.** The broker advertises `127.0.0.1:9092`, so the two applications share the
   broker container's network namespace and the broker container publishes `lab-edge`'s port 8100.
   `lab-worker` runs no HTTP server.

@@ -19,4 +19,10 @@
   `ConfigReader` (rename to `dynatrace.oneagent.enabled`); `ManifestReader` reports OneAgent's version under OneAgent (a main
   fix); the negative control splits the rest of the flow; no link across Kafka (the tag is not a Kafka header); SDK
   in-process-link warnings where OneAgent's Reactor support already continues the path.
+  **Eric's rulings 2026-10-23 (detail in 2026-10-23-215957):** (1) the switch is `dynatrace.oneagent.enabled` - DONE on
+  #583; (4) the tag crosses Kafka as `x-mercury-tag-*` headers - DONE on #583, proven A-B-A in the lab (the worker joins
+  the edge's trace; three Dynatrace traces per order become two); (2) `ManifestReader` - a separate PR from main; (3) the
+  negative control - explained, awaiting his choice (document the split, or keep the caller's tag on the unlinked route's
+  reply, recommended). The key audit found the same collision in the released scheduler - its own PR from main
+  ([[conv-config-key-not-value-and-parent]]). Still to run: the OpenTelemetry adapter in the lab.
   <!-- id: dynatrace-oneagent-field-experiment | created: 2026-10-21 | last_used: 2026-10-21 | uses: 1 | tier: working | origin: 2026-10-22-003118 -->

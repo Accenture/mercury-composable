@@ -562,6 +562,21 @@
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
   <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-10-22 | uses: 1 | tier: working | origin: 2026-10-22-232342 -->
 
+- **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
+  properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
+  in either order, the map wins: `getProperty("a.b")` answers the map's text (`{c=y}`), not null and not `x`. A switch then
+  silently stays off, and a validated value fails with a misleading message. Met twice:
+  - `dynatrace.oneagent` beside its settings (PR #583: the switch is now `dynatrace.oneagent.enabled`);
+  - `scheduler.environment` beside `scheduler.environment.store` (since 4.12.22: startup fails with "must be one word").
+
+  Both test configurations carried the collision, and no test read the leaf next to its children.
+  **How to apply:** a switch or a value whose feature has settings takes its own child name, `<prefix>.enabled` like
+  `redis.cache.enabled`, so the prefix stays a parent only. Before adding a key, check that no existing key is its parent
+  or its child. To audit the tree, collect the keys of every `.properties` file, every `getProperty` and `@OptionalService`
+  literal and every configuration-reference heading, then list each key that prefixes another. The 2026-10-23 log has the
+  scan; `cloud.connector.health` is a route, not a key. YAML cannot express the collision.
+  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-10-23 | uses: 1 | tier: working | origin: 2026-10-23-215957 -->
+
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
 - [ ] (blueprint) **AI agent orchestration ("graph engineering")** — the Active Knowledge

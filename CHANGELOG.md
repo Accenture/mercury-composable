@@ -65,8 +65,9 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    request at each hop between composable functions, because Mercury hands the event through its event bus and a per-route queue.
    Platform-core gains a vendor-neutral seam, `org.platformlambda.core.spi`. A live observer is called inline when a function is
    about to run, on the thread that runs it, and when an event is about to be sent; the linkage between hops rides as a tag on
-   the event envelope, so it also crosses Event-over-HTTP. Two optional extensions use it, both off by default:
-   `dynatrace-oneagent` (`dynatrace.oneagent=true`) brackets each hop with the OneAgent SDK as a linked message, for one
+   the event envelope, so it also crosses Event-over-HTTP, and `minimalist-kafka` carries it as `x-mercury-tag-*` Kafka
+   headers from `simple.kafka.notification` to the flow adapter. Two optional extensions use it, both off by default:
+   `dynatrace-oneagent` (`dynatrace.oneagent.enabled=true`) brackets each hop with the OneAgent SDK as a linked message, for one
    connected PurePath per request; `opentelemetry-tracer` (`otel.tracing=true`) opens a live OpenTelemetry span per hop through
    the vendor-neutral API, for an agent that implements it. A traced request is observed on every route but the telemetry routes
    and the RPC inbox (`invocation.observer.include`/`exclude`); `invocation.observer.unlinked` is the negative control of a

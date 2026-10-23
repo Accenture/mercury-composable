@@ -31,6 +31,8 @@ import org.apache.kafka.common.errors.RetriableException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.spi.InvocationObservers;
+import org.platformlambda.core.spi.InvocationScope;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
@@ -62,7 +64,10 @@ import java.util.regex.Pattern;
  * trace-id and parent span-id; the request to the flow engine is sent with {@code setSpanId(parentSpanId)}
  * so the flow chains onto the upstream span (the receiver adopts the event's span-id as its parent). The
  * low-level {@link PostOffice} API is used directly rather than the FlowExecutor convenience methods,
- * which do not expose the inbound span-id.</p>
+ * which do not expose the inbound span-id. For a live invocation observer, the delivery is an incoming hop on
+ * {@code kafka.flow.adapter}: the publisher's tags, carried as {@link KafkaHeaders#OBSERVER_TAG_PREFIX}
+ * headers, are restored on the event and link it to the publisher's trace, and the request into the flow is
+ * sent inside it. The flow's {@code header} map does not include those headers.</p>
  *
  * <p><b>Flow input dataset.</b> Every message hands the flow a {@code Map} with {@code header} (Kafka
  * headers), {@code metadata} (the record's own {@code topic}, {@code partition}, {@code offset},
@@ -335,6 +340,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
         }
         @SuppressWarnings("unchecked")
         Map<String, String> headers = (Map<String, String>) dataset.get(HEADER);
+        Map<String, String> observerTags = takeObserverTags(headers);
         RoutingRuleSet.Target target = binding.routingRules() != null
                 ? binding.routingRules().select(headers, dataset.get(BODY))
                 : RoutingRuleSet.Target.flow(binding.flowId());
@@ -345,7 +351,23 @@ public class KafkaFlowConsumer implements AutoCloseable {
         EventEnvelope forward = target.task()
                 ? toTaskRequest(target.destination(), dataset, headers, trace, traceId, tracePath)
                 : toFlowRequest(target.destination(), dataset, headers, trace, traceId, tracePath);
-        return deliver(consumerRecord, forward, target.label(), traceId, tracePath);
+        return deliver(consumerRecord, forward, observerTags, target.label(), traceId, tracePath);
+    }
+
+    /**
+     * Remove the observer tags that the publisher carried as headers, and return them by tag name.
+     * Visible for testing.
+     */
+    static Map<String, String> takeObserverTags(Map<String, String> headers) {
+        Map<String, String> tags = new HashMap<>();
+        headers.entrySet().removeIf(entry -> {
+            if (entry.getKey().startsWith(KafkaHeaders.OBSERVER_TAG_PREFIX)) {
+                tags.put(entry.getKey().substring(KafkaHeaders.OBSERVER_TAG_PREFIX.length()), entry.getValue());
+                return true;
+            }
+            return false;
+        });
+        return tags;
     }
 
     /**
@@ -450,12 +472,12 @@ public class KafkaFlowConsumer implements AutoCloseable {
      * @return whether the offset may be committed (see {@link #writeToDeadLetter}); false only on shutdown.
      */
     private boolean deliver(ConsumerRecord<String, byte[]> consumerRecord, EventEnvelope forward,
-                            String targetLabel, String traceId, String tracePath) {
+                            Map<String, String> observerTags, String targetLabel, String traceId, String tracePath) {
         int attempt = 0;
         while (true) {
             Throwable cause;
             try {
-                EventEnvelope response = invokeFlow(forward, traceId, tracePath);
+                EventEnvelope response = invokeObserved(forward, observerTags, traceId, tracePath);
                 if (response.getStatus() < 400) {
                     return true;   // the target finished normally (2xx/3xx) -> acknowledge (commit) and move on
                 }
@@ -484,6 +506,31 @@ public class KafkaFlowConsumer implements AutoCloseable {
             if (!backoff()) {
                 return false;   // interrupted during backoff -> redeliver, do not commit
             }
+        }
+    }
+
+    /**
+     * {@link #invokeFlow} as an incoming hop for a live invocation observer, opened and closed on this
+     * thread. The publisher's tags go back on the event first, at every attempt, because the request
+     * replaces them with the tags of its own outgoing message.
+     */
+    private EventEnvelope invokeObserved(EventEnvelope forward, Map<String, String> observerTags,
+                                         String traceId, String tracePath)
+            throws InterruptedException, ExecutionException {
+        observerTags.forEach(forward::addTag);
+        InvocationScope scope = InvocationObservers.begin(forward, ADAPTER_ROUTE, 1);
+        String error = null;
+        try {
+            EventEnvelope response = invokeFlow(forward, traceId, tracePath);
+            if (response.getStatus() >= 400) {
+                error = "status " + response.getStatus();
+            }
+            return response;
+        } catch (InterruptedException | ExecutionException | RuntimeException e) {
+            error = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            throw e;
+        } finally {
+            InvocationObservers.close(scope, error);
         }
     }
 

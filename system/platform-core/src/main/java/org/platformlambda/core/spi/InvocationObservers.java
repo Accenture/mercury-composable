@@ -25,8 +25,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -163,6 +165,35 @@ public final class InvocationObservers {
     }
 
     /**
+     * Integration call, on the thread that hands a message to a transport outside the event bus (a Kafka
+     * producer, for example): the observers' tags for that outgoing message, as {@link #send} would write
+     * them on an event. The transport carries them in its own headers, and its consumer puts them back on
+     * the event it dispatches and opens the receiving side with {@link #begin}, so the linkage crosses the
+     * transport as it crosses the event bus.
+     *
+     * @param destination where the message goes, such as a topic; the route filter applies to it
+     * @param traceId Mercury's trace id; an untraced message carries no tags
+     * @param tracePath Mercury's trace path, or null
+     * @return the tags by the observers' own names; empty when nothing is observed
+     */
+    public static Map<String, String> export(String destination, String traceId, String tracePath) {
+        if (observers.isEmpty() || destination == null || traceId == null || !getFilter().isObserved(destination)) {
+            return Map.of();
+        }
+        InvocationInfo info = new InvocationInfo(destination, null, Utility.getInstance().getUuid(),
+                traceId, tracePath, null, 1);
+        MapCarrier carrier = new MapCarrier(new HashMap<>());
+        for (InvocationObserver observer : observers) {
+            try {
+                observer.send(info, carrier);
+            } catch (Exception e) {
+                failed(observer, "send", e);
+            }
+        }
+        return Map.copyOf(carrier.tags());
+    }
+
+    /**
      * Engine call: close a scope on its own thread - error first when the function failed.
      *
      * @param scope the scope from {@link #begin} or {@link #resume}
@@ -293,6 +324,27 @@ public final class InvocationObservers {
         @Override
         public void remove(String key) {
             event.removeTag(key);
+        }
+    }
+
+    private record MapCarrier(Map<String, String> tags) implements InvocationCarrier {
+        @Override
+        public String get(String key) {
+            return tags.get(key);
+        }
+
+        @Override
+        public void set(String key, String value) {
+            if (value == null || value.isEmpty()) {
+                tags.remove(key);
+            } else {
+                tags.put(key, value);
+            }
+        }
+
+        @Override
+        public void remove(String key) {
+            tags.remove(key);
         }
     }
 

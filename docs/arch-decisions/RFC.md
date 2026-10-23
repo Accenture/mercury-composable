@@ -272,12 +272,13 @@ no vendor dependency: an `InvocationObserver` with `begin` (on the thread that r
 sends an event), an `InvocationScope` closed on its own thread (error, then end; several observers close LIFO), and an
 `InvocationContinuation` that a `Mono` result resumes exactly once on its completion thread (or abandons on timeout). The
 linkage between hops rides as a **string tag on the envelope**, never as thread state, and is serialized across
-Event-over-HTTP and the cloud connector. **(2) The hooks.** `WorkerHandler.executeFunction`; `EventEmitter`'s direct dispatch
+Event-over-HTTP and the cloud connector; across `minimalist-kafka` it travels as `x-mercury-tag-*` headers
+(`InvocationObservers.export` on publish, the tags restored and the delivery opened as a hop on consume). **(2) The hooks.** `WorkerHandler.executeFunction`; `EventEmitter`'s direct dispatch
 of Event Script's `event.script.manager` and `task.executor`; and the five `EventEmitter` send entry points (`send`, two
 `asyncRequest`, two `eRequest`), each on the engine's own copy. A traced request is observed on every route but the
 telemetry routes and the RPC inbox; `invocation.observer.include`/`exclude` adjust that, and
 `invocation.observer.unlinked` is the experiment's **negative control**. **(3) Two optional adapters, off by default.**
-`extensions/dynatrace-oneagent` (`dynatrace.oneagent=true`) models each hop as a message with the OneAgent SDK: an outgoing
+`extensions/dynatrace-oneagent` (`dynatrace.oneagent.enabled=true`) models each hop as a message with the OneAgent SDK: an outgoing
 message's Dynatrace tag on the envelope, an incoming message that consumes it, and an in-process link for a `Mono`. All hops
 share one messaging system, and the destination is the application by default, so routes do not become Dynatrace services.
 `extensions/opentelemetry-tracer` (`otel.tracing=true`) opens a live `CONSUMER` span per hop through the vendor-neutral API,

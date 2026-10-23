@@ -33,6 +33,11 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import com.accenture.automation.EventScriptManager;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.spi.InvocationCarrier;
+import org.platformlambda.core.spi.InvocationInfo;
+import org.platformlambda.core.spi.InvocationObserver;
+import org.platformlambda.core.spi.InvocationObservers;
+import org.platformlambda.core.spi.InvocationScope;
 import org.platformlambda.core.util.Utility;
 import org.junit.jupiter.api.Test;
 
@@ -40,8 +45,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -417,6 +424,63 @@ class KafkaFlowConsumerTest {
 
         assertEquals(Set.of("orders-1"), mock.subscription(), "pattern-matched topic joins the subscription");
         assertTrue(mock.assignment().stream().allMatch(tp -> tp.topic().equals("orders-1")));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void eachDeliveryIsAnIncomingHopLinkedByThePublishersTags() {
+        List<String> events = new CopyOnWriteArrayList<>();
+        InvocationObserver observer = new InvocationObserver() {
+            @Override
+            public InvocationScope begin(InvocationInfo info, InvocationCarrier carrier) {
+                events.add("begin " + info.route() + " " + carrier.get("dt_tag"));
+                return new InvocationScope() {
+                    @Override
+                    public void error(String message) {
+                        events.add("error " + message);
+                    }
+
+                    @Override
+                    public void end() {
+                        events.add("end");
+                    }
+                };
+            }
+
+            @Override
+            public void send(InvocationInfo info, InvocationCarrier carrier) {
+                // not reached: the flow invocation is stubbed
+            }
+        };
+        AtomicReference<Map<String, String>> flowHeaders = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger();
+        KafkaFlowConsumer consumer = new KafkaFlowConsumer(null, binding().build(), 1000,
+                new RetryPolicy(1, 0, null), null) {
+            @Override
+            EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) {
+                events.add("invoke");
+                flowHeaders.set((Map<String, String>) ((Map<String, Object>) forward.getBody()).get("header"));
+                // the request into the flow replaces the tag with the tag of its own outgoing message
+                forward.addTag("dt_tag", "replaced-by-the-request");
+                return new EventEnvelope().setStatus(attempts.incrementAndGet() == 1 ? 500 : 200);
+            }
+        };
+        ConsumerRecord<String, byte[]> r = inboundRecord();
+        r.headers().add(KafkaHeaders.OBSERVER_TAG_PREFIX + "dt_tag", "from-the-publisher".getBytes(UTF_8));
+
+        InvocationObservers.register(observer);
+        try {
+            assertTrue(consumer.routeToFlow(r));
+        } finally {
+            InvocationObservers.unregister(observer);
+        }
+
+        // the retry is linked to the publisher too: the tag goes back on the event at every attempt
+        assertEquals(List.of("begin kafka.flow.adapter from-the-publisher", "invoke", "error status 500", "end",
+                "begin kafka.flow.adapter from-the-publisher", "invoke", "end"), events);
+        assertFalse(flowHeaders.get().containsKey(KafkaHeaders.OBSERVER_TAG_PREFIX + "dt_tag"),
+                "the flow never sees the tag headers");
+        assertEquals("cid-1", flowHeaders.get().get("cid"));
     }
 
     private static MockProducer<String, byte[]> autoCompletingProducer() {
