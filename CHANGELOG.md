@@ -195,6 +195,12 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    `scheduler.environment.name`, rather than taking `prod` and running every job on a DR site as well. The scheduler example uses
    the new key. **Upgrade note:** rename `scheduler.environment` to `scheduler.environment.name`; an application that sets only the
    old key keeps working until then.
+7. **The application's version comes from its own jar, also under an agent such as Dynatrace OneAgent.** The version came
+   from the class loader's first `META-INF/MANIFEST.MF`, and the boot class path is searched first. Under OneAgent, which
+   puts its jar there, the startup log said "Application name: oneagentjava.17" and `/info` reported OneAgent's version
+   (`1.347.64.20261021-162634`). The manifest is now read from the jar that `java.class.path` names first, the
+   application's jar for `java -jar`; a class path that starts with a folder (an IDE, a test run) reads it as before.
+   **Upgrade note:** none - `/info` reports the application's own version.
 
 ---
 ## Version 4.12.25, 10/12/2026
