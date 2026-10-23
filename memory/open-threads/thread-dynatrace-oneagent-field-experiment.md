@@ -1,13 +1,14 @@
-- [ ] **Dynatrace OneAgent compatibility - the field experiment on a snapshot of `feature/dynatrace-oneagent-compatibility`**
+- [ ] **Dynatrace OneAgent compatibility - integrating `feature/dynatrace-oneagent-compatibility` into the framework**
   (→ proposal: RFC-0009; serves [[vision-mercury-composable]]). The branch adds the live invocation-observer seam to
   platform-core (`org.platformlambda.core.spi`, hooked in `WorkerHandler`, `EventEmitter`'s Event Script dispatch and its five send
   entry points) plus two optional adapters, `extensions/dynatrace-oneagent` (OneAgent SDK, hops as linked messages) and
-  `extensions/opentelemetry-tracer` (live OpenTelemetry API spans). **Eric's rule (2026-10-21): no PR until the feature has been
-  tested in the field as a snapshot release**; the field takes the branch as a snapshot, the results decide the adjustments, and
-  the next release carries the finished feature. **Eric, 2026-10-23: a PR is opened to track the branch, with the lab committed to it.** Next: the field runs both adapters in turn (procedure:
-  `docs/guides/observability.md#live-tracing`) and reports, per adapter, the PurePath tree, the `invocation.observer.unlinked`
-  fragment (the negative control), the log ids per line, a Mono hop's duration, any `OneAgent SDK:` warnings, and the overhead.
-  The branch keeps version 4.12.25: a snapshot published to an artifact repository would collide with the release.
+  `extensions/opentelemetry-tracer` (live OpenTelemetry API spans). **The field-snapshot gate is LIFTED (Eric, 2026-10-23).** His
+  rule of 2026-10-21 was no PR until the field had tested a snapshot; the sandbox run below proved enough to drop it, and the
+  branch goes to main through its PR, with the lab committed to it, so the next release carries the feature. Next: Eric's
+  decisions on the run's findings below, then the OpenTelemetry adapter's run in the lab. A run's checklist:
+  `docs/guides/observability.md#live-tracing` - the PurePath tree, the `invocation.observer.unlinked` fragment (the negative
+  control), the log ids per line, a Mono hop's duration, any `OneAgent SDK:` warnings, and the overhead. The branch keeps
+  version 4.12.25 until the release round, so the lab builds with `-am` and nothing is installed into `~/.m2`.
   **Sandbox run 2026-10-22 (a Dynatrace sandbox tenant, the lab `lab/dynatrace-oneagent/`, OneAgent 1.347.64 full stack in
   Colima's VM):** with the OneAgent adapter on, REST and the composable hops are ONE connected, nested PurePath (the RPC and
   the `Mono` included) where the baseline showed a single span, and every log line carries `dt.trace_id`/`dt.span_id`.
