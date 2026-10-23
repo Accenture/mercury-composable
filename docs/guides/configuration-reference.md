@@ -772,14 +772,6 @@ Request headers for the `opentelemetry-forwarder` extension — **where backend 
 
 The next keys belong to the live invocation observers, which bracket each composable-function hop for an APM agent's code-level view (see [Code-level tracing with an agent](observability.md#live-tracing)).
 
-### `otel.tracing`
-
-| Type | Default |
-|------|---------|
-| `boolean` | `false` |
-
-**Master switch for the `opentelemetry-tracer` extension** (`@OptionalService("otel.tracing")`): each hop becomes a live OpenTelemetry `CONSUMER` span through the API, recorded by whatever agent implements it. Not to be combined with `dynatrace.oneagent.enabled`, or with `otel.forwarding` into the same backend.
-
 ### `dynatrace.oneagent.enabled`
 
 | Type | Default |

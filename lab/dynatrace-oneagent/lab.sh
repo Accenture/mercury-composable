@@ -8,7 +8,7 @@ VERSION=4.12.25
 APPS="lab-broker lab-edge lab-worker"
 
 usage() {
-  echo "usage: $0 build | up [oneagent|otel|none] | order | logs <lab-edge|lab-worker|lab-broker> | down"
+  echo "usage: $0 build | up [oneagent|none] | order | logs <lab-edge|lab-worker|lab-broker> | down"
   exit 1
 }
 
@@ -29,7 +29,6 @@ case "${1:-}" in
     case "${2:-oneagent}" in
       # DESTINATION=route names every hop after its route; the default names it after the application
       oneagent) tracer=(-e DYNATRACE_ONEAGENT_ENABLED=true -e "DYNATRACE_ONEAGENT_DESTINATION=${DESTINATION:-application}") ;;
-      otel)     tracer=(-e OTEL_TRACING=true) ;;
       none)     tracer=() ;;
       *)        usage ;;
     esac

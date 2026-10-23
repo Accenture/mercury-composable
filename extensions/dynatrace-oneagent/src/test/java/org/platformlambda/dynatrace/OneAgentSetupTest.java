@@ -60,7 +60,7 @@ class OneAgentSetupTest {
         FakeOneAgent agent = new FakeOneAgent();
         OneAgentObserver observer = OneAgentSetup.configure(agent.sdk, settings(Map.of(
                 OneAgentSetup.DESTINATION, "route", OneAgentSetup.LOG_CONTEXT, "true",
-                "otel.tracing", "true", "otel.forwarding", "true")));
+                "otel.forwarding", "true")));
 
         assertNotNull(observer);
         observer.begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();

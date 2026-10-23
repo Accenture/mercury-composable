@@ -27,7 +27,6 @@
         <!-- Extensions -->
         <module>extensions/reactive-postgres</module>
         <module>extensions/opentelemetry-forwarder</module>
-        <module>extensions/opentelemetry-tracer</module>
         <module>extensions/dynatrace-oneagent</module>
         <module>extensions/redis-connection</module>
         <module>extensions/sync-over-async</module>

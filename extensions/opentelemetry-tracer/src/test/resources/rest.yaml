@@ -1,6 +1,0 @@
-rest:
-  - service: "demo.hello"
-    methods: ['GET']
-    url: "/api/demo/hello"
-    timeout: 10s
-    tracing: true

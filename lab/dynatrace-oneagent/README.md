@@ -37,7 +37,7 @@ download folder and any OneAgent installer (`Dynatrace-OneAgent-Linux*`, `-Windo
 
 ```bash
 ./lab.sh build            # the jars (always with -am, see below) and the three images
-./lab.sh up oneagent      # or: up otel | up none (the baseline: OneAgent without the adapter)
+./lab.sh up oneagent      # or: up none (the baseline: OneAgent without the adapter)
 ./lab.sh order            # one order; repeat a few times
 ./lab.sh logs lab-edge    # or lab-worker | lab-broker
 ./lab.sh down
@@ -50,8 +50,8 @@ download folder and any OneAgent installer (`Dynatrace-OneAgent-Linux*`, `-Windo
 - **Build with `-am`.** The branch keeps version 4.12.25. Without `-am` Maven takes the released
   platform-core from `~/.m2`, which has no invocation-observer interface, and the applications fail at
   startup with `NoClassDefFoundError: org/platformlambda/core/spi/InvocationObserver`. `lab.sh build` does it.
-- **The tracer is chosen by environment variables** that `lab.sh up` sets (`DYNATRACE_ONEAGENT_ENABLED`,
-  `DYNATRACE_ONEAGENT_DESTINATION`, `OTEL_TRACING`), which both applications' `application.properties` read.
+- **The adapter is switched by environment variables** that `lab.sh up` sets (`DYNATRACE_ONEAGENT_ENABLED`,
+  `DYNATRACE_ONEAGENT_DESTINATION`), which both applications' `application.properties` read.
 - **One network namespace.** The broker advertises `127.0.0.1:9092`, so the two applications share the
   broker container's network namespace and the broker container publishes `lab-edge`'s port 8100.
   `lab-worker` runs no HTTP server.

@@ -334,16 +334,17 @@ state. The tag is serialized with the envelope, so it also crosses Event-over-HT
 Across `minimalist-kafka` it travels as Kafka headers (`x-mercury-tag-<tag>`): `simple.kafka.notification`
 writes them and the flow adapter restores them, so the consuming application's hops join the publisher's trace
 ([details](minimalist-kafka.md#tracing)).
-Two optional extensions implement it:
+An optional extension implements it:
 
 | Extension | Switch | What it records |
 |---|---|---|
 | `extensions/dynatrace-oneagent` | `dynatrace.oneagent.enabled=true` | Each hop with the **OneAgent SDK**, as an incoming message linked by a Dynatrace tag to the sender's outgoing message, giving one connected PurePath per request. Inert without an attached OneAgent. |
-| `extensions/opentelemetry-tracer` | `otel.tracing=true` | Each hop as a live OpenTelemetry **CONSUMER span**, through the vendor-neutral API, with W3C context in the tag. Whatever implements the API records it: OneAgent with its *OpenTelemetry (Java)* feature, or the OpenTelemetry Java agent. |
 
-Both are off by default, so the jar alone does nothing. Run **one at a time**: two live tracers would record
-every hop twice. Do not also export the forwarder's spans to the same backend, which would record each request
-as two unconnected traces.
+It is off by default, so the jar alone does nothing. Do not also export the forwarder's spans to the same
+backend, which would record each request as two unconnected traces. **OpenTelemetry API spans do not replace
+it under OneAgent:** OneAgent links an API span only through its own context on the thread, never through a
+W3C parent carried on the event, so spans opened across Mercury's event bus stay separate requests. The seam is
+vendor-neutral: an adapter for another agent implements `InvocationObserver`.
 
 **Which hops are observed.** A traced request is observed (one with a trace id; see
 [Turning tracing on](#enable)) on every route except the plumbing routes listed below. That includes Event
@@ -360,16 +361,12 @@ Script's two routers, `event.script.manager` and `task.executor`, so a flow stay
 **Deferred results.** A function that returns a `Mono` returns before its result exists, and the result
 usually completes on another thread. A OneAgent SDK tracer must start and end on one thread, so the OneAgent
 extension ends the hop when the function returns and resumes it through an *in-process link* when the result
-arrives: the completion appears as a linked node at the time it happened. An OpenTelemetry span is not bound to
-a thread, so the OpenTelemetry extension ends the hop's span when the result is delivered, and the hop shows its
-real duration. A `Flux` stream is not covered by either. As before, log lines written inside a `Mono`
-completion carry no log context.
+arrives: the completion appears as a linked node at the time it happened. A `Flux` stream is not covered. As
+before, log lines written inside a `Mono` completion carry no log context.
 
 **Requirements for Dynatrace.** Use OneAgent **1.311 or later**, which propagates context into virtual threads,
 and enable its Java virtual-thread support (an opt-in OneAgent feature). Java 25 is the recommended runtime:
-before Java 24 (JEP 491), a virtual thread that blocks inside `synchronized` code pins its carrier thread. For the
-OpenTelemetry extension, also enable the OneAgent feature *OpenTelemetry (Java)*. By default it takes Server
-and Consumer spans as entry points, and each hop is a Consumer span.
+before Java 24 (JEP 491), a virtual thread that blocks inside `synchronized` code pins its carrier thread.
 
 **Checking it.** Drive one traced request through several function hops and a flow, then check four
 things in Dynatrace:
@@ -379,9 +376,7 @@ things in Dynatrace:
 3. The route in `invocation.observer.unlinked` appears as a **separate fragment** of its own, and the rest of
    the request stays in the connected tree: the route's reply keeps the caller's tag. If the route is not
    separate, the check cannot tell a connected trace from a broken one, and its results prove nothing.
-4. A `Mono` function's node, or span, has the expected duration.
-
-Run the OneAgent extension and the OpenTelemetry extension in turn, with the same requests, and compare.
+4. A `Mono` function's completion appears as a node linked to its hop, at the time the result arrived.
 
 ## Application log context {#log-context}
 
@@ -583,6 +578,6 @@ trace. A collector configuration must not drop a record that has no `context`.
 
 - [Build, Test & Deploy](build-test-deploy.md) — enabling tracing and the forwarder hook.
 - [Configuration Reference](configuration-reference.md#observability) — the `trace.*` and `otel.*` keys.
-- [Code-level tracing with an agent](#live-tracing) — the OneAgent and OpenTelemetry invocation observers.
+- [Code-level tracing with an agent](#live-tracing) — the OneAgent invocation observer.
 - [Reserved Names & Headers](reserved-names-and-headers.md) — `distributed.trace.forwarder`, `traceparent`.
 - [Architecture Overview](architecture.md) — the three layers the span tree mirrors.

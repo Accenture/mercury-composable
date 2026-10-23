@@ -56,7 +56,6 @@ public class OneAgentSetup implements EntryPoint {
     public static final String ENABLED = "dynatrace.oneagent.enabled";
     public static final String DESTINATION = "dynatrace.oneagent.destination";
     public static final String LOG_CONTEXT = "dynatrace.oneagent.log.context";
-    private static final String OTEL_TRACING = "otel.tracing";
     private static final String OTEL_FORWARDING = "otel.forwarding";
     private static final String ROUTE = "route";
     private static final String TRUE = "true";
@@ -91,9 +90,6 @@ public class OneAgentSetup implements EntryPoint {
         String application = Platform.getInstance().getName();
         log.info("Dynatrace OneAgent invocation observer - SDK state {}, destination {}, log context {}",
                 state, perRoute? "per route" : application, logContext);
-        if (TRUE.equalsIgnoreCase(property.apply(OTEL_TRACING, FALSE))) {
-            log.warn("{}=true as well - two live tracers record every hop twice; run one at a time", OTEL_TRACING);
-        }
         if (TRUE.equalsIgnoreCase(property.apply(OTEL_FORWARDING, FALSE))) {
             log.warn("{}=true as well - do not export the OTLP spans to the same Dynatrace tenant: " +
                     "the forwarder's trace and the PurePath are two unconnected traces of one request",

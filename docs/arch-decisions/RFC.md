@@ -294,7 +294,11 @@ Dynatrace sandbox environment, so a dev cycle is a rebuild rather than a field r
 proved enough to lift the gate: with the OneAgent adapter, a request was one connected, nested PurePath through every
 hop, the RPC and the `Mono` included, and every log line carried `dt.trace_id` and `dt.span_id`. The feature moves from
 experimental to regular feature development, and the branch goes to main through its PR; the run's findings are on the
-thread.
+thread. **The OpenTelemetry adapter was removed (Eric, 2026-10-23), as option (b) had warned:** under OneAgent its spans were
+recorded but never linked across the event bus, because OneAgent links an API span only through its own context on the
+thread and ignores a W3C parent set by the caller (the `SERVER` kind behaves the same, `INTERNAL` yields no span), and its
+PurePath is not OpenTelemetry's current context at the REST entry. The seam stays vendor-neutral, so an adapter for an agent
+that honours W3C parents can come back with that agent to test against.
 **Options.** (a) The OneAgent SDK adapter alone: native PurePath nodes, but SDK tracers are bound to one thread, so a `Mono`
 completion is a linked node, not a long hop. (b) The OpenTelemetry adapter alone: not tied to one vendor, and spans are not
 bound to a thread, but it depends on an agent capturing OpenTelemetry API spans, and Dynatrace documents that spans may

@@ -75,11 +75,6 @@
             <artifactId>dynatrace-oneagent</artifactId>
             <version>4.12.25</version>
         </dependency>
-        <dependency>
-            <groupId>org.platformlambda</groupId>
-            <artifactId>opentelemetry-tracer</artifactId>
-            <version>4.12.25</version>
-        </dependency>
 
         <dependency>
             <groupId>org.junit</groupId>
