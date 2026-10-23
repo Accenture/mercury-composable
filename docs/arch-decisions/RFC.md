@@ -285,7 +285,8 @@ with W3C context in the tag; OneAgent's *OpenTelemetry (Java)* feature or the Op
 span may end on another thread, so a reactive hop shows its real duration. **(4) One fix found by the linkage test:**
 Event Script's kick-off event to `task.executor` carried no trace id (the executor reads it from the flow instance), so it
 was unobserved and a flow's first task started a new trace; it now carries the flow's trace. Built on branch
-`feature/dynatrace-oneagent-compatibility` for a field snapshot; **no PR until the field experiment** (Eric, 2026-10-21).
+`feature/dynatrace-oneagent-compatibility` for a field snapshot; a PR tracks the branch from 2026-10-23, and the field
+experiment comes before it merges (Eric, 2026-10-21 and 2026-10-23).
 **Options.** (a) The OneAgent SDK adapter alone: native PurePath nodes, but SDK tracers are bound to one thread, so a `Mono`
 completion is a linked node, not a long hop. (b) The OpenTelemetry adapter alone: not tied to one vendor, and spans are not
 bound to a thread, but it depends on an agent capturing OpenTelemetry API spans, and Dynatrace documents that spans may
