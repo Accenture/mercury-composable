@@ -129,8 +129,10 @@ runs inside one state store. Neither spans two sites with two Kafka clusters, so
 **Decision.**
 
 - **A declared environment, one property.** `scheduler.environment` names this instance's environment, one word of letters, digits,
-  hyphens and underscores (`${ENV_NAME:prod}` in a deployment), compared case-insensitively with the active environment. The
-  property is not `app.env`, which already selects the Playground's dev mode (`@OptionalService("app.env=dev")`): a Layer 3
+  hyphens and underscores (`${ENV_NAME:prod}` in a deployment), compared case-insensitively with the active environment.
+  (Amended 2026-10-23: the key is `scheduler.environment.name`, so `scheduler.environment` is the parent of both settings. A
+  key cannot be both a value and a parent, and the name was lost beside `scheduler.environment.store`. The old key is still
+  read when it stands alone.) The property is not `app.env`, which already selects the Playground's dev mode (`@OptionalService("app.env=dev")`): a Layer 3
   application that also schedules jobs must be able to be in dev mode and count as Production at once.
 - **The store is the source of truth, and there is no second origin.** The active environment is read from the store at every
   scheduled point, before a job runs; a first draft's `scheduler.active.environment` property was dropped at review (Eric,
