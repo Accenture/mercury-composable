@@ -826,7 +826,7 @@ Routes a live invocation observer never observes; setting the property replaces 
 |------|---------|
 | `String` (comma-sep routes) | — |
 
-The **negative control** of a tracing check: these routes are observed but never see the incoming linkage tag, so each of their invocations starts a new trace. A check that cannot see this break cannot tell a connected trace from a broken one.
+The **negative control** of a tracing check: these routes are observed but never see the incoming linkage tag, so each of their invocations starts a new trace. Their reply keeps the caller's tag, so the route alone is a separate fragment and the rest of the request stays in the caller's trace. A check that cannot see this break cannot tell a connected trace from a broken one.
 
 ---
 

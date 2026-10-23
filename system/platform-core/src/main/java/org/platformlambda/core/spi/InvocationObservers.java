@@ -48,7 +48,9 @@ import java.util.concurrent.atomic.AtomicReference;
  *       and the RPC reply inbox, which are plumbing; setting the property replaces the default.</li>
  *   <li>{@code invocation.observer.unlinked} - the negative control of a tracing check: these
  *       routes are observed, but {@link InvocationObserver#begin} sees no incoming tags, so each of
- *       their invocations starts a new trace. A test that cannot see that break proves nothing.</li>
+ *       their invocations starts a new trace. Their reply keeps the caller's tags ({@link #reply}), so
+ *       only the route itself is a separate fragment and the rest of the request stays in the caller's
+ *       trace. A test that cannot see that break proves nothing.</li>
  * </ul>
  * Every observer call is guarded: an exception is logged (once per observer class at WARN) and the
  * invocation proceeds unobserved by that observer.
@@ -78,6 +80,8 @@ public final class InvocationObservers {
     private static final List<InvocationObserver> observers = new CopyOnWriteArrayList<>();
     private static final Set<String> failingObservers = ConcurrentHashMap.newKeySet();
     private static final AtomicReference<RouteFilter> filter = new AtomicReference<>();
+    // set while an unlinked route's reply is delivered on this thread: send leaves its tags as they are
+    private static final ThreadLocal<Boolean> keepingTags = new ThreadLocal<>();
 
     private InvocationObservers() { }
 
@@ -135,7 +139,8 @@ public final class InvocationObservers {
         if (scopes.isEmpty()) {
             return NONE;
         }
-        return scopes.size() == 1? scopes.getFirst() : new CompositeScope(scopes);
+        InvocationScope scope = scopes.size() == 1? scopes.getFirst() : new CompositeScope(scopes);
+        return carrier == NO_TAGS? new UnlinkedScope(scope) : scope;
     }
 
     /**
@@ -145,7 +150,7 @@ public final class InvocationObservers {
      * @param event the outgoing event
      */
     public static void send(EventEnvelope event) {
-        if (observers.isEmpty() || event.getTraceId() == null || event.getTo() == null) {
+        if (observers.isEmpty() || event.getTraceId() == null || event.getTo() == null || keepingTags.get() != null) {
             return;
         }
         String route = routeOf(event.getTo());
@@ -161,6 +166,42 @@ public final class InvocationObservers {
             } catch (Exception e) {
                 failed(observer, "send", e);
             }
+        }
+    }
+
+    /**
+     * Engine call: deliver a function's reply on the scope's thread while the scope is open. The reply
+     * carries the incoming event's tags, which the worker copies. The reply of a route in
+     * {@code invocation.observer.unlinked} keeps them, so the caller's next step consumes the caller's own
+     * tag, and the negative control breaks one link instead of moving the rest of the request into the
+     * route's new trace. Two things make that hold:
+     * <ul>
+     *   <li>{@link #send} does not re-tag the reply;</li>
+     *   <li>the route's scope is closed first, because an agent that carries the thread's context into an
+     *       executor would otherwise carry the route's trace into the next step, whatever the tag says.</li>
+     * </ul>
+     * Any other reply is tagged by {@link #send} as usual, as is every other event the route sends.
+     *
+     * @param scope the function's scope from {@link #begin}
+     * @param error the error message when the function failed, or null
+     * @param delivery sends the reply
+     */
+    public static void reply(InvocationScope scope, String error, Runnable delivery) {
+        if (scope instanceof UnlinkedScope) {
+            close(scope, error);
+            keepingTags(delivery);
+        } else {
+            delivery.run();
+        }
+    }
+
+    // an Event-over-HTTP reply passes send twice on this thread, so the whole delivery keeps its tags
+    private static void keepingTags(Runnable delivery) {
+        keepingTags.set(Boolean.TRUE);
+        try {
+            delivery.run();
+        } finally {
+            keepingTags.remove();
         }
     }
 
@@ -229,7 +270,7 @@ public final class InvocationObservers {
         }
         try {
             InvocationContinuation continuation = scope.detach();
-            return continuation == null? null : new OnceContinuation(continuation);
+            return continuation == null? null : new OnceContinuation(continuation, scope instanceof UnlinkedScope);
         } catch (Exception e) {
             failed(scope, "detach", e);
             return null;
@@ -246,6 +287,12 @@ public final class InvocationObservers {
      */
     public static void resume(InvocationContinuation continuation, String error, Runnable delivery) {
         InvocationScope scope = continuation == null? null : continuation.resume();
+        if (continuation instanceof OnceContinuation once && once.unlinked) {
+            // the negative control's deferred reply, as in reply: the route's node ends before the reply leaves
+            close(scope, error);
+            keepingTags(delivery);
+            return;
+        }
         try {
             delivery.run();
         } finally {
@@ -412,14 +459,49 @@ public final class InvocationObservers {
     }
 
     /**
+     * The scope of a route in {@code invocation.observer.unlinked}: closed at most once, because
+     * {@link #reply} closes it before the reply leaves and the engine closes it again when the function
+     * returns.
+     */
+    private static final class UnlinkedScope implements InvocationScope {
+        private final InvocationScope scope;
+        private final AtomicBoolean closed = new AtomicBoolean(false);
+
+        UnlinkedScope(InvocationScope scope) {
+            this.scope = scope;
+        }
+
+        @Override
+        public void error(String message) {
+            if (!closed.get()) {
+                scope.error(message);
+            }
+        }
+
+        @Override
+        public void end() {
+            if (closed.compareAndSet(false, true)) {
+                scope.end();
+            }
+        }
+
+        @Override
+        public InvocationContinuation detach() {
+            return scope.detach();
+        }
+    }
+
+    /**
      * A continuation resumed at most once, whether by the delivery or by {@link #abandon}.
      */
     private static final class OnceContinuation implements InvocationContinuation {
         private final InvocationContinuation continuation;
+        private final boolean unlinked;
         private final AtomicBoolean resumed = new AtomicBoolean(false);
 
-        OnceContinuation(InvocationContinuation continuation) {
+        OnceContinuation(InvocationContinuation continuation, boolean unlinked) {
             this.continuation = continuation;
+            this.unlinked = unlinked;
         }
 
         @Override

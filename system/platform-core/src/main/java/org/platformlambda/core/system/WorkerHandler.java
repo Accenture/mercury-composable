@@ -271,7 +271,7 @@ public class WorkerHandler {
             }
             return ps.setExecutionTime(md.diff).setInputOutput(md.inputOutput);
         } catch (NoClassDefFoundError | AssertionError | Exception e) {
-            return getErrorProcessStatus(f, e, ps, md, event, begin);
+            return getErrorProcessStatus(f, e, ps, md, event, begin, scope);
         }
     }
 
@@ -352,7 +352,7 @@ public class WorkerHandler {
                     encoded.setType(evt.getType());
                     encoded.setBody(evt.getBody());
                 }
-                po.send(encoded);
+                InvocationObservers.reply(scope, null, () -> po.send(encoded));
             }
         } catch (Exception e2) {
             ps.setUnDelivery(e2.getMessage());
@@ -369,7 +369,8 @@ public class WorkerHandler {
     }
 
     private ProcessStatus getErrorProcessStatus(TypedLambdaFunction<?, ?> f, Throwable e, ProcessStatus ps,
-                                                ProcessMetadata md, EventEnvelope event, long begin) {
+                                                ProcessMetadata md, EventEnvelope event, long begin,
+                                                InvocationScope scope) {
         EventEmitter po = EventEmitter.getInstance();
         md.diff = getExecTime(begin);
         final String replyTo = event.getReplyTo();
@@ -390,7 +391,8 @@ public class WorkerHandler {
         if (replyTo != null) {
             final EventEnvelope errorResponse = prepareErrorResponse(event, e);
             try {
-                po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(md.diff));
+                InvocationObservers.reply(scope, error,
+                        () -> po.send(encodeTraceAnnotations(errorResponse).setExecutionTime(md.diff)));
             } catch (Exception e4) {
                 ps.setUnDelivery(e4.getMessage());
             }

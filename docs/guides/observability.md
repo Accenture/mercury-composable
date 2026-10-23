@@ -376,8 +376,9 @@ things in Dynatrace:
 
 1. The request shows as **one connected tree**, with a node for every hop.
 2. Every log line of the request carries the trace and span ids of the node that wrote it.
-3. The route in `invocation.observer.unlinked` appears as a **separate fragment**. If it does not, the
-   check cannot tell a connected trace from a broken one, and its results prove nothing.
+3. The route in `invocation.observer.unlinked` appears as a **separate fragment** of its own, and the rest of
+   the request stays in the connected tree: the route's reply keeps the caller's tag. If the route is not
+   separate, the check cannot tell a connected trace from a broken one, and its results prove nothing.
 4. A `Mono` function's node, or span, has the expected duration.
 
 Run the OneAgent extension and the OpenTelemetry extension in turn, with the same requests, and compare.

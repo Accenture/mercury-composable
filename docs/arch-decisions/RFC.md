@@ -277,7 +277,8 @@ Event-over-HTTP and the cloud connector; across `minimalist-kafka` it travels as
 of Event Script's `event.script.manager` and `task.executor`; and the five `EventEmitter` send entry points (`send`, two
 `asyncRequest`, two `eRequest`), each on the engine's own copy. A traced request is observed on every route but the
 telemetry routes and the RPC inbox; `invocation.observer.include`/`exclude` adjust that, and
-`invocation.observer.unlinked` is the experiment's **negative control**. **(3) Two optional adapters, off by default.**
+`invocation.observer.unlinked` is the experiment's **negative control**: the route alone is a separate fragment, because its
+reply keeps the caller's tag (Eric, 2026-10-23; before, the rest of the flow followed the route into its new trace). **(3) Two optional adapters, off by default.**
 `extensions/dynatrace-oneagent` (`dynatrace.oneagent.enabled=true`) models each hop as a message with the OneAgent SDK: an outgoing
 message's Dynatrace tag on the envelope, an incoming message that consumes it, and an in-process link for a `Mono`. All hops
 share one messaging system, and the destination is the application by default, so routes do not become Dynatrace services.

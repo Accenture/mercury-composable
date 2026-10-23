@@ -54,6 +54,7 @@ class InvocationObserverTest extends TestBase {
     private static final String DEFERRED = PREFIX + "deferred";
     private static final String NEVER = PREFIX + "never";
     private static final String ONLY = PREFIX + "only";
+    private static final String COLLECTOR = PREFIX + "collector";
     private static final String TAG = "rec_tag";
     private static final long TIMEOUT = 5000;
     private static final AtomicBoolean routesRegistered = new AtomicBoolean(false);
@@ -78,6 +79,7 @@ class InvocationObserverTest extends TestBase {
         platform.registerPrivate(DEFERRED, deferred, 1);
         platform.registerPrivate(NEVER, never, 1);
         platform.registerPrivate(ONLY, echo, 1);
+        platform.registerPrivate(COLLECTOR, (LambdaFunction) (headers, input, instance) -> null, 1);
     }
 
     @AfterEach
@@ -200,6 +202,43 @@ class InvocationObserverTest extends TestBase {
         // the sender still tagged the event, but the unlinked route starts a new trace
         assertNotNull(recorder.find(r -> r.is("send", ECHO)));
         assertNull(begin.tag);
+    }
+
+    @Test
+    void theNegativeControlsReplyKeepsTheCallersTags() throws Exception {
+        Recorder recorder = register(new Recorder("a"));
+        InvocationObservers.configure(null, null, ONLY);
+
+        // a callback reply, as a flow task's reply to the task executor: the collector's begin shows its tag
+        EventEmitter po = EventEmitter.getInstance();
+        po.send(new EventEnvelope().setTo(ONLY).setReplyTo(COLLECTOR).setBody("unlinked")
+                .setTrace("trace-109", "TEST /unlinked"));
+        Record unlinked = recorder.await(r -> r.is("begin", COLLECTOR) && "trace-109".equals(r.traceId));
+        po.send(new EventEnvelope().setTo(ECHO).setReplyTo(COLLECTOR).setBody("linked")
+                .setTrace("trace-110", "TEST /linked"));
+        Record linked = recorder.await(r -> r.is("begin", COLLECTOR) && "trace-110".equals(r.traceId));
+
+        // the unlinked route's reply carries the caller's tag on, so the next step stays in the caller's trace
+        assertNull(recorder.await(r -> r.is("begin", ONLY)).tag);
+        assertEquals("sent-to-" + ONLY, unlinked.tag);
+        // and the route's own trace ends before the reply leaves, so no thread context carries it on
+        assertTrue(recorder.await(r -> r.is("end", ONLY)).seq < unlinked.seq);
+        // any other reply is tagged where it leaves, by the route that sends it
+        assertEquals("sent-to-" + COLLECTOR, linked.tag);
+    }
+
+    @Test
+    void theNegativeControlsDeferredReplyKeepsTheCallersTags() throws Exception {
+        Recorder recorder = register(new Recorder("a"));
+        InvocationObservers.configure(null, null, DEFERRED);
+
+        EventEmitter.getInstance().send(new EventEnvelope().setTo(DEFERRED).setReplyTo(COLLECTOR).setBody("unlinked")
+                .setTrace("trace-111", "TEST /unlinked"));
+        Record collected = recorder.await(r -> r.is("begin", COLLECTOR) && "trace-111".equals(r.traceId));
+
+        assertEquals("sent-to-" + DEFERRED, collected.tag);
+        // the deferred node is resumed and ended on the completion thread before the reply leaves
+        assertTrue(recorder.await(r -> r.is("resumed-end", DEFERRED)).seq < collected.seq);
     }
 
     @Test

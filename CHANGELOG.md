@@ -71,8 +71,9 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    connected PurePath per request; `opentelemetry-tracer` (`otel.tracing=true`) opens a live OpenTelemetry span per hop through
    the vendor-neutral API, for an agent that implements it. A traced request is observed on every route but the telemetry routes
    and the RPC inbox (`invocation.observer.include`/`exclude`); `invocation.observer.unlinked` is the negative control of a
-   tracing check. Event Script's kick-off event to `task.executor` now carries the flow's trace id, so a flow's first task stays
-   linked. **Upgrade note:** none - nothing is observed unless an extension is added and switched on.
+   tracing check: the route alone becomes a separate fragment, because its reply keeps the caller's tag. Event Script's
+   kick-off event to `task.executor` now carries the flow's trace id, so a flow's first task stays linked. **Upgrade note:**
+   none - nothing is observed unless an extension is added and switched on.
 
 ### Changed
 
