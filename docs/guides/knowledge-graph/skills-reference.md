@@ -240,8 +240,7 @@ the same date twice gives `0`. A date is an ISO-8601 calendar date written exact
 no time zone** — the request must carry dates in that form, and a date-time, a single-digit month, a day the calendar
 lacks (`2027-02-29`) or a null argument aborts the node by name, as does a fractional number of days or a result
 outside the years 0000 to 9999. The days may be a number or numeric text, so a terms property read from a table node
-works as written. Pinned by `unit-test-date-arithmetic-1` and the engine-neutral `date-plugin-vectors.json`; Java
-engine only for now — the Rust port gains the plugins when it catches up. The full rules are in the
+works as written. Pinned on both engines by `unit-test-date-arithmetic-1` and the shared `date-plugin-vectors.json`. The full rules are in the
 [Event Script syntax page](../event-script/syntax.md#simple-plugins) (*Date arithmetic plugins*).
 
 ## graph.math {#math}

@@ -7,5 +7,8 @@
   - **Rules to match:** exactly `YYYY-MM-DD`, a real calendar day, a result within 0000-01-01 to 9999-12-31; the days a
     whole number (an integer, numeric text or a whole float), negative for an earlier date; `daysBetween` the absolute
     count as an integer; a null argument refused.
+  - **Progress (2026-10-24):** built on the Rust branch `feat/date-plugins` as Increment 189 (mercury #396), every item
+    above done and green; this repository's notes replaced on `docs/date-plugins-both-engines`. Closes when the Rust
+    branch merges.
   - origin: 2026-10-24-201909
   <!-- id: date-plugins-rust-twin | created: 2026-10-24 | last_used: 2026-10-24 | uses: 1 | tier: working | origin: 2026-10-24-201909 -->
