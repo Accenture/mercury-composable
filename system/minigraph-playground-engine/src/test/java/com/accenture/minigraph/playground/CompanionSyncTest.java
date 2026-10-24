@@ -40,6 +40,7 @@ import org.platformlambda.core.util.Utility;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -200,6 +201,126 @@ class CompanionSyncTest {
         var badRunOutput = ((List<?>) badRun.get("output")).stream().map(String::valueOf).toList();
         assertTrue(badRunOutput.stream().anyMatch(l -> l.startsWith("Graph traversal aborted: ")),
                 "every run ends with a terminal carrying its reason, even on early failure: " + badRunOutput);
+    }
+
+    /**
+     * {@code create node} on a name the model already holds prints "node {name} already exists" and
+     * changes nothing, so the sync outcome is ok=false with that line as the error - a driver that
+     * trusted ok=true would believe it had changed the node. {@code update node} replaces a node and
+     * stays ok=true.
+     */
+    @Test
+    void createOnAnExistingNodeIsAFailure() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = openCompanionSession("990017");
+        var first = syncCommand(po, sid, "create node root\nwith type Root\nwith properties\npurpose=first");
+        assertEquals(Boolean.TRUE, first.get("ok"), "the first create -> ok:true: " + first);
+        var again = syncCommand(po, sid, "create node root\nwith type Root\nwith properties\npurpose=changed");
+        assertEquals(Boolean.FALSE, again.get("ok"), "a create on an existing node -> ok:false: " + again);
+        assertEquals("node root already exists", again.get("error"), "the error is the engine's line: " + again);
+        assertEquals("first", draftProperties(sid, "root").get("purpose"), "the refused create changed nothing");
+        var updated = syncCommand(po, sid, "update node root\nwith type Root\nwith properties\npurpose=changed");
+        assertEquals(Boolean.TRUE, updated.get("ok"), "update node replaces the node -> ok:true: " + updated);
+        assertEquals("changed", draftProperties(sid, "root").get("purpose"), "update node replaced the node");
+    }
+
+    /**
+     * A help page is never a failure, whatever its prose says: the endpoint reads the engine's refusal flag, not
+     * the words of a line. The word list that the flag replaced answered ok=false for nine pages - "help run",
+     * "help schema" and seven tutorials - whose prose mentions an abort, a "not found" or a "does not have". Every
+     * page is asked for, so a page added later is covered too. A topic that does not exist is a refusal.
+     */
+    @Test
+    void helpProseIsNeverAFailure() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = openCompanionSession("990018");
+        List<String> topics;
+        try (var pages = Files.list(Path.of("src/main/resources/help"))) {
+            topics = pages.map(page -> page.getFileName().toString())
+                    .filter(name -> name.endsWith(".md")).map(name -> name.substring(0, name.length() - 3)).toList();
+        }
+        assertTrue(topics.contains("help run"), "the help pages are found: " + topics);
+        var failed = new ArrayList<String>();
+        for (var topic : topics) {
+            if (!Boolean.TRUE.equals(syncCommand(po, sid, topic).get("ok"))) {
+                failed.add(topic);
+            }
+        }
+        assertEquals(List.of(), failed, "every help page -> ok:true");
+        var unknown = syncCommand(po, sid, "help no-such-topic");
+        assertEquals(Boolean.FALSE, unknown.get("ok"), "an unknown topic -> ok:false: " + unknown);
+        assertEquals("'help no-such-topic' not found", unknown.get("error"));
+    }
+
+    private static final String ROOT_AND_END = """
+            {"nodes": [
+              {"alias": "root", "types": ["Root"], "properties": {"purpose": "refusal test"}},
+              {"alias": "end", "types": ["End"], "properties": {}}],
+             "connections": []}""";
+
+    private static final String NODE_WITHOUT_ALIAS = """
+            {"nodes": [{"types": ["Root"], "properties": {}}]}""";
+
+    /**
+     * Every refusal is a failure, however it is worded. Each of these commands did nothing, or reset the draft and
+     * then refused, and the endpoint answered ok=true because no word of its line matched the error words. The
+     * command service now sends a refusal with an error status, and the endpoint reports the first such line. An
+     * answer is not a refusal: two nodes that are not connected is what "describe connection" found.
+     */
+    @Test
+    void everyRefusalIsAFailureWhateverItsWording() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = openCompanionSession("990019");
+        var model = new File("/tmp/graph", "refusal-test.json");
+        var broken = new File("/tmp/graph", "refusal-broken.json");
+        assertTrue(Utility.getInstance().str2file(model, ROOT_AND_END));
+        assertTrue(Utility.getInstance().str2file(broken, NODE_WITHOUT_ALIAS));
+        try {
+            syncCommand(po, sid, "create node root\nwith type Root");
+            syncCommand(po, sid, "create node end\nwith type End");
+            assertRefused(po, sid, "import node fetcher from refusal-test",
+                    "node fetcher does not exist in refusal-test");
+            assertRefused(po, sid, "import node fetcher from no-such-graph", "Graph model not found in ");
+            assertRefused(po, sid, "delete connection root and end", "root has no connections with end");
+            assertRefused(po, sid, "list everything", "Please use 'list nodes'");
+            assertRefused(po, sid, "session everything", "Invalid session command");
+            var answer = syncCommand(po, sid, "describe connection root and end");
+            assertEquals(Boolean.TRUE, answer.get("ok"), "an answer is not a refusal: " + answer);
+            // the importer resets the draft before it refuses, so this one goes last
+            assertRefused(po, sid, "import graph from refusal-broken",
+                    "Graph model not imported - missing alias in node entry-1");
+        } finally {
+            assertTrue(model.delete());
+            assertTrue(broken.delete());
+        }
+    }
+
+    /**
+     * A command that throws past the command service's own handling prints nothing on the console, and its RPC
+     * fails: that failure is the outcome, not a silent ok=true.
+     */
+    @Test
+    void aMalformedJsonCommandIsAFailure() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = openCompanionSession("990020");
+        var malformed = syncCommand(po, sid, "{not json}");
+        assertEquals(Boolean.FALSE, malformed.get("ok"), "a malformed JSON command -> ok:false: " + malformed);
+        assertInstanceOf(String.class, malformed.get("error"));
+    }
+
+    private void assertRefused(EventEmitter po, String sid, String command, String error) throws Exception {
+        var outcome = syncCommand(po, sid, command);
+        assertEquals(Boolean.FALSE, outcome.get("ok"), command + " -> ok:false: " + outcome);
+        assertTrue(String.valueOf(outcome.get("error")).startsWith(error), command + ": " + outcome.get("error"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> draftProperties(String sid, String alias) {
+        var draft = (Map<String, Object>) GraphCommandService.downloadGraph(sid);
+        assertNotNull(draft, "the session holds a draft");
+        var node = ((List<Map<String, Object>>) draft.get("nodes")).stream()
+                .filter(n -> alias.equals(n.get("alias"))).findFirst().orElseThrow();
+        return (Map<String, Object>) node.get("properties");
     }
 
     /**
@@ -791,6 +912,7 @@ class CompanionSyncTest {
             var sid2 = openCompanionSession("990022");
             syncCommand(po, sid2, "create node root\nwith type Root");
             var second = syncCommand(po, sid2, "export graph as export-guard-test");
+            assertEquals(Boolean.TRUE, second.get("ok"), "second export: " + second);
             var secondOut = ((List<?>) second.get("output")).stream().map(String::valueOf).toList();
             assertTrue(secondOut.stream().anyMatch(l -> l.startsWith("Graph exported to ")),
                     "an unnamed root must be accepted over an existing file: " + secondOut);
@@ -805,6 +927,7 @@ class CompanionSyncTest {
                     with properties
                     name=some-other-graph""");
             var rejected = syncCommand(po, sid3, "export graph as export-guard-test");
+            assertEquals(Boolean.FALSE, rejected.get("ok"), "a refused export -> ok:false: " + rejected);
             var rejectedOut = ((List<?>) rejected.get("output")).stream().map(String::valueOf).toList();
             assertTrue(rejectedOut.stream().anyMatch(
                     l -> l.startsWith("Expect root node name=export-guard-test, Actual: some-other-graph")),
