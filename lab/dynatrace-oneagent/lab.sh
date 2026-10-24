@@ -27,8 +27,8 @@ case "${1:-}" in
     ;;
   up)
     case "${2:-oneagent}" in
-      # DESTINATION=route names every hop after its route; the default names it after the application
-      oneagent) tracer=(-e DYNATRACE_ONEAGENT_ENABLED=true -e "DYNATRACE_ONEAGENT_DESTINATION=${DESTINATION:-application}") ;;
+      # the default names every hop "<application> - <route>"; DESTINATION=application or route names it after one
+      oneagent) tracer=(-e DYNATRACE_ONEAGENT_ENABLED=true -e "DYNATRACE_ONEAGENT_DESTINATION=${DESTINATION:-application-route}") ;;
       none)     tracer=() ;;
       *)        usage ;;
     esac

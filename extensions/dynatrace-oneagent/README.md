@@ -25,7 +25,7 @@ section *Code-level tracing with an agent* (`docs/guides/observability.md#live-t
 # master switch - default off; the jar alone does nothing
 dynatrace.oneagent.enabled=true
 # optional: the endpoint Dynatrace shows for a hop, "Topic: <name>" - application, route, or application-route
-dynatrace.oneagent.destination=application
+dynatrace.oneagent.destination=application-route
 # optional: write OneAgent's trace and span ids into the log context (not with OneAgent's own log enrichment)
 dynatrace.oneagent.log.context=false
 ```

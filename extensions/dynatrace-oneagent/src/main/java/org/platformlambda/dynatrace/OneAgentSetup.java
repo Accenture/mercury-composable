@@ -42,7 +42,8 @@ import java.util.function.BinaryOperator;
  * <p>
  * Settings:
  * <ul>
- *   <li>{@code dynatrace.oneagent.destination} - {@code application} (default) or {@code route}</li>
+ *   <li>{@code dynatrace.oneagent.destination} - {@code application-route} (default), {@code application} or
+ *       {@code route}: the endpoint Dynatrace shows for a hop</li>
  *   <li>{@code dynatrace.oneagent.log.context} - {@code true} writes OneAgent's ids into the log context</li>
  * </ul>
  * One SDK instance is created for the JVM. Its state is logged at startup: without an attached OneAgent
@@ -57,7 +58,7 @@ public class OneAgentSetup implements EntryPoint {
     public static final String DESTINATION = "dynatrace.oneagent.destination";
     public static final String LOG_CONTEXT = "dynatrace.oneagent.log.context";
     private static final String OTEL_FORWARDING = "otel.forwarding";
-    private static final String APPLICATION = "application";
+    private static final String APPLICATION_ROUTE = "application-route";
     private static final String TRUE = "true";
     private static final String FALSE = "false";
 
@@ -85,11 +86,12 @@ public class OneAgentSetup implements EntryPoint {
                     "invocation observer not registered", state);
             return null;
         }
-        String setting = property.apply(DESTINATION, APPLICATION);
+        String setting = property.apply(DESTINATION, APPLICATION_ROUTE);
         OneAgentObserver.Destination destination = OneAgentObserver.Destination.of(setting);
         if (destination == null) {
-            log.warn("{}={} is not application, route or application-route - using application", DESTINATION, setting);
-            destination = OneAgentObserver.Destination.APPLICATION;
+            log.warn("{}={} is not application, route or application-route - using {}",
+                    DESTINATION, setting, APPLICATION_ROUTE);
+            destination = OneAgentObserver.Destination.APPLICATION_ROUTE;
         }
         boolean logContext = TRUE.equalsIgnoreCase(property.apply(LOG_CONTEXT, FALSE));
         String application = Platform.getInstance().getName();

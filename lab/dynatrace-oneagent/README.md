@@ -43,8 +43,9 @@ download folder and any OneAgent installer (`Dynatrace-OneAgent-Linux*`, `-Windo
 ./lab.sh down
 ```
 
-`DESTINATION=route ./lab.sh up oneagent` names every hop's endpoint after its route instead of the application, and
-`DESTINATION=application-route` after both (`Topic: lab-edge - lab.validate`).
+Each hop's endpoint is named after the application and the route by default (`Topic: lab-edge - lab.validate`);
+`DESTINATION=application ./lab.sh up oneagent` names it after the application only, and `DESTINATION=route` after
+the route only.
 
 ## Notes
 

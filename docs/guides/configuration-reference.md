@@ -784,9 +784,9 @@ The next keys belong to the live invocation observers, which bracket each compos
 
 | Type | Default |
 |------|---------|
-| `String` | `application` |
+| `String` | `application-route` |
 
-The OneAgent messaging destination of every hop, a topic in the Kafka sense, which Dynatrace shows as the endpoint `Topic: <name>`: `application` (the application name), `route` (the hop's route) or `application-route` (`<application> - <route>`, such as `Topic: lab-edge - lab.validate`). The `Topic:` prefix comes from the destination type and cannot be dropped: a message tracer is the one OneAgent SDK tracer that carries the linkage tag. An unknown value is logged and taken as `application`.
+The OneAgent messaging destination of every hop, a topic in the Kafka sense, which Dynatrace shows as the endpoint `Topic: <name>`: `application-route` (`<application> - <route>`, such as `Topic: lab-edge - lab.validate`, the default), `application` (the application name) or `route` (the hop's route). Every value keeps all hops in one Dynatrace service, "Mercury Messaging". The `Topic:` prefix comes from the destination type and cannot be dropped: a message tracer is the one OneAgent SDK tracer that carries the linkage tag. An unknown value is logged and taken as `application-route`.
 
 ### `dynatrace.oneagent.log.context`
 
