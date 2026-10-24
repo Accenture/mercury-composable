@@ -2056,6 +2056,8 @@
       
         
       
+        
+      
     
     
     
@@ -3194,6 +3196,72 @@
     <span class="md-ellipsis">
       
         otel.exporter.otlp.headers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynatraceoneagentenabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dynatrace.oneagent.enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynatraceoneagentdestination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dynatrace.oneagent.destination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynatraceoneagentlogcontext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dynatrace.oneagent.log.context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invocationobserverinclude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        invocation.observer.include
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invocationobserverexclude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        invocation.observer.exclude
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invocationobserverunlinked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        invocation.observer.unlinked
       
     </span>
   </a>
@@ -4745,6 +4813,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../test-reports/dynatrace-one-agent-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — Dynatrace OneAgent integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../test-reports/llm-helper-certification/" class="md-nav__link">
         
   
@@ -5991,6 +6087,72 @@
     <span class="md-ellipsis">
       
         otel.exporter.otlp.headers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynatraceoneagentenabled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dynatrace.oneagent.enabled
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynatraceoneagentdestination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dynatrace.oneagent.destination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynatraceoneagentlogcontext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dynatrace.oneagent.log.context
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invocationobserverinclude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        invocation.observer.include
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invocationobserverexclude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        invocation.observer.exclude
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invocationobserverunlinked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        invocation.observer.unlinked
       
     </span>
   </a>
@@ -8343,7 +8505,7 @@ client leg) still records its own span; see <a href="../observability/#edge-span
 </tr>
 </tbody>
 </table>
-<p>HTTP header recognized (inbound, when no W3C <code>traceparent</code> is present) and emitted (outbound by the async HTTP client) as the trace-id. A well-formed <code>traceparent</code> always takes precedence inbound. Overridable per endpoint with <code>trace.id.header</code> in a rest.yaml entry.</p>
+<p>HTTP header recognized (inbound, when no W3C <code>traceparent</code> is present) and emitted (outbound by the async HTTP client) as the trace-id. A well-formed <code>traceparent</code> always takes precedence inbound. When neither is present, REST automation continues the trace context of an APM agent already tracing the request (a <a href="../observability/#live-tracing">live invocation observer</a>), else it generates a fresh trace id. Overridable per endpoint with <code>trace.id.header</code> in a rest.yaml entry.</p>
 <h3 id="httptraceparentheader"><code>http.traceparent.header</code><a class="headerlink" href="#httptraceparentheader" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -8402,7 +8564,7 @@ the migration back to the standard header (e.g. fixing the gateway allow-list).<
 </tr>
 </tbody>
 </table>
-<p>Optional Kafka message header for the trace-id. Inbound: a fallback trace-id source when the upstream sends no W3C <code>traceparent</code> (which always takes precedence). Outbound: <code>simple.kafka.notification</code> stamps the current trace-id under this name alongside <code>traceparent</code>, for legacy downstream consumers. Unset = traceparent-only behavior (unchanged). Overridable per binding with <code>trace.id.header</code> in a kafka-flow-adapter.yaml entry.</p>
+<p>Optional Kafka message header for the trace-id. Inbound: a fallback trace-id source when the upstream sends no W3C <code>traceparent</code> (which always takes precedence); without either, the flow adapter continues the trace context of an APM agent tracing the delivery (a <a href="../observability/#live-tracing">live invocation observer</a>), else it generates a fresh trace id. Outbound: <code>simple.kafka.notification</code> stamps the current trace-id under this name alongside <code>traceparent</code>, for legacy downstream consumers. Unset = traceparent-only behavior (unchanged). Overridable per binding with <code>trace.id.header</code> in a kafka-flow-adapter.yaml entry.</p>
 <h3 id="kafkatraceparentheader"><code>kafka.traceparent.header</code><a class="headerlink" href="#kafkatraceparentheader" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -8566,6 +8728,103 @@ the migration back to the standard header (e.g. fixing the gateway allow-list).<
 <blockquote>
 <p>The <code>otel.*</code> values support <code>${ENV_VAR:default}</code> substitution, so the forwarder is configured entirely from <code>application.properties</code> while secrets stay in the environment.</p>
 </blockquote>
+<p>The next keys belong to the live invocation observers, which bracket each composable-function hop for an APM agent's code-level view (see <a href="../observability/#live-tracing">Code-level tracing with an agent</a>).</p>
+<h3 id="dynatraceoneagentenabled"><code>dynatrace.oneagent.enabled</code><a class="headerlink" href="#dynatraceoneagentenabled" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Master switch for the <code>dynatrace-oneagent</code> extension</strong> (<code>@OptionalService("dynatrace.oneagent.enabled")</code>): each hop is bracketed with the OneAgent SDK, linked by a Dynatrace tag on the event envelope. Without an attached OneAgent the SDK is inactive and nothing is registered. The key ends in <code>.enabled</code> because the extension's settings share its prefix: a key cannot be both a value and the parent of other keys, so a bare <code>dynatrace.oneagent=true</code> beside <code>dynatrace.oneagent.destination</code> would be lost.</p>
+<h3 id="dynatraceoneagentdestination"><code>dynatrace.oneagent.destination</code><a class="headerlink" href="#dynatraceoneagentdestination" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code></td>
+<td><code>application-route</code></td>
+</tr>
+</tbody>
+</table>
+<p>The OneAgent messaging destination of every hop, a topic in the Kafka sense, which Dynatrace shows as the endpoint <code>Topic: &lt;name&gt;</code>: <code>application-route</code> (<code>&lt;application&gt; - &lt;route&gt;</code>, such as <code>Topic: lab-edge - lab.validate</code>, the default), <code>application</code> (the application name) or <code>route</code> (the hop's route). Every value keeps all hops in one Dynatrace service, "Mercury Messaging". The <code>Topic:</code> prefix comes from the destination type and cannot be dropped: a message tracer is the one OneAgent SDK tracer that carries the linkage tag. An unknown value is logged and taken as <code>application-route</code>.</p>
+<h3 id="dynatraceoneagentlogcontext"><code>dynatrace.oneagent.log.context</code><a class="headerlink" href="#dynatraceoneagentlogcontext" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>true</code> writes OneAgent's own trace and span ids into the application log context as <code>dt.trace_id</code> and <code>dt.span_id</code>. Do not combine it with OneAgent's own log enrichment, which writes the same field names.</p>
+<h3 id="invocationobserverinclude"><code>invocation.observer.include</code><a class="headerlink" href="#invocationobserverinclude" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (comma-sep routes)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>When set, only these routes are observed by a live invocation observer. An entry ending in <code>*</code> matches a route prefix.</p>
+<h3 id="invocationobserverexclude"><code>invocation.observer.exclude</code><a class="headerlink" href="#invocationobserverexclude" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (comma-sep routes)</td>
+<td><code>distributed.tracing, distributed.trace.forwarder, transaction.journal.recorder, temporary.inbox</code></td>
+</tr>
+</tbody>
+</table>
+<p>Routes a live invocation observer never observes; setting the property replaces the default.</p>
+<h3 id="invocationobserverunlinked"><code>invocation.observer.unlinked</code><a class="headerlink" href="#invocationobserverunlinked" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (comma-sep routes)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>negative control</strong> of a tracing check: these routes are observed but never see the incoming linkage tag, so each of their invocations starts a new trace. Their reply keeps the caller's tag, so the route alone is a separate fragment and the rest of the request stays in the caller's trace. A check that cannot see this break cannot tell a connected trace from a broken one.</p>
 <hr />
 <h2 id="health-actuators">Health &amp; Actuators<a class="headerlink" href="#health-actuators" title="Permanent link">&para;</a></h2>
 <h3 id="mandatoryhealthdependencies"><code>mandatory.health.dependencies</code><a class="headerlink" href="#mandatoryhealthdependencies" title="Permanent link">&para;</a></h3>

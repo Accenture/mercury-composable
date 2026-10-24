@@ -1911,6 +1911,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#live-tracing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code-level tracing with an agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#log-context" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2314,6 +2325,8 @@
   
     
     
+      
+        
       
         
       
@@ -2839,6 +2852,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../test-reports/dynatrace-one-agent-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — Dynatrace OneAgent integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../test-reports/llm-helper-certification/" class="md-nav__link">
         
   
@@ -3335,6 +3376,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#live-tracing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code-level tracing with an agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#log-context" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3783,6 +3835,112 @@ your platform's log forwarder, not through the engine; see
 <p>To target a system without an OTLP path, implement your own function at <code>distributed.trace.forwarder</code> and consume
 the dataset described in <a href="#metrics">What a trace records</a> — for example, write it to a metrics database or a
 proprietary APM API.</p>
+<h2 id="live-tracing">Code-level tracing with an agent<a class="headerlink" href="#live-tracing" title="Permanent link">&para;</a></h2>
+<p>The forwarder reports a span <strong>after</strong> a function finished. An APM agent's code-level view needs something
+else: a tracer that brackets the real call, on the real call stack, so the agent can nest it inside the
+request it is already tracing. Without one, an agent such as Dynatrace OneAgent sees the HTTP request and the
+outgoing calls, but not the hops between composable functions. Mercury hands an event from the sender to the
+receiving function through the event bus and a per-route queue, and an agent's thread-bound context is lost
+at that handoff.</p>
+<p>A <strong>live invocation observer</strong> closes that gap. Platform-core calls it inline, with no vendor code in the
+core: when a function is about to run, on the thread that runs it, and when an event is about to be sent, on
+the sending thread. The linkage between hops rides as a string <strong>tag on the event envelope</strong>, not as thread
+state. The tag is serialized with the envelope, so it also crosses Event-over-HTTP and the cloud connector.
+Across <code>minimalist-kafka</code> it travels as Kafka headers (<code>x-mercury-tag-&lt;tag&gt;</code>): <code>simple.kafka.notification</code>
+writes them and the flow adapter restores them, so the consuming application's hops join the publisher's trace
+(<a href="../minimalist-kafka/#tracing">details</a>).
+An optional extension implements it:</p>
+<table>
+<thead>
+<tr>
+<th>Extension</th>
+<th>Switch</th>
+<th>What it records</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>extensions/dynatrace-oneagent</code></td>
+<td><code>dynatrace.oneagent.enabled=true</code></td>
+<td>Each hop with the <strong>OneAgent SDK</strong>, as an incoming message linked by a Dynatrace tag to the sender's outgoing message, giving one connected PurePath per request. Inert without an attached OneAgent.</td>
+</tr>
+</tbody>
+</table>
+<p>It is off by default, so the jar alone does nothing. Do not also export the forwarder's spans to the same
+backend, which would record each request as two unconnected traces. <strong>OpenTelemetry API spans do not replace
+it under OneAgent:</strong> OneAgent links an API span only through its own context on the thread, never through a
+W3C parent carried on the event, so spans opened across Mercury's event bus stay separate requests. The seam is
+vendor-neutral: an adapter for another agent implements <code>InvocationObserver</code>.</p>
+<p><strong>One trace.</strong> A REST request or a Kafka message that arrives without a <code>traceparent</code> or a trace-id header
+continues the agent's trace context, as if the caller had sent it as a <code>traceparent</code>. At a REST request the agent's
+trace was started by OneAgent's HTTP instrumentation; at a Kafka message, by the flow adapter's own hop. The agent's
+trace id becomes Mercury's, and the agent's span the parent of Mercury's first span. So Mercury's trace id - in log
+lines, telemetry and the forwarder's spans - is the Dynatrace trace id of the request, and the span lineage runs on
+unbroken across applications. A request that carries a <code>traceparent</code> keeps it, and OneAgent continues the same one, so
+the two agree there too. The precedence is: <code>traceparent</code>, then the trace-id header, then the agent's trace context,
+then a fresh id.</p>
+<p><strong>Which hops are observed.</strong> A traced request is observed (one with a trace id; see
+<a href="#enable">Turning tracing on</a>) on every route except the plumbing routes listed below. That includes Event
+Script's two routers, <code>event.script.manager</code> and <code>task.executor</code>, so a flow stays connected from task to task.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>invocation.observer.include</code></td>
+<td><em>(empty: all)</em></td>
+<td>Comma-separated routes to observe; an entry ending in <code>*</code> matches a prefix</td>
+</tr>
+<tr>
+<td><code>invocation.observer.exclude</code></td>
+<td>the telemetry routes and <code>temporary.inbox</code></td>
+<td>Routes never observed; setting it replaces the default</td>
+</tr>
+<tr>
+<td><code>invocation.observer.unlinked</code></td>
+<td><em>(empty)</em></td>
+<td><strong>Negative control</strong>: these routes are observed, but they never see the incoming tag, so each of their invocations starts a new trace</td>
+</tr>
+<tr>
+<td><code>dynatrace.oneagent.destination</code></td>
+<td><code>application-route</code></td>
+<td>The OneAgent messaging destination, shown as the endpoint <code>Topic: &lt;name&gt;</code>: <code>application-route</code> (<code>&lt;application&gt; - &lt;route&gt;</code>), <code>application</code>, or <code>route</code>; all hops stay in one service, "Mercury Messaging"</td>
+</tr>
+<tr>
+<td><code>dynatrace.oneagent.log.context</code></td>
+<td><code>false</code></td>
+<td><code>true</code> writes OneAgent's own trace and span ids into the <a href="#log-context">log context</a> as <code>dt.trace_id</code> and <code>dt.span_id</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Deferred results.</strong> A function that returns a <code>Mono</code> returns before its result exists, and the result
+usually completes on another thread. A OneAgent SDK tracer must start and end on one thread, so the OneAgent
+extension ends the hop when the function returns and resumes it through an <em>in-process link</em> when the result
+arrives: the completion appears as a linked node at the time it happened. When OneAgent's own Reactor support has
+already carried the trace onto the completion thread, the completion is in the trace already and no link is added:
+the SDK would report it as lost ("incoming inProcessLink received on already started path"). A <code>Flux</code> stream is not covered. As
+before, log lines written inside a <code>Mono</code> completion carry no log context.</p>
+<p><strong>Requirements for Dynatrace.</strong> Use OneAgent <strong>1.311 or later</strong>, which propagates context into virtual threads,
+and enable its Java virtual-thread support (an opt-in OneAgent feature). Java 25 is the recommended runtime:
+before Java 24 (JEP 491), a virtual thread that blocks inside <code>synchronized</code> code pins its carrier thread.</p>
+<p><strong>Checking it.</strong> Drive one traced request through several function hops and a flow, then check four
+things in Dynatrace:</p>
+<ol>
+<li>The request shows as <strong>one connected tree</strong>, with a node for every hop.</li>
+<li>Every log line of the request carries the trace and span ids of the node that wrote it.</li>
+<li>The route in <code>invocation.observer.unlinked</code> appears as a <strong>separate fragment</strong> of its own, and the rest of
+   the request stays in the connected tree: the route's reply keeps the caller's tag. If the route is not
+   separate, the check cannot tell a connected trace from a broken one, and its results prove nothing.</li>
+<li>A <code>Mono</code> function's completion appears as a node linked to its hop, at the time the result arrived.</li>
+<li>Mercury's <code>trace_id</code> on a log line is the Dynatrace trace id of the request.</li>
+</ol>
+<p>The <a href="../../test-reports/dynatrace-one-agent-integration/">Dynatrace OneAgent integration report</a> records these checks
+against a Dynatrace environment, with REST and Kafka entry points.</p>
 <h2 id="log-context">Application log context<a class="headerlink" href="#log-context" title="Permanent link">&para;</a></h2>
 <p>Spans tell you the causal path; <strong>application logs</strong> tell you what happened inside each step. The log-context
 feature closes the gap between them: it injects a <code>context</code> block — correlation id, trace/span ids, service name,
@@ -3985,6 +4143,7 @@ trace. A collector configuration must not drop a record that has no <code>contex
 <ul>
 <li><a href="../build-test-deploy/">Build, Test &amp; Deploy</a> — enabling tracing and the forwarder hook.</li>
 <li><a href="../configuration-reference/#observability">Configuration Reference</a> — the <code>trace.*</code> and <code>otel.*</code> keys.</li>
+<li><a href="#live-tracing">Code-level tracing with an agent</a> — the OneAgent invocation observer.</li>
 <li><a href="../reserved-names-and-headers/">Reserved Names &amp; Headers</a> — <code>distributed.trace.forwarder</code>, <code>traceparent</code>.</li>
 <li><a href="../architecture/">Architecture Overview</a> — the three layers the span tree mirrors.</li>
 </ul>

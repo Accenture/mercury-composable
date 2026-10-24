@@ -2461,6 +2461,8 @@
       
         
       
+        
+      
     
     
     
@@ -2913,6 +2915,34 @@
     
   
     Test Report — OpenTelemetry forwarder (Dynatrace)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../test-reports/dynatrace-one-agent-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — Dynatrace OneAgent integration
   
 
     
@@ -4322,6 +4352,13 @@ whole record, rather than buried in client configuration.</p>
 <code>traceparent</code> from its own current span; the adapter parses it on the way in and chains the flow onto that
 span. The result is one continuous distributed trace across the asynchronous Kafka boundary — the two
 notification hops are the bridge spans. See <a href="../observability/">Observability</a>.</p>
+<p>A <a href="../observability/#live-tracing">live invocation observer</a> (an APM agent's code-level view) is linked across
+Kafka too. The notification function writes the observer's tags for the outgoing message as headers named
+<code>x-mercury-tag-&lt;tag&gt;</code> (for example <code>x-mercury-tag-dt_tag</code>), and the adapter restores them on the event it
+dispatches: each message is one incoming hop on <code>kafka.flow.adapter</code>, linked to the publisher's trace, and the
+request into the flow is sent inside it, retries included. A message that carries no <code>traceparent</code> and no trace-id
+header continues the agent's trace context, as a REST request does. The flow's <code>input.header</code> map does not include
+these headers, and a stale one mapped into a notification is not forwarded.</p>
 <h2 id="health">Health check<a class="headerlink" href="#health" title="Permanent link">&para;</a></h2>
 <p>The library ships a ready-made health-check function at route <strong><code>kafka.health</code></strong> (auto-registered when
 the jar is on the classpath). Opt in by listing it as a health dependency in <code>application.properties</code>:</p>

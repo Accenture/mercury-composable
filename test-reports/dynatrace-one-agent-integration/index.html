@@ -1,0 +1,3726 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Mercury Composable — Accenture's event-driven, composable application platform for Java: platform-core, Event Script, and the active knowledge graph.">
+      
+      
+      
+        <link rel="canonical" href="https://accenture.github.io/mercury-composable/test-reports/dynatrace-one-agent-integration/">
+      
+      
+        <link rel="prev" href="../otel-dynatrace-certification/">
+      
+      
+        <link rel="next" href="../llm-helper-certification/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Test Report — Dynatrace OneAgent integration - Composable for Java</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#test-report-dynatrace-oneagent-integration" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Composable for Java" class="md-header__button md-logo" aria-label="Composable for Java" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 11a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M4.22 4.22C5.65 2.79 8.75 3.43 12 5.56c3.25-2.13 6.35-2.77 7.78-1.34s.79 4.53-1.34 7.78c2.13 3.25 2.77 6.35 1.34 7.78s-4.53.79-7.78-1.34c-3.25 2.13-6.35 2.77-7.78 1.34S3.43 15.25 5.56 12C3.43 8.75 2.79 5.65 4.22 4.22m11.32 4.24c.61.62 1.17 1.25 1.69 1.88 1.38-2.13 1.88-3.96 1.13-4.7-.74-.75-2.57-.25-4.7 1.13.63.52 1.26 1.08 1.88 1.69m-7.08 7.08c-.61-.62-1.17-1.25-1.69-1.88-1.38 2.13-1.88 3.96-1.13 4.7.74.75 2.57.25 4.7-1.13-.63-.52-1.26-1.08-1.88-1.69m-2.82-9.9c-.75.74-.25 2.57 1.13 4.7.52-.63 1.08-1.26 1.69-1.88.62-.61 1.25-1.17 1.88-1.69-2.13-1.38-3.96-1.88-4.7-1.13m4.24 8.48c.7.7 1.42 1.34 2.12 1.91.7-.57 1.42-1.21 2.12-1.91s1.34-1.42 1.91-2.12c-.57-.7-1.21-1.42-1.91-2.12S12.7 8.54 12 7.97c-.7.57-1.42 1.21-2.12 1.91S8.54 11.3 7.97 12c.57.7 1.21 1.42 1.91 2.12m8.48 4.24c.75-.74.25-2.57-1.13-4.7-.52.63-1.08 1.26-1.69 1.88-.62.61-1.25 1.17-1.88 1.69 2.13 1.38 3.96 1.88 4.7 1.13"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Composable for Java
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Test Report — Dynatrace OneAgent integration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="cyan"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="cyan"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Accenture/mercury-composable" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Accenture/mercury-composable
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/getting-started/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Orientation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Foundations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/event-driven/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Layer 1 — Event-driven
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/event-script/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Layer 2 — Composable
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/knowledge-graph/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Layer 3 — Knowledge Graph
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/build-test-deploy/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Operate & integrate
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../arch-decisions/ADR/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Composable for Java" class="md-nav__button md-logo" aria-label="Composable for Java" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 11a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M4.22 4.22C5.65 2.79 8.75 3.43 12 5.56c3.25-2.13 6.35-2.77 7.78-1.34s.79 4.53-1.34 7.78c2.13 3.25 2.77 6.35 1.34 7.78s-4.53.79-7.78-1.34c-3.25 2.13-6.35 2.77-7.78 1.34S3.43 15.25 5.56 12C3.43 8.75 2.79 5.65 4.22 4.22m11.32 4.24c.61.62 1.17 1.25 1.69 1.88 1.38-2.13 1.88-3.96 1.13-4.7-.74-.75-2.57-.25-4.7 1.13.63.52 1.26 1.08 1.88 1.69m-7.08 7.08c-.61-.62-1.17-1.25-1.69-1.88-1.38 2.13-1.88 3.96-1.13 4.7.74.75 2.57.25 4.7-1.13-.63-.52-1.26-1.08-1.88-1.69m-2.82-9.9c-.75.74-.25 2.57 1.13 4.7.52-.63 1.08-1.26 1.69-1.88.62-.61 1.25-1.17 1.88-1.69-2.13-1.38-3.96-1.88-4.7-1.13m4.24 8.48c.7.7 1.42 1.34 2.12 1.91.7-.57 1.42-1.21 2.12-1.91s1.34-1.42 1.91-2.12c-.57-.7-1.21-1.42-1.91-2.12S12.7 8.54 12 7.97c-.7.57-1.42 1.21-2.12 1.91S8.54 11.3 7.97 12c.57.7 1.21 1.42 1.91 2.12m8.48 4.24c.75-.74.25-2.57-1.13-4.7-.52.63-1.08 1.26-1.69 1.88-.62.61-1.25 1.17-1.88 1.69 2.13 1.38 3.96 1.88 4.7 1.13"/></svg>
+
+    </a>
+    Composable for Java
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Accenture/mercury-composable" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Accenture/mercury-composable
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orientation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Orientation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mercury-story/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    White Paper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mercury-family/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Mercury Family
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Foundations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Foundations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/methodology/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/ai-developer-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Developer Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/event-driven/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Layer 1 — Event-driven
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Layer 1 — Event-driven
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/event-driven/write-your-first-function/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Write your first function
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/event-driven/function-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Function Execution Strategies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/event-driven/ai-agent-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Function AI agent guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/rest-automation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST Automation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/rest-automation/rest-grammar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST grammar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/rest-automation/ai-agent-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    REST AI agent guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/event-script/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Layer 2 — Composable
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Layer 2 — Composable
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/event-script/syntax/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Event Script Syntax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/event-script/flow-grammar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow grammar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/event-script/ai-agent-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow AI agent guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/flow-schema-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flow Configuration Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/knowledge-graph/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Layer 3 — Knowledge Graph
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Layer 3 — Knowledge Graph
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/knowledge-graph/build-your-first-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build your first graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/knowledge-graph/workflow-suspension/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow suspension
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/knowledge-graph/skills-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Built-in skills reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/knowledge-graph/command-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MiniGraph command grammar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/knowledge-graph/ai-agent-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI agent guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/knowledge-graph/composing-the-layers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Composing the layers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/knowledge-graph/playground-and-companion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Playground & AI companion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/knowledge-graph/graph-contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The graph contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/knowledge-graph/property-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minimalist Property Graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operate & integrate
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operate & integrate
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/build-test-deploy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build, Test & Deploy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/spring-boot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spring Boot Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/event-over-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Event over HTTP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/http-streaming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP Response Streaming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/polyglot-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot Functions (Python & Node.js)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/minimalist-kafka/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minimalist Kafka
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/twin-kafka/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Twin Kafka (dual cluster)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/distributed-cache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distributed Cache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/schema-registry-mock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema Registry Mock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sync-over-async/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sync-over-Async
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Minimalist Service Mesh
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../arch-decisions/ADR/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architectural Decision Records
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../arch-decisions/RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requests for Comments (RFC)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/api-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/annotations-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotations Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/configuration-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/event-envelope-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Event Envelope Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/event-envelope-wire-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Event Envelope Wire Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/canonical-package-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Canonical Package Format
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/registration-metadata-contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registration Metadata Contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../event-over-http-interop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interop Test Report (Java ⇄ Rust)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../progressive-rendering-interop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interop Test Report — Progressive Rendering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../suspend-resume-interop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interop Test Report — Suspend/Resume
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../distributed-cache-interop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interop Test Report — Distributed Cache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../streaming-return-route-cross-pod/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — Streaming Return Route (cross-pod)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../otel-dynatrace-certification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — OpenTelemetry forwarder (Dynatrace)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — Dynatrace OneAgent integration
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — Dynatrace OneAgent integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-system-under-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The system under test
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-1-the-baseline-oneagent-without-the-adapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 1 — the baseline: OneAgent without the adapter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-2-every-hop-in-one-purepath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 2 — every hop in one PurePath
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-3-across-kafka-proven-a-b-a" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 3 — across Kafka, proven A-B-A
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-4-the-negative-control-isolates-its-own-route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 4 — the negative control isolates its own route
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-5-one-trace-id-one-lineage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 5 — one trace id, one lineage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-6-no-sdk-warnings-on-a-deferred-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 6 — no SDK warnings on a deferred result
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-7-each-hop-named-after-its-application-and-route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 7 — each hop named after its application and route
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-8-the-applications-own-version-under-oneagent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 8 — the application's own version under OneAgent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-9-mercurys-own-telemetry-has-no-broken-spans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 9 — Mercury's own telemetry has no broken spans
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-10-oneagent-off-the-original-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 10 — OneAgent off: the original design
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#findings-and-their-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings and their fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-remains" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What remains
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../llm-helper-certification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — The LLM helper (Claude)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../minimalist-msgpack-benchmark/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — MsgPack codec, minimalist-msgpack vs msgpack-core
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../minimalist-jsonpath-differential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — JSONPath, minimalist-jsonpath vs Jayway
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/reserved-names-and-headers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reserved Names & Headers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/actuators-and-http-client/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Actuators & HTTP Client
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/code-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/documentation-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/Accenture/mercury-composable/blob/main/CHANGELOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/Accenture/mercury-composable/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/Accenture/mercury-composable/blob/main/CODE_OF_CONDUCT.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/Accenture/mercury-composable/blob/main/INCLUSIVITY.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inclusivity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-system-under-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The system under test
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-1-the-baseline-oneagent-without-the-adapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 1 — the baseline: OneAgent without the adapter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-2-every-hop-in-one-purepath" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 2 — every hop in one PurePath
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-3-across-kafka-proven-a-b-a" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 3 — across Kafka, proven A-B-A
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-4-the-negative-control-isolates-its-own-route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 4 — the negative control isolates its own route
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-5-one-trace-id-one-lineage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 5 — one trace id, one lineage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-6-no-sdk-warnings-on-a-deferred-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 6 — no SDK warnings on a deferred result
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-7-each-hop-named-after-its-application-and-route" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 7 — each hop named after its application and route
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-8-the-applications-own-version-under-oneagent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 8 — the application's own version under OneAgent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-9-mercurys-own-telemetry-has-no-broken-spans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 9 — Mercury's own telemetry has no broken spans
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-10-oneagent-off-the-original-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 10 — OneAgent off: the original design
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#findings-and-their-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings and their fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-remains" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What remains
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="test-report-dynatrace-oneagent-integration">Test Report — Dynatrace OneAgent integration<a class="headerlink" href="#test-report-dynatrace-oneagent-integration" title="Permanent link">&para;</a></h1>
+<p><em>Live validation of the <a href="../../guides/observability/#live-tracing">live invocation observers</a> and the
+<code>dynatrace-oneagent</code> extension against a <strong>Dynatrace sandbox environment</strong>, conducted 2026-10-22 and 2026-10-23 from a
+single developer machine, with the support of Dynatrace's engineering team. The subject is the OneAgent lab
+(<code>lab/dynatrace-oneagent</code>): two Mercury applications and a Kafka broker in containers, with OneAgent attached. This
+report records what was run, the evidence, the findings each iteration produced, and what remains.</em></p>
+<p><em>No environment address, token or tenant identifier appears in this report or in any committed file. The OneAgent
+installer, which is commercially licensed, is ignored by git and never committed.</em></p>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p><strong>One Mercury request is one connected Dynatrace trace</strong>, from the REST entry through every composable function, across
+Kafka into a second application, and back to the HTTP response. The Dynatrace trace id equals Mercury's trace id,
+Mercury's first span is a child of OneAgent's HTTP node, and Mercury's own span lineage is unbroken in both
+applications. The maintainer judged the implementation ready to deploy to the field.</p>
+<table>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Evidence</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Every hop of a request is in one PurePath, the RPC and the <code>Mono</code> included</td>
+<td>Dynatrace waterfalls</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>The trace crosses Kafka into the consuming application</td>
+<td>Dynatrace waterfalls; A-B-A on <code>dt.trace_id</code> in the logs</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>The Dynatrace trace id is Mercury's trace id, with or without a client <code>traceparent</code></td>
+<td>Log lines (<code>trace_id</code> = <code>dt.trace_id</code>); Dynatrace</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>Mercury's edge span is a child of OneAgent's server node</td>
+<td>Dynatrace span id against Mercury's <code>parent_span_id</code></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>Mercury's own telemetry has no broken spans</td>
+<td>Span-by-span check of the Telemetry log, three orders</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>The negative control breaks one link and only one</td>
+<td>Dynatrace; log lines</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>No OneAgent SDK warnings</td>
+<td>Application logs</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>Each hop is named after its application and route, in one service</td>
+<td>Dynatrace request list</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>/info</code> reports the application's own version under OneAgent</td>
+<td><code>/info</code></td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-system-under-test">The system under test<a class="headerlink" href="#the-system-under-test" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Machine</td>
+<td>macOS developer machine, Apple silicon</td>
+</tr>
+<tr>
+<td>Container runtime</td>
+<td>Colima, an <code>aarch64</code> Ubuntu 24.04.5 LTS VM with the Docker runtime</td>
+</tr>
+<tr>
+<td>Agent</td>
+<td>Dynatrace OneAgent 1.347.64, installed full stack in Colima's VM (signature verified), injected into every JVM a container starts</td>
+</tr>
+<tr>
+<td>Images</td>
+<td>Ubuntu 26.04.1 LTS with OpenJDK 25.0.4.1 (<code>lab/dynatrace-oneagent/base</code>)</td>
+</tr>
+<tr>
+<td>Mercury</td>
+<td>branch <code>feature/dynatrace-oneagent-compatibility</code> (PR #583), version 4.12.25, OneAgent SDK 1.9.0</td>
+</tr>
+<tr>
+<td>Broker</td>
+<td><code>helpers/kafka-standalone</code></td>
+</tr>
+</tbody>
+</table>
+<p>Three containers share one network namespace, because the broker advertises <code>127.0.0.1:9092</code>:</p>
+<ul>
+<li><strong><code>lab-edge</code>, the REST entry point.</strong> <code>POST /api/lab/orders</code> runs the <code>lab-order</code> flow: <code>lab.validate</code>, which makes
+  an RPC to <code>lab.lookup</code> from inside the function; <code>lab.price</code>, which returns a <code>Mono</code> that completes 200 ms later on a
+  Reactor thread; <code>lab.audit</code>, the negative control (<code>invocation.observer.unlinked</code>); <code>simple.kafka.notification</code> to
+  the topic <code>lab.orders</code>; and <code>lab.receipt</code>.</li>
+<li><strong><code>lab-worker</code>, the Kafka entry point.</strong> The <code>minimalist-kafka</code> flow adapter consumes <code>lab.orders</code> and runs
+  <code>lab-fulfil</code>: <code>lab.reserve</code>, then <code>lab.ship</code>.</li>
+<li><strong><code>lab-broker</code>.</strong></li>
+</ul>
+<p>The settings under test, in both applications:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="na">dynatrace.oneagent.enabled</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="na">dynatrace.oneagent.destination</span><span class="o">=</span><span class="s">application-route</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="na">dynatrace.oneagent.log.context</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="na">log.format</span><span class="o">=</span><span class="s">compact</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="na">invocation.observer.unlinked</span><span class="o">=</span><span class="s">lab.audit</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>lab/dynatrace-oneagent
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>./lab.sh<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>./lab.sh<span class="w"> </span>up<span class="w"> </span>oneagent<span class="w">   </span><span class="c1"># ./lab.sh up none for the baseline</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>./lab.sh<span class="w"> </span>order<span class="w">                           </span><span class="c1"># one order; repeat</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>./lab.sh<span class="w"> </span>lineage<span class="w">                         </span><span class="c1"># the span check of Mercury's own telemetry (Scenario 9)</span>
+</code></pre></div>
+<h2 id="scenario-1-the-baseline-oneagent-without-the-adapter">Scenario 1 — the baseline: OneAgent without the adapter<a class="headerlink" href="#scenario-1-the-baseline-oneagent-without-the-adapter" title="Permanent link">&para;</a></h2>
+<p>With OneAgent attached and the adapter off, each request was <strong>one span</strong> (<code>/api/lab/orders</code>, about 230 ms) under a
+generic Netty service, with no child spans: the hops between composable functions were invisible, because Mercury hands
+an event through its event bus and a per-route queue, where an agent's thread-bound context is lost. Mercury's own
+trace id still crossed Kafka.</p>
+<h2 id="scenario-2-every-hop-in-one-purepath">Scenario 2 — every hop in one PurePath<a class="headerlink" href="#scenario-2-every-hop-in-one-purepath" title="Permanent link">&para;</a></h2>
+<p>With the adapter on, each request became <strong>one connected, nested PurePath</strong> from <code>server /api/lab/orders</code>: a producer
+and consumer pair per hop, the RPC from inside <code>lab.validate</code>, and the <code>Mono</code> hop continued by OneAgent's own Reactor
+support (<code>reactor.core.scheduler.WorkerTask</code>). Every function's log line carries <code>dt.trace_id</code> and <code>dt.span_id</code>, and
+every node carries the captured attributes <code>mercury.route</code> and <code>mercury.trace_id</code>, so a Mercury trace id is searchable
+in Dynatrace with no environment setup.</p>
+<h2 id="scenario-3-across-kafka-proven-a-b-a">Scenario 3 — across Kafka, proven A-B-A<a class="headerlink" href="#scenario-3-across-kafka-proven-a-b-a" title="Permanent link">&para;</a></h2>
+<p><code>simple.kafka.notification</code> carries the observers' tags as <code>x-mercury-tag-&lt;tag&gt;</code> headers, and the flow adapter opens
+each message as one incoming hop on <code>kafka.flow.adapter</code>. The check reads the log lines: the worker's functions are
+linked when their <code>dt.trace_id</code> is the edge's.</p>
+<table>
+<thead>
+<tr>
+<th>Leg</th>
+<th>Edge setting</th>
+<th>Worker's Dynatrace trace</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>normal</td>
+<td>the edge's, 3 of 3 orders</td>
+</tr>
+<tr>
+<td>B</td>
+<td><code>lab.orders</code> excluded from observation, so no tag is exported</td>
+<td>its own, 3 of 3</td>
+</tr>
+<tr>
+<td>A</td>
+<td>normal again</td>
+<td>the edge's, 3 of 3</td>
+</tr>
+</tbody>
+</table>
+<p>Leg B is the experiment that makes the other two mean something: a link that cannot be shown to break proves nothing.</p>
+<h2 id="scenario-4-the-negative-control-isolates-its-own-route">Scenario 4 — the negative control isolates its own route<a class="headerlink" href="#scenario-4-the-negative-control-isolates-its-own-route" title="Permanent link">&para;</a></h2>
+<p><code>invocation.observer.unlinked</code> makes a route start a new trace, so a run can show that a missing link is visible. In
+the first run it moved the rest of the flow into its fragment, because the route's reply carried a tag of its new
+trace. The route's reply now keeps the caller's tag, and the route's scope closes before the reply leaves. For 3 of 3
+orders, the request is one trace and <code>lab.audit</code> alone the other.</p>
+<p>Withholding the tag alone changed nothing. <code>task.executor</code> runs on an executor task submitted from the replying thread,
+and OneAgent carries that thread's active PurePath into the task; an SDK tracer started there ignores its tag. Ending
+the route's path before the handoff is what breaks the link. With no unlinked route, each Mercury trace is exactly one
+Dynatrace trace across both applications (3 of 3).</p>
+<h2 id="scenario-5-one-trace-id-one-lineage">Scenario 5 — one trace id, one lineage<a class="headerlink" href="#scenario-5-one-trace-id-one-lineage" title="Permanent link">&para;</a></h2>
+<p>A request that carries a W3C <code>traceparent</code> keeps it, and OneAgent continues the same one: the ids agreed end to end
+(<code>4bf92f35…</code>, <code>0af76519…</code>). A request without one now continues the agent's trace context (<code>InvocationObserver.traceparent</code>)
+at the REST edge, and a Kafka message without one at the flow adapter, as if the caller had sent it.</p>
+<ul>
+<li>With no client <code>traceparent</code>, Mercury's trace id equals the Dynatrace trace id in both applications, 3 of 3 orders.</li>
+<li><strong>Confirmed in the Dynatrace UI:</strong> in trace <code>6f9157b5c7a6e46ba1f43a79ef51ccd5</code>, the server span of <code>/api/lab/orders</code>
+  is <code>a8b280c1ddc4af29</code>, the parent that Mercury recorded for its edge span. The maintainer's reading of that trace:
+  <code>http.flow.adapter</code>, the edge's hops and <code>simple.kafka.notification</code>, then <code>kafka.flow.adapter</code>,
+  <code>event.script.manager</code> and the worker's hops, then back to <code>async.http.response</code>, in one tree.</li>
+</ul>
+<h2 id="scenario-6-no-sdk-warnings-on-a-deferred-result">Scenario 6 — no SDK warnings on a deferred result<a class="headerlink" href="#scenario-6-no-sdk-warnings-on-a-deferred-result" title="Permanent link">&para;</a></h2>
+<p>The first runs logged "incoming inProcessLink received on already started path ... is being lost" twice per order: the
+adapter linked a <code>Mono</code> completion to its hop, but OneAgent's Reactor support had already continued the path onto the
+completion thread. The link is now started only when the completion thread is not already in the hop's trace. Result:
+<strong>0 SDK warnings</strong> in either application across every later run, with the <code>Mono</code> hop still in the trace.</p>
+<h2 id="scenario-7-each-hop-named-after-its-application-and-route">Scenario 7 — each hop named after its application and route<a class="headerlink" href="#scenario-7-each-hop-named-after-its-application-and-route" title="Permanent link">&para;</a></h2>
+<p>The endpoint of an SDK message tracer is <code>&lt;destination type&gt;: &lt;destination name&gt;</code>, and the type is a queue or a topic,
+so the prefix cannot be dropped from the one tracer kind that carries the linkage tag. Every hop's destination is now a
+topic, the Kafka term, named <code>&lt;application&gt; - &lt;route&gt;</code> by default. The request list in Dynatrace shows
+<code>Topic: lab-edge - lab.validate</code>, <code>Topic: lab-worker - lab.reserve</code> and so on, all under <strong>one</strong> service, "Mercury
+Messaging", so per-route names add no service (orders <code>5b95a65b…</code>, <code>bb3d424c…</code>, <code>985653c8…</code>).</p>
+<h2 id="scenario-8-the-applications-own-version-under-oneagent">Scenario 8 — the application's own version under OneAgent<a class="headerlink" href="#scenario-8-the-applications-own-version-under-oneagent" title="Permanent link">&para;</a></h2>
+<p>Under full-stack OneAgent, the startup log said "Application name: oneagentjava.17" and <code>/info</code> reported version
+<code>1.347.64.20261021-162634</code>: the version came from the class loader's first <code>META-INF/MANIFEST.MF</code>, and OneAgent's jar
+on the boot class path is searched first. Fixed on main by #585. The lab, rebuilt with it, reports <code>lab-edge</code> <code>4.12.25</code>.</p>
+<h2 id="scenario-9-mercurys-own-telemetry-has-no-broken-spans">Scenario 9 — Mercury's own telemetry has no broken spans<a class="headerlink" href="#scenario-9-mercurys-own-telemetry-has-no-broken-spans" title="Permanent link">&para;</a></h2>
+<p>The Dynatrace tree includes OneAgent's plumbing nodes, such as the <code>EventEmitter$$Lambda</code> executor tasks. Mercury's
+Telemetry log records only its own spans: the REST edge, the composable functions, <code>task.executor</code> and
+<code>async.http.response</code>. To check that its lineage is whole, both applications' logs were saved and every Telemetry
+record of the three most recent orders was linked by <code>span_id</code> and <code>parent_span_id</code> (<code>./lab.sh lineage</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Order (Mercury trace id)</th>
+<th>Span records</th>
+<th>Roots</th>
+<th>Unreachable</th>
+<th>Links across Kafka</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>d0c236ae8fa7e618cb5f3a57ab7bd22c</code></td>
+<td>14 (10 edge, 4 worker)</td>
+<td>1</td>
+<td>0</td>
+<td>2</td>
+<td>CONNECTED</td>
+</tr>
+<tr>
+<td><code>589cea5ad70b1930ccb25f05aa3016e3</code></td>
+<td>14 (10 edge, 4 worker)</td>
+<td>1</td>
+<td>0</td>
+<td>2</td>
+<td>CONNECTED</td>
+</tr>
+<tr>
+<td><code>e7e917c6e165f9fb3163c9f8e665e269</code></td>
+<td>14 (10 edge, 4 worker)</td>
+<td>1</td>
+<td>0</td>
+<td>2</td>
+<td>CONNECTED</td>
+</tr>
+</tbody>
+</table>
+<p>The check was first shown to fail: with one <code>lab.price</code> record removed from a copy of the log, it found two roots and
+reported the order BROKEN (exit code 1). The one root is the REST edge, <code>http.request</code>, whose parent is OneAgent's
+server node and no Mercury span. No span id is
+repeated. Each order has one record without a span id: the flow adapter's RPC round-trip record for <code>event.script.manager</code>,
+attached to a valid parent. It has no span of its own by design (#215): the RPC inbox records the responder's span id
+only when the route it called also replied, and a flow replies from its last task. On the log lines, each order is the
+same two Dynatrace traces: the request, with Mercury's trace id, and <code>lab.audit</code> alone. One of the three trees:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>http.request               [lab-edge]   +  0.0 ms  243.46 ms   root; parent 4448bdda80e074a2 is OneAgent's server node
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>   http.flow.adapter          [lab-edge]   +  3.0 ms
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>      task.executor              [lab-edge]   +  5.0 ms
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>      lab.validate               [lab-edge]   +  7.0 ms
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>         lab.lookup                 [lab-edge]   +  8.0 ms   (the RPC from inside lab.validate)
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>         lab.price                  [lab-edge]   + 13.0 ms   (the Mono; its successor starts about 200 ms later)
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>            lab.audit                  [lab-edge]   +219.0 ms
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>               simple.kafka.notification  [lab-edge]   +222.0 ms
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>                  lab.receipt                [lab-edge]   +241.0 ms
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>                     async.http.response        [lab-edge]   +242.0 ms
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>                  task.executor              [lab-worker] +244.0 ms   crosses Kafka
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>                  lab.reserve                [lab-worker] +245.0 ms   crosses Kafka
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>                     lab.ship                   [lab-worker] +248.0 ms
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>                  event.script.manager       [lab-worker]  RPC round-trip record, no span of its own
+</code></pre></div>
+<p><code>lab.audit</code> is a normal span in Mercury's own tree: the negative control acts only on the observers' tags.</p>
+<h2 id="scenario-10-oneagent-off-the-original-design">Scenario 10 — OneAgent off: the original design<a class="headerlink" href="#scenario-10-oneagent-off-the-original-design" title="Permanent link">&para;</a></h2>
+<p>With the switch off, or with no agent attached (the SDK reports itself inactive and the observer is not registered),
+the observer list is empty: every hook returns after one emptiness check, the trace id is chosen as before (a
+<code>traceparent</code>, then the trace-id header, then a fresh id), no <code>x-mercury-tag-*</code> header is written, and replies go out
+unchanged. Mercury's Telemetry log is identical to before. The whole reactor, whose telemetry and W3C tests run with no
+observer registered, passed after the merge of main: BUILD SUCCESS, 39 of 39 modules, 2,772 tests, 0 failures, 3
+skipped, all coverage gates met.</p>
+<h2 id="findings-and-their-fixes">Findings and their fixes<a class="headerlink" href="#findings-and-their-fixes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dynatrace.oneagent=true</code> was lost beside <code>dynatrace.oneagent.*</code>: a configuration key holds a value or child keys, never both</td>
+<td>The switch is <code>dynatrace.oneagent.enabled</code>. An audit of every key found the same collision in the mini-scheduler, fixed by #584</td>
+</tr>
+<tr>
+<td><code>/info</code> reported OneAgent's version</td>
+<td><code>ManifestReader</code> reads the application's own jar (#585)</td>
+</tr>
+<tr>
+<td>The negative control moved the rest of the flow into its fragment</td>
+<td>The route's reply keeps the caller's tag, and its scope closes before the reply leaves (Scenario 4)</td>
+</tr>
+<tr>
+<td>No link across Kafka</td>
+<td>The tags travel as <code>x-mercury-tag-*</code> headers; one hop per message (Scenario 3)</td>
+</tr>
+<tr>
+<td>Two SDK warnings per order on the <code>Mono</code> hop</td>
+<td>The link is skipped where OneAgent already continued the path (Scenario 6)</td>
+</tr>
+<tr>
+<td>Two trace ids per request without a client <code>traceparent</code></td>
+<td>The agent's <code>traceparent</code> is continued at the REST edge and the Kafka consumer (Scenario 5)</td>
+</tr>
+<tr>
+<td>Every hop was <code>Queue: &lt;application&gt;</code></td>
+<td><code>Topic: &lt;application&gt; - &lt;route&gt;</code> by default, one service (Scenario 7)</td>
+</tr>
+<tr>
+<td>A lab left running answered the reactor tests' requests on port 8100</td>
+<td>The lab publishes host port 18100</td>
+</tr>
+<tr>
+<td>The lab in the root reactor would be registered by the field's static code analysis</td>
+<td>The lab has its own aggregator, <code>lab/dynatrace-oneagent/pom.xml</code>, and the root pom does not list it</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The OpenTelemetry API adapter was built and removed.</strong> Under OneAgent its spans were recorded, named after their
+routes, but every hop through the event bus became a separate request. A diagnostic build showed why: OneAgent links an
+API span only through its own context on the thread and ignores a W3C parent set by the caller (<code>SERVER</code> spans behave
+the same; <code>INTERNAL</code> spans are not created at all), and its PurePath is not OpenTelemetry's current context at the REST
+entry. The observer seam stays vendor-neutral, so an adapter for an agent that honours W3C parents can come later.</p>
+<h2 id="what-remains">What remains<a class="headerlink" href="#what-remains" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Overhead was not measured.</strong> The lab checks correctness, not cost; a load comparison with the adapter on and off is
+  still to do.</li>
+<li><strong>A Kafka message without any trace</strong> continuing the agent's context is covered by unit tests only: a Mercury
+  publisher always sends a <code>traceparent</code>, so the lab does not produce one.</li>
+<li><strong>Not exercised:</strong></li>
+<li>Event-over-HTTP between applications. The tag is an envelope tag, which Event-over-HTTP serializes with the
+    envelope, but no test or lab run has driven the linkage across it.</li>
+<li><code>Flux</code> streams, which the adapter does not cover.</li>
+<li>OneAgent's own log enrichment combined with <code>dynatrace.oneagent.log.context</code>, which the guide advises against.</li>
+<li><strong>The field.</strong> The maintainer judged the implementation ready to deploy; a field installation's own run is the next
+  evidence.</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../otel-dynatrace-certification/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Test Report — OpenTelemetry forwarder (Dynatrace)">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Test Report — OpenTelemetry forwarder (Dynatrace)
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../llm-helper-certification/" class="md-footer__link md-footer__link--next" aria-label="Next: Test Report — The LLM helper (Claude)">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Test Report — The LLM helper (Claude)
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Apache-2.0 &middot; mercury-composable also has an official <a href="https://github.com/Accenture/mercury">Rust implementation</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
