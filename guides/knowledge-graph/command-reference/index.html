@@ -3813,6 +3813,9 @@ block); one-line commands are self-contained.</p>
 </code></pre></div>
 <ul>
 <li><code>with properties</code> and the key lines are <strong>optional</strong> (properties act as defaults).</li>
+<li><code>create node</code> on a name the model already holds changes nothing and refuses with <code>node {name} already exists</code>.
+  On the Java engine, the synchronous companion endpoint reports a refusal as its error, with <code>ok: false</code>.
+  <code>update node</code> replaces a node.</li>
 <li>A node has <strong>zero or one</strong> skill, set with <code>skill={route}</code>.</li>
 <li><code>{name}</code> is lowercase letters, digits and hyphen (<code>root</code>/<code>end</code> reserved); <code>{type}</code> is a descriptive label,
   conventionally <strong>Capitalized</strong> (<code>Root</code>, <code>Fetcher</code>, <code>Module</code> — see <a href="#lexical">lexical</a>).</li>
