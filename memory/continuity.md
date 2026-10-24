@@ -562,6 +562,43 @@
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
   <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-10-22 | uses: 1 | tier: working | origin: 2026-10-22-232342 -->
 
+- **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
+  properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
+  in either order, the map wins: `getProperty("a.b")` answers the map's text (`{c=y}`), not null and not `x`. A switch then
+  silently stays off, and a validated value fails with a misleading message. Met twice:
+  - `dynatrace.oneagent` beside its settings (PR #583: the switch is now `dynatrace.oneagent.enabled`);
+  - `scheduler.environment` beside `scheduler.environment.store` (since 4.12.22: startup fails with "must be one word").
+
+  Both test configurations carried the collision, and no test read the leaf next to its children.
+  **How to apply:** a switch or a value whose feature has settings takes its own child name, `<prefix>.enabled` like
+  `redis.cache.enabled`, so the prefix stays a parent only. Before adding a key, check that no existing key is its parent
+  or its child. To audit the tree, collect the keys of every `.properties` file, every `getProperty` and `@OptionalService`
+  literal and every configuration-reference heading, then list each key that prefixes another. The 2026-10-23 log has the
+  scan; `cloud.connector.health` is a route, not a key. YAML cannot express the collision.
+  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-10-23 | uses: 1 | tier: working | origin: 2026-10-23-215957 -->
+
+- **A lab or dev-machine tool stays out of the root reactor (Eric, 2026-10-23).** The field's static code analysis scans
+  the modules the root `pom.xml` declares, registers each one, and keeps scanning it for good. A module listed there
+  becomes a long-term field scan target, and removing it later needs a placeholder pom, the reason the Spring Boot 3
+  placeholders stay ([[snyk-retired-manifest-placeholders]], archived). A module outside the root reactor is never
+  scanned and needs no placeholder.
+  **How to apply:** a lab gets its own aggregator in its folder, as `lab/dynatrace-oneagent/pom.xml` does. It lists by
+  relative path the Mercury modules the lab uses, so Maven builds them from source instead of resolving the released
+  version of the same number from `~/.m2`, and installs nothing. Its literal version joins the release version sweep.
+  Before adding any module to the root reactor, ask whether it ships to the field's artifact repository.
+  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-10-23 | uses: 1 | tier: working | origin: 2026-10-23-215957 -->
+
+- **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
+  Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
+  deleting a module freezes its findings on the last resolved dependency tree, failing
+  the security gate forever. A parentless dependency-free `packaging=pom` placeholder
+  re-tests to an empty graph (zero findings). Live at `system/rest-spring-3/` +
+  `examples/rest-spring-3-example/` (PR #305) with relocation metadata to the Boot-4 twins;
+  **release version sweeps must include these non-reactor poms deliberately.** Relates
+  [[stack-integration-spring-boot4]]. **Reactivated 2026-10-23:** a lab stays out of the root reactor, so it never
+  needs a placeholder ([[conv-lab-outside-root-reactor]]).
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-10-13 | uses: 30 | tier: active | origin: 2026-09-01-022524 -->
+
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
 - [ ] (blueprint) **AI agent orchestration ("graph engineering")** — the Active Knowledge

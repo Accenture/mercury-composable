@@ -84,3 +84,12 @@ templates/**/.gradle/
 templates/**/gradle/
 templates/**/gradlew
 templates/**/gradlew.bat
+
+# Dynatrace OneAgent is commercially licensed: the installer downloaded for the OneAgent lab is never
+# committed, in its download folder or wherever else in the tree a copy is saved. The installer's name
+# begins with its OS: a bare Dynatrace-OneAgent-* would also hide a file such as dynatrace-oneagent-guide.md
+# on a checkout that ignores case (macOS)
+lab/dynatrace-oneagent/oneagent/
+Dynatrace-OneAgent-Linux*
+Dynatrace-OneAgent-Windows*
+Dynatrace-OneAgent-AIX*

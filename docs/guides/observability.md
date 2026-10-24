@@ -318,6 +318,81 @@ To target a system without an OTLP path, implement your own function at `distrib
 the dataset described in [What a trace records](#metrics) — for example, write it to a metrics database or a
 proprietary APM API.
 
+## Code-level tracing with an agent {#live-tracing}
+
+The forwarder reports a span **after** a function finished. An APM agent's code-level view needs something
+else: a tracer that brackets the real call, on the real call stack, so the agent can nest it inside the
+request it is already tracing. Without one, an agent such as Dynatrace OneAgent sees the HTTP request and the
+outgoing calls, but not the hops between composable functions. Mercury hands an event from the sender to the
+receiving function through the event bus and a per-route queue, and an agent's thread-bound context is lost
+at that handoff.
+
+A **live invocation observer** closes that gap. Platform-core calls it inline, with no vendor code in the
+core: when a function is about to run, on the thread that runs it, and when an event is about to be sent, on
+the sending thread. The linkage between hops rides as a string **tag on the event envelope**, not as thread
+state. The tag is serialized with the envelope, so it also crosses Event-over-HTTP and the cloud connector.
+Across `minimalist-kafka` it travels as Kafka headers (`x-mercury-tag-<tag>`): `simple.kafka.notification`
+writes them and the flow adapter restores them, so the consuming application's hops join the publisher's trace
+([details](minimalist-kafka.md#tracing)).
+An optional extension implements it:
+
+| Extension | Switch | What it records |
+|---|---|---|
+| `extensions/dynatrace-oneagent` | `dynatrace.oneagent.enabled=true` | Each hop with the **OneAgent SDK**, as an incoming message linked by a Dynatrace tag to the sender's outgoing message, giving one connected PurePath per request. Inert without an attached OneAgent. |
+
+It is off by default, so the jar alone does nothing. Do not also export the forwarder's spans to the same
+backend, which would record each request as two unconnected traces. **OpenTelemetry API spans do not replace
+it under OneAgent:** OneAgent links an API span only through its own context on the thread, never through a
+W3C parent carried on the event, so spans opened across Mercury's event bus stay separate requests. The seam is
+vendor-neutral: an adapter for another agent implements `InvocationObserver`.
+
+**One trace.** A REST request or a Kafka message that arrives without a `traceparent` or a trace-id header
+continues the agent's trace context, as if the caller had sent it as a `traceparent`. At a REST request the agent's
+trace was started by OneAgent's HTTP instrumentation; at a Kafka message, by the flow adapter's own hop. The agent's
+trace id becomes Mercury's, and the agent's span the parent of Mercury's first span. So Mercury's trace id - in log
+lines, telemetry and the forwarder's spans - is the Dynatrace trace id of the request, and the span lineage runs on
+unbroken across applications. A request that carries a `traceparent` keeps it, and OneAgent continues the same one, so
+the two agree there too. The precedence is: `traceparent`, then the trace-id header, then the agent's trace context,
+then a fresh id.
+
+**Which hops are observed.** A traced request is observed (one with a trace id; see
+[Turning tracing on](#enable)) on every route except the plumbing routes listed below. That includes Event
+Script's two routers, `event.script.manager` and `task.executor`, so a flow stays connected from task to task.
+
+| Property | Default | Meaning |
+|---|---|---|
+| `invocation.observer.include` | *(empty: all)* | Comma-separated routes to observe; an entry ending in `*` matches a prefix |
+| `invocation.observer.exclude` | the telemetry routes and `temporary.inbox` | Routes never observed; setting it replaces the default |
+| `invocation.observer.unlinked` | *(empty)* | **Negative control**: these routes are observed, but they never see the incoming tag, so each of their invocations starts a new trace |
+| `dynatrace.oneagent.destination` | `application-route` | The OneAgent messaging destination, shown as the endpoint `Topic: <name>`: `application-route` (`<application> - <route>`), `application`, or `route`; all hops stay in one service, "Mercury Messaging" |
+| `dynatrace.oneagent.log.context` | `false` | `true` writes OneAgent's own trace and span ids into the [log context](#log-context) as `dt.trace_id` and `dt.span_id` |
+
+**Deferred results.** A function that returns a `Mono` returns before its result exists, and the result
+usually completes on another thread. A OneAgent SDK tracer must start and end on one thread, so the OneAgent
+extension ends the hop when the function returns and resumes it through an *in-process link* when the result
+arrives: the completion appears as a linked node at the time it happened. When OneAgent's own Reactor support has
+already carried the trace onto the completion thread, the completion is in the trace already and no link is added:
+the SDK would report it as lost ("incoming inProcessLink received on already started path"). A `Flux` stream is not covered. As
+before, log lines written inside a `Mono` completion carry no log context.
+
+**Requirements for Dynatrace.** Use OneAgent **1.311 or later**, which propagates context into virtual threads,
+and enable its Java virtual-thread support (an opt-in OneAgent feature). Java 25 is the recommended runtime:
+before Java 24 (JEP 491), a virtual thread that blocks inside `synchronized` code pins its carrier thread.
+
+**Checking it.** Drive one traced request through several function hops and a flow, then check four
+things in Dynatrace:
+
+1. The request shows as **one connected tree**, with a node for every hop.
+2. Every log line of the request carries the trace and span ids of the node that wrote it.
+3. The route in `invocation.observer.unlinked` appears as a **separate fragment** of its own, and the rest of
+   the request stays in the connected tree: the route's reply keeps the caller's tag. If the route is not
+   separate, the check cannot tell a connected trace from a broken one, and its results prove nothing.
+4. A `Mono` function's completion appears as a node linked to its hop, at the time the result arrived.
+5. Mercury's `trace_id` on a log line is the Dynatrace trace id of the request.
+
+The [Dynatrace OneAgent integration report](../test-reports/dynatrace-one-agent-integration.md) records these checks
+against a Dynatrace environment, with REST and Kafka entry points.
+
 ## Application log context {#log-context}
 
 Spans tell you the causal path; **application logs** tell you what happened inside each step. The log-context
@@ -518,5 +593,6 @@ trace. A collector configuration must not drop a record that has no `context`.
 
 - [Build, Test & Deploy](build-test-deploy.md) — enabling tracing and the forwarder hook.
 - [Configuration Reference](configuration-reference.md#observability) — the `trace.*` and `otel.*` keys.
+- [Code-level tracing with an agent](#live-tracing) — the OneAgent invocation observer.
 - [Reserved Names & Headers](reserved-names-and-headers.md) — `distributed.trace.forwarder`, `traceparent`.
 - [Architecture Overview](architecture.md) — the three layers the span tree mirrors.

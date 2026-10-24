@@ -264,7 +264,7 @@
 - scheduler-active-environment-store — The mini-scheduler runs its jobs in one site of an active-active deployment, and the activ… — faded — 2026-Q4.md
 - llm-helper-certification-java — The LLM helper is not engine code: it is a Claude-only function host in the Python and Nod… — faded — 2026-Q4.md
 - pg-single-connection-is-serial — PostgreSQL runs one statement at a time per connection, so "parallel inserts on a single c… — faded — 2026-Q4.md
-- snyk-retired-manifest-placeholders — Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team + — faded — 2026-Q4.md
+- snyk-retired-manifest-placeholders — Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team + — faded — 2026-Q4.md — REACTIVATED 2026-10-23, back in continuity.md (the lab kept out of the root reactor)
 - conv-ports-adopt-java-release-number — Every port adopts the JAVA release number on catch-up — no downstream repo runs its own ve… — faded — 2026-Q4.md
 - release-4-12-24 — Release v4.12.24 — SHIPPED 2026-10-12: the Guava resolution the field's Snyk gate rejected… — faded — 2026-Q4.md
 - release-4-12-25 — Release v4.12.25 — SHIPPED 2026-10-13 (Java only): the field's Sonar findings on 4.12.24 c… — faded — 2026-Q4.md

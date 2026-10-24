@@ -23,6 +23,7 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TraceInfo;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
+import org.platformlambda.core.spi.InvocationObservers;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.W3cTrace;
@@ -49,7 +50,9 @@ import java.util.concurrent.ConcurrentMap;
  *
  * <p><b>Trace propagation.</b> Rather than forwarding the caller's (now-stale) traceparent, it stamps a
  * fresh W3C {@code traceparent} built from this function's <i>own</i> current span. Therefore, the consuming side
- * adopts this span as the parent of the next hop - keeping the trace continuous across the Kafka boundary.</p>
+ * adopts this span as the parent of the next hop - keeping the trace continuous across the Kafka boundary.
+ * A live invocation observer's tags for the outgoing message travel too, as {@link KafkaHeaders#OBSERVER_TAG_PREFIX}
+ * headers, so an APM agent's trace continues on the consuming side.</p>
  *
  * <p>byte[] is the wire form for headers and body so no custom Kafka serializer/deserializer is needed.
  * This is the minimalist building block; richer encodings (e.g. a Confluent Schema Registry) layer on
@@ -183,7 +186,8 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<Object, Mono
         if (businessCorrelationId != null) {
             kafkaHeaders.put(cidHeader, businessCorrelationId.getBytes(StandardCharsets.UTF_8));
         }
-        String traceparent = currentTraceparent(new PostOffice(headers, instance));
+        PostOffice po = new PostOffice(headers, instance);
+        String traceparent = currentTraceparent(po);
         if (traceparent != null) {
             kafkaHeaders.put(W3cTrace.TRACEPARENT, traceparent.getBytes(StandardCharsets.UTF_8));
             // when a custom traceparent header name is configured, stamp the same value under that
@@ -202,6 +206,10 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<Object, Mono
                 kafkaHeaders.put(traceHeader, traceId.getBytes(StandardCharsets.UTF_8));
             }
         }
+        // a live invocation observer (an APM agent's SDK) tags this outgoing message as it tags an event;
+        // the flow adapter on the consuming side restores the tags, so the agent's trace crosses Kafka
+        InvocationObservers.export(topic, po.getTraceId(), po.getTracePath()).forEach((key, value) ->
+                kafkaHeaders.put(KafkaHeaders.OBSERVER_TAG_PREFIX + key, value.getBytes(StandardCharsets.UTF_8)));
         byte[] payload = encode(topic, headers, body, instance);
         // checked last: every caller-input error (missing topic, a non-byte[] schema document) is the
         // caller's own mistake and must surface ahead of an environment condition
@@ -271,7 +279,8 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<Object, Mono
      * 1. routing/encoding directives (topic/partition/subject/version)
      * 2. the inbound traceparent under the standard or configured name (replaced with this hop's own span)
      * 3. the correlation-id and configured trace-id headers (stamped explicitly from the resolved values)
-     * 4. and the framework's read-only reserved headers (my_route / my_trace_id / my_trace_path / my_correlation_id)
+     * 4. the framework's read-only reserved headers (my_route / my_trace_id / my_trace_path / my_correlation_id)
+     * 5. and an observer tag mapped in from an earlier message, which is stale (this hop exports its own)
      */
     private boolean isPropagatableHeader(String key) {
         return !KafkaHeaders.TOPIC.equals(key)
@@ -285,7 +294,8 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<Object, Mono
                 && !MY_ROUTE.equals(key)
                 && !MY_TRACE_ID.equals(key)
                 && !MY_TRACE_PATH.equals(key)
-                && !MY_CORRELATION_ID.equals(key);
+                && !MY_CORRELATION_ID.equals(key)
+                && !key.startsWith(KafkaHeaders.OBSERVER_TAG_PREFIX);
     }
 
     private static Integer parsePartition(String value) {

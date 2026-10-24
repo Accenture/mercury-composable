@@ -652,7 +652,7 @@ HTTP header carrying the business correlation-id (enterprise-specific; case-inse
 |------|---------|
 | `String` | `X-Trace-Id` |
 
-HTTP header recognized (inbound, when no W3C `traceparent` is present) and emitted (outbound by the async HTTP client) as the trace-id. A well-formed `traceparent` always takes precedence inbound. Overridable per endpoint with `trace.id.header` in a rest.yaml entry.
+HTTP header recognized (inbound, when no W3C `traceparent` is present) and emitted (outbound by the async HTTP client) as the trace-id. A well-formed `traceparent` always takes precedence inbound. When neither is present, REST automation continues the trace context of an APM agent already tracing the request (a [live invocation observer](observability.md#live-tracing)), else it generates a fresh trace id. Overridable per endpoint with `trace.id.header` in a rest.yaml entry.
 
 ### `http.traceparent.header`
 
@@ -686,7 +686,7 @@ Kafka message header carrying the business correlation-id (no cross-vendor stand
 |------|---------|
 | `String` | — |
 
-Optional Kafka message header for the trace-id. Inbound: a fallback trace-id source when the upstream sends no W3C `traceparent` (which always takes precedence). Outbound: `simple.kafka.notification` stamps the current trace-id under this name alongside `traceparent`, for legacy downstream consumers. Unset = traceparent-only behavior (unchanged). Overridable per binding with `trace.id.header` in a kafka-flow-adapter.yaml entry.
+Optional Kafka message header for the trace-id. Inbound: a fallback trace-id source when the upstream sends no W3C `traceparent` (which always takes precedence); without either, the flow adapter continues the trace context of an APM agent tracing the delivery (a [live invocation observer](observability.md#live-tracing)), else it generates a fresh trace id. Outbound: `simple.kafka.notification` stamps the current trace-id under this name alongside `traceparent`, for legacy downstream consumers. Unset = traceparent-only behavior (unchanged). Overridable per binding with `trace.id.header` in a kafka-flow-adapter.yaml entry.
 
 ### `kafka.traceparent.header`
 
@@ -769,6 +769,56 @@ OTLP request-body compression for the `opentelemetry-forwarder` extension: `gzip
 Request headers for the `opentelemetry-forwarder` extension — **where backend API credentials go** (e.g. `Authorization=Api-Token …` for Dynatrace, `X-SF-Token=…` for Splunk). Source it from the environment with **no default** — `otel.exporter.otlp.headers=${OTEL_EXPORTER_OTLP_HEADERS}` — so no secret is hard-coded; unset resolves to no headers.
 
 > The `otel.*` values support `${ENV_VAR:default}` substitution, so the forwarder is configured entirely from `application.properties` while secrets stay in the environment.
+
+The next keys belong to the live invocation observers, which bracket each composable-function hop for an APM agent's code-level view (see [Code-level tracing with an agent](observability.md#live-tracing)).
+
+### `dynatrace.oneagent.enabled`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `false` |
+
+**Master switch for the `dynatrace-oneagent` extension** (`@OptionalService("dynatrace.oneagent.enabled")`): each hop is bracketed with the OneAgent SDK, linked by a Dynatrace tag on the event envelope. Without an attached OneAgent the SDK is inactive and nothing is registered. The key ends in `.enabled` because the extension's settings share its prefix: a key cannot be both a value and the parent of other keys, so a bare `dynatrace.oneagent=true` beside `dynatrace.oneagent.destination` would be lost.
+
+### `dynatrace.oneagent.destination`
+
+| Type | Default |
+|------|---------|
+| `String` | `application-route` |
+
+The OneAgent messaging destination of every hop, a topic in the Kafka sense, which Dynatrace shows as the endpoint `Topic: <name>`: `application-route` (`<application> - <route>`, such as `Topic: lab-edge - lab.validate`, the default), `application` (the application name) or `route` (the hop's route). Every value keeps all hops in one Dynatrace service, "Mercury Messaging". The `Topic:` prefix comes from the destination type and cannot be dropped: a message tracer is the one OneAgent SDK tracer that carries the linkage tag. An unknown value is logged and taken as `application-route`.
+
+### `dynatrace.oneagent.log.context`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `false` |
+
+`true` writes OneAgent's own trace and span ids into the application log context as `dt.trace_id` and `dt.span_id`. Do not combine it with OneAgent's own log enrichment, which writes the same field names.
+
+### `invocation.observer.include`
+
+| Type | Default |
+|------|---------|
+| `String` (comma-sep routes) | — |
+
+When set, only these routes are observed by a live invocation observer. An entry ending in `*` matches a route prefix.
+
+### `invocation.observer.exclude`
+
+| Type | Default |
+|------|---------|
+| `String` (comma-sep routes) | `distributed.tracing, distributed.trace.forwarder, transaction.journal.recorder, temporary.inbox` |
+
+Routes a live invocation observer never observes; setting the property replaces the default.
+
+### `invocation.observer.unlinked`
+
+| Type | Default |
+|------|---------|
+| `String` (comma-sep routes) | — |
+
+The **negative control** of a tracing check: these routes are observed but never see the incoming linkage tag, so each of their invocations starts a new trace. Their reply keeps the caller's tag, so the route alone is a separate fragment and the rest of the request stays in the caller's trace. A check that cannot see this break cannot tell a connected trace from a broken one.
 
 ---
 

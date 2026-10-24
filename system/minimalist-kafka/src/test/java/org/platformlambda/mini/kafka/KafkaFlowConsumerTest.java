@@ -33,6 +33,11 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import com.accenture.automation.EventScriptManager;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.spi.InvocationCarrier;
+import org.platformlambda.core.spi.InvocationInfo;
+import org.platformlambda.core.spi.InvocationObserver;
+import org.platformlambda.core.spi.InvocationObservers;
+import org.platformlambda.core.spi.InvocationScope;
 import org.platformlambda.core.util.Utility;
 import org.junit.jupiter.api.Test;
 
@@ -40,12 +45,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -417,6 +425,111 @@ class KafkaFlowConsumerTest {
 
         assertEquals(Set.of("orders-1"), mock.subscription(), "pattern-matched topic joins the subscription");
         assertTrue(mock.assignment().stream().allMatch(tp -> tp.topic().equals("orders-1")));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void aMessageIsOneIncomingHopLinkedByThePublishersTags() {
+        List<String> events = new CopyOnWriteArrayList<>();
+        InvocationObserver observer = new InvocationObserver() {
+            @Override
+            public InvocationScope begin(InvocationInfo info, InvocationCarrier carrier) {
+                events.add("begin " + info.route() + " " + carrier.get("dt_tag"));
+                return new InvocationScope() {
+                    @Override
+                    public void error(String message) {
+                        events.add("error " + message);
+                    }
+
+                    @Override
+                    public void end() {
+                        events.add("end");
+                    }
+                };
+            }
+
+            @Override
+            public void send(InvocationInfo info, InvocationCarrier carrier) {
+                // not reached: the flow invocation is stubbed
+            }
+        };
+        AtomicReference<Map<String, String>> flowHeaders = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger();
+        KafkaFlowConsumer consumer = new KafkaFlowConsumer(null, binding().build(), 1000,
+                new RetryPolicy(1, 0, null), null) {
+            @Override
+            EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) {
+                events.add("invoke");
+                flowHeaders.set((Map<String, String>) ((Map<String, Object>) forward.getBody()).get("header"));
+                return new EventEnvelope().setStatus(attempts.incrementAndGet() == 1 ? 500 : 200);
+            }
+        };
+        ConsumerRecord<String, byte[]> r = inboundRecord();
+        r.headers().add(KafkaHeaders.OBSERVER_TAG_PREFIX + "dt_tag", "from-the-publisher".getBytes(UTF_8));
+
+        InvocationObservers.register(observer);
+        try {
+            assertTrue(consumer.routeToFlow(r));
+        } finally {
+            InvocationObservers.unregister(observer);
+        }
+
+        // one hop for the message, linked to the publisher, with the retry sent inside it; a later success
+        // leaves no failure on the hop
+        assertEquals(List.of("begin kafka.flow.adapter from-the-publisher", "invoke", "invoke", "end"), events);
+        assertFalse(flowHeaders.get().containsKey(KafkaHeaders.OBSERVER_TAG_PREFIX + "dt_tag"),
+                "the flow never sees the tag headers");
+        assertEquals("cid-1", flowHeaders.get().get("cid"));
+    }
+
+    @Test
+    void aMessageWithoutATraceContinuesTheAgentsTrace() {
+        String agentTrace = "4bf92f3577b34da6a3ce929d0e0e4736";
+        String agentSpan = "00f067aa0ba902b7";
+        InvocationObserver agent = new InvocationObserver() {
+            @Override
+            public InvocationScope begin(InvocationInfo info, InvocationCarrier carrier) {
+                return () -> { };
+            }
+
+            @Override
+            public void send(InvocationInfo info, InvocationCarrier carrier) {
+                // not reached: the flow invocation is stubbed
+            }
+
+            @Override
+            public String traceparent() {
+                return "00-" + agentTrace + "-" + agentSpan + "-01";
+            }
+        };
+        AtomicReference<EventEnvelope> captured = new AtomicReference<>();
+        KafkaFlowConsumer consumer = new KafkaFlowConsumer(null, binding().build(), 1000,
+                new RetryPolicy(0, 0, null), null) {
+            @Override
+            EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) {
+                captured.set(forward);
+                return new EventEnvelope().setStatus(200);
+            }
+        };
+        ConsumerRecord<String, byte[]> traced = inboundRecord();
+        traced.headers().add("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01".getBytes(UTF_8));
+
+        InvocationObservers.register(agent);
+        try {
+            assertTrue(consumer.routeToFlow(inboundRecord()));
+            // a message that carries no trace continues the agent's, as a REST request does
+            assertEquals(agentTrace, captured.get().getTraceId());
+            assertEquals(agentSpan, captured.get().getSpanId());
+            assertTrue(consumer.routeToFlow(traced));
+            assertEquals("0af7651916cd43dd8448eb211c80319c", captured.get().getTraceId(), "the message's own trace wins");
+            assertEquals("b7ad6b7169203331", captured.get().getSpanId());
+        } finally {
+            InvocationObservers.unregister(agent);
+        }
+        // without an agent, a fresh trace id as before
+        assertTrue(consumer.routeToFlow(inboundRecord()));
+        assertEquals(32, captured.get().getTraceId().length());
+        assertNotEquals(agentTrace, captured.get().getTraceId());
     }
 
     private static MockProducer<String, byte[]> autoCompletingProducer() {

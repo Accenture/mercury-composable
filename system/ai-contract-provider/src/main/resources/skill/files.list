@@ -56,6 +56,7 @@ references/guides/spring-boot.md
 references/guides/sync-over-async.md
 references/guides/twin-kafka.md
 references/index.md
+references/test-reports/dynatrace-one-agent-integration.md
 references/test-reports/event-over-http-interop.md
 references/test-reports/llm-helper-certification.md
 references/test-reports/otel-dynatrace-certification.md

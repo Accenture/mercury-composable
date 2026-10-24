@@ -54,6 +54,7 @@ class SkillSnapshotTest {
         expected.add("references/index.md");
         expected.add("references/arch-decisions/ADR.md");
         expected.add("references/arch-decisions/RFC.md");
+        expected.add("references/test-reports/dynatrace-one-agent-integration.md");
         expected.add("references/test-reports/event-over-http-interop.md");
         expected.add("references/test-reports/llm-helper-certification.md");
         expected.add("references/test-reports/otel-dynatrace-certification.md");
