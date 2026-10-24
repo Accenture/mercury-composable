@@ -226,8 +226,8 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    abort already was, and the endpoint reports the first such line as its `error`, or the command's own failure when it
    throws past the command service (a malformed JSON command). `import node` from a file that does not exist, and
    `session` with an unknown argument, now say so instead of printing nothing. The WebSocket console shows the same lines.
-   Java engine. **Upgrade note:** a driver that sent `create node` to replace a node now sees the failure it always was;
-   `update node` replaces a node.
+   Both engines (the Rust port is mercury #394). **Upgrade note:** a driver that sent `create node` to replace a node now
+   sees the failure it always was; `update node` replaces a node.
 
 ---
 ## Version 4.12.25, 10/12/2026
