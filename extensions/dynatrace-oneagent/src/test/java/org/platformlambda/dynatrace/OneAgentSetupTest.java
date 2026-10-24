@@ -65,6 +65,16 @@ class OneAgentSetupTest {
         assertNotNull(observer);
         observer.begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
         assertEquals("demo.route", agent.infos.getFirst());
+
+        FakeOneAgent both = new FakeOneAgent();
+        OneAgentSetup.configure(both.sdk, settings(Map.of(OneAgentSetup.DESTINATION, "application-route")))
+                .begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
+        assertTrue(both.infos.getFirst().endsWith(" - demo.route"), "the application, then the route");
+
+        FakeOneAgent unknown = new FakeOneAgent();
+        OneAgentSetup.configure(unknown.sdk, settings(Map.of(OneAgentSetup.DESTINATION, "per-function")))
+                .begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
+        assertFalse(unknown.infos.getFirst().endsWith("demo.route"), "an unknown value names the application");
     }
 
     @Test

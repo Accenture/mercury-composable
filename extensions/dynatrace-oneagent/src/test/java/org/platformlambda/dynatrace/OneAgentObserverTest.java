@@ -157,6 +157,29 @@ class OneAgentObserverTest {
     }
 
     @Test
+    void noLinkWhenOneAgentAlreadyContinuedThePathOnTheCompletionThread() throws Exception {
+        FakeOneAgent agent = new FakeOneAgent();
+        OneAgentObserver observer = new OneAgentObserver(agent.sdk, "demo-app", false, false);
+
+        InvocationScope scope = observer.begin(HOP, new MapCarrier(Map.of()));
+        InvocationContinuation continuation = scope.detach();
+        scope.end();
+        InvocationScope[] resumed = new InvocationScope[1];
+        Thread completion = Thread.ofVirtual().start(() -> {
+            // OneAgent's Reactor support carried the hop's PurePath onto this thread
+            agent.continuePathOnThisThread(true);
+            resumed[0] = continuation.resume();
+            agent.continuePathOnThisThread(false);
+        });
+        completion.join();
+
+        // the link would be lost on an already started path, with an SDK warning: it is not started
+        assertNull(resumed[0]);
+        assertEquals(-1, indexOf(agent.callsOf("sdk"), "traceInProcessLink"));
+        assertTrue(agent.callsOf("link-tracer").isEmpty());
+    }
+
+    @Test
     void theDestinationIsTheApplicationOrEachRoute() {
         FakeOneAgent agent = new FakeOneAgent();
         OneAgentObserver shared = new OneAgentObserver(agent.sdk, "demo-app", false, false);
@@ -169,6 +192,22 @@ class OneAgentObserverTest {
         named.begin(HOP, new MapCarrier(Map.of())).end();
         named.begin(HOP, new MapCarrier(Map.of())).end();
         assertEquals(List.of("demo.route"), perRoute.infos);
+
+        // Dynatrace shows the destination as the endpoint "Queue: demo-app - demo.route"
+        FakeOneAgent both = new FakeOneAgent();
+        new OneAgentObserver(both.sdk, "demo-app", OneAgentObserver.Destination.APPLICATION_ROUTE, false)
+                .begin(HOP, new MapCarrier(Map.of())).end();
+        assertEquals(List.of("demo-app - demo.route"), both.infos);
+    }
+
+    @Test
+    void theDestinationSettingIsReadByName() {
+        assertEquals(OneAgentObserver.Destination.APPLICATION, OneAgentObserver.Destination.of("application"));
+        assertEquals(OneAgentObserver.Destination.ROUTE, OneAgentObserver.Destination.of(" Route "));
+        assertEquals(OneAgentObserver.Destination.APPLICATION_ROUTE,
+                OneAgentObserver.Destination.of("application-route"));
+        assertNull(OneAgentObserver.Destination.of("per-function"));
+        assertNull(OneAgentObserver.Destination.of(null));
     }
 
     @Test
@@ -176,12 +215,13 @@ class OneAgentObserverTest {
         FakeOneAgent agent = new FakeOneAgent();
         OneAgentObserver observer = new OneAgentObserver(agent.sdk, "demo-app", false, false);
 
-        assertEquals("00-" + FakeOneAgent.TRACE_ID + "-" + FakeOneAgent.SPAN_ID + "-01", observer.traceparent());
-        agent.validTraceContext = false;
         assertNull(observer.traceparent(), "no PurePath on this thread");
-        agent.validTraceContext = true;
+        InvocationScope hop = observer.begin(HOP, new MapCarrier(Map.of()));
+        assertEquals("00-" + FakeOneAgent.TRACE_ID + "-" + FakeOneAgent.SPAN_ID + "-01", observer.traceparent());
         agent.state = SDKState.TEMPORARILY_INACTIVE;
         assertNull(observer.traceparent(), "an inactive agent offers nothing");
+        agent.state = SDKState.ACTIVE;
+        hop.end();
     }
 
     @Test

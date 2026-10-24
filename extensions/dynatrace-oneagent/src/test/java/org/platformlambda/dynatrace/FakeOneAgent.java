@@ -39,7 +39,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A stand-in for the OneAgent SDK that records every call, in order, with the thread it ran on. The SDK's
  * types are interfaces, so a dynamic proxy is enough. An outgoing tracer hands out a fresh tag per message
- * ({@code tag-1}, {@code tag-2} ...), as an agent with an active PurePath would.
+ * ({@code tag-1}, {@code tag-2} ...), as an agent with an active PurePath would. The trace context is valid only
+ * on a thread where one of its tracers is open, as OneAgent's is.
  */
 final class FakeOneAgent {
     /**
@@ -84,6 +85,8 @@ final class FakeOneAgent {
     volatile boolean validTraceContext = true;
     volatile LoggingCallback logging;
     private final AtomicInteger sequence = new AtomicInteger();
+    // the tracers open on each thread: the trace context is valid only where one is
+    private final ThreadLocal<AtomicInteger> openTracers = ThreadLocal.withInitial(AtomicInteger::new);
     private final AtomicInteger tags = new AtomicInteger();
     final OneAgentSDK sdk = proxy(OneAgentSDK.class, (method, args) -> {
         recordCall("sdk", method, args);
@@ -103,10 +106,11 @@ final class FakeOneAgent {
             case "createInProcessLink" -> proxy(InProcessLink.class, (m, a) -> m.equals("toString")? "link" : null);
             case "traceInProcessLink" -> proxy(InProcessLinkTracer.class, (m, a) -> {
                 recordCall("link-tracer", m, a);
+                track(m);
                 return null;
             });
             case "getTraceContextInfo" -> proxy(TraceContextInfo.class, (m, a) -> switch (m) {
-                case "isValid" -> validTraceContext;
+                case "isValid" -> validTraceContext && openTracers.get().get() > 0;
                 case "getTraceId" -> TRACE_ID;
                 case "getSpanId" -> SPAN_ID;
                 default -> null;
@@ -128,10 +132,12 @@ final class FakeOneAgent {
                 case "start" -> {
                     hop.started = true;
                     hop.startThread = thread;
+                    track(method);
                 }
                 case "end" -> {
                     hop.ended = true;
                     hop.endThread = thread;
+                    track(method);
                 }
                 case "error" -> hop.error = String.valueOf(args[0]);
                 default -> {
@@ -156,6 +162,24 @@ final class FakeOneAgent {
             }
             return null;
         });
+    }
+
+    /** Count a tracer opening or closing on this thread. */
+    private void track(String method) {
+        if (method.equals("start")) {
+            openTracers.get().incrementAndGet();
+        } else if (method.equals("end")) {
+            openTracers.get().decrementAndGet();
+        }
+    }
+
+    /** OneAgent's own instrumentation continuing a PurePath on this thread, as its Reactor support does. */
+    void continuePathOnThisThread(boolean active) {
+        if (active) {
+            openTracers.get().incrementAndGet();
+        } else {
+            openTracers.get().decrementAndGet();
+        }
     }
 
     List<Hop> hopsOf(String destination) {

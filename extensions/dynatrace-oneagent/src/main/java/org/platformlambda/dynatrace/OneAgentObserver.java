@@ -51,13 +51,17 @@ import java.util.concurrent.ConcurrentMap;
  * new entry point. All hops share one messaging system (vendor {@code Mercury}); the destination is the
  * application name by default, so a route does not become a Dynatrace service - the route travels as the
  * custom request attribute {@code mercury.route}. {@code dynatrace.oneagent.destination=route} makes each
- * route its own destination, for a check that wants every hop named in the PurePath.
+ * route its own destination, and {@code application-route} names it {@code <application> - <route>}, so every hop
+ * is named in the PurePath. Dynatrace shows a destination as the endpoint {@code Queue: <name>}: the prefix comes
+ * from the destination type and cannot be dropped from a message tracer, the one tracer kind that carries a tag.
  * <p>
  * <b>Thread affinity.</b> SDK tracers must start and end on one thread, LIFO. The engine guarantees it: a
  * hop's scope opens and closes on the worker thread, and an outgoing tracer opens and closes inside one
  * send. A function that returns a Mono hands over an in-process link ({@link InvocationScope#detach}) that
  * the completion thread resumes; the hop's own tracer still ends when the function returns, so a deferred
- * result appears as a linked node at the time it completes, not as a long hop.
+ * result appears as a linked node at the time it completes, not as a long hop. When OneAgent's own Reactor
+ * support has already continued the hop's PurePath onto the completion thread, the link is not started: it would
+ * be lost, with an SDK warning, and the completion is in the trace already.
  * <p>
  * <b>Log context (opt-in, {@code dynatrace.oneagent.log.context=true}).</b> When a hop starts, OneAgent's
  * own trace and span ids for it are written into Mercury's log context as {@code dt.trace_id} and
@@ -78,20 +82,55 @@ public class OneAgentObserver implements InvocationObserver {
     private static final String VENDOR = "Mercury";
     private final OneAgentSDK sdk;
     private final String application;
-    private final boolean destinationPerRoute;
+    private final Destination destination;
     private final boolean logContext;
     private final ConcurrentMap<String, MessagingSystemInfo> destinations = new ConcurrentHashMap<>();
 
     /**
+     * How a hop's messaging destination is named; Dynatrace shows it as the endpoint {@code Queue: <name>}.
+     */
+    public enum Destination {
+        /** The application name, one endpoint for all of its hops (the default). */
+        APPLICATION,
+        /** The route, one endpoint per function. */
+        ROUTE,
+        /** The application and the route, {@code <application> - <route>}. */
+        APPLICATION_ROUTE;
+
+        /**
+         * @param setting {@code application}, {@code route} or {@code application-route}
+         * @return the naming, or null for an unknown setting
+         */
+        public static Destination of(String setting) {
+            return switch (setting == null? "" : setting.trim().toLowerCase()) {
+                case "application" -> APPLICATION;
+                case "route" -> ROUTE;
+                case "application-route" -> APPLICATION_ROUTE;
+                default -> null;
+            };
+        }
+    }
+
+    /**
      * @param sdk the OneAgent SDK instance, created once for the JVM
-     * @param application the application name: the messaging destination unless per-route
+     * @param application the application name
      * @param destinationPerRoute true to make each route its own messaging destination
      * @param logContext true to write OneAgent's trace and span ids into Mercury's log context
      */
     public OneAgentObserver(OneAgentSDK sdk, String application, boolean destinationPerRoute, boolean logContext) {
+        this(sdk, application, destinationPerRoute? Destination.ROUTE : Destination.APPLICATION, logContext);
+    }
+
+    /**
+     * @param sdk the OneAgent SDK instance, created once for the JVM
+     * @param application the application name
+     * @param destination how a hop's messaging destination is named
+     * @param logContext true to write OneAgent's trace and span ids into Mercury's log context
+     */
+    public OneAgentObserver(OneAgentSDK sdk, String application, Destination destination, boolean logContext) {
         this.sdk = sdk;
         this.application = application;
-        this.destinationPerRoute = destinationPerRoute;
+        this.destination = destination;
         this.logContext = logContext;
     }
 
@@ -145,9 +184,18 @@ public class OneAgentObserver implements InvocationObserver {
     }
 
     private MessagingSystemInfo destination(String route) {
-        String name = destinationPerRoute? route : application;
+        String name = switch (destination) {
+            case APPLICATION -> application;
+            case ROUTE -> route;
+            case APPLICATION_ROUTE -> application + " - " + route;
+        };
         return destinations.computeIfAbsent(name, n ->
                 sdk.createMessagingSystemInfo(VENDOR, n, MessageDestinationType.QUEUE, ChannelType.IN_PROCESS, null));
+    }
+
+    private String currentTraceId() {
+        TraceContextInfo trace = sdk.getTraceContextInfo();
+        return trace != null && trace.isValid()? trace.getTraceId() : null;
     }
 
     private void writeLogContext() {
@@ -174,7 +222,12 @@ public class OneAgentObserver implements InvocationObserver {
         public InvocationContinuation detach() {
             // created while the hop's tracer is the active node on this thread
             InProcessLink link = sdk.createInProcessLink();
+            String hopTrace = currentTraceId();
             return () -> {
+                if (hopTrace != null && hopTrace.equals(currentTraceId())) {
+                    // OneAgent already continued the hop's PurePath on this thread: a link would be lost
+                    return null;
+                }
                 InProcessLinkTracer linked = sdk.traceInProcessLink(link);
                 linked.start();
                 return new TracerScope(linked);

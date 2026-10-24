@@ -11,7 +11,9 @@
   decisions on the run's findings below, then the OpenTelemetry adapter's run in the lab. A run's checklist:
   `docs/guides/observability.md#live-tracing` - the PurePath tree, the `invocation.observer.unlinked` fragment (the negative
   control), the log ids per line, a Mono hop's duration, any `OneAgent SDK:` warnings, and the overhead. The branch keeps
-  version 4.12.25 until the release round, so the lab builds with `-am` and nothing is installed into `~/.m2`.
+  version 4.12.25 until the release round. The lab is NOT in the root reactor (Eric, 2026-10-23: the field's static
+  analysis registers every root-reactor module for good); its own `lab/dynatrace-oneagent/pom.xml` aggregator builds the
+  Mercury modules it uses from source, installs nothing into `~/.m2`, and joins the release version sweep.
   **Sandbox run 2026-10-22 (a Dynatrace sandbox tenant, the lab `lab/dynatrace-oneagent/`, OneAgent 1.347.64 full stack in
   Colima's VM):** with the OneAgent adapter on, REST and the composable hops are ONE connected, nested PurePath (the RPC and
   the `Mono` included) where the baseline showed a single span, and every log line carries `dt.trace_id`/`dt.span_id`.

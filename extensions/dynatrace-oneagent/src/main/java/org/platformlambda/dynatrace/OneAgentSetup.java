@@ -57,7 +57,7 @@ public class OneAgentSetup implements EntryPoint {
     public static final String DESTINATION = "dynatrace.oneagent.destination";
     public static final String LOG_CONTEXT = "dynatrace.oneagent.log.context";
     private static final String OTEL_FORWARDING = "otel.forwarding";
-    private static final String ROUTE = "route";
+    private static final String APPLICATION = "application";
     private static final String TRUE = "true";
     private static final String FALSE = "false";
 
@@ -85,17 +85,22 @@ public class OneAgentSetup implements EntryPoint {
                     "invocation observer not registered", state);
             return null;
         }
-        boolean perRoute = ROUTE.equalsIgnoreCase(property.apply(DESTINATION, "application"));
+        String setting = property.apply(DESTINATION, APPLICATION);
+        OneAgentObserver.Destination destination = OneAgentObserver.Destination.of(setting);
+        if (destination == null) {
+            log.warn("{}={} is not application, route or application-route - using application", DESTINATION, setting);
+            destination = OneAgentObserver.Destination.APPLICATION;
+        }
         boolean logContext = TRUE.equalsIgnoreCase(property.apply(LOG_CONTEXT, FALSE));
         String application = Platform.getInstance().getName();
         log.info("Dynatrace OneAgent invocation observer - SDK state {}, destination {}, log context {}",
-                state, perRoute? "per route" : application, logContext);
+                state, destination.name().toLowerCase().replace('_', '-'), logContext);
         if (TRUE.equalsIgnoreCase(property.apply(OTEL_FORWARDING, FALSE))) {
             log.warn("{}=true as well - do not export the OTLP spans to the same Dynatrace tenant: " +
                     "the forwarder's trace and the PurePath are two unconnected traces of one request",
                     OTEL_FORWARDING);
         }
-        return new OneAgentObserver(sdk, application, perRoute, logContext);
+        return new OneAgentObserver(sdk, application, destination, logContext);
     }
 
     /**

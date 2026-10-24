@@ -786,7 +786,7 @@ The next keys belong to the live invocation observers, which bracket each compos
 |------|---------|
 | `String` | `application` |
 
-The OneAgent messaging destination of every hop: the application name, or `route` to name each hop after its route (one Dynatrace messaging service per route).
+The OneAgent messaging destination of every hop, which Dynatrace shows as the endpoint `Queue: <name>`: `application` (the application name), `route` (the hop's route) or `application-route` (`<application> - <route>`, such as `Queue: lab-edge - lab.validate`). The `Queue:` prefix comes from the destination type and cannot be dropped: a message tracer is the one OneAgent SDK tracer that carries the linkage tag. An unknown value is logged and taken as `application`.
 
 ### `dynatrace.oneagent.log.context`
 

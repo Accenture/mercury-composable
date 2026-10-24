@@ -364,13 +364,15 @@ Script's two routers, `event.script.manager` and `task.executor`, so a flow stay
 | `invocation.observer.include` | *(empty: all)* | Comma-separated routes to observe; an entry ending in `*` matches a prefix |
 | `invocation.observer.exclude` | the telemetry routes and `temporary.inbox` | Routes never observed; setting it replaces the default |
 | `invocation.observer.unlinked` | *(empty)* | **Negative control**: these routes are observed, but they never see the incoming tag, so each of their invocations starts a new trace |
-| `dynatrace.oneagent.destination` | `application` | The OneAgent messaging destination: the application name, or `route` to name every hop after its route |
+| `dynatrace.oneagent.destination` | `application` | The OneAgent messaging destination, shown as the endpoint `Queue: <name>`: `application`, `route`, or `application-route` (`<application> - <route>`) |
 | `dynatrace.oneagent.log.context` | `false` | `true` writes OneAgent's own trace and span ids into the [log context](#log-context) as `dt.trace_id` and `dt.span_id` |
 
 **Deferred results.** A function that returns a `Mono` returns before its result exists, and the result
 usually completes on another thread. A OneAgent SDK tracer must start and end on one thread, so the OneAgent
 extension ends the hop when the function returns and resumes it through an *in-process link* when the result
-arrives: the completion appears as a linked node at the time it happened. A `Flux` stream is not covered. As
+arrives: the completion appears as a linked node at the time it happened. When OneAgent's own Reactor support has
+already carried the trace onto the completion thread, the completion is in the trace already and no link is added:
+the SDK would report it as lost ("incoming inProcessLink received on already started path"). A `Flux` stream is not covered. As
 before, log lines written inside a `Mono` completion carry no log context.
 
 **Requirements for Dynatrace.** Use OneAgent **1.311 or later**, which propagates context into virtual threads,
