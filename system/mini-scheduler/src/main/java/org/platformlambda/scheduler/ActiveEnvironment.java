@@ -29,10 +29,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 /**
  * The active environment of an active-active deployment (RFC-0008). A scheduler deployed in two sites,
- * Production and DR, must fire its jobs in ONE of them: {@code scheduler.environment} names this
+ * Production and DR, must fire its jobs in ONE of them: {@code scheduler.environment.name} names this
  * instance's environment (default {@code prod}), the <b>active environment</b> names the one whose
  * scheduler runs the jobs, and this instance is <b>active</b> when the two match and on <b>standby</b>
  * otherwise - a scheduled job is skipped with one log line, an operator's manual run is still honoured.
@@ -49,12 +50,18 @@ import java.util.concurrent.atomic.AtomicReference;
  * fallback for a store that fails to answer. When no store function is registered, the value lives in
  * memory only and the scheduler says so at startup.
  * <p>
+ * Both settings sit under {@code scheduler.environment}, which is a parent only: a configuration key holds a
+ * value or child keys, never both. Before 4.12.26 the name was {@code scheduler.environment} itself; that plain
+ * value is still read, with a warning, so an existing deployment keeps its environment.
+ * <p>
  * Intentional singleton.
  */
 @SuppressWarnings("java:S6548")
 public final class ActiveEnvironment {
     private static final Logger log = LoggerFactory.getLogger(ActiveEnvironment.class);
-    public static final String ENVIRONMENT = "scheduler.environment";
+    public static final String ENVIRONMENT = "scheduler.environment.name";
+    /** The name's key before 4.12.26, read when it holds a plain value. */
+    public static final String LEGACY_ENVIRONMENT = "scheduler.environment";
     public static final String ENVIRONMENT_STORE = "scheduler.environment.store";
     /** This instance's environment when the property is absent, and the active environment until an operator sets one. */
     public static final String DEFAULT_ENVIRONMENT = "prod";
@@ -79,7 +86,7 @@ public final class ActiveEnvironment {
 
     private ActiveEnvironment() {
         var config = AppConfigReader.getInstance();
-        this.localEnvironment = name(config.getProperty(ENVIRONMENT, DEFAULT_ENVIRONMENT), ENVIRONMENT);
+        this.localEnvironment = name(configuredEnvironment(config::get), ENVIRONMENT);
         this.storeRoute = config.getProperty(ENVIRONMENT_STORE, DEFAULT_STORE).trim();
     }
 
@@ -87,7 +94,35 @@ public final class ActiveEnvironment {
         return INSTANCE;
     }
 
-    /** This instance's environment ({@code scheduler.environment}). */
+    /**
+     * This instance's environment name as configured: {@code scheduler.environment.name}; else a plain value of
+     * {@code scheduler.environment}, the key before 4.12.26, with a warning; else {@code prod}. When
+     * {@code scheduler.environment} holds child keys but no name, the name is refused rather than defaulted: a
+     * {@code scheduler.environment=dr} written beside {@code scheduler.environment.store} is lost to the child
+     * key, and a DR instance that took {@code prod} would run every job twice. Visible for testing.
+     *
+     * @param config reads a configuration key: its value, its child keys as a map, or null
+     * @return the name, not yet validated
+     * @throws IllegalArgumentException when the child keys leave the name unknown
+     */
+    static String configuredEnvironment(Function<String, Object> config) {
+        Object name = config.apply(ENVIRONMENT);
+        if (name != null) {
+            return String.valueOf(name);
+        }
+        Object legacy = config.apply(LEGACY_ENVIRONMENT);
+        if (legacy == null) {
+            return DEFAULT_ENVIRONMENT;
+        }
+        if (legacy instanceof Map) {
+            throw new IllegalArgumentException("Set " + ENVIRONMENT + " - " + LEGACY_ENVIRONMENT
+                    + " holds other settings, so it cannot hold the name as well");
+        }
+        log.warn("{} is deprecated - rename it to {}", LEGACY_ENVIRONMENT, ENVIRONMENT);
+        return String.valueOf(legacy);
+    }
+
+    /** This instance's environment ({@code scheduler.environment.name}). */
     public String getEnvironment() {
         return localEnvironment;
     }
@@ -212,6 +247,6 @@ public final class ActiveEnvironment {
     }
 
     private static PostOffice postOffice() {
-        return new PostOffice(ENVIRONMENT, Utility.getInstance().getUuid(), "ACTIVE environment");
+        return new PostOffice(LEGACY_ENVIRONMENT, Utility.getInstance().getUuid(), "ACTIVE environment");
     }
 }

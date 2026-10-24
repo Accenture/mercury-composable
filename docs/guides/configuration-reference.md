@@ -1072,16 +1072,21 @@ Enable leader election so that only one instance in a cluster runs each schedule
 
 Location(s) of the cron job definition file(s). Multiple files are merged.
 
-### `scheduler.environment` {#scheduler-environment}
+### `scheduler.environment.name` {#scheduler-environment}
 
 | Type | Default |
 |------|---------|
 | `String` | `prod` |
 
-This instance's environment in an active-active deployment, e.g. `scheduler.environment=${ENV_NAME:prod}`; one word of letters,
+This instance's environment in an active-active deployment, e.g. `scheduler.environment.name=${ENV_NAME:prod}`; one word of letters,
 digits, hyphens and underscores, compared case-insensitively with the *active environment* - the one whose scheduler runs the jobs,
 `prod` until the operations team sets another. When this instance's environment is not the active one, the scheduler stands by: a scheduled job is skipped with one log line, and an operator's manual run is still honoured. The operations team moves the active environment through the application's REST endpoint (the example's
 `POST /api/scheduler/environment`), which writes the store below.
+
+Before 4.12.26 the name was set as `scheduler.environment`. A key cannot be both a value and the parent of other keys, so beside
+`scheduler.environment.store` that value was lost and the application failed to start. `scheduler.environment` is now a parent only. Its
+plain value is still read, with a deprecation warning; next to the store, the application refuses to start and asks for
+`scheduler.environment.name`, rather than taking `prod` on a DR site.
 
 ### `scheduler.environment.store` {#scheduler-environment-store}
 

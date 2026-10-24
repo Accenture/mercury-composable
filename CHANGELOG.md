@@ -201,6 +201,20 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    io/netty/handler/codec/http/websocketx/WebSocketCloseStatus`. The server and the persistent client now log the type before
    the message (`exception - NoClassDefFoundError: io/netty/...`), as the serializer loader already does. The Rust engine's
    warning already names the error kind. **Upgrade note:** none - a log line only.
+6. **The mini-scheduler's environment name is `scheduler.environment.name`, so it can sit beside `scheduler.environment.store`.**
+   A configuration key holds a value or child keys, never both. With both `scheduler.environment` and
+   `scheduler.environment.store` set, the reader answered the child map's text (`{store=...}`) for the name, and the application
+   failed to start with "scheduler.environment must be one word...". `scheduler.environment` is now a parent only. Its plain value
+   is still read, with a deprecation warning. Next to the store, the application refuses to start and asks for
+   `scheduler.environment.name`, rather than taking `prod` and running every job on a DR site as well. The scheduler example uses
+   the new key. **Upgrade note:** rename `scheduler.environment` to `scheduler.environment.name`; an application that sets only the
+   old key keeps working until then.
+7. **The application's version comes from its own jar, also under an agent such as Dynatrace OneAgent.** The version came
+   from the class loader's first `META-INF/MANIFEST.MF`, and the boot class path is searched first. Under OneAgent, which
+   puts its jar there, the startup log said "Application name: oneagentjava.17" and `/info` reported OneAgent's version
+   (`1.347.64.20261021-162634`). The manifest is now read from the jar that `java.class.path` names first, the
+   application's jar for `java -jar`; a class path that starts with a folder (an IDE, a test run) reads it as before.
+   **Upgrade note:** none - `/info` reports the application's own version.
 
 ---
 ## Version 4.12.25, 10/12/2026
