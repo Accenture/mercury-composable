@@ -57,34 +57,15 @@ class OneAgentSetupTest {
 
     @Test
     void theSettingsChooseTheDestinationAndTheLogContext() {
-        FakeOneAgent agent = new FakeOneAgent();
-        OneAgentObserver observer = OneAgentSetup.configure(agent.sdk, settings(Map.of(
-                OneAgentSetup.DESTINATION, "route", OneAgentSetup.LOG_CONTEXT, "true",
-                "otel.forwarding", "true")));
-
-        assertNotNull(observer);
-        observer.begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
-        assertEquals("demo.route", agent.infos.getFirst());
-
-        FakeOneAgent both = new FakeOneAgent();
-        OneAgentSetup.configure(both.sdk, settings(Map.of(OneAgentSetup.DESTINATION, "application-route")))
-                .begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
-        assertTrue(both.infos.getFirst().endsWith(" - demo.route"), "the application, then the route");
-
-        FakeOneAgent byDefault = new FakeOneAgent();
-        OneAgentSetup.configure(byDefault.sdk, settings(Map.of()))
-                .begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
-        assertTrue(byDefault.infos.getFirst().endsWith(" - demo.route"), "the application and the route by default");
-
-        FakeOneAgent application = new FakeOneAgent();
-        OneAgentSetup.configure(application.sdk, settings(Map.of(OneAgentSetup.DESTINATION, "application")))
-                .begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
-        assertFalse(application.infos.getFirst().contains("demo.route"), "the application only");
-
-        FakeOneAgent unknown = new FakeOneAgent();
-        OneAgentSetup.configure(unknown.sdk, settings(Map.of(OneAgentSetup.DESTINATION, "per-function")))
-                .begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
-        assertTrue(unknown.infos.getFirst().endsWith(" - demo.route"), "an unknown value takes the default");
+        assertEquals("demo.route", destination(Map.of(OneAgentSetup.DESTINATION, "route",
+                OneAgentSetup.LOG_CONTEXT, "true", "otel.forwarding", "true")));
+        assertTrue(destination(Map.of(OneAgentSetup.DESTINATION, "application-route")).endsWith(" - demo.route"),
+                "the application, then the route");
+        assertTrue(destination(Map.of()).endsWith(" - demo.route"), "the application and the route by default");
+        assertFalse(destination(Map.of(OneAgentSetup.DESTINATION, "application")).contains("demo.route"),
+                "the application only");
+        assertTrue(destination(Map.of(OneAgentSetup.DESTINATION, "per-function")).endsWith(" - demo.route"),
+                "an unknown value takes the default");
     }
 
     @Test
@@ -106,6 +87,17 @@ class OneAgentSetupTest {
             agent.logging.warn("tracer used on the wrong thread");
             agent.logging.error("agent failure");
         });
+    }
+
+    /**
+     * The destination of one hop through an observer built with these settings.
+     */
+    private static String destination(Map<String, String> values) {
+        FakeOneAgent agent = new FakeOneAgent();
+        OneAgentObserver observer = OneAgentSetup.configure(agent.sdk, settings(values));
+        assertNotNull(observer);
+        observer.begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
+        return agent.infos.getFirst();
     }
 
     private static BinaryOperator<String> settings(Map<String, String> values) {

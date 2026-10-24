@@ -536,7 +536,10 @@
   wrong was right:** IntelliJ's `ClassEscapesDefinedScope` reports a package-private type in a public method's signature, and a
   record nested in an interface is always public, so its methods are too; the package-private `Node` in those signatures gave 27
   warnings in `Expr` and `Selector` alone, and making `Node` public, with its javadoc saying why, is the fix. Reverting it on API-surface grounds brought them
-  back. A pre-existing finding counts as new the next
+  back. **Ninth round (IntelliJ, after #583-#588, 2026-10-24):** a
+  method that returns null on one path flags every call chained on its result, so a test helper asserts the value non-null
+  and returns it; a parameter that every caller passes the same value is dropped; `forEach(File::delete)` ignores the
+  result, so `Utility.cleanupDir`; S3398 - a private static method that only a nested class calls moves into that class. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-24 | uses: 13 | tier: active | origin: 2026-10-13-001452 -->

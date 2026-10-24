@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * The REST endpoint's function: one more hop, an RPC to demo.echo, before it answers.
+ * The REST endpoint's function: one more hop, an RPC to 'demo.echo', before it answers.
  */
 @PreLoad(route = "demo.hello", instances = 5)
 public class DemoHello implements LambdaFunction {

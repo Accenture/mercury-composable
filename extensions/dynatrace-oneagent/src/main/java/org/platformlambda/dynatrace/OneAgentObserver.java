@@ -45,14 +45,15 @@ import java.util.concurrent.ConcurrentMap;
  * Brackets every composable-function hop with the Dynatrace OneAgent SDK, so a request shows in Dynatrace
  * as one connected PurePath instead of fragments that stop at Mercury's event bus.
  * <p>
- * <b>Each hop is a message.</b> A send is an outgoing-message tracer whose Dynatrace tag rides on the event
+ * <b>Each hop is a message.</b> A 'send' is an outgoing-message tracer whose Dynatrace tag rides on the event
  * envelope ({@link #TAG}); the receiving function is an incoming-message-process tracer that consumes the
  * tag before it starts. A custom-service tracer would not do: it carries no tag, so each hop would become a
  * new entry point. All hops share one messaging system (vendor {@code Mercury}), which Dynatrace shows as one
  * service, "Mercury Messaging", whatever the destination. The destination is {@code <application> - <route>} by
  * default ({@code dynatrace.oneagent.destination=application-route}), so every hop is named in the PurePath and
  * in the request list; {@code application} names it after the application only, and {@code route} after the route
- * only. The route also travels as the custom request attribute {@code mercury.route}. Every destination is a topic, the Kafka term for an event's destination, so Dynatrace
+ * only. The route also travels as the custom request attribute {@code mercury.route}. Every destination is a topic,
+ * the Kafka term for an event's destination, so Dynatrace
  * shows it as the endpoint {@code Topic: <name>}: the prefix comes from the destination type, which can be only a
  * queue or a topic, and cannot be dropped from a message tracer, the one tracer kind that carries a tag.
  * <p>
@@ -71,8 +72,8 @@ import java.util.concurrent.ConcurrentMap;
  * <p>
  * <b>One trace.</b> At a REST request or a Kafka message that arrives without a trace id, Mercury continues the
  * trace of the current PurePath ({@link #traceparent}), started by OneAgent's HTTP instrumentation or by the flow
- * adapter's own hop, so a Mercury trace id is also the Dynatrace trace id, and Mercury's first span is a child of
- * OneAgent's node.
+ * adapter's own hop. Therefore, a Mercury trace id is also the Dynatrace trace id, and Mercury's first span is a
+ * child of OneAgent's node.
  */
 public class OneAgentObserver implements InvocationObserver {
     public static final String TAG = "dt_tag";
