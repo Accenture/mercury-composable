@@ -31,9 +31,13 @@
   ([[conv-config-key-not-value-and-parent]]). The OpenTelemetry adapter under OneAgent (lab, 2026-10-23): spans recorded but never linked across the event bus -
   OneAgent links API spans only through its own thread context and ignores a W3C remote parent (SERVER the same, INTERNAL
   no span); its PurePath is not the OTel current context at the REST entry. Eric chose option B: the adapter is REMOVED
-  from #583 (the seam stays vendor-neutral), and he asks Dynatrace whether OneAgent can honour a W3C parent on API spans.
+  from #583 (the seam stays vendor-neutral); option C, asking Dynatrace about W3C parents on API spans, was DROPPED (Eric).
   Production shape in the lab (no unlinked route): ONE Mercury trace = ONE Dynatrace trace across both applications; with a
   client `traceparent` the ids are even identical. Without one, Mercury now CONTINUES the agent's trace context, at the
   REST edge and at the Kafka consumer (`InvocationObserver.traceparent`, DONE on #583; lab 3 of 3): a Mercury trace id IS
   the Dynatrace trace id, and Mercury's first span hangs under OneAgent's node, so the lineage is continuous across apps.
+  **FIELD-READY (Eric, 2026-10-23): "your current implementation is good to deploy to the field"** - after the sandbox
+  runs showed one connected trace per request across both applications (the `Mono` warnings gone, every hop named
+  `Topic: <application> - <route>` under one service, the default). #585 merged into the branch. Next: Eric's call on
+  #583's review and merge, then the release round.
   <!-- id: dynatrace-oneagent-field-experiment | created: 2026-10-21 | last_used: 2026-10-21 | uses: 1 | tier: working | origin: 2026-10-22-003118 -->

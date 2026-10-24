@@ -59,7 +59,8 @@ the route only.
 - **The adapter is switched by environment variables** that `lab.sh up` sets (`DYNATRACE_ONEAGENT_ENABLED`,
   `DYNATRACE_ONEAGENT_DESTINATION`), which both applications' `application.properties` read.
 - **One network namespace.** The broker advertises `127.0.0.1:9092`, so the two applications share the
-  broker container's network namespace and the broker container publishes `lab-edge`'s port 8100.
+  broker container's network namespace and the broker container publishes `lab-edge`'s port 8100 as host port
+  **18100**: the reactor's own tests serve REST on 8100, and a lab left running would answer their requests.
   `lab-worker` runs no HTTP server.
 - **What to check in Dynatrace:** the procedure in `docs/guides/observability.md#live-tracing` - one
   connected tree per request, the `dt.trace_id` and `dt.span_id` on every log line, the negative control as a

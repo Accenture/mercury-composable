@@ -34,7 +34,9 @@ case "${1:-}" in
     esac
     # The broker advertises 127.0.0.1:9092, so the applications share its network namespace; the broker
     # container therefore publishes lab-edge's REST port too.
-    docker run -d --name lab-broker -p 8100:8100 "mercury-lab/lab-broker:$VERSION"
+    # host port 18100, not 8100: the reactor's tests (reactive-postgres, for one) serve REST on 8100, and a lab left
+    # running would answer their requests
+    docker run -d --name lab-broker -p 18100:8100 "mercury-lab/lab-broker:$VERSION"
     until docker exec lab-broker bash -c 'echo > /dev/tcp/127.0.0.1/9092' 2>/dev/null; do sleep 1; done
     for app in lab-worker lab-edge; do
       docker run -d --name "$app" --network container:lab-broker ${tracer[@]+"${tracer[@]}"} "mercury-lab/$app:$VERSION"
@@ -42,7 +44,7 @@ case "${1:-}" in
     echo "started with tracer: ${2:-oneagent}"
     ;;
   order)
-    curl -s -X POST http://127.0.0.1:8100/api/lab/orders -H 'Content-Type: application/json' \
+    curl -s -X POST http://127.0.0.1:18100/api/lab/orders -H 'Content-Type: application/json' \
       -d '{"item": "widget", "quantity": 3, "customer": "ann"}'
     echo
     ;;
