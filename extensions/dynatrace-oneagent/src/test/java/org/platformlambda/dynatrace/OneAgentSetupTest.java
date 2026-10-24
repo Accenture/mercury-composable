@@ -1,0 +1,114 @@
+/*
+
+    Copyright 2018-2026 Accenture Technology
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+ */
+
+package org.platformlambda.dynatrace;
+
+import com.dynatrace.oneagent.sdk.api.enums.SDKState;
+import org.junit.jupiter.api.Test;
+import org.platformlambda.core.annotations.OptionalService;
+import org.platformlambda.core.spi.InvocationInfo;
+import org.platformlambda.core.util.AppConfigReader;
+
+import java.util.Map;
+import java.util.function.BinaryOperator;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Startup: whether an observer is built, and how it is configured.
+ */
+class OneAgentSetupTest {
+    private static final InvocationInfo HOP = new InvocationInfo("demo.route", null, "event-1",
+            "trace-1", null, null, 1);
+
+    @Test
+    void noObserverWithoutAnAttachedAgent() {
+        FakeOneAgent agent = new FakeOneAgent();
+        agent.state = SDKState.PERMANENTLY_INACTIVE;
+
+        assertNull(OneAgentSetup.configure(agent.sdk, settings(Map.of())));
+        assertNotNull(agent.logging);
+    }
+
+    @Test
+    void anObserverWhenTheAgentIsActiveOrStarting() {
+        FakeOneAgent active = new FakeOneAgent();
+        assertNotNull(OneAgentSetup.configure(active.sdk, settings(Map.of())));
+
+        FakeOneAgent starting = new FakeOneAgent();
+        starting.state = SDKState.TEMPORARILY_INACTIVE;
+        assertNotNull(OneAgentSetup.configure(starting.sdk, settings(Map.of())));
+    }
+
+    @Test
+    void theSettingsChooseTheDestinationAndTheLogContext() {
+        FakeOneAgent agent = new FakeOneAgent();
+        OneAgentObserver observer = OneAgentSetup.configure(agent.sdk, settings(Map.of(
+                OneAgentSetup.DESTINATION, "route", OneAgentSetup.LOG_CONTEXT, "true",
+                "otel.forwarding", "true")));
+
+        assertNotNull(observer);
+        observer.begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
+        assertEquals("demo.route", agent.infos.getFirst());
+
+        FakeOneAgent both = new FakeOneAgent();
+        OneAgentSetup.configure(both.sdk, settings(Map.of(OneAgentSetup.DESTINATION, "application-route")))
+                .begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
+        assertTrue(both.infos.getFirst().endsWith(" - demo.route"), "the application, then the route");
+
+        FakeOneAgent byDefault = new FakeOneAgent();
+        OneAgentSetup.configure(byDefault.sdk, settings(Map.of()))
+                .begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
+        assertTrue(byDefault.infos.getFirst().endsWith(" - demo.route"), "the application and the route by default");
+
+        FakeOneAgent application = new FakeOneAgent();
+        OneAgentSetup.configure(application.sdk, settings(Map.of(OneAgentSetup.DESTINATION, "application")))
+                .begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
+        assertFalse(application.infos.getFirst().contains("demo.route"), "the application only");
+
+        FakeOneAgent unknown = new FakeOneAgent();
+        OneAgentSetup.configure(unknown.sdk, settings(Map.of(OneAgentSetup.DESTINATION, "per-function")))
+                .begin(HOP, new OneAgentObserverTest.MapCarrier(Map.of())).end();
+        assertTrue(unknown.infos.getFirst().endsWith(" - demo.route"), "an unknown value takes the default");
+    }
+
+    @Test
+    void theSwitchSurvivesBesideTheSettingsItGates() {
+        // the test configuration sets the switch and dynatrace.oneagent.destination together, as an
+        // application does; a bare dynatrace.oneagent=true would be replaced by the map of its settings
+        AppConfigReader config = AppConfigReader.getInstance();
+        assertEquals("true", config.getProperty(OneAgentSetup.ENABLED));
+        assertEquals("route", config.getProperty(OneAgentSetup.DESTINATION));
+        assertEquals(OneAgentSetup.ENABLED, OneAgentSetup.class.getAnnotation(OptionalService.class).value());
+    }
+
+    @Test
+    void theSdksDiagnosticsGoToTheLog() {
+        FakeOneAgent agent = new FakeOneAgent();
+        OneAgentSetup.configure(agent.sdk, settings(Map.of()));
+
+        assertDoesNotThrow(() -> {
+            agent.logging.warn("tracer used on the wrong thread");
+            agent.logging.error("agent failure");
+        });
+    }
+
+    private static BinaryOperator<String> settings(Map<String, String> values) {
+        return values::getOrDefault;
+    }
+}

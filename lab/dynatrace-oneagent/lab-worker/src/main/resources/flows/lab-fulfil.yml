@@ -1,0 +1,24 @@
+flow:
+  id: 'lab-fulfil'
+  description: 'The Kafka entry point - reserve the stock and ship the order'
+  ttl: 30s
+
+first.task: 'lab.reserve'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+    process: 'lab.reserve'
+    output:
+      - 'result -> model.order'
+    description: 'Reserve the stock'
+    execution: sequential
+    next:
+      - 'lab.ship'
+
+  - input:
+      - 'model.order -> *'
+    process: 'lab.ship'
+    output: []
+    description: 'Ship the order'
+    execution: end

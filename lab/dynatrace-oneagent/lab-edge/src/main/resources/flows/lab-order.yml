@@ -1,0 +1,54 @@
+flow:
+  id: 'lab-order'
+  description: 'The REST entry point - validate, price, audit, publish to Kafka and answer'
+  ttl: 30s
+
+first.task: 'lab.validate'
+
+tasks:
+  - input:
+      - 'input.body -> *'
+    process: 'lab.validate'
+    output:
+      - 'result -> model.order'
+    description: 'Validate the order; looks up the customer through an RPC to lab.lookup'
+    execution: sequential
+    next:
+      - 'lab.price'
+
+  - input:
+      - 'model.order -> *'
+    process: 'lab.price'
+    output:
+      - 'result -> model.order'
+    description: 'Price the order in a Mono that completes 200 ms later on another thread'
+    execution: sequential
+    next:
+      - 'lab.audit'
+
+  - input:
+      - 'model.order -> *'
+    process: 'lab.audit'
+    output: []
+    description: 'Audit the order - the negative control, listed in invocation.observer.unlinked'
+    execution: sequential
+    next:
+      - 'simple.kafka.notification'
+
+  - input:
+      - 'text(lab.orders) -> header.topic'
+      - 'model.order -> *'
+    process: 'simple.kafka.notification'
+    output: []
+    description: 'Publish the order to lab.orders, where lab-worker consumes it'
+    execution: sequential
+    next:
+      - 'lab.receipt'
+
+  - input:
+      - 'model.order -> *'
+    process: 'lab.receipt'
+    output:
+      - 'result -> output.body'
+    description: 'Answer the caller'
+    execution: end

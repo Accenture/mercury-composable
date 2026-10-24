@@ -87,6 +87,12 @@ public class EventScriptManager implements TypedLambdaFunction<EventEnvelope, Vo
         EventEnvelope firstTask = new EventEnvelope().setFrom(SERVICE_NAME)
                 .setTo(TaskExecutor.SERVICE_NAME).setCorrelationId(flowInstance.id)
                 .setHeader(FIRST_TASK, flowInstance.getFlow().firstTask);
+        // The task executor reads the trace from the flow instance, never from this event. The event carries
+        // it anyway, so a live invocation observer sees this kick-off hop: an untraced hop is not observed,
+        // and the first task's linkage would start from a thread with no context.
+        if (flowInstance.getTraceId() != null) {
+            firstTask.setTrace(flowInstance.getTraceId(), flowInstance.getTracePath());
+        }
         po.send(firstTask);
     }
 

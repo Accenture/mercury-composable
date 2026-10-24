@@ -1,0 +1,5 @@
+consumer:
+  - topic: 'lab.orders'
+    flow: 'lab-fulfil'
+    group: 'lab-worker'
+    serializer: 'json'

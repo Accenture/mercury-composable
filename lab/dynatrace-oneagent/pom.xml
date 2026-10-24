@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    The OneAgent lab's own build, kept out of the root reactor on purpose: the lab is a dev-machine tool, never
+    deployed and never scanned. The root pom.xml does not list it, so the field's static code analysis, which
+    registers every module the root reactor declares, never sees these modules.
+
+    This aggregator builds the two lab applications and the Kafka broker together with the Mercury modules they
+    use, from source. Maven therefore never resolves those modules from ~/.m2, where the released version of the
+    same number may sit, and nothing is installed: the release in ~/.m2 is never overwritten. Build it with
+    ./lab.sh build. Its version follows the root pom and moves with the release version sweep.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.accenture.mercury.lab</groupId>
+    <artifactId>dynatrace-oneagent-lab</artifactId>
+    <packaging>pom</packaging>
+    <version>4.12.25</version>
+    <name>Dynatrace OneAgent lab (not part of the root reactor)</name>
+
+    <modules>
+        <!-- the Mercury modules the lab uses, built from this checkout -->
+        <module>../../system/minimalist-msgpack</module>
+        <module>../../system/minimalist-jsonpath</module>
+        <module>../../system/platform-core</module>
+        <module>../../system/event-script-engine</module>
+        <module>../../system/minimalist-kafka</module>
+        <module>../../extensions/dynatrace-oneagent</module>
+        <module>../../helpers/kafka-standalone</module>
+        <!-- the lab itself -->
+        <module>lab-edge</module>
+        <module>lab-worker</module>
+    </modules>
+</project>

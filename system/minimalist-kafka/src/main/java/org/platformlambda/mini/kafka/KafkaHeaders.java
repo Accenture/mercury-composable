@@ -50,5 +50,13 @@ public final class KafkaHeaders {
     /** Default {@link #VERSION} when a {@link #SUBJECT} is given without one. */
     public static final String DEFAULT_VERSION = "latest";
 
+    /**
+     * Prefix of the headers that carry a live invocation observer's tags across Kafka, one header per tag
+     * ({@code x-mercury-tag-dt_tag}, for example): {@code simple.kafka.notification} writes them and the flow
+     * adapter restores them on the event it dispatches, so an APM agent links the consumer's trace to the
+     * publisher's. The flow never sees them.
+     */
+    public static final String OBSERVER_TAG_PREFIX = "x-mercury-tag-";
+
     private KafkaHeaders() {}
 }

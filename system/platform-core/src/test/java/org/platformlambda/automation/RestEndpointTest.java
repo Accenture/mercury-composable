@@ -29,6 +29,11 @@ import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.serializers.SimpleXmlParser;
 import org.platformlambda.core.serializers.SimpleXmlWriter;
+import org.platformlambda.core.spi.InvocationCarrier;
+import org.platformlambda.core.spi.InvocationInfo;
+import org.platformlambda.core.spi.InvocationObserver;
+import org.platformlambda.core.spi.InvocationObservers;
+import org.platformlambda.core.spi.InvocationScope;
 import org.platformlambda.core.system.*;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
@@ -100,6 +105,72 @@ class RestEndpointTest extends TestBase {
                 "trace-id captured from the per-endpoint 'trace.id.header' override");
         assertEquals("legacy-cid-0001", probe.get("cid"),
                 "business correlation-id captured from the per-endpoint 'correlation.id.header' override");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void aRequestWithoutATraceIdContinuesTheAgentsTrace() throws InterruptedException {
+        // an APM agent already tracing the request: Mercury continues its trace as if the caller had sent it
+        InvocationObserver agent = new InvocationObserver() {
+            @Override
+            public InvocationScope begin(InvocationInfo info, InvocationCarrier carrier) {
+                return null;
+            }
+
+            @Override
+            public void send(InvocationInfo info, InvocationCarrier carrier) {
+                // links nothing
+            }
+
+            @Override
+            public String traceparent() {
+                return "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
+            }
+        };
+        // the REST edge's own span (service http.request) is the one that parents onto the agent's span
+        String traceForwarder = "distributed.trace.forwarder";
+        BlockingQueue<MultiLevelMap> edgeSpans = new ArrayBlockingQueue<>(4);
+        Platform platform = Platform.getInstance();
+        platform.registerPrivate(traceForwarder, (LambdaFunction) (headers, input, instance) -> {
+            MultiLevelMap trace = new MultiLevelMap((Map<String, Object>) input);
+            if ("4bf92f3577b34da6a3ce929d0e0e4736".equals(trace.getElement("trace.id"))
+                    && "http.request".equals(trace.getElement("trace.service"))) {
+                edgeSpans.add(trace);
+            }
+            return null;
+        }, 1);
+        InvocationObservers.register(agent);
+        try {
+            Map<String, Object> adopted = probe(Map.of());
+            assertEquals("4bf92f3577b34da6a3ce929d0e0e4736", adopted.get("traceId"), "the agent's trace id");
+            MultiLevelMap edge = edgeSpans.poll(10, TimeUnit.SECONDS);
+            assertNotNull(edge, "expect the edge's own span record");
+            assertEquals("00f067aa0ba902b7", edge.getElement("trace.parent_span_id"), "the edge is under the agent's span");
+            assertEquals(edge.getElement("trace.span_id"), adopted.get("parentSpanId"), "and the function under the edge");
+            assertEquals("legacy-trace-0002", probe(Map.of("X-Legacy-Trace", "legacy-trace-0002")).get("traceId"),
+                    "the trace-id header still wins");
+            assertEquals("0af7651916cd43dd8448eb211c80319c", probe(Map.of("traceparent",
+                    "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")).get("traceId"),
+                    "and the traceparent before it");
+        } finally {
+            InvocationObservers.unregister(agent);
+            platform.release(traceForwarder);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> probe(Map<String, String> headers) throws InterruptedException {
+        final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
+        AsyncHttpRequest req = new AsyncHttpRequest();
+        req.setMethod("GET").setUrl("/api/legacy/probe").setTargetHost("http://127.0.0.1:" + port);
+        req.setHeader("accept", "application/json");
+        headers.forEach(req::setHeader);
+        EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
+        EventEmitter.getInstance().asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
+        EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertEquals(200, response.getStatus());
+        return (Map<String, Object>) response.getBody();
     }
 
     @SuppressWarnings("unchecked")

@@ -61,6 +61,20 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
 6. **The MiniGraph Playground engine has a favicon - the Mercury atom.** `public/favicon.ico` holds 16, 32 and 48 px images of
    the white atom that the documentation site and the API playground use, on the API playground's deep purple. It answers the
    `/favicon.ico` request that every Playground page load answered with 404. Both engines. **Upgrade note:** none.
+7. **Code-level tracing for an APM agent: live invocation observers (RFC-0009).** An agent such as Dynatrace OneAgent loses a
+   request at each hop between composable functions, because Mercury hands the event through its event bus and a per-route queue.
+   Platform-core gains a vendor-neutral seam, `org.platformlambda.core.spi`. A live observer is called inline when a function is
+   about to run, on the thread that runs it, and when an event is about to be sent; the linkage between hops rides as a tag on
+   the event envelope, so it also crosses Event-over-HTTP, and `minimalist-kafka` carries it as `x-mercury-tag-*` Kafka headers
+   from `simple.kafka.notification` to the flow adapter. An optional extension uses it, off by default: `dynatrace-oneagent`
+   (`dynatrace.oneagent.enabled=true`) brackets each hop with the OneAgent SDK as a linked message, for one connected PurePath
+   per request, with each hop named `Topic: <application> - <route>` (`dynatrace.oneagent.destination`). A REST request or Kafka
+   message without a trace continues the agent's trace context (`InvocationObserver.traceparent`), so Mercury's trace id is the
+   Dynatrace trace id and the span lineage is unbroken. A traced request is observed on every route but the telemetry routes and
+   the RPC inbox (`invocation.observer.include`/`exclude`); `invocation.observer.unlinked` is the negative control of a tracing
+   check: the route alone becomes a separate fragment, because its reply keeps the caller's tag. Event Script's kick-off event to
+   `task.executor` now carries the flow's trace id, so a flow's first task stays linked. **Upgrade note:** none - nothing is
+   observed unless an extension is added and switched on.
 
 ### Changed
 
@@ -195,7 +209,13 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    `scheduler.environment.name`, rather than taking `prod` and running every job on a DR site as well. The scheduler example uses
    the new key. **Upgrade note:** rename `scheduler.environment` to `scheduler.environment.name`; an application that sets only the
    old key keeps working until then.
-7. **The companion endpoint reports a `create node` on an existing node as a failure.** For a name the model already holds,
+7. **The application's version comes from its own jar, also under an agent such as Dynatrace OneAgent.** The version came
+   from the class loader's first `META-INF/MANIFEST.MF`, and the boot class path is searched first. Under OneAgent, which
+   puts its jar there, the startup log said "Application name: oneagentjava.17" and `/info` reported OneAgent's version
+   (`1.347.64.20261021-162634`). The manifest is now read from the jar that `java.class.path` names first, the
+   application's jar for `java -jar`; a class path that starts with a folder (an IDE, a test run) reads it as before.
+   **Upgrade note:** none - `/info` reports the application's own version.
+8. **The companion endpoint reports a `create node` on an existing node as a failure.** For a name the model already holds,
    `create node` prints `node {name} already exists` and changes nothing, yet the synchronous companion endpoint
    (`POST /api/companion/{id}/sync`) answered `ok: true`, so a driver that trusted `ok` believed it had changed the node. The
    endpoint now returns `ok: false` with that line as its `error`. The match is on the whole line's shape, because the help

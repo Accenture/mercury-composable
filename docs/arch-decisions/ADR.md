@@ -33,6 +33,62 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0032 — Live invocation observers: a vendor-neutral seam in platform-core, with Dynatrace OneAgent as the shipped adapter {#adr-0032}
+**Status:** Accepted · **Date:** 2026-10-24 · **Serves:** vision-mercury-composable · **Formalizes:** live-invocation-observers
+<!-- id: adr-0032 | status: accepted -->
+
+**Abstract.** An APM agent sees each composable-function hop of a request, in one connected trace. Platform-core calls a
+live `InvocationObserver` inline, when a function is about to run and when an event is about to be sent, and the linkage
+between hops rides as a tag on the event envelope. The optional extension `dynatrace-oneagent` implements it with the
+OneAgent SDK, so one Mercury request is one Dynatrace PurePath across functions, flows, applications and Kafka, under the
+same trace id. Proposed as RFC-0009 in [`RFC.md`](RFC.md) on 2026-10-21, validated against a Dynatrace sandbox
+environment from a dev machine on 2026-10-22 and 2026-10-23, and accepted on 2026-10-24 after PR #583 (squash `a09a1535`)
+merged with green CI. The evidence is `docs/test-reports/dynatrace-one-agent-integration.md`.
+
+**Context.** A field installation validated the OpenTelemetry forwarder against Dynatrace, but OneAgent's code-level view
+showed one span per request: Mercury hands an event to the receiving function through the event bus and a per-route queue,
+where an agent's thread-bound context is lost, and the log fields did not tie to the trace the agent showed. The forwarder
+cannot help, because it reports a finished span after the fact; an agent needs a tracer around the real call. And the
+engine core stays free of vendor code.
+
+**Decision.**
+
+- **The seam, in platform-core, with no vendor dependency** (`org.platformlambda.core.spi`). `begin` runs on the thread
+  that runs a function and `send` on the thread that sends an event; a scope closes on its own thread, and a `Mono`
+  resumes through a continuation on its completion thread. The hooks are `WorkerHandler`, Event Script's direct dispatch
+  and the five send entry points. With no observer registered, every hook returns after one emptiness check.
+- **The linkage is a tag on the envelope, never thread state,** so it crosses the event bus, Event-over-HTTP and the cloud
+  connector with the envelope. Across `minimalist-kafka` it travels as `x-mercury-tag-*` headers (`InvocationObservers.export`),
+  and the flow adapter opens each message as one incoming hop.
+- **One trace.** A REST request or a Kafka message that arrives without a `traceparent` or a trace-id header continues the
+  agent's trace context (`InvocationObserver.traceparent`), as if the caller had sent it: Mercury's trace id is the agent's,
+  and Mercury's first span is a child of the agent's node.
+- **A negative control that breaks one link.** A route in `invocation.observer.unlinked` starts a new trace; its scope closes
+  before its reply leaves, and the reply keeps the caller's tag, so the rest of the request stays connected.
+- **The OneAgent adapter** (`dynatrace.oneagent.enabled`, off by default) models each hop as a message: an outgoing message
+  whose Dynatrace tag rides on the envelope, consumed by the receiving hop's incoming message. Every hop is a topic named
+  `<application> - <route>` in one messaging service; a `Mono` completion is linked only where OneAgent has not already
+  continued the trace; the log context can carry OneAgent's ids (`dt.trace_id`, `dt.span_id`).
+
+**Alternatives.** (b) *An OpenTelemetry API adapter,* vendor-neutral and not bound to a thread: built, run under OneAgent
+and removed. OneAgent recorded its spans but never linked them across the event bus, because it links an API span only
+through its own context on the thread and ignores a W3C parent set by the caller, and its PurePath is not OpenTelemetry's
+current context at the REST entry. (c) *Both adapters:* the shape of the branch until (b) failed in the sandbox. (d) *An SDK
+inside the engine:* rejected, because the engine core stays vendor-free. (a), the OneAgent SDK adapter over the
+vendor-neutral seam, was chosen: it gives one connected trace per request with the same id, and the seam leaves room for an
+adapter for an agent that honours W3C parents.
+
+**Consequences.** The behaviour holds from the release that carries PR #583 (v4.12.26). Nothing changes unless the extension
+is added and switched on. Two traits of OneAgent shape any change: it links an executor handoff from a thread with an active
+PurePath by itself, so breaking a link means ending the path before the handoff; and it links API spans only through that
+thread context. The guard is the observer and linkage tests in platform-core, `minimalist-kafka` and the extension, and the
+lab in `lab/dynatrace-oneagent`, kept out of the root reactor so the field's static code analysis never registers it, with
+`./lab.sh lineage` checking Mercury's own span tree. Not yet measured: the overhead under load. Found on the way and fixed
+separately: a configuration key that was both a value and a parent (`scheduler.environment`, #584) and the application
+version under an agent on the boot class path (#585).
+
+---
+
 ## ADR-0031 — JSONPath is RFC 9535 on both engines: the zero-dependency `minimalist-jsonpath` module replaces Jayway JsonPath {#adr-0031}
 **Status:** Accepted · **Date:** 2026-10-22 · **Serves:** vision-mercury-composable · **Formalizes:** minimalist-jsonpath-rfc-9535
 <!-- id: adr-0031 | status: accepted -->

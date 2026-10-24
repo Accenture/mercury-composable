@@ -1,0 +1,7 @@
+rest:
+  - service: "http.flow.adapter"
+    methods: ['POST']
+    url: "/api/lab/orders"
+    flow: 'lab-order'
+    timeout: 10s
+    tracing: true

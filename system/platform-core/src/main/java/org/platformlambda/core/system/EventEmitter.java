@@ -26,6 +26,8 @@ import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.automation.services.HttpRouter;
 import org.platformlambda.core.models.*;
 import org.platformlambda.core.services.TemporaryInbox;
+import org.platformlambda.core.spi.InvocationObservers;
+import org.platformlambda.core.spi.InvocationScope;
 import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.ConfigReader;
 import org.platformlambda.core.util.Utility;
@@ -747,6 +749,8 @@ public class EventEmitter {
             throw new IllegalArgumentException(MISSING_ROUTING_PATH);
         }
         event.setTo(substituteRouteIfAny(destination));
+        // a live invocation observer tags the engine's own copy before the event leaves this thread
+        InvocationObservers.send(event);
         var targetHttp = event.getHeader(X_EVENT_API) == null? getEventHttpTarget(event.getTo()) : null;
         if (targetHttp != null) {
             sendWithEventHttp(event, event.getTo(), targetHttp);
@@ -796,7 +800,7 @@ public class EventEmitter {
          * serialization and I/O immutability are guaranteed.
          */
         if (TASK_EXECUTOR.equals(route) || EVENT_MANAGER.equals(route)) {
-            runTaskExecutor(out, target.getManager().getService().getFunction());
+            runTaskExecutor(out, route, target.getManager().getService().getFunction());
         } else {
             system.send(route, out.toBytes());
         }
@@ -922,8 +926,12 @@ public class EventEmitter {
     }
 
     @SuppressWarnings("unchecked")
-    private void runTaskExecutor(EventEnvelope event, Object f) {
+    private void runTaskExecutor(EventEnvelope event, String route, Object f) {
         Platform.getInstance().getVirtualThreadExecutor().submit(() -> {
+            // Event Script's two routers bypass the WorkerHandler, so a live invocation observer brackets
+            // them here - otherwise the linkage between the flow's tasks would break at every step
+            InvocationScope scope = InvocationObservers.begin(event, route, 1);
+            String error = null;
             try {
                 if (f instanceof TypedLambdaFunction<?, ?>) {
                     TypedLambdaFunction<EventEnvelope, Void> task = (TypedLambdaFunction<EventEnvelope, Void>) f;
@@ -932,7 +940,10 @@ public class EventEmitter {
                     throw new IllegalArgumentException("Not a TypedLambdaFunction");
                 }
             } catch (Exception e) {
+                error = e.getMessage() == null? e.getClass().getSimpleName() : e.getMessage();
                 log.error("Unable to execute event script - {}", e.getMessage());
+            } finally {
+                InvocationObservers.close(scope, error);
             }
         });
     }
@@ -965,6 +976,8 @@ public class EventEmitter {
         if (destination == null) {
             throw new IllegalArgumentException(MISSING_ROUTING_PATH);
         }
+        // a live invocation observer tags the engine's own copy, which is serialized into the HTTP body
+        InvocationObservers.send(event);
         final URI url;
         try {
             url = new URI(eventEndpoint);
@@ -1120,6 +1133,8 @@ public class EventEmitter {
         if (destination == null) {
             throw new IllegalArgumentException(MISSING_ROUTING_PATH);
         }
+        // a live invocation observer tags the engine's own copy, which is serialized into the HTTP body
+        InvocationObservers.send(event);
         final URI url;
         try {
             url = new URI(eventEndpoint);
@@ -1266,6 +1281,8 @@ public class EventEmitter {
             EventEnvelope forwardEvent = EventEnvelope.of(event.toMap()).setHeader(X_EVENT_API, "asyncRequest");
             return asyncRequest(forwardEvent, timeout, getEventHttpHeaders(to), targetHttp, true);
         }
+        // a live invocation observer tags the engine's own copy (the Event-over-HTTP branch above tags its own)
+        InvocationObservers.send(event);
         Platform platform = Platform.getInstance();
         TargetRoute target = discover(to);
         AsyncInbox inbox = new AsyncInbox(to, event, timeout, timeoutException);
@@ -1350,6 +1367,8 @@ public class EventEmitter {
             EventEnvelope forwardEvent = EventEnvelope.of(event.toMap()).setHeader(X_EVENT_API, "request");
             return eRequest(forwardEvent, timeout, getEventHttpHeaders(to), targetHttp, true);
         }
+        // a live invocation observer tags the engine's own copy (the Event-over-HTTP branch above tags its own)
+        InvocationObservers.send(event);
         Platform platform = Platform.getInstance();
         TargetRoute target = discover(to);
         FutureInbox inbox = new FutureInbox(to, event, timeout, timeoutException);
