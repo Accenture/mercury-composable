@@ -343,6 +343,22 @@
   extends [[conv-library-pins-are-direct-dependencies]] (the dependency left instead of being pinned). (ADR-0031)
   <!-- id: minimalist-jsonpath-rfc-9535 | created: 2026-10-22 | last_used: 2026-10-22 | uses: 1 | tier: working | origin: 2026-10-22-175132 -->
 
+- **Live invocation observers bracket every composable-function hop for an APM agent's code-level view; Dynatrace OneAgent is
+  the shipped adapter (ADR-0032; #583, 2026-10-24).** Platform-core holds a vendor-neutral seam (`org.platformlambda.core.spi`):
+  `begin` on the thread that runs a function, `send` on the thread that sends, the linkage as an envelope tag (never thread state),
+  `reply` for a reply, `export` for a transport outside the bus (Kafka: `x-mercury-tag-*` headers, one hop per message), and
+  `traceparent` - a request or message that arrives without a trace continues the agent's context, so the Dynatrace trace id IS
+  Mercury's and Mercury's edge span is a child of the agent's node. `extensions/dynatrace-oneagent`
+  (`dynatrace.oneagent.enabled`, off by default) names each hop `Topic: <application> - <route>` in one service. **What a change must
+  keep:** OneAgent off means an empty observer list and Mercury's original behaviour; `invocation.observer.unlinked` breaks one
+  link only (the route's scope closes before its reply, which keeps the caller's tag); OneAgent links an executor handoff from a
+  thread with an active PurePath by itself, and links OpenTelemetry API spans only through that thread context - which is why the
+  OpenTelemetry API adapter was rejected. **The guard:** `InvocationObserverTest`, `OneAgentLinkageTest`, `KafkaFlowConsumerTest`,
+  `RestEndpointTest`, and the lab (`lab/dynatrace-oneagent`, outside the root reactor, [[conv-lab-outside-root-reactor]]) with
+  `./lab.sh lineage`; the evidence is `docs/test-reports/dynatrace-one-agent-integration.md`. Extends
+  [[otel-optional-service-and-negative-control]] (the A-B-A method, used at every step). (ADR-0032)
+  <!-- id: live-invocation-observers | created: 2026-10-24 | last_used: 2026-10-24 | uses: 1 | tier: working | origin: 2026-10-24-013405 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge

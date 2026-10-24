@@ -260,8 +260,8 @@ closed as moot and the `minimalist-jsonpath` thread closes with the promotion. S
 ---
 
 ## RFC-0009 — Live invocation observers: a vendor-neutral seam in platform-core for an APM agent's code-level view
-**Status:** Open · **Raised:** 2026-10-21 · **Serves:** vision-mercury-composable · **Thread:** `dynatrace-oneagent-field-experiment`
-<!-- id: rfc-0009 | status: open | thread: dynatrace-oneagent-field-experiment -->
+**Status:** Promoted → ADR-0032 · **Raised:** 2026-10-21 · **Serves:** vision-mercury-composable · **Thread:** `dynatrace-oneagent-field-experiment`
+<!-- id: rfc-0009 | status: promoted | thread: dynatrace-oneagent-field-experiment -->
 
 **Proposal.** A field installation validated the OpenTelemetry forwarder against Dynatrace, but OneAgent's code-level
 view does not show the hops between composable functions, and its log fields do not tie to the trace it shows. The cause:
@@ -307,7 +307,10 @@ completion is a linked node, not a long hop. (b) The OpenTelemetry adapter alone
 bound to a thread, but it depends on an agent capturing OpenTelemetry API spans, and Dynatrace documents that spans may
 display flat. (c) Both, chosen on the field's evidence (this branch ships both). (d) An SDK inside the engine itself:
 rejected, because the engine core stays vendor-free.
-**Resolution.**
+**Resolution.** Promoted → ADR-0032 (2026-10-24, Eric): option (a), the OneAgent SDK adapter, over the vendor-neutral seam.
+Accepted after PR #583 (squash `a09a1535`) merged with green CI, with #584 and #585 found on the way. The OpenTelemetry API
+adapter, option (b), was built and removed: under OneAgent its spans were never linked across the event bus. The evidence is
+`docs/test-reports/dynatrace-one-agent-integration.md`.
 
 ---
 
