@@ -48,6 +48,7 @@ class ManifestReaderTest {
 
         Manifest manifest = ManifestReader.applicationManifest(app + File.pathSeparator + agent);
 
+        assertNotNull(manifest);
         assertEquals("demo-app", manifest.getMainAttributes().getValue(TITLE));
         assertEquals("9.9.9", manifest.getMainAttributes().getValue(VERSION));
     }

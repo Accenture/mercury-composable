@@ -41,7 +41,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -218,10 +217,10 @@ class CompanionSyncTest {
         var again = syncCommand(po, sid, "create node root\nwith type Root\nwith properties\npurpose=changed");
         assertEquals(Boolean.FALSE, again.get("ok"), "a create on an existing node -> ok:false: " + again);
         assertEquals("node root already exists", again.get("error"), "the error is the engine's line: " + again);
-        assertEquals("first", draftProperties(sid, "root").get("purpose"), "the refused create changed nothing");
+        assertEquals("first", rootProperties(sid).get("purpose"), "the refused create changed nothing");
         var updated = syncCommand(po, sid, "update node root\nwith type Root\nwith properties\npurpose=changed");
         assertEquals(Boolean.TRUE, updated.get("ok"), "update node replaces the node -> ok:true: " + updated);
-        assertEquals("changed", draftProperties(sid, "root").get("purpose"), "update node replaced the node");
+        assertEquals("changed", rootProperties(sid).get("purpose"), "update node replaced the node");
     }
 
     /**
@@ -315,11 +314,11 @@ class CompanionSyncTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> draftProperties(String sid, String alias) {
+    private static Map<String, Object> rootProperties(String sid) {
         var draft = (Map<String, Object>) GraphCommandService.downloadGraph(sid);
         assertNotNull(draft, "the session holds a draft");
         var node = ((List<Map<String, Object>>) draft.get("nodes")).stream()
-                .filter(n -> alias.equals(n.get("alias"))).findFirst().orElseThrow();
+                .filter(n -> "root".equals(n.get("alias"))).findFirst().orElseThrow();
         return (Map<String, Object>) node.get("properties");
     }
 
@@ -345,7 +344,8 @@ class CompanionSyncTest {
         syncCommand(po, sid, "create node root\nwith type Root\nwith properties\nname=unit-test-prerun-check");
         syncCommand(po, sid, "create node end\nwith type End");
         syncCommand(po, sid,
-                "create node suspend\nwith type Suspend\nwith properties\nskill=graph.suspend\ntask=v1.file.state.store");
+                "create node suspend\nwith type Suspend\nwith properties\nskill=graph.suspend\n" +
+                        "task=v1.file.state.store");
         syncCommand(po, sid, "connect root to suspend with then");
         syncCommand(po, sid, "connect suspend to end with then");
         var instantiated = syncCommand(po, sid, "instantiate graph");
@@ -643,8 +643,10 @@ class CompanionSyncTest {
         assertEquals(Boolean.TRUE, contract.get("ok"), "describe graph {id} -> ok:true: " + contract);
         var contractText = String.valueOf(contract.get("output"));
         assertTrue(contractText.contains("Deployed graph model 'tutorial-3'"), "header: " + contractText);
-        assertTrue(contractText.contains("  input.body.person_id\n"), "derived input surface (exact line): " + contractText);
-        assertTrue(contractText.contains("  output.body.name\n"), "derived output surface (exact line): " + contractText);
+        assertTrue(contractText.contains("  input.body.person_id\n"),
+                "derived input surface (exact line): " + contractText);
+        assertTrue(contractText.contains("  output.body.name\n"),
+                "derived output surface (exact line): " + contractText);
     }
 
     /**
@@ -1037,7 +1039,8 @@ class CompanionSyncTest {
                       {"alias": "root", "types": ["Root"],
                        "properties": {"purpose": "a graph from a set", "name": "unit-test-set-listed"}},
                       {"alias": "end", "types": ["End"], "properties": {}}],
-                     "connections": [{"source": "root", "target": "end", "relations": [{"type": "done", "properties": {}}]}]}
+                     "connections": [{"source": "root", "target": "end",
+                                      "relations": [{"type": "done", "properties": {}}]}]}
                     """, Map.class);
             Files.write(folder.resolve("listed-set.pack"),
                     GraphSet.pack("listed-set", Map.of("version", "2.0.0"), Map.of("unit-test-set-listed", model)));
@@ -1051,7 +1054,8 @@ class CompanionSyncTest {
             var po = EventEmitter.getInstance();
             var sid = openCompanionSession("990042");
             var listed = String.valueOf(syncCommand(po, sid, "list graphs"));
-            assertTrue(listed.contains("unit-test-set-listed - a graph from a set (set listed-set, version 2.0.0)"), listed);
+            assertTrue(listed.contains("unit-test-set-listed - a graph from a set (set listed-set, version 2.0.0)"),
+                    listed);
             syncCommand(po, sid, "import graph from unit-test-set-listed");
             var draft = (Map<String, Object>) GraphCommandService.downloadGraph(sid);
             assertNotNull(draft, "the unpacked graph imports as the draft");
@@ -1060,9 +1064,7 @@ class CompanionSyncTest {
             assertEquals("unit-test-set-listed", ((Map<String, Object>) root.get("properties")).get("name"));
         } finally {
             CompiledGraphs.removeGraph("unit-test-set-listed");
-            try (var paths = Files.walk(folder)) {
-                paths.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-            }
+            Utility.getInstance().cleanupDir(folder.toFile());
         }
     }
 

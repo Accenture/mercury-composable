@@ -188,6 +188,15 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
             return error instanceof String text? text
                     : SimpleMapper.getInstance().getMapper().writeValueAsString(error);
         }
+
+        /**
+         * The traveler's end-of-transmission lines. One of these is <b>always</b>
+         * emitted last (success or failure), so the synchronous endpoint drains a
+         * traversal deterministically — no timer, no truncated capture.
+         */
+        private static boolean isTraversalTerminal(String line) {
+            return line.startsWith("Graph traversal completed in") || line.startsWith("Graph traversal aborted");
+        }
     }
 
     private boolean dispatchAndDrain(PostOffice po, String id, String command, String inRoute,
@@ -285,18 +294,9 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
      * The Playground's only <b>asynchronous</b> command: {@code run} launches the
      * traveler, which streams its output after the command handler has already
      * replied — so the sentinel drain races the traversal tail. A traversal is
-     * drained on its terminal line instead (see {@link #isTraversalTerminal}).
+     * drained on its terminal line instead (see {@link Capture#isTraversalTerminal}).
      */
     private static boolean isTraversalCommand(String command) {
         return "run".equalsIgnoreCase(command);
-    }
-
-    /**
-     * The traveler's end-of-transmission lines. One of these is <b>always</b>
-     * emitted last (success or failure), so the synchronous endpoint drains a
-     * traversal deterministically — no timer, no truncated capture.
-     */
-    private static boolean isTraversalTerminal(String line) {
-        return line.startsWith("Graph traversal completed in") || line.startsWith("Graph traversal aborted");
     }
 }
