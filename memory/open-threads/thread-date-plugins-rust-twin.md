@@ -1,4 +1,5 @@
-- [ ] **The Rust engine gains `f:addDays` and `f:daysBetween`** (the twin of branch `feat/date-plugins`, Java only so far).
+- [ ] **The Rust engine gains `f:addDays` and `f:daysBetween`** (the twin of PR #591, squash `ca2344ae`, merged
+  2026-10-24; Java only so far).
   - **Scope:** two `#[simple_plugin]` functions in `crates/event-script/src/plugins.rs`; `date-plugin-vectors.json` copied
     byte-identical with a vectors test beside `range_lookup_vectors.rs`; the graph fixture `unit-test-date-arithmetic-1`;
     the result types in `crates/knowledge-graph/src/contract.rs`; `npm run release:rust` for the help page and bundle; then

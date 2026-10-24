@@ -372,6 +372,10 @@
   it, leaving the trailer off a commit on a PR branch, was WRONG: #588's squash `5b5cab91` then carried none, because
   GitHub builds the squash message from the commits' messages and does not copy the PR body's footer. Guard: every commit
   keeps the trailer, and the squash dialog trims the copies to one, the same review moment as the title.
+  Fifth instance, where the extra copy comes from (2026-10-24): PR #591's squash `ca2344ae` carries three - one from each of
+  its two commits and GitHub's own `Co-authored-by` below a `---------` line, which GitHub adds for a multi-commit squash. A
+  clean squash keeps that last line alone (`138ae1be`), so the dialog holds one copy per commit plus one; the handoff says
+  to delete everything above the `---------` line's trailer.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-24 | uses: 99 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
