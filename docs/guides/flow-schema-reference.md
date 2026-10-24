@@ -1085,6 +1085,17 @@ mapping statement at either boundary, no per-field mapping.
 | `f:now()` | Current UTC time — ISO-8601 by default, `text(ms)` for epoch milliseconds, `text(local)` for local date-time | `f:now(text(ms)) -> ts` |
 | `f:dateTime(format?)` | Current date-time with local timezone, optionally formatted | `f:dateTime(text(yyyy-MM-dd)) -> today` |
 
+### Date arithmetic
+
+A date is an ISO-8601 calendar date written exactly as `YYYY-MM-DD`, with no time and no time zone. A date of another
+shape, a day the calendar lacks, a fractional number of days, a null argument and a result outside the years 0000 to
+9999 are errors naming the plugin.
+
+| Function | Description | Example |
+|----------|-------------|---------|
+| `f:addDays(date, days)` | The date a whole number of days later (earlier for a negative number), as `YYYY-MM-DD`: `(2027-01-15, 15)` gives `2027-01-30`; the days may be numeric text | `f:addDays(input.body.invoice_date, int(30)) -> due_date` |
+| `f:daysBetween(from, to)` | The whole days between two dates as an integer, the earlier date excluded and the later one included: `(2027-04-10, 2027-05-11)` gives `31`, the same date twice `0`; the order of the arguments does not matter, so it is never negative | `f:daysBetween(model.due_date, input.body.paid_on) -> days_apart` |
+
 ### Configuration
 
 | Function | Description | Example |

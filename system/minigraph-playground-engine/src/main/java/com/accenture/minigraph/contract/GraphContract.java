@@ -102,7 +102,7 @@ public final class GraphContract {
     /** The simple plugins whose result type is known from the plugin alone. */
     private static final Map<String, String> PLUGIN_TYPES = Map.ofEntries(
             Map.entry(INT, INTEGER), Map.entry(LONG, INTEGER), Map.entry("length", INTEGER),
-            Map.entry("decimalCompare", INTEGER),
+            Map.entry("decimalCompare", INTEGER), Map.entry("daysBetween", INTEGER),
             Map.entry(FLOAT, NUMBER), Map.entry(DOUBLE, NUMBER), Map.entry("add", NUMBER),
             Map.entry("subtract", NUMBER), Map.entry("multiply", NUMBER), Map.entry("div", NUMBER),
             Map.entry("mod", NUMBER), Map.entry("increment", NUMBER), Map.entry("decrement", NUMBER),
@@ -112,6 +112,7 @@ public final class GraphContract {
             Map.entry("notNull", BOOLEAN),
             Map.entry(TEXT, STRING), Map.entry("concat", STRING), Map.entry("substring", STRING),
             Map.entry("now", STRING), Map.entry("uuid", STRING), Map.entry("dateTime", STRING),
+            Map.entry("addDays", STRING),
             Map.entry("b64", STRING), Map.entry("lookup", STRING), Map.entry("rangeLookup", STRING),
             Map.entry("decimalAdd", STRING),
             Map.entry("decimalSubtract", STRING), Map.entry("decimalMultiply", STRING),
@@ -168,7 +169,7 @@ public final class GraphContract {
      *
      * @param graphId the graph id (the deployed id, or a draft's name)
      * @param model the graph model (nodes and connections)
-     * @param otherModels resolves another deployed model by id, for a graph.extension target; may return null
+     * @param otherModels resolves another deployed model by id, for a 'graph.extension' target; may return null
      * @return the contract
      */
     public static GraphContract derive(String graphId, Map<String, Object> model,
@@ -466,7 +467,7 @@ public final class GraphContract {
         return new String[]{body.substring(0, sep).trim(), body.substring(sep + MAP_TO.length()).trim()};
     }
 
-    /** Tier 2: a typed constant, wrapper, plugin, for_each source or graph.math statement. */
+    /** Tier 2: a typed constant, wrapper, plugin, for_each source or 'graph.math' statement. */
     private void directEvidence(String alias, String property, String text) {
         var tag = tagOf(text);
         if (COMPUTE.equals(tag) || CONDITION.equals(tag) || DECIMAL.equals(tag)) {
@@ -617,7 +618,8 @@ public final class GraphContract {
 
     /** A node-relative selector such as {@code result.total} is {@code {alias}.result.total}. */
     private static String qualified(String alias, String selector) {
-        return selector.startsWith(RESULT) && (selector.length() == RESULT.length() || selector.charAt(RESULT.length()) == '.')
+        return selector.startsWith(RESULT)
+                && (selector.length() == RESULT.length() || selector.charAt(RESULT.length()) == '.')
                 ? alias + "." + selector : selector;
     }
 
@@ -656,7 +658,7 @@ public final class GraphContract {
         return null;
     }
 
-    /** A graph.extension target's declared output types the node's result. */
+    /** A 'graph.extension' target's declared output types the node's result. */
     private void extensionTarget(Map<String, Object> node, Function<String, Map<String, Object>> otherModels) {
         if (!(node.get(PROPERTIES) instanceof Map<?, ?> p) || !"graph.extension".equals(p.get("skill"))) {
             return;
