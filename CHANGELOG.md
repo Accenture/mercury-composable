@@ -75,6 +75,17 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    check: the route alone becomes a separate fragment, because its reply keeps the caller's tag. Event Script's kick-off event to
    `task.executor` now carries the flow's trace id, so a flow's first task stays linked. **Upgrade note:** none - nothing is
    observed unless an extension is added and switched on.
+8. **`f:addDays` and `f:daysBetween` - calendar-date arithmetic in a flow or a knowledge graph.** The field asked for due dates
+   and day counts without a composable function. `f:addDays(date, days)` returns the date a whole number of days later (earlier
+   for a negative number): `f:addDays(text(2027-01-15), int(15))` is `2027-01-30`. `f:daysBetween(from, to)` returns the whole
+   days between two dates as an integer, counting the earlier date out and the later one in, so the same date twice gives 0,
+   2027-03-01 to 2027-03-02 gives 1 and 2027-04-10 to 2027-05-11 gives 31; the order of the arguments does not matter and the
+   answer is never negative. A date is an ISO-8601 calendar date written exactly as `YYYY-MM-DD`, with no time and no time zone
+   (not UTC, not a Unix timestamp), so the answer never depends on where the application runs. A date of another shape, a day the
+   calendar lacks (`2027-02-29`), a fractional number of days, a null argument and a result outside the years 0000 to 9999 are
+   refused by name. Pinned by the engine-neutral `date-plugin-vectors.json` (63 vectors), the plugin and gate tests and the graph
+   fixture `unit-test-date-arithmetic-1`; the graph contract types the results (`string`, `integer`). Java only for now: the
+   Rust port gains them when it catches up. **Upgrade note:** none - two new plugins.
 
 ### Changed
 

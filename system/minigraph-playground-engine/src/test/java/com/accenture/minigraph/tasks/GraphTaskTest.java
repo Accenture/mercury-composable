@@ -223,7 +223,8 @@ class GraphTaskTest {
         assertNotEquals(200, response.getStatus());
         var error = String.valueOf(response.getBody());
         // the message names the node and the offending mapping, and points at the input-side-only rule
-        assertTrue(error.contains("Invalid output mapping 'input.body.hello -> output.body.echo' in node bad-output-task"),
+        assertTrue(error.contains(
+                "Invalid output mapping 'input.body.hello -> output.body.echo' in node bad-output-task"),
                 "unexpected error response: " + error);
         assertTrue(error.contains("'input.*' is valid only on the input side"),
                 "message should name the input-side-only rule: " + error);
@@ -302,7 +303,8 @@ class GraphTaskTest {
         assertEquals("gold", mm.getElement("tier"));
         assertEquals("same_day", mm.getElement("processing"));
         assertEquals("12500.75", mm.getElement("annual_spend"));
-        response = runGraph("unit-test-range-lookup-1", Map.of("annual_spend", 2499.99, "instructed_at", "16:00"), Map.of());
+        response = runGraph("unit-test-range-lookup-1",
+                Map.of("annual_spend", 2499.99, "instructed_at", "16:00"), Map.of());
         assertEquals(200, response.getStatus());
         mm = bodyMap(response);
         assertEquals("standard", mm.getElement("tier"));
@@ -321,7 +323,8 @@ class GraphTaskTest {
         // f:minRange(loyalty-tiers.{model.tier}, int(0)) and f:maxRange(loyalty-tiers.{model.tier}) - and its
         // bounds are typed by the notation: whole numbers for a money band, exact decimal text for a fee band, text
         // for a time or a quoted code; a graph.math node computes the distance to the next tier from the upper bound
-        var response = runGraph("unit-test-range-bounds-1", Map.of("annual_spend", "12500.75", "product_code", "0450"), Map.of());
+        var response = runGraph("unit-test-range-bounds-1",
+                Map.of("annual_spend", "12500.75", "product_code", "0450"), Map.of());
         assertEquals(200, response.getStatus());
         var mm = bodyMap(response);
         assertEquals("gold", mm.getElement("tier"));
@@ -370,6 +373,40 @@ class GraphTaskTest {
         assertFalse(mm.exists("tier_to"));
         assertFalse(mm.exists("to_next_tier"));
         assertEquals("legacy", mm.getElement("product_line"));
+    }
+
+    @Test
+    void datePluginsComputeADueDateAndTheDaysApart() throws TimeoutException {
+        // unit-test-date-arithmetic-1: f:addDays(input.body.invoice_date, input.body.term_days) gives the due date,
+        // and f:daysBetween counts the whole days between it and the payment date - the earlier date excluded, the
+        // later one included - with the same answer in either order
+        var response = runGraph("unit-test-date-arithmetic-1",
+                Map.of("invoice_date", "2027-01-15", "term_days", 15, "paid_on", "2027-02-02"), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        var mm = bodyMap(response);
+        assertEquals("2027-01-30", mm.getElement("due_date"));
+        assertEquals("2027-01-29", mm.getElement("last_day_before_due"));
+        assertEquals(3, ((Number) mm.getElement("days_apart")).intValue());
+        assertEquals(3, ((Number) mm.getElement("days_apart_swapped")).intValue());
+        assertEquals(15, ((Number) mm.getElement("term_check")).intValue());
+        // the terms may arrive as text, and a payment before the due date is counted the same way
+        response = runGraph("unit-test-date-arithmetic-1",
+                Map.of("invoice_date", "2028-02-15", "term_days", "14", "paid_on", "2028-02-28"), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        mm = bodyMap(response);
+        assertEquals("2028-02-29", mm.getElement("due_date"));
+        assertEquals(1, ((Number) mm.getElement("days_apart")).intValue());
+        assertEquals(1, ((Number) mm.getElement("days_apart_swapped")).intValue());
+    }
+
+    @Test
+    void datePluginsRefuseADateWithATime() throws TimeoutException {
+        // unit-test-date-arithmetic-1: a date is YYYY-MM-DD only, so a date-time aborts the run with the reason
+        var response = runGraph("unit-test-date-arithmetic-1",
+                Map.of("invoice_date", "2027-01-15T00:00:00Z", "term_days", 15, "paid_on", "2027-02-02"), Map.of());
+        assertEquals(400, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Expected a date written as YYYY-MM-DD"),
+                String.valueOf(response.getBody()));
     }
 
     @Test
@@ -521,7 +558,8 @@ class GraphTaskTest {
         }
         var response = runGraph("unit-test-math-2", Map.of("case", 6, "flag", false), Map.of());
         assertNotEquals(200, response.getStatus());
-        assertTrue(String.valueOf(response.getBody()).contains("Boolean operand: model.flag (false) in '{model.flag} < 1'"),
+        assertTrue(String.valueOf(response.getBody())
+                        .contains("Boolean operand: model.flag (false) in '{model.flag} < 1'"),
                 String.valueOf(response.getBody()));
     }
 
@@ -530,7 +568,8 @@ class GraphTaskTest {
         // case 4: a misspelled function is rejected by name, never a silent no-op
         var response = runGraph("unit-test-math-2", Map.of("case", 4, "a", 1, "b", 2), Map.of());
         assertNotEquals(200, response.getStatus());
-        assertTrue(String.valueOf(response.getBody()).contains("Unknown function: mn"), String.valueOf(response.getBody()));
+        assertTrue(String.valueOf(response.getBody()).contains("Unknown function: mn"),
+                String.valueOf(response.getBody()));
         // case 3: an overflow to infinity fails naming the operator instead of traveling on as 'Infinity'
         response = runGraph("unit-test-math-2", Map.of("case", 3, "big", 1e308), Map.of());
         assertNotEquals(200, response.getStatus());

@@ -56,6 +56,10 @@ class SimplePluginGateTest extends TestBase {
         for (var name : new String[]{"rangeLookup", "minRange", "maxRange"}) {
             assertTrue(SimplePluginLoader.containsSimplePlugin(name), name);
         }
+        // the date plugins share the DatePluginUtils helper, which the gate allow-lists by name
+        for (var name : new String[]{"addDays", "daysBetween"}) {
+            assertTrue(SimplePluginLoader.containsSimplePlugin(name), name);
+        }
         // the decimal family reaches its arithmetic only through the allowlisted DecimalPluginUtils
         for (var name : new String[]{"decimalAdd", "decimalSubtract", "decimalMultiply", "decimalDiv", "decimalMod",
                 "decimalRound", "decimalCompare"}) {
