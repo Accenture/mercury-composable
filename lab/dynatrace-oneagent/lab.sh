@@ -14,10 +14,10 @@ usage() {
 
 case "${1:-}" in
   build)
-    # Always with -am: the branch keeps version 4.12.25, so without it Maven takes the RELEASED platform-core
-    # from ~/.m2, which has no invocation-observer interface, and the applications fail at startup.
-    (cd "$ROOT" && mvn -o -q package -DskipTests -am \
-      -pl lab/dynatrace-oneagent/lab-edge,lab/dynatrace-oneagent/lab-worker,helpers/kafka-standalone)
+    # The lab's own aggregator (pom.xml here, not in the root reactor) builds the Mercury modules it uses from
+    # this checkout, so Maven never takes the RELEASED platform-core of the same version from ~/.m2, which may
+    # lack what the branch adds. A lab build is no quality gate: tests and coverage checks are skipped.
+    mvn -o -q -f pom.xml package -DskipTests -Djacoco.skip=true -am -pl :lab-edge,:lab-worker,:kafka-standalone
     cp "$ROOT/helpers/kafka-standalone/target/kafka-standalone-$VERSION-exec.jar" apps/lab-broker.jar
     cp "lab-edge/target/lab-edge-$VERSION.jar" apps/lab-edge.jar
     cp "lab-worker/target/lab-worker-$VERSION.jar" apps/lab-worker.jar

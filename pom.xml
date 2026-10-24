@@ -62,11 +62,6 @@
         <module>examples/distributed-cache-example</module>
         <module>examples/twin-kafka-demo</module>
 
-        <!-- The Dynatrace OneAgent lab (RFC-0009): two test applications
-             that run in containers with OneAgent attached; see lab/dynatrace-oneagent/README.md -->
-        <module>lab/dynatrace-oneagent/lab-edge</module>
-        <module>lab/dynatrace-oneagent/lab-worker</module>
-
         <!-- Starter templates for the three layers (copy one out to begin a new
              project; standalone poms - no reactor parent - listed here so every
              build proves they stay current) -->

@@ -36,20 +36,25 @@ download folder and any OneAgent installer (`Dynatrace-OneAgent-Linux*`, `-Windo
 ## Run
 
 ```bash
-./lab.sh build            # the jars (always with -am, see below) and the three images
+./lab.sh build            # the jars (with the lab's own pom.xml, see below) and the three images
 ./lab.sh up oneagent      # or: up none (the baseline: OneAgent without the adapter)
 ./lab.sh order            # one order; repeat a few times
 ./lab.sh logs lab-edge    # or lab-worker | lab-broker
 ./lab.sh down
 ```
 
-`DESTINATION=route ./lab.sh up oneagent` names every hop after its route instead of the application.
+`DESTINATION=route ./lab.sh up oneagent` names every hop's endpoint after its route instead of the application, and
+`DESTINATION=application-route` after both (`Queue: lab-edge - lab.validate`).
 
 ## Notes
 
-- **Build with `-am`.** The branch keeps version 4.12.25. Without `-am` Maven takes the released
-  platform-core from `~/.m2`, which has no invocation-observer interface, and the applications fail at
-  startup with `NoClassDefFoundError: org/platformlambda/core/spi/InvocationObserver`. `lab.sh build` does it.
+- **The lab is not in the root reactor, on purpose.** It is a dev-machine tool: never deployed, and never to
+  be registered by the field's static code analysis, which scans every module the root `pom.xml` declares
+  and keeps scanning it once registered. So the lab has its own aggregator, `pom.xml` in this folder. It
+  builds the lab, the broker and the Mercury modules they use from this checkout, and installs nothing.
+  Without it, Maven takes the released platform-core of the same version from `~/.m2`, which may lack what
+  the branch adds (`NoClassDefFoundError: org/platformlambda/core/spi/InvocationObserver`). Its version
+  follows the root pom, so the release version sweep covers these poms too.
 - **The adapter is switched by environment variables** that `lab.sh up` sets (`DYNATRACE_ONEAGENT_ENABLED`,
   `DYNATRACE_ONEAGENT_DESTINATION`), which both applications' `application.properties` read.
 - **One network namespace.** The broker advertises `127.0.0.1:9092`, so the two applications share the
