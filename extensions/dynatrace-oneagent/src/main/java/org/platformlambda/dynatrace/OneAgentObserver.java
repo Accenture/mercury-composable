@@ -52,8 +52,9 @@ import java.util.concurrent.ConcurrentMap;
  * application name by default, so a route does not become a Dynatrace service - the route travels as the
  * custom request attribute {@code mercury.route}. {@code dynatrace.oneagent.destination=route} makes each
  * route its own destination, and {@code application-route} names it {@code <application> - <route>}, so every hop
- * is named in the PurePath. Dynatrace shows a destination as the endpoint {@code Queue: <name>}: the prefix comes
- * from the destination type and cannot be dropped from a message tracer, the one tracer kind that carries a tag.
+ * is named in the PurePath. Every destination is a topic, the Kafka term for an event's destination, so Dynatrace
+ * shows it as the endpoint {@code Topic: <name>}: the prefix comes from the destination type, which can be only a
+ * queue or a topic, and cannot be dropped from a message tracer, the one tracer kind that carries a tag.
  * <p>
  * <b>Thread affinity.</b> SDK tracers must start and end on one thread, LIFO. The engine guarantees it: a
  * hop's scope opens and closes on the worker thread, and an outgoing tracer opens and closes inside one
@@ -87,7 +88,7 @@ public class OneAgentObserver implements InvocationObserver {
     private final ConcurrentMap<String, MessagingSystemInfo> destinations = new ConcurrentHashMap<>();
 
     /**
-     * How a hop's messaging destination is named; Dynatrace shows it as the endpoint {@code Queue: <name>}.
+     * How a hop's messaging destination is named; Dynatrace shows it as the endpoint {@code Topic: <name>}.
      */
     public enum Destination {
         /** The application name, one endpoint for all of its hops (the default). */
@@ -190,7 +191,7 @@ public class OneAgentObserver implements InvocationObserver {
             case APPLICATION_ROUTE -> application + " - " + route;
         };
         return destinations.computeIfAbsent(name, n ->
-                sdk.createMessagingSystemInfo(VENDOR, n, MessageDestinationType.QUEUE, ChannelType.IN_PROCESS, null));
+                sdk.createMessagingSystemInfo(VENDOR, n, MessageDestinationType.TOPIC, ChannelType.IN_PROCESS, null));
     }
 
     private String currentTraceId() {

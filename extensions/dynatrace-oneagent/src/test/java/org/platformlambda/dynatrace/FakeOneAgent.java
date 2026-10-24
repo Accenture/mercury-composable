@@ -78,6 +78,7 @@ final class FakeOneAgent {
     /** The thread each tag was produced on: the sender's thread. */
     final Map<String, String> tagThreads = new ConcurrentHashMap<>();
     final List<String> infos = Collections.synchronizedList(new ArrayList<>());
+    final List<String> destinationTypes = Collections.synchronizedList(new ArrayList<>());
     static final String TRACE_ID = "4bf92f3577b34da6a3ce929d0e0e4736";
     static final String SPAN_ID = "00f067aa0ba902b7";
     volatile SDKState state = SDKState.ACTIVE;
@@ -99,6 +100,7 @@ final class FakeOneAgent {
             case "createMessagingSystemInfo" -> {
                 String destination = (String) args[1];
                 infos.add(destination);
+                destinationTypes.add(String.valueOf(args[2]));
                 yield proxy(MessagingSystemInfo.class, (m, a) -> m.equals("toString")? destination : null);
             }
             case "traceIncomingMessageProcess" -> incoming(String.valueOf(args[0]));

@@ -193,11 +193,12 @@ class OneAgentObserverTest {
         named.begin(HOP, new MapCarrier(Map.of())).end();
         assertEquals(List.of("demo.route"), perRoute.infos);
 
-        // Dynatrace shows the destination as the endpoint "Queue: demo-app - demo.route"
+        // Dynatrace shows the destination as the endpoint "Topic: demo-app - demo.route"
         FakeOneAgent both = new FakeOneAgent();
         new OneAgentObserver(both.sdk, "demo-app", OneAgentObserver.Destination.APPLICATION_ROUTE, false)
                 .begin(HOP, new MapCarrier(Map.of())).end();
         assertEquals(List.of("demo-app - demo.route"), both.infos);
+        assertEquals(List.of("TOPIC"), both.destinationTypes, "a topic, as in Kafka");
     }
 
     @Test

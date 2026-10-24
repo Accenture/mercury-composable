@@ -364,7 +364,7 @@ Script's two routers, `event.script.manager` and `task.executor`, so a flow stay
 | `invocation.observer.include` | *(empty: all)* | Comma-separated routes to observe; an entry ending in `*` matches a prefix |
 | `invocation.observer.exclude` | the telemetry routes and `temporary.inbox` | Routes never observed; setting it replaces the default |
 | `invocation.observer.unlinked` | *(empty)* | **Negative control**: these routes are observed, but they never see the incoming tag, so each of their invocations starts a new trace |
-| `dynatrace.oneagent.destination` | `application` | The OneAgent messaging destination, shown as the endpoint `Queue: <name>`: `application`, `route`, or `application-route` (`<application> - <route>`) |
+| `dynatrace.oneagent.destination` | `application` | The OneAgent messaging destination, shown as the endpoint `Topic: <name>`: `application`, `route`, or `application-route` (`<application> - <route>`) |
 | `dynatrace.oneagent.log.context` | `false` | `true` writes OneAgent's own trace and span ids into the [log context](#log-context) as `dt.trace_id` and `dt.span_id` |
 
 **Deferred results.** A function that returns a `Mono` returns before its result exists, and the result
