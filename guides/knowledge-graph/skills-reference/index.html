@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -1468,6 +1468,17 @@
     <span class="md-ellipsis">
       
         Keyed tables — a value per key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dates — a due date and a day count
       
     </span>
   </a>
@@ -3170,6 +3181,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#dates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dates — a due date and a day count
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3561,6 +3583,27 @@ and its <code>else</code> branch returns a 404 from a refusal mapper (<code>int(
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>ELSE: not-found
 <a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>'''
 </code></pre></div>
+<h3 id="dates">Dates — a due date and a day count<a class="headerlink" href="#dates" title="Permanent link">&para;</a></h3>
+<p>Two simple plugins compute with calendar dates in a mapper, with no function and no <code>graph.math</code> statement.
+<code>f:addDays(date, days)</code> returns the date a whole number of days later (earlier for a negative number), and
+<code>f:daysBetween(from, to)</code> the whole days between two dates as an integer, the earlier date excluded and the later one
+included, whatever the order of the arguments:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>create node schedule
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>with type Schedule
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>with properties
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>skill=graph.data.mapper
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>mapping[]=f:addDays(input.body.invoice_date, input.body.term_days) -&gt; model.due_date
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>mapping[]=model.due_date -&gt; output.body.due_date
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>mapping[]=f:daysBetween(model.due_date, input.body.paid_on) -&gt; output.body.days_apart
+</code></pre></div>
+<p>An invoice of <code>2027-01-15</code> on 15-day terms is due <code>2027-01-30</code>, and a payment on <code>2027-02-02</code> is <code>3</code> days apart from it;
+the same date twice gives <code>0</code>. A date is an ISO-8601 calendar date written exactly as <code>YYYY-MM-DD</code>, with <strong>no time and
+no time zone</strong> — the request must carry dates in that form, and a date-time, a single-digit month, a day the calendar
+lacks (<code>2027-02-29</code>) or a null argument aborts the node by name, as does a fractional number of days or a result
+outside the years 0000 to 9999. The days may be a number or numeric text, so a terms property read from a table node
+works as written. Pinned by <code>unit-test-date-arithmetic-1</code> and the engine-neutral <code>date-plugin-vectors.json</code>; Java
+engine only for now — the Rust port gains the plugins when it catches up. The full rules are in the
+<a href="../../event-script/syntax/#simple-plugins">Event Script syntax page</a> (<em>Date arithmetic plugins</em>).</p>
 <h2 id="math">graph.math<a class="headerlink" href="#math" title="Permanent link">&para;</a></h2>
 <p>Fast inline math and boolean evaluation for computation and decision-making. This is <strong>the</strong> skill
 for inline compute/branch (never reach for the deprecated <a href="#js"><code>graph.js</code></a> — pair <code>graph.math</code>
@@ -3604,13 +3647,13 @@ seven types:</p>
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>skill=graph.math
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>statement[]=COMPUTE: amount -&gt; (1 - {input.body.discount}) * {book.price}
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>statement[]='''
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>IF: (1 - {input.body.discount}) * {book.price} &gt; 5000
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>THEN: high-price
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>ELSE: low-price
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>'''
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>skill=graph.math
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>statement[]=COMPUTE: amount -&gt; (1 - {input.body.discount}) * {book.price}
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>statement[]='''
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>IF: (1 - {input.body.discount}) * {book.price} &gt; 5000
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>THEN: high-price
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>ELSE: low-price
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>'''
 </code></pre></div>
 <p><code>{variable}</code> resolves a value from <code>input.*</code>, <code>model.*</code>, or a node property into the expression.
 An <code>IF</code> returning a node name <strong>overrides</strong> natural traversal; returning <code>next</code> keeps it.
@@ -3706,10 +3749,10 @@ use-with-care feature; a node may not contain only <code>MAPPING</code> statemen
 For anything richer than the dialect, use <code>graph.task</code> (a composable function).</p>
 <h3 id="math-decimal">The DECIMAL statement<a class="headerlink" href="#math-decimal" title="Permanent link">&para;</a></h3>
 <p><code>DECIMAL</code> is the high-precision <code>COMPUTE</code>: exact decimal arithmetic whose result is a canonical decimal string, and <code>COMPUTE</code> is untouched. <code>COMPUTE</code> still computes in binary floating point, and a graph that never says <code>DECIMAL</code> keeps its arithmetic; two rules reach it all the same, and both are READ items at release: a string that is a canonical number now compares as a number in <code>COMPUTE</code>, <code>IF</code> and <code>CONDITION</code> (<code>'9.5' &gt; '10.25'</code> is false, <code>'1.0' == '1'</code> is true), and <code>round</code> is half up, away from zero (<code>round(-2.5)</code> is <code>-3</code>). Use <code>DECIMAL</code> for money, rates and anything a double would round.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>skill=graph.math
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>statement[]=DECIMAL: fee -&gt; {input.body.amount} * {input.body.rate}
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>statement[]=DECIMAL: rounded -&gt; round({price.result.fee}, 2, HALF_UP)
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>statement[]=DECIMAL: total -&gt; {input.body.qty} * {price.result.rounded}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>skill=graph.math
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>statement[]=DECIMAL: fee -&gt; {input.body.amount} * {input.body.rate}
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>statement[]=DECIMAL: rounded -&gt; round({price.result.fee}, 2, HALF_UP)
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>statement[]=DECIMAL: total -&gt; {input.body.qty} * {price.result.rounded}
 </code></pre></div>
 <ul>
 <li><strong>The result is a canonical decimal string</strong>, stored at <code>{node}.result.{var}</code>: plain notation, never
@@ -3822,8 +3865,8 @@ instead of a script.</p>
 <p>Same statement model as <a href="#math"><code>graph.math</code></a> — the full
 <a href="../command-reference/#math-statements">statement grammar</a> applies — but expressions run as
 <strong>full JavaScript on GraalVM</strong>: more flexible, slower.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>skill=graph.js
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>statement[]=COMPUTE: amount -&gt; (1 - {input.body.discount}) * {book.price}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>skill=graph.js
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>statement[]=COMPUTE: amount -&gt; (1 - {input.body.discount}) * {book.price}
 </code></pre></div>
 <p><strong>Deadline:</strong> a script is cancelled at a hard execution deadline (GraalVM context cancellation),
 failing the node with a 408 <code>script exceeded the N ms execution deadline</code>. Unlike
@@ -3843,14 +3886,14 @@ full authoring rules (Provider URL <code>{name}</code> placeholders, the Diction
 parameters with <code>:default</code>, <code>response.* -&gt; result.*</code> output mapping) are in
 <a href="../command-reference/#provider-dictionary">Provider &amp; Dictionary</a>. Supports response deduplication
 and bounded fork-join concurrency.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>skill=graph.api.fetcher
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>dictionary[]=&lt;data-dictionary-node&gt;     # one or more (required)
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>input[]=input.body.person_id -&gt; person_id
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>output[]=result.name -&gt; output.body.name   # optional: result always lands at {node}.result
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>for_each[]=&lt;array-source&gt; -&gt; model.&lt;var&gt;   # optional: iterate a runtime list (see below)
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>concurrency=3                            # optional: 1–30, default 3
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>ttl=8s                                   # optional: per-call deadline override (see below)
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>exception=&lt;error-handler-node&gt;           # optional
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>skill=graph.api.fetcher
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>dictionary[]=&lt;data-dictionary-node&gt;     # one or more (required)
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>input[]=input.body.person_id -&gt; person_id
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>output[]=result.name -&gt; output.body.name   # optional: result always lands at {node}.result
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>for_each[]=&lt;array-source&gt; -&gt; model.&lt;var&gt;   # optional: iterate a runtime list (see below)
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>concurrency=3                            # optional: 1–30, default 3
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>ttl=8s                                   # optional: per-call deadline override (see below)
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>exception=&lt;error-handler-node&gt;           # optional
 </code></pre></div>
 <p><strong>Iterating a runtime list (<code>for_each</code>):</strong> the array source is typically a <strong>prior fetcher's
 result</strong> (<code>{fetcher}.result.{key}</code>); wire the current element into each call with
@@ -3859,15 +3902,15 @@ result</strong> (<code>{fetcher}.result.{key}</code>); wire the current element 
 the source list</strong> (batches of <code>concurrency</code> run in order; responses join in request order). Full
 rules: <a href="../command-reference/#for-each">Iterative fetching</a>.</p>
 <p>Worked example (fetch a person's name and address):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>create node fetcher
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>with type Fetcher
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>with properties
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>skill=graph.api.fetcher
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>dictionary[]=person-name
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>dictionary[]=person-address
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>input[]=input.body.person_id -&gt; person_id
-<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>output[]=result.name -&gt; output.body.name
-<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>output[]=result.address -&gt; output.body.address
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>create node fetcher
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>with type Fetcher
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>with properties
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>skill=graph.api.fetcher
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>dictionary[]=person-name
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>dictionary[]=person-address
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>input[]=input.body.person_id -&gt; person_id
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>output[]=result.name -&gt; output.body.name
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>output[]=result.address -&gt; output.body.address
 </code></pre></div>
 <p>The result lands at <code>{node}.result</code>. <strong>Gotchas:</strong> identical requests (same provider + input
 parameters) are <strong>deduplicated within the graph instance</strong> — the cache holds <strong>successful
@@ -3905,20 +3948,20 @@ Details and gotchas: <a href="#task"><code>graph.task</code></a>.</p>
 <p>Delegates to another <strong>graph model</strong> or an <strong>Event Script flow</strong>, so you can compose larger
 capabilities and reuse logic. <strong>Discover the valid targets with <code>list graphs</code> / <code>list flows</code></strong>
 (<a href="../command-reference/#describe">discovery commands</a>) — no out-of-band brief needed.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>skill=graph.extension
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>extension=&lt;graph-id&gt;          # a sub-graph …
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>extension=flow://&lt;flow-id&gt;    # … or an Event Script flow (note the flow:// prefix)
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>input[]=input.body.person_id -&gt; person_id
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>output[]=result -&gt; output.body
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>skill=graph.extension
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>extension=&lt;graph-id&gt;          # a sub-graph …
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>extension=flow://&lt;flow-id&gt;    # … or an Event Script flow (note the flow:// prefix)
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>input[]=input.body.person_id -&gt; person_id
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>output[]=result -&gt; output.body
 </code></pre></div>
 <p>Sub-graph example (reuse a deployed graph):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>create node performance-evaluator
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>with type Extension
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>with properties
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>skill=graph.extension
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>extension=evaluate-sales-performance
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>input[]=input.body.department_id -&gt; id
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>output[]=result.sales_performance -&gt; output.body.sales_performance
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>create node performance-evaluator
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>with type Extension
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>with properties
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>skill=graph.extension
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>extension=evaluate-sales-performance
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>input[]=input.body.department_id -&gt; id
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>output[]=result.sales_performance -&gt; output.body.sales_performance
 </code></pre></div>
 <p><strong>The delegation contract (rules, not just the example):</strong></p>
 <ul>
@@ -3961,27 +4004,27 @@ authoring the target flow: <a href="../../event-script/ai-agent-guide/">Event Sc
 <p>Invokes a <strong>composable function</strong> — a <code>TypedLambdaFunction</code> registered with <code>@PreLoad</code> — through its
 route name. The lightweight way to plug a small piece of custom business logic into a graph: your
 own function becomes, in effect, a custom skill.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>skill=graph.task
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>task=&lt;function-route&gt;
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>input[]=input.body -&gt; *                  # '*' merges the mapped value into the request body
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>input[]=text(minigraph) -&gt; header.x-app  # 'header.{name}' sets a request header
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>input[]=input.body.id -&gt; model.id        # 'model.{key}' stages a state-machine variable
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>output[]=result -&gt; output.body
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>skill=graph.task
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>task=&lt;function-route&gt;
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>input[]=input.body -&gt; *                  # '*' merges the mapped value into the request body
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>input[]=text(minigraph) -&gt; header.x-app  # 'header.{name}' sets a request header
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>input[]=input.body.id -&gt; model.id        # 'model.{key}' stages a state-machine variable
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>output[]=result -&gt; output.body
 </code></pre></div>
 <p>Worked example (tutorial-13 — any registered route is callable, so <code>async.http.request</code> turns
 the node into an HTTP client by configuration):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>create node hello-task
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>with type Task
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>with properties
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>skill=graph.task
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>task=async.http.request
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>input[]=input.body.person_id -&gt; model.person_id
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>input[]=text(http://127.0.0.1:${rest.server.port:8080}) -&gt; host
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>input[]=text(/api/mdm/profile/{model.person_id}) -&gt; url
-<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>input[]=text(GET) -&gt; method
-<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>input[]=text(application/json) -&gt; headers.accept
-<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>input[]=text(5000) -&gt; headers.x-ttl
-<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>output[]=result -&gt; output.body
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>create node hello-task
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>with type Task
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>with properties
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>skill=graph.task
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>task=async.http.request
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>input[]=input.body.person_id -&gt; model.person_id
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>input[]=text(http://127.0.0.1:${rest.server.port:8080}) -&gt; host
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>input[]=text(/api/mdm/profile/{model.person_id}) -&gt; url
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>input[]=text(GET) -&gt; method
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>input[]=text(application/json) -&gt; headers.accept
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>input[]=text(5000) -&gt; headers.x-ttl
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>output[]=result -&gt; output.body
 </code></pre></div>
 <p><code>input[]</code> entries apply <strong>in order</strong>, so field mappings after a <code>*</code> merge into the request body,
 and the body auto-converts when the function declares a PoJo input. A <code>model.{key}</code> target stages
@@ -4017,22 +4060,22 @@ neither is certifiable from the graph.</p>
 <p>The table node, shared by both examples below — <code>keys</code> names the rules in priority order and each
 rule lists the values that select it, every value a JSON array written as text so the node reads as
 a table in the Playground:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>create node state-rules
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>with type DecisionTable
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>with properties
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>keys=[ "community-property", "separate-property" ]
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>community-property=[ "CA", "TX" ]
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>separate-property=[ "NY" ]
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>create node state-rules
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>with type DecisionTable
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>with properties
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>keys=[ "community-property", "separate-property" ]
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>community-property=[ "CA", "TX" ]
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>separate-property=[ "NY" ]
 </code></pre></div>
 <p><strong>Common case — the <code>lookup</code> simple plugin, no function.</strong> A <a href="#data-mapper"><code>graph.data.mapper</code></a>
 node is the decision node: <code>f:lookup(table, value, default)</code> returns the name of the first rule that
 lists the value (compared as text, case-insensitively), or the optional third argument on a miss
 (<code>null</code> when it is omitted):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>create node select-rule
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>with type Decision
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>with properties
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>skill=graph.data.mapper
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>mapping[]=f:lookup(state-rules, input.body.state, text(unknown)) -&gt; output.body.rule
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>create node select-rule
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>with type Decision
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>with properties
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>skill=graph.data.mapper
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>mapping[]=f:lookup(state-rules, input.body.state, text(unknown)) -&gt; output.body.rule
 </code></pre></div>
 <p><strong>When the ruling needs more than a lookup — a composable function.</strong> One <code>input[]</code> entry hands the
 whole table to the function; the function stays generic by reading the rule names from <code>table.keys</code>
@@ -4040,14 +4083,14 @@ and reconstructing the JSON-text lists (Java: <code>SimpleMapper.getInstance().g
 List.class)</code>; Rust: <code>serde_json::from_str</code>), ignoring any other property on the node (a <code>purpose</code>, a
 <code>source</code>). In the field, even complex rulings generalize into a small number of such decision-table
 functions:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>create node select-rule
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>with type Task
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>with properties
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>skill=graph.task
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>task=v1.decision.table
-<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>input[]=state-rules -&gt; table
-<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>input[]=input.body.state -&gt; key
-<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>output[]=result.rule -&gt; output.body.rule
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>create node select-rule
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>with type Task
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>with properties
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>skill=graph.task
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>task=v1.decision.table
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>input[]=state-rules -&gt; table
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>input[]=input.body.state -&gt; key
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>output[]=result.rule -&gt; output.body.rule
 </code></pre></div>
 <p>Two variations of the table node: <code>key[]=member</code> lines build a real list property (one row per
 member in the Playground; <code>lookup</code> and the function accept both), and a nested table can be <strong>one
@@ -4091,9 +4134,9 @@ transaction may suspend independently in each domain's graph and in each subgrap
 graph runs as one iteration of a parent's <code>for_each</code> fan-out, the iteration index is appended
 as a third segment (<code>graph:{graph_id}:{cid}:{index}</code>) so concurrent iterations do not collide
 — see <a href="../workflow-suspension/#design-rules">Workflow suspension</a>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>skill=graph.suspend
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>task=v1.redis.persist.model
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>ttl=2d
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>skill=graph.suspend
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>task=v1.redis.persist.model
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>ttl=2d
 </code></pre></div>
 <p>The node carrying this skill <strong>must be named <code>suspend</code></strong> — a reserved alias like <code>root</code>/<code>end</code>.
 Two patterns reach it, named after the node that pauses: a <strong>checkpoint node</strong> — a working node
@@ -4116,8 +4159,8 @@ the recorded suspension point — <strong>past a checkpoint node without re-exec
 <code>graph.task</code> — the <code>task</code> property names the store function (<code>type=get</code>, body <code>{cid, graph}</code> —
 the graph id scopes the lookup to this graph's own records),
 restoration is encapsulated, no mapping on the node.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>skill=graph.resume
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>task=v1.redis.retrieve.model
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>skill=graph.resume
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>task=v1.redis.retrieve.model
 </code></pre></div>
 <p>Place it early — conventionally named <code>resume</code>, right after <code>root</code> or after setup nodes. Found:
 the persisted model merges into the state machine (the current run's reserved keys always win),
@@ -4139,11 +4182,11 @@ a <code>RESET</code> node stops counting until it re-executes successfully — s
 holds the barrier instead of firing it prematurely. A <strong>chained upstream join</strong> counts only once
 it actually <strong>fired</strong> (an evaluation that sank does not count), so multi-stage joins compose
 safely.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>skill=graph.join
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>skill=graph.join
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>connect fetch-name to join with done
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>connect fetch-address to join with done
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>connect join to combine with proceed
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>connect fetch-name to join with done
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>connect fetch-address to join with done
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>connect join to combine with proceed
 </code></pre></div>
 <p><strong>Gotchas:</strong> needs at least two predecessors to be meaningful; it is the explicit fork-join
 mechanism — without it, traversal proceeds as branches complete. The fork side needs no special
@@ -4161,13 +4204,13 @@ new joiner (or an agent) discovers the domain model by reading the connected dic
 entities, not just the execution path.</p>
 <p><strong>Convention (required): leave no node unconnected</strong> — wire every config node into the island
 structure (see <a href="../command-reference/#island">Island — the knowledge layer</a>):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>skill=graph.island
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>skill=graph.island
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>connect root to dictionary with contains
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>connect dictionary to person-name with data
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>connect dictionary to person-address with data
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>connect person-name to mdm-profile with provider
-<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>connect person-address to mdm-profile with provider
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>connect root to dictionary with contains
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>connect dictionary to person-name with data
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>connect dictionary to person-address with data
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>connect person-name to mdm-profile with provider
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>connect person-address to mdm-profile with provider
 </code></pre></div>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
@@ -4281,10 +4324,10 @@ structure (see <a href="../command-reference/#island">Island — the knowledge l
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

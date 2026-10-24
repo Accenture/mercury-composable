@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -3796,7 +3796,7 @@ else — see <a href="#provider-dictionary">Provider &amp; Dictionary</a>):</p>
 skills share Event Script's mapping engine):</p>
 <dl>
 <dt><code>f:plugin(args…)</code></dt>
-<dd>a <a href="../../event-script/syntax/#simple-plugins">simple-plugin</a> invocation — the modern replacement for the deprecated <code>:type</code> suffixes. <strong>Arguments accept any mapping source</strong>: constants and any state-machine path — <code>model.*</code>, <code>input.*</code>, <code>output.*</code>, and node namespaces such as <code>{node}.result.{key}</code> (engine-verified). Examples: <code>f:concat(model.a, text(!))</code>, generators <code>f:uuid()</code> and <code>f:now(text(local))</code> (current date-time at execution: <code>iso</code>/<code>local</code>/<code>ms</code>), JSON dataset creation <code>f:json(text([]))</code> → empty list / <code>f:json(text({"a": [1, 2]}))</code> → nested map (parses JSON text from a constant or model variable), arithmetic <code>f:add(...)</code>, logic <code>f:ternary(...)</code>, and <strong>list/map reshapers</strong> <code>f:removeKey(list, text(key))</code> (strip fields from every map in a list), <code>f:listOfMap(...)</code> (maps-of-lists → list-of-maps, order-preserving) and <code>f:length(...)</code> (length by type: list → element count, string → <strong>character</strong> count, bytes → byte count, null → 0). <strong>Full catalog</strong> in the <a href="../../event-script/syntax/#simple-plugins">Event Script syntax page</a></dd>
+<dd>a <a href="../../event-script/syntax/#simple-plugins">simple-plugin</a> invocation — the modern replacement for the deprecated <code>:type</code> suffixes. <strong>Arguments accept any mapping source</strong>: constants and any state-machine path — <code>model.*</code>, <code>input.*</code>, <code>output.*</code>, and node namespaces such as <code>{node}.result.{key}</code> (engine-verified). Examples: <code>f:concat(model.a, text(!))</code>, generators <code>f:uuid()</code> and <code>f:now(text(local))</code> (current date-time at execution: <code>iso</code>/<code>local</code>/<code>ms</code>), date arithmetic <code>f:addDays(date, days)</code> and <code>f:daysBetween(from, to)</code> (dates written as <code>YYYY-MM-DD</code>, no time and no time zone — <a href="../skills-reference/#dates">dates</a>), JSON dataset creation <code>f:json(text([]))</code> → empty list / <code>f:json(text({"a": [1, 2]}))</code> → nested map (parses JSON text from a constant or model variable), arithmetic <code>f:add(...)</code>, logic <code>f:ternary(...)</code>, and <strong>list/map reshapers</strong> <code>f:removeKey(list, text(key))</code> (strip fields from every map in a list), <code>f:listOfMap(...)</code> (maps-of-lists → list-of-maps, order-preserving) and <code>f:length(...)</code> (length by type: list → element count, string → <strong>character</strong> count, bytes → byte count, null → 0). <strong>Full catalog</strong> in the <a href="../../event-script/syntax/#simple-plugins">Event Script syntax page</a></dd>
 <dt><code>$.…</code></dt>
 <dd>an RFC 9535 JSONPath query over the state machine (prefer plain dot-bracket keys; JSONPath only when the query needs it); a definite path yields the value and an indefinite one (a filter, a wildcard, a deep scan) always a list (<a href="../../event-script/syntax/#json-path">result shape</a>). A graph whose JSONPath is outside the standard is rejected at deployment, in a data dictionary's default value too, and a simple plugin's <code>$</code> argument is checked the same way</dd>
 </dl>
@@ -4675,10 +4675,10 @@ next scaled addend restores the scale. The decimal plugins run in a mapping too 
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.footer", "navigation.indexes", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.tabs.link"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
