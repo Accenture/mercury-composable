@@ -8,7 +8,7 @@ VERSION=4.12.25
 APPS="lab-broker lab-edge lab-worker"
 
 usage() {
-  echo "usage: $0 build | up [oneagent|none] | order | logs <lab-edge|lab-worker|lab-broker> | down"
+  echo "usage: $0 build | up [oneagent|none] | order | logs <lab-edge|lab-worker|lab-broker> | lineage | down"
   exit 1
 }
 
@@ -50,6 +50,14 @@ case "${1:-}" in
     ;;
   logs)
     docker logs "${2:-lab-edge}"
+    ;;
+  lineage)
+    # Mercury's own span tree of the three most recent orders, from both applications' Telemetry log
+    mkdir -p logs
+    for app in lab-edge lab-worker; do
+      docker logs "$app" > "logs/$app.log" 2>&1
+    done
+    python3 lineage.py logs
     ;;
   down)
     docker rm -f lab-edge lab-worker lab-broker 2>/dev/null || true

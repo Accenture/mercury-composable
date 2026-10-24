@@ -40,6 +40,7 @@ download folder and any OneAgent installer (`Dynatrace-OneAgent-Linux*`, `-Windo
 ./lab.sh up oneagent      # or: up none (the baseline: OneAgent without the adapter)
 ./lab.sh order            # one order; repeat a few times
 ./lab.sh logs lab-edge    # or lab-worker | lab-broker
+./lab.sh lineage          # Mercury's own span tree of the last 3 orders, checked span by span
 ./lab.sh down
 ```
 

@@ -113,6 +113,7 @@
                     <include>test-reports/streaming-return-route-cross-pod.md</include>
                     <include>test-reports/otel-dynatrace-certification.md</include>
                     <include>test-reports/llm-helper-certification.md</include>
+                    <include>test-reports/dynatrace-one-agent-integration.md</include>
                 </includes>
             </resource>
             <!-- The canonical rest.yaml fixture is owned by platform-core, where

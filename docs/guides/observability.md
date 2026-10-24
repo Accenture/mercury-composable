@@ -390,6 +390,9 @@ things in Dynatrace:
 4. A `Mono` function's completion appears as a node linked to its hop, at the time the result arrived.
 5. Mercury's `trace_id` on a log line is the Dynatrace trace id of the request.
 
+The [Dynatrace OneAgent integration report](../test-reports/dynatrace-one-agent-integration.md) records these checks
+against a Dynatrace environment, with REST and Kafka entry points.
+
 ## Application log context {#log-context}
 
 Spans tell you the causal path; **application logs** tell you what happened inside each step. The log-context
