@@ -3358,6 +3358,12 @@ engines):</p>
       <code>{table-node}.{model.key}</code>. Never hard-code it as a ladder of
       IF-THEN-ELSE in <code>graph.math</code> or inside a composable function: the table is more readable, and
       the product owner certifies it on the graph (<a href="../skills-reference/#task">static decision table</a>).
+- [ ] <strong>Date arithmetic is a plugin, not code.</strong> A due date or a day count on dates written as <code>YYYY-MM-DD</code> is
+      <code>f:addDays({date}, {days})</code> (a negative number of days goes back) or <code>f:daysBetween({from}, {to})</code> (whole days,
+      the earlier date excluded and the later one included, in either order) in a <code>graph.data.mapper</code>
+      (<a href="../skills-reference/#dates">dates</a>). Never compute it in <code>graph.math</code>, in a composable function or through
+      epoch milliseconds (<code>f:parseDate</code> with <code>ms</code>), which brings time zones back in; the request carries its dates as
+      <code>YYYY-MM-DD</code> text, with no time and no time zone.
 - [ ] A <code>$</code> source is an <strong>RFC 9535</strong> JSONPath query, used only as a data mapping's source: no Jayway forms
       (<code>in</code>, <code>=~</code>, <code>.length()</code>), and no JSONPath inside a <code>{reference}</code>
       (<a href="../../event-script/syntax/#json-path">JSON Path</a>).

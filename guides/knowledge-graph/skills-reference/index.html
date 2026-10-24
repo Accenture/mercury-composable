@@ -3601,8 +3601,7 @@ the same date twice gives <code>0</code>. A date is an ISO-8601 calendar date wr
 no time zone</strong> — the request must carry dates in that form, and a date-time, a single-digit month, a day the calendar
 lacks (<code>2027-02-29</code>) or a null argument aborts the node by name, as does a fractional number of days or a result
 outside the years 0000 to 9999. The days may be a number or numeric text, so a terms property read from a table node
-works as written. Pinned by <code>unit-test-date-arithmetic-1</code> and the engine-neutral <code>date-plugin-vectors.json</code>; Java
-engine only for now — the Rust port gains the plugins when it catches up. The full rules are in the
+works as written. Pinned on both engines by <code>unit-test-date-arithmetic-1</code> and the shared <code>date-plugin-vectors.json</code>. The full rules are in the
 <a href="../../event-script/syntax/#simple-plugins">Event Script syntax page</a> (<em>Date arithmetic plugins</em>).</p>
 <h2 id="math">graph.math<a class="headerlink" href="#math" title="Permanent link">&para;</a></h2>
 <p>Fast inline math and boolean evaluation for computation and decision-making. This is <strong>the</strong> skill
