@@ -365,6 +365,16 @@
    "error": "not-a-date"
   },
   {
+   "id": "add-empty-date",
+   "plugin": "addDays",
+   "args": [
+    "",
+    1
+   ],
+   "error": "not-a-date",
+   "note": "an empty string is not a date"
+  },
+  {
    "id": "add-leading-space",
    "plugin": "addDays",
    "args": [
@@ -449,6 +459,16 @@
     1
    ],
    "error": "not-a-calendar-date"
+  },
+  {
+   "id": "add-feb-30",
+   "plugin": "addDays",
+   "args": [
+    "2027-02-30",
+    1
+   ],
+   "error": "not-a-calendar-date",
+   "note": "February never has 30 days"
   },
   {
    "id": "add-feb-29-century",

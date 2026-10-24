@@ -410,6 +410,24 @@ class GraphTaskTest {
     }
 
     @Test
+    void datePluginsRefuseAMissingRequestField() throws TimeoutException {
+        // unit-test-date-arithmetic-1: an absent request field reaches the plugin as null, which is refused by name -
+        // the run aborts with the reason instead of leaving the due date unset
+        var response = runGraph("unit-test-date-arithmetic-1",
+                Map.of("term_days", 15, "paid_on", "2027-02-02"), Map.of());
+        assertEquals(400, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains(
+                "Expected a date written as YYYY-MM-DD, with no time and no time zone, in addDays - got null"),
+                String.valueOf(response.getBody()));
+        // the days are a request field too
+        response = runGraph("unit-test-date-arithmetic-1",
+                Map.of("invoice_date", "2027-01-15", "paid_on", "2027-02-02"), Map.of());
+        assertEquals(400, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("The days of addDays must be a whole number - got null"),
+                String.valueOf(response.getBody()));
+    }
+
+    @Test
     void mappingSourceResolvesDynamicVariablesVerbatim() throws TimeoutException {
         // unit-test-mapping-1: a {namespace.key} reference inside a mapping source resolves before the
         // source is read - a key segment of a keyed table, a list index, text in a constant and a plugin

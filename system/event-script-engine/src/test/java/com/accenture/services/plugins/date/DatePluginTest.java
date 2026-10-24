@@ -128,6 +128,9 @@ class DatePluginTest {
         assertStartsWith("Expected a date written as YYYY-MM-DD", failure(addDays, "+12027-01-15", 1));
         assertEquals("Expected a date written as YYYY-MM-DD, with no time and no time zone, in addDays - got 20270115",
                 failure(addDays, 20270115, 1).getMessage());
+        // an empty string is not a date either
+        assertEquals("Expected a date written as YYYY-MM-DD, with no time and no time zone, in daysBetween - got ''",
+                failure(daysBetween, "", "2027-01-16").getMessage());
     }
 
     @Test
@@ -138,6 +141,8 @@ class DatePluginTest {
         assertStartsWith("Not a calendar date in daysBetween", failure(daysBetween, "2027-01-01", "2027-13-01"));
         assertStartsWith("Not a calendar date in addDays", failure(addDays, "2027-00-10", 1));
         assertStartsWith("Not a calendar date in addDays", failure(addDays, "2100-02-29", 1));
+        assertEquals("Not a calendar date in daysBetween - got '2027-02-30'",
+                failure(daysBetween, "2027-03-01", "2027-02-30").getMessage());
     }
 
     @Test
