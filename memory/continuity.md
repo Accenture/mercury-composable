@@ -560,7 +560,12 @@
   maintainer pushes the rebuilt bundle onto that PR, A/B-tests the two bundles in a browser (the unit tests run against the
   source, never the bundle), and deploys the same files to Rust. **Run `npm ci` before a release when `node_modules` may be stale
   (2026-10-22):** it held Vite 8.1.5 against the lockfile's 8.3.5 after #572 was rebuilt in a worktree, and a build from it would not
-  have reproduced the committed bundle; `npm ls vite` shows it. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
+  have reproduced the committed bundle; `npm ls vite` shows it. **A test-only dependency leaves the bundle alone, but its
+  tests are then run by hand (2026-10-24, #589):** happy-dom 20.11.1 → 21.0.4 is the tests' environment, and no source the
+  build reaches imports it, so no release was needed. No workflow runs the webapp tests, so a Dependabot merge of a test
+  dependency has run none of them; after `npm ci`, `npm test` passed 490 of 490 on 21.0.4. `npm run build` alone writes only
+  the ignored `dist/`, which compares with the committed bundle (`public/assets`, `template/playground.html`) and with the Rust
+  copy, maps excluded, without touching a tracked file; both were byte-identical. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
   only the entry page moved out of `public/`).
   <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-24 | uses: 28 | tier: active | origin: 2026-10-02-015208 -->
 
