@@ -3462,8 +3462,8 @@ accepted as listed in the CHANGELOG; the WP3 and WP4 rulings above are part of t
 closed as moot and the <code>minimalist-jsonpath</code> thread closes with the promotion. Ships in v4.12.26.</p>
 <hr />
 <h2 id="rfc-0009-live-invocation-observers-a-vendor-neutral-seam-in-platform-core-for-an-apm-agents-code-level-view">RFC-0009 — Live invocation observers: a vendor-neutral seam in platform-core for an APM agent's code-level view<a class="headerlink" href="#rfc-0009-live-invocation-observers-a-vendor-neutral-seam-in-platform-core-for-an-apm-agents-code-level-view" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-10-21 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>dynatrace-oneagent-field-experiment</code></p>
-<!-- id: rfc-0009 | status: open | thread: dynatrace-oneagent-field-experiment -->
+<p><strong>Status:</strong> Promoted → ADR-0032 · <strong>Raised:</strong> 2026-10-21 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>dynatrace-oneagent-field-experiment</code></p>
+<!-- id: rfc-0009 | status: promoted | thread: dynatrace-oneagent-field-experiment -->
 
 <p><strong>Proposal.</strong> A field installation validated the OpenTelemetry forwarder against Dynatrace, but OneAgent's code-level
 view does not show the hops between composable functions, and its log fields do not tie to the trace it shows. The cause:
@@ -3509,7 +3509,10 @@ completion is a linked node, not a long hop. (b) The OpenTelemetry adapter alone
 bound to a thread, but it depends on an agent capturing OpenTelemetry API spans, and Dynatrace documents that spans may
 display flat. (c) Both, chosen on the field's evidence (this branch ships both). (d) An SDK inside the engine itself:
 rejected, because the engine core stays vendor-free.
-<strong>Resolution.</strong></p>
+<strong>Resolution.</strong> Promoted → ADR-0032 (2026-10-24, Eric): option (a), the OneAgent SDK adapter, over the vendor-neutral seam.
+Accepted after PR #583 (squash <code>a09a1535</code>) merged with green CI, with #584 and #585 found on the way. The OpenTelemetry API
+adapter, option (b), was built and removed: under OneAgent its spans were never linked across the event bus. The evidence is
+<code>docs/test-reports/dynatrace-one-agent-integration.md</code>.</p>
 <hr />
 <h2 id="rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment">RFC-0008 — The mini-scheduler's active environment: one site runs the jobs of an active-active deployment<a class="headerlink" href="#rfc-0008-the-mini-schedulers-active-environment-one-site-runs-the-jobs-of-an-active-active-deployment" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Promoted → ADR-0030 · <strong>Raised:</strong> 2026-10-09 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>scheduler-active-environment</code></p>
