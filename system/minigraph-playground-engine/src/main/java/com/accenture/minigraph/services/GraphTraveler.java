@@ -509,7 +509,8 @@ public class GraphTraveler extends GraphLambdaFunction {
      * with either "Graph traversal completed in N ms" or "Graph traversal aborted: {reason}"
      * — a deterministic signal, never a timeout, and every abort names its reason, the
      * shape of the GraphExecutor's log record (field issue #454: a bare abort was
-     * undiagnosable). Callers own the terminal via {@link #claimTerminal} before emitting.
+     * undiagnosable). The abort carries the failure's error status, which the endpoint reports
+     * as ok=false. Callers own the terminal via {@link #claimTerminal} before emitting.
      */
     private void emitAborted(PostOffice po, GraphInstance graphInstance, int status, Object reason) {
         emitAborted(po, graphInstance.getReplyTo(), graphInstance.getCorrelationId(), status, reason);

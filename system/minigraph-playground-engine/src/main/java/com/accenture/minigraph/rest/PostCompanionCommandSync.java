@@ -24,8 +24,8 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
-import org.platformlambda.core.models.LambdaFunction;
 import org.platformlambda.core.models.TypedLambdaFunction;
+import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
@@ -41,6 +41,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * THE AI-companion endpoint (ADR-0008, synchronous). Its fire-and-forget sibling
@@ -65,6 +66,12 @@ import java.util.concurrent.TimeUnit;
  * output before it replies, so a <b>FIFO sentinel</b> marks its buffer drained. A
  * sentinel would race (and usually beat) the traversal tail, truncating the
  * capture. The WebSocket console behavior is unchanged.
+ * <p>
+ * The outcome is a failure when the engine says so, never inferred from the wording of
+ * its lines: the command service sends every refusal (the line that says why a command
+ * did nothing or failed) with an error status, as the traveler sends a traversal's
+ * abort, and the first such line is the {@code error}. A command that throws past the
+ * command service fails its RPC, which is an error too.
  */
 @OptionalService("app.env=dev")
 @PreLoad(route = "post.companion.command.sync", instances = 10)
@@ -107,22 +114,16 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         var po = new PostOffice(headers, instance);
         var platform = Platform.getInstance();
 
-        // A private, per-call capture route: buffer each line for the in-band response and
-        // tee it to the session's real WebSocket .out for the live human view.
-        // A traversal (`run`) streams its output after the handler replies; every other
-        // command emits all output before replying. One latch serves both: it fires on
-        // the traveler's terminal line for a traversal, or on the FIFO sentinel otherwise.
-        final var traversal = isTraversalCommand(command);
-        List<Object> buffer = new CopyOnWriteArrayList<>();
-        CountDownLatch drained = new CountDownLatch(1);
-        platform.registerPrivate(captureRoute, captureFunction(outRoute, traversal, buffer, drained), 1);
+        // a private, per-call capture route (see Capture)
+        var capture = new Capture(outRoute, isTraversalCommand(command));
+        platform.registerPrivate(captureRoute, capture, 1);
         final boolean complete;
         try {
-            complete = dispatchAndDrain(po, id, command, inRoute, captureRoute, traversal, drained);
+            complete = dispatchAndDrain(po, id, command, inRoute, captureRoute, capture);
         } finally {
             platform.release(captureRoute);
         }
-        return outcomeResponse(id, command, buffer, complete);
+        return outcomeResponse(id, command, capture, complete);
     }
 
     private static String commandFromBody(AsyncHttpRequest input) {
@@ -136,17 +137,41 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         return command;
     }
 
-    private LambdaFunction captureFunction(String outRoute, boolean traversal,
-                                           List<Object> buffer, CountDownLatch drained) {
-        var emitter = EventEmitter.getInstance();
-        return (hdr, body, inst) -> {
+    /**
+     * The private, per-call capture route: it buffers each line for the in-band response, tees it
+     * to the session's real WebSocket .out for the live human view, and remembers the first line
+     * the engine flagged as a refusal. It takes the whole event, because the flag is the event's
+     * error status. A traversal (`run`) streams its output after the handler replies; every other
+     * command emits all output before replying. One latch serves both: it fires on the traveler's
+     * terminal line for a traversal, or on the FIFO sentinel otherwise.
+     */
+    private static final class Capture implements TypedLambdaFunction<EventEnvelope, Void> {
+        private final EventEmitter emitter = EventEmitter.getInstance();
+        private final String outRoute;
+        private final boolean traversal;
+        private final List<Object> buffer = new CopyOnWriteArrayList<>();
+        private final AtomicReference<String> refusal = new AtomicReference<>();
+        private final AtomicReference<String> failure = new AtomicReference<>();
+        private final CountDownLatch drained = new CountDownLatch(1);
+
+        Capture(String outRoute, boolean traversal) {
+            this.outRoute = outRoute;
+            this.traversal = traversal;
+        }
+
+        @Override
+        public Void handleEvent(Map<String, String> headers, EventEnvelope event, int instance) {
+            var body = event.getBody();
             if (SYNC_SENTINEL.equals(body)) {
                 drained.countDown();
                 return null;
             }
             buffer.add(body);
+            if (event.hasError()) {
+                refusal.compareAndSet(null, asText(event.getError()));
+            }
             try {
-                emitter.send(new EventEnvelope().setTo(outRoute).setBody(body));
+                emitter.send(new EventEnvelope().setTo(outRoute).setStatus(event.getStatus()).setBody(body));
             } catch (Exception e) {
                 // best-effort tee: the .out route may have no live WebSocket
                 log.debug("Tee to {} skipped - {}", outRoute, e.getMessage());
@@ -157,17 +182,22 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
                 drained.countDown();
             }
             return null;
-        };
+        }
+
+        private static String asText(Object error) {
+            return error instanceof String text? text
+                    : SimpleMapper.getInstance().getMapper().writeValueAsString(error);
+        }
     }
 
     private boolean dispatchAndDrain(PostOffice po, String id, String command, String inRoute,
-                                     String captureRoute, boolean traversal, CountDownLatch drained)
+                                     String captureRoute, Capture capture)
             throws ExecutionException, InterruptedException {
         // RPC the singleton handler with the capture route as `out`; handleEvent
         // returns once the command is dispatched (a traversal is still running).
         // "direct" marks a synchronous companion RPC: not a flaky WS client, so
         // the identical-command dedup guard does not apply (finding #62)
-        po.request(new EventEnvelope()
+        var dispatched = po.request(new EventEnvelope()
                 .setTo(GraphCommandService.SINGLETON_COMMAND_HANDLER)
                 .setBody(Map.of(
                         "type", COMMAND,
@@ -176,9 +206,14 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
                         "message", command,
                         "direct", true)),
                 COMMAND_TIMEOUT_MS).get();
+        // the command service catches what it expects and prints it as a refusal; anything
+        // else fails the RPC, which the console never shows
+        if (dispatched.hasError()) {
+            capture.failure.set("ERROR: " + dispatched.getError());
+        }
         // Synchronous commands: enqueue the FIFO sentinel to mark the buffer drained.
         // Traversals: the capture route counts the latch down on the terminal line.
-        if (!traversal) {
+        if (!capture.traversal) {
             po.send(new EventEnvelope().setTo(captureRoute).setBody(SYNC_SENTINEL));
         }
         // The timeout is only a safety net; correctness comes from the signal, not from
@@ -187,8 +222,8 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         // config. When the net DOES catch - the signal never arrived - the caller must
         // know: the capture is truncated and the command is still running, so the
         // outcome is classified as a failure, never a silent success.
-        var drainTimeout = traversal ? traversalDrainWindow(inRoute) : DRAIN_TIMEOUT_MS;
-        var complete = drained.await(drainTimeout, TimeUnit.MILLISECONDS);
+        var drainTimeout = capture.traversal ? traversalDrainWindow(inRoute) : DRAIN_TIMEOUT_MS;
+        var complete = capture.drained.await(drainTimeout, TimeUnit.MILLISECONDS);
         if (!complete) {
             log.warn("Companion sync drain timed out for {}", id);
         }
@@ -216,20 +251,23 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
     }
 
     /**
-     * Build the structured outcome from the captured output. Collect the console
-     * lines first, then classify with whole-output context (see firstErrorLine).
+     * Build the structured outcome from the captured output. The error is the first line the
+     * engine flagged as a refusal, else the dispatch's own failure, else a truncated capture.
      */
-    private static EventEnvelope outcomeResponse(String id, String command, List<Object> buffer, boolean complete) {
+    private static EventEnvelope outcomeResponse(String id, String command, Capture capture, boolean complete) {
         List<String> output = new ArrayList<>();
         List<Object> result = new ArrayList<>();
-        for (var item : buffer) {
+        for (var item : capture.buffer) {
             if (item instanceof String line) {
                 output.add(line);
             } else {
                 result.add(item);
             }
         }
-        String error = firstErrorLine(output);
+        var error = capture.refusal.get();
+        if (error == null) {
+            error = capture.failure.get();
+        }
         if (error == null && !complete) {
             error = "Output truncated - the command did not finish within the drain window";
         }
@@ -241,48 +279,6 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         body.put("error", error);
         body.put("result", result.isEmpty() ? null : result);
         return new EventEnvelope().setHeader("Content-Type", "application/json").setBody(body);
-    }
-
-    private static boolean isErrorLine(String line) {
-        // A usage hint beginning with the Syntax prefix is the engine's rejection of a
-        // malformed command. The command did nothing, so the caller must see ok=false
-        // per finding 63. No help page starts a line with that prefix, which rules out
-        // a false positive. A create on a node the model already holds is refused the
-        // same way: it changes nothing, and a caller that trusted ok=true would believe
-        // it had changed the node.
-        return line.startsWith("ERROR:") || line.contains("aborted") || line.contains("does not have")
-                || line.startsWith("Invalid") || line.contains("not found") || line.contains("Please try 'help'")
-                || line.startsWith("Syntax:") || isNodeAlreadyExists(line);
-    }
-
-    /**
-     * The whole line {@code node {name} already exists}, which {@code create node} prints for a name
-     * the model already holds. The match is on the line's shape, not on the words alone, because the
-     * help pages of import and export use "already exists" in their prose.
-     */
-    private static boolean isNodeAlreadyExists(String line) {
-        return line.startsWith("node ") && line.endsWith(" already exists");
-    }
-
-    /**
-     * Whole-output-aware error classification. {@code import graph from {deployed}}
-     * legitimately prints "Graph model not found in /tmp/..." before falling back
-     * to the deployed classpath copy — a benign line that must not mark the
-     * command failed. It is forgiven <b>only</b> when the same output also carries
-     * the fallback's success marker; a genuinely missing model prints the
-     * not-found line alone and stays an error.
-     */
-    private static String firstErrorLine(List<String> lines) {
-        var deployedFallback = lines.stream().anyMatch(l -> l.contains("Found deployed graph model"));
-        for (var line : lines) {
-            if (deployedFallback && line.startsWith("Graph model not found in")) {
-                continue;
-            }
-            if (isErrorLine(line)) {
-                return line;
-            }
-        }
-        return null;
     }
 
     /**

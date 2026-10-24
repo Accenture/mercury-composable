@@ -215,12 +215,19 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    (`1.347.64.20261021-162634`). The manifest is now read from the jar that `java.class.path` names first, the
    application's jar for `java -jar`; a class path that starts with a folder (an IDE, a test run) reads it as before.
    **Upgrade note:** none - `/info` reports the application's own version.
-8. **The companion endpoint reports a `create node` on an existing node as a failure.** For a name the model already holds,
-   `create node` prints `node {name} already exists` and changes nothing, yet the synchronous companion endpoint
-   (`POST /api/companion/{id}/sync`) answered `ok: true`, so a driver that trusted `ok` believed it had changed the node. The
-   endpoint now returns `ok: false` with that line as its `error`. The match is on the whole line's shape, because the help
-   pages of `import` and `export` use the words "already exists" in their prose. Java engine. **Upgrade note:** a driver that
-   sent `create node` to replace a node now sees the failure it always was; `update node` replaces a node.
+8. **The companion endpoint reports every refusal as a failure, by the engine's own flag.** The synchronous companion
+   endpoint (`POST /api/companion/{id}/sync`) decided `ok` by matching each console line against a list of error words, so
+   a refusal worded otherwise came back `ok: true` and a driver that trusted `ok` believed the command had worked: `create
+   node` on a node the model already holds (`node {name} already exists`), an `import graph` that the importer refused
+   after resetting the draft, `import node` of a node the file does not hold, an `export` refused for its root's name, a
+   `delete connection` between nodes that are not connected, and `list` or `session` with an unknown argument. The word
+   list also failed commands that had worked: `help run`, `help schema` and seven tutorials answered `ok: false` for prose
+   that mentions an abort or a "not found". The command service now sends each refusal with an error status, as a traversal's
+   abort already was, and the endpoint reports the first such line as its `error`, or the command's own failure when it
+   throws past the command service (a malformed JSON command). `import node` from a file that does not exist, and
+   `session` with an unknown argument, now say so instead of printing nothing. The WebSocket console shows the same lines.
+   Java engine. **Upgrade note:** a driver that sent `create node` to replace a node now sees the failure it always was;
+   `update node` replaces a node.
 
 ---
 ## Version 4.12.25, 10/12/2026

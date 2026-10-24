@@ -68,6 +68,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String TOTAL = "Total ";
     private static final String INVALID_GRAPH_NAME = "Invalid filename - must be a-z, A-Z, 0-9 with optional hyphen";
     private static final String SESSION_TAG = "Session ";
+    private static final String INVALID_SESSION_COMMAND = "Invalid session command";
     private static final String UPLOAD = "upload";
     private static final String CONTENT = "content";
     private static final String MOCK_DATA_LOADED = "Mock data loaded into 'input.body' namespace";
@@ -79,6 +80,9 @@ public class GraphCommandService extends GraphLambdaFunction {
     private static final String IMPORT = "import";
     private static final String CONNECTIONS = "connections";
     private static final String GRAPH_IMPORTED = "Graph model imported as draft";
+    private static final String GRAPH_NOT_FOUND = "Graph model not found in ";
+    // a refusal's status: the WebSocket console ignores it, and the synchronous companion endpoint reports ok=false
+    private static final int REFUSED = 400;
     private static final long EXPIRY = 20 * 1000L;
     private static final String[] MAPPING_PROPERTIES = {"mapping", "input", "output", "for_each"};
     private static final SimpleTypeMatchingConverter converter = SimpleTypeMatchingConverter.getInstance();
@@ -140,11 +144,20 @@ public class GraphCommandService extends GraphLambdaFunction {
                 handleRequest(po, data);
             } catch (IllegalArgumentException | IOException e) {
                 if (data.get(OUT) instanceof String outRoute) {
-                    po.send(new EventEnvelope().setTo(outRoute).setBody("ERROR: " + e.getMessage()));
+                    refuse(po, outRoute, "ERROR: " + e.getMessage());
                 }
             }
         }
         return null;
+    }
+
+    /**
+     * Print a refusal: the line that says why a command did nothing or failed. It carries an error status, which
+     * the WebSocket console ignores and the synchronous companion endpoint reports as ok=false, so a caller knows a
+     * refusal by its flag, never by its wording. An abort of a traversal carries one too (GraphTraveler).
+     */
+    private static void refuse(PostOffice po, String outRoute, String message) {
+        po.send(new EventEnvelope().setTo(outRoute).setStatus(REFUSED).setBody(message));
     }
 
     private void handleRequest(PostOffice po, Map<String, Object> input) throws IOException {
@@ -298,8 +311,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private void loadMockContent(PostOffice po, String inRoute, String outRoute, Object content, String namespace) {
         var instance = graphInstances.get(inRoute);
         if (instance == null) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(
-                    "Mock data not loaded - this session has no graph instance (instantiate first)"));
+            refuse(po, outRoute, "Mock data not loaded - this session has no graph instance (instantiate first)");
             return;
         }
         var stateMachine = instance.stateMachine;
@@ -428,8 +440,11 @@ public class GraphCommandService extends GraphLambdaFunction {
         po.send(new EventEnvelope().setTo(outRoute).setBody(echo));
         if (!words.isEmpty() && words.getFirst().equalsIgnoreCase(HELP)) {
             var helpText = getHelp(words);
-            po.send(new EventEnvelope().setTo(outRoute).setBody(
-                    Objects.requireNonNullElseGet(helpText, () -> "'" + command + "'"+NOT_FOUND)));
+            if (helpText == null) {
+                refuse(po, outRoute, "'" + command + "'" + NOT_FOUND);
+            } else {
+                po.send(new EventEnvelope().setTo(outRoute).setBody(helpText));
+            }
         } else if (words.size() > 1 && (words.getFirst().equalsIgnoreCase("create") ||
                     words.getFirst().equalsIgnoreCase(INSTANTIATE))) {
             // handle create command without type and properties OR instantiate without mock data
@@ -634,9 +649,8 @@ public class GraphCommandService extends GraphLambdaFunction {
                 "assistant to this session, not a WebSocket session; use the read-only 'session' " +
                 "command here, and manage subscriptions from a WebSocket-connected session";
         var emitter = EventEmitter.getInstance();
-        for (var line : new String[]{"> " + command, error}) {
-            emitter.send(new EventEnvelope().setTo(outRoute).setBody(line));
-        }
+        emitter.send(new EventEnvelope().setTo(outRoute).setBody("> " + command));
+        emitter.send(new EventEnvelope().setTo(outRoute).setStatus(REFUSED).setBody(error));
         return error;
     }
 
@@ -681,7 +695,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (words.size() == 1 && words.getFirst().equalsIgnoreCase(RUN)) {
             handleRunCommand(po, inRoute, outRoute);
         } else {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
+            refuse(po, outRoute, TRY_HELP);
         }
     }
 
@@ -711,8 +725,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             } catch (IllegalArgumentException e) {
                 // the uniform end-of-transmission line, carrying the reason, matching the
                 // traveler's failure shape so the sync companion's drain stays deterministic
-                po.send(new EventEnvelope().setTo(outRoute).setStatus(400)
-                        .setBody("Graph traversal aborted: Unable to run - " + e.getMessage()));
+                refuse(po, outRoute, "Graph traversal aborted: Unable to run - " + e.getMessage());
                 return;
             }
         }
@@ -761,18 +774,20 @@ public class GraphCommandService extends GraphLambdaFunction {
                 po.send(new EventEnvelope().setTo(outRoute).setBody("Session restarted"));
             } else if (words.get(1).equalsIgnoreCase("unsubscribe")) {
                 if (me.isPrimary()) {
-                    po.send(new EventEnvelope().setTo(outRoute).setBody("Nothing to unsubscribe"));
+                    refuse(po, outRoute, "Nothing to unsubscribe");
                 } else {
                     var targetId = me.getTargetId();
                     unsubscribeSession(po, me, outRoute);
                     me.setTargetId(me.getSessionId());
                     po.send(new EventEnvelope().setTo(outRoute).setBody("Session unsubscribed from " + targetId));
                 }
+            } else {
+                refuse(po, outRoute, INVALID_SESSION_COMMAND);
             }
         } else if (words.size() > 2 && words.get(1).equalsIgnoreCase("subscribe")) {
             subscribeSession(po, me, inRoute, outRoute, words.get(2));
         } else {
-            po.send(new EventEnvelope().setTo(outRoute).setBody("Invalid session command"));
+            refuse(po, outRoute, INVALID_SESSION_COMMAND);
         }
     }
 
@@ -825,23 +840,23 @@ public class GraphCommandService extends GraphLambdaFunction {
             var subscribedId = me.getTargetId();
             var message = "You have already subscribed to "+subscribedId+"\n"+
                     "Please do 'session reset' before subscribing to another session";
-            po.send(new EventEnvelope().setTo(outRoute).setBody(message));
+            refuse(po, outRoute, message);
             return;
         }
         var target = sessions.get(GraphSession.getInRoute(sessionId));
         if (target == null) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(SESSION_TAG+sessionId+" not found"));
+            refuse(po, outRoute, SESSION_TAG + sessionId + NOT_FOUND);
         } else {
             if (target.isPrimary()) {
                 var sourceId = me.getSessionId();
                 var targetId = target.getSessionId();
                 if (sourceId.equals(targetId)) {
-                    po.send(new EventEnvelope().setTo(outRoute).setBody("You cannot subscribe to yourself"));
+                    refuse(po, outRoute, "You cannot subscribe to yourself");
                 } else {
                     synchronizeGraph(po, me, target, inRoute, outRoute);
                 }
             } else {
-                po.send(new EventEnvelope().setTo(outRoute).setBody(sessionId+" is not a primary session"));
+                refuse(po, outRoute, sessionId + " is not a primary session");
             }
         }
     }
@@ -930,7 +945,8 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if ("flows".equalsIgnoreCase(type)) {
             listFlows(sb);
         } else {
-            sb.append("Please use 'list nodes', 'list connections', 'list graphs' or 'list flows'");
+            refuse(po, outRoute, "Please use 'list nodes', 'list connections', 'list graphs' or 'list flows'");
+            return;
         }
         po.send(new EventEnvelope().setTo(outRoute).setBody(sb.toString()));
     }
@@ -979,7 +995,7 @@ public class GraphCommandService extends GraphLambdaFunction {
     private void describeDeployedGraph(PostOffice po, String outRoute, String graphId) {
         var model = deployedModel(graphId);
         if (model.isEmpty()) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model '" + graphId + "'" + NOT_FOUND));
+            refuse(po, outRoute, "Graph model '" + graphId + "'" + NOT_FOUND);
             return;
         }
         var nodes = model.get(NODES) instanceof List<?> n? n.size() : 0;
@@ -1302,7 +1318,9 @@ public class GraphCommandService extends GraphLambdaFunction {
                             .setHeader(IN, inRoute).setHeader(TYPE, EXECUTE).setHeader(NODE, nodeName), timeout)
                     .thenAccept(response -> {
                         if (response.hasError()) {
-                            po.send(new EventEnvelope().setTo(outRoute).setBody(response.getBody()));
+                            // the skill's own error status keeps the line a refusal
+                            po.send(new EventEnvelope().setTo(outRoute).setStatus(response.getStatus())
+                                    .setBody(response.getBody()));
                         } else {
                             po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName +
                                     " run for " + response.getExecutionTime() +
@@ -1322,10 +1340,12 @@ public class GraphCommandService extends GraphLambdaFunction {
                 if (file.exists()) {
                     var json = util.file2str(file);
                     findNodeFromAnotherGraph(po, graph, outRoute, nodeName, filename, json);
+                } else {
+                    refuse(po, outRoute, GRAPH_NOT_FOUND + file.getPath());
                 }
             }
         } else {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(INVALID_GRAPH_NAME));
+            refuse(po, outRoute, INVALID_GRAPH_NAME);
         }
     }
 
@@ -1337,8 +1357,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         anotherGraph.importGraph(map);
         var anotherNode = anotherGraph.findNodeByAlias(nodeName);
         if (anotherNode == null) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName +
-                    " does not exist in "+filename));
+            refuse(po, outRoute, NODE_NAME + nodeName + " does not exist in " + filename);
         } else {
             if (updateNodeFromAnotherGraph(graph, nodeName, anotherNode)) {
                 po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName +
@@ -1377,9 +1396,13 @@ public class GraphCommandService extends GraphLambdaFunction {
                 if (file.exists()) {
                     importGraphAsDraft(po, inRoute, outRoute, util.file2str(file));
                 } else {
-                    po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model not found in "+file.getPath()));
+                    // a deployed model of the same name is the fallback, so the missing temp copy is a refusal
+                    // only when there is none
                     var deployed = findDeployedGraph(filename);
-                    if (deployed != null) {
+                    if (deployed == null) {
+                        refuse(po, outRoute, GRAPH_NOT_FOUND + file.getPath());
+                    } else {
+                        po.send(new EventEnvelope().setTo(outRoute).setBody(GRAPH_NOT_FOUND + file.getPath()));
                         po.send(new EventEnvelope().setTo(outRoute).setBody("Found deployed graph model in " +
                                         deployed.location()));
                         importGraphAsDraft(po, inRoute, outRoute, deployed.json());
@@ -1387,7 +1410,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                 }
             }
         } else {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(INVALID_GRAPH_NAME));
+            refuse(po, outRoute, INVALID_GRAPH_NAME);
         }
     }
 
@@ -1459,7 +1482,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             graph.importGraph(GraphModelGate.withoutNullProperties(map));
         } catch (IllegalArgumentException e) {
             // the importer resets the draft before it rejects, so the console must say why
-            po.send(new EventEnvelope().setTo(outRoute).setBody("Graph model not imported - " + e.getMessage()));
+            refuse(po, outRoute, "Graph model not imported - " + e.getMessage());
             return;
         }
         if (graphInstances.containsKey(inRoute)) {
@@ -1471,7 +1494,7 @@ public class GraphCommandService extends GraphLambdaFunction {
 
     private void handleExportCommand(PostOffice po, String inRoute, String outRoute, String filename) {
         if (!validGraphFileName(filename)) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(INVALID_GRAPH_NAME));
+            refuse(po, outRoute, INVALID_GRAPH_NAME);
             return;
         }
         var graph = graphModels.get(inRoute);
@@ -1485,8 +1508,8 @@ public class GraphCommandService extends GraphLambdaFunction {
             root.addType(ROOT);
             po.send(new EventEnvelope().setTo(outRoute).setBody("Root node created because it does not exist"));
         } else if (exportNameConflicts(root, filename, file)) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody("Expect root node name="+
-                    filename+ ", Actual: "+declaredRootName(root)+"\nUpdate root node to overwrite existing graph model"));
+            refuse(po, outRoute, "Expect root node name=" + filename + ", Actual: " + declaredRootName(root) +
+                    "\nUpdate root node to overwrite existing graph model");
             return;
         }
         root.addProperty(NAME, filename);
@@ -1495,8 +1518,8 @@ public class GraphCommandService extends GraphLambdaFunction {
         // NOT a write indicator) and returns false only on an I/O failure -
         // that failure must not be reported as success
         if (!util.str2file(file, text)) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(
-                    "ERROR: unable to write "+file.getPath()+" - check filesystem permissions and space"));
+            refuse(po, outRoute,
+                    "ERROR: unable to write " + file.getPath() + " - check filesystem permissions and space");
             return;
         }
         var n = getRandomCounter();
@@ -1524,7 +1547,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             if (graph != null) {
                 var node = graph.findNodeByAlias(nodeName);
                 if (node == null) {
-                    po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + NOT_FOUND));
+                    refuse(po, outRoute, NODE_NAME + nodeName + NOT_FOUND);
                 } else {
                     graph.removeNode(nodeName);
                     po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " deleted"));
@@ -1540,7 +1563,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         } else if (words.size() == 2 && words.get(1).equalsIgnoreCase(CACHE)) {
             clearCache(po, inRoute, outRoute);
         } else {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
+            refuse(po, outRoute, TRY_HELP);
         }
     }
 
@@ -1556,12 +1579,16 @@ public class GraphCommandService extends GraphLambdaFunction {
                                          MiniGraph graph, String nodeA, String nodeB) {
         if (validSourceAndTargetNodes(po, outRoute, graph, nodeA, nodeB)) {
             var sb = new StringBuilder();
-            deleteConnection(graph, nodeA, nodeB, sb);
-            po.send(new EventEnvelope().setTo(outRoute).setBody(sb.toString()));
+            if (deleteConnection(graph, nodeA, nodeB, sb)) {
+                po.send(new EventEnvelope().setTo(outRoute).setBody(sb.toString()));
+            } else {
+                refuse(po, outRoute, nodeA + " has no connections with " + nodeB);
+            }
         }
     }
 
-    private void deleteConnection(MiniGraph graph, String nodeA, String nodeB, StringBuilder sb) {
+    /** Remove the connections between two nodes, in either direction, and say so: false when there was none. */
+    private boolean deleteConnection(MiniGraph graph, String nodeA, String nodeB, StringBuilder sb) {
         var path1 = graph.findConnection(nodeA, nodeB);
         if (path1 != null) {
             graph.removeConnection(nodeA, nodeB);
@@ -1572,9 +1599,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             graph.removeConnection(nodeB, nodeA);
             sb.append(nodeB).append(" -> ").append(nodeA).append(" removed\n");
         }
-        if (path1 == null && path2 == null) {
-            sb.append(nodeA).append(" has no connections with ").append(nodeB).append('\n');
-        }
+        return path1 != null || path2 != null;
     }
 
     private void handleConnectCommand(PostOffice po, String inRoute, String outRoute, List<String> words) {
@@ -1590,7 +1615,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                         .setBody(NODE_NAME + nodeA + " connected to " + nodeB));
             }
         } else {
-            po.send(new EventEnvelope().setTo(outRoute).setBody("Syntax: connect {node-A} to {node-B} with {relation}"));
+            refuse(po, outRoute, "Syntax: connect {node-A} to {node-B} with {relation}");
         }
     }
 
@@ -1621,7 +1646,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                 && GRAPH.equalsIgnoreCase(words.get(1))) {
             handleInstantiateGraph(po, inRoute, outRoute, lines);
         } else {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
+            refuse(po, outRoute, TRY_HELP);
         }
     }
 
@@ -1725,7 +1750,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                 words.get(3).equalsIgnoreCase("and")) {
             describeConnection(po, inRoute, outRoute, words.get(2), words.get(4));
         } else {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(TRY_HELP));
+            refuse(po, outRoute, TRY_HELP);
         }
     }
 
@@ -1733,8 +1758,11 @@ public class GraphCommandService extends GraphLambdaFunction {
         var command = HELP + " " + skillRoute.replace('.', '-');
         var words = util.split(command, " ");
         var helpText = getHelp(words);
-        po.send(new EventEnvelope().setTo(outRoute).setBody(
-                Objects.requireNonNullElseGet(helpText, () -> "'" + command + "'"+NOT_FOUND)));
+        if (helpText == null) {
+            refuse(po, outRoute, "'" + command + "'" + NOT_FOUND);
+        } else {
+            po.send(new EventEnvelope().setTo(outRoute).setBody(helpText));
+        }
     }
 
     private void describeGraph(PostOffice po, String inRoute, String outRoute) {
@@ -1776,14 +1804,14 @@ public class GraphCommandService extends GraphLambdaFunction {
     private boolean validSourceAndTargetNodes(PostOffice po, String outRoute,
                                               MiniGraph graph, String nodeA, String nodeB) {
         if (nodeA.equals(nodeB)) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(SAME_SOURCE_TARGET));
+            refuse(po, outRoute, SAME_SOURCE_TARGET);
         } else {
             var node1 = graph.findNodeByAlias(nodeA);
             var node2 = graph.findNodeByAlias(nodeB);
             if (node1 == null) {
-                po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeA + NOT_FOUND));
+                refuse(po, outRoute, NODE_NAME + nodeA + NOT_FOUND);
             } else if (node2 == null) {
-                po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeB + NOT_FOUND));
+                refuse(po, outRoute, NODE_NAME + nodeB + NOT_FOUND);
             } else {
                 return true;
             }
@@ -1805,7 +1833,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                 map.put(NODE, node);
                 po.send(new EventEnvelope().setTo(outRoute).setBody(map));
             } else {
-                po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + NOT_FOUND));
+                refuse(po, outRoute, NODE_NAME + nodeName + NOT_FOUND);
             }
         }
     }
@@ -1839,7 +1867,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                             MultiLevelMap keyValues, String deprecationNotice) {
         var node = graph.findNodeByAlias(nodeName);
         if (node == null) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + NOT_FOUND));
+            refuse(po, outRoute, NODE_NAME + nodeName + NOT_FOUND);
         } else {
             node.getTypes().clear();
             node.getProperties().clear();
@@ -1870,7 +1898,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                             MultiLevelMap keyValues, String deprecationNotice) {
         var node = graph.findNodeByAlias(nodeName);
         if (node != null) {
-            po.send(new EventEnvelope().setTo(outRoute).setBody(NODE_NAME + nodeName + " already exists"));
+            refuse(po, outRoute, NODE_NAME + nodeName + " already exists");
         } else {
             node = graph.createNode(nodeName, type == null? UNTYPED : type);
             var map = keyValues.getMap();
