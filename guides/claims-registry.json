@@ -430,6 +430,16 @@
       "quote": "When this instance's environment is not the active one, the scheduler stands by: a scheduled job is skipped with one log line, and an operator's manual run is still honoured.",
       "test": "system/mini-scheduler::ActiveEnvironmentTest#standbySkipsAScheduledJobAndHonoursAnOperatorRun",
       "since": "4.12.22+"
+    },
+    {
+      "id": "companion-ok-is-the-engine-verdict",
+      "claim": "The synchronous companion endpoint's ok flag is the engine's own verdict: every refusal and every traversal abort carries an error status, so a refusal is ok:false however it is worded and a help page is never a failure.",
+      "pages": [
+        "docs/guides/knowledge-graph/ai-agent-guide.md"
+      ],
+      "quote": "The \"ok\" flag is the engine's own verdict, never read from the wording of a line",
+      "test": "system/minigraph-playground-engine::CompanionSyncTest#everyRefusalIsAFailureWhateverItsWording",
+      "since": "4.12.26+"
     }
   ]
 }

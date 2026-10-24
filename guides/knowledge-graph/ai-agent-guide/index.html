@@ -3255,20 +3255,19 @@ can self-correct without a human relaying the console:</p>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>     do not require the keys.
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>   - The "ok" flag is the engine's own verdict, never read from the wording of a line: every
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>     line the engine prints to refuse a command (it did nothing, or it failed) or to abort a
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>     run carries an error status, and ok is false when one appears (the Java engine; the Rust
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>     engine still infers ok from the words of the lines). A help page or an informational line
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>     is never a failure, whatever its words: import's normal "Graph model not found in
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>     /tmp/... Found deployed graph model" fallback is ok:true. When ok is false, the error field
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>     carries the first refusal — still read the output for the full picture.
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>   - A malformed command answered with a "Syntax: ..." usage hint is a FAILURE: ok:false
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>     with the hint as the error (the command did nothing).
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>   - Repeating an identical command back-to-back is safe: /sync commands are never
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>     dedup-dropped (the engine's 1-second duplicate guard protects only the WS UI path).
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>   - If ok is false, read error/output, fix it, and re-issue — self-correct; no human relay needed.
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>   - Use result to verify a run/inspect (e.g. output.body).
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>4. The same output is ALSO teed to the human's WebSocket console, so a watcher — and any
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>   `session subscribe`d session (e.g. a product owner) — sees it live: real-time human+AI collaboration.
-<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>5. Read the model shape any time with  GET /api/graph/session/{session-id}.
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>     run carries an error status, and ok is false when one appears. A help page or an
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>     informational line is never a failure, whatever its words: import's normal "Graph model
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>     not found in /tmp/... Found deployed graph model" fallback is ok:true. When ok is false,
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>     the error field carries the first refusal — still read the output for the full picture.
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>   - A malformed command answered with a "Syntax: ..." usage hint is a FAILURE: ok:false
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>     with the hint as the error (the command did nothing).
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>   - Repeating an identical command back-to-back is safe: /sync commands are never
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>     dedup-dropped (the engine's 1-second duplicate guard protects only the WS UI path).
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>   - If ok is false, read error/output, fix it, and re-issue — self-correct; no human relay needed.
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>   - Use result to verify a run/inspect (e.g. output.body).
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>4. The same output is ALSO teed to the human's WebSocket console, so a watcher — and any
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>   `session subscribe`d session (e.g. a product owner) — sees it live: real-time human+AI collaboration.
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>5. Read the model shape any time with  GET /api/graph/session/{session-id}.
 </code></pre></div>
 <p>Status codes: <code>200</code> executed (read <code>ok</code>/<code>error</code> in the body); <code>400</code> missing/empty/non-text body;
 <code>404</code> no active session for that id.</p>
