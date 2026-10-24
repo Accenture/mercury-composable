@@ -53,11 +53,10 @@ can self-correct without a human relaying the console:
      do not require the keys.
    - The "ok" flag is the engine's own verdict, never read from the wording of a line: every
      line the engine prints to refuse a command (it did nothing, or it failed) or to abort a
-     run carries an error status, and ok is false when one appears (the Java engine; the Rust
-     engine still infers ok from the words of the lines). A help page or an informational line
-     is never a failure, whatever its words: import's normal "Graph model not found in
-     /tmp/... Found deployed graph model" fallback is ok:true. When ok is false, the error field
-     carries the first refusal — still read the output for the full picture.
+     run carries an error status, and ok is false when one appears. A help page or an
+     informational line is never a failure, whatever its words: import's normal "Graph model
+     not found in /tmp/... Found deployed graph model" fallback is ok:true. When ok is false,
+     the error field carries the first refusal — still read the output for the full picture.
    - A malformed command answered with a "Syntax: ..." usage hint is a FAILURE: ok:false
      with the hint as the error (the command did nothing).
    - Repeating an identical command back-to-back is safe: /sync commands are never
