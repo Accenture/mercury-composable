@@ -247,10 +247,21 @@ public class PostCompanionCommandSync implements TypedLambdaFunction<AsyncHttpRe
         // A usage hint beginning with the Syntax prefix is the engine's rejection of a
         // malformed command. The command did nothing, so the caller must see ok=false
         // per finding 63. No help page starts a line with that prefix, which rules out
-        // a false positive.
+        // a false positive. A create on a node the model already holds is refused the
+        // same way: it changes nothing, and a caller that trusted ok=true would believe
+        // it had changed the node.
         return line.startsWith("ERROR:") || line.contains("aborted") || line.contains("does not have")
                 || line.startsWith("Invalid") || line.contains("not found") || line.contains("Please try 'help'")
-                || line.startsWith("Syntax:");
+                || line.startsWith("Syntax:") || isNodeAlreadyExists(line);
+    }
+
+    /**
+     * The whole line {@code node {name} already exists}, which {@code create node} prints for a name
+     * the model already holds. The match is on the line's shape, not on the words alone, because the
+     * help pages of import and export use "already exists" in their prose.
+     */
+    private static boolean isNodeAlreadyExists(String line) {
+        return line.startsWith("node ") && line.endsWith(" already exists");
     }
 
     /**

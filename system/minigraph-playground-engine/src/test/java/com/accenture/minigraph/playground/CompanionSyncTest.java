@@ -203,6 +203,27 @@ class CompanionSyncTest {
     }
 
     /**
+     * {@code create node} on a name the model already holds prints "node {name} already exists" and
+     * changes nothing, so the sync outcome is ok=false with that line as the error - a driver that
+     * trusted ok=true would believe it had changed the node. {@code update node} replaces a node and
+     * stays ok=true.
+     */
+    @Test
+    void createOnAnExistingNodeIsAFailure() throws Exception {
+        var po = EventEmitter.getInstance();
+        var sid = openCompanionSession("990017");
+        var first = syncCommand(po, sid, "create node root\nwith type Root");
+        assertEquals(Boolean.TRUE, first.get("ok"), "the first create -> ok:true: " + first);
+        var again = syncCommand(po, sid, "create node root\nwith type Root\nwith properties\npurpose=changed");
+        assertEquals(Boolean.FALSE, again.get("ok"), "a create on an existing node -> ok:false: " + again);
+        assertEquals("node root already exists", again.get("error"), "the error is the engine's line: " + again);
+        var updated = syncCommand(po, sid, "update node root\nwith type Root\nwith properties\npurpose=changed");
+        assertEquals(Boolean.TRUE, updated.get("ok"), "update node replaces the node -> ok:true: " + updated);
+        var help = syncCommand(po, sid, "help import");
+        assertEquals(Boolean.TRUE, help.get("ok"), "help prose that says 'already exists' is not an error: " + help);
+    }
+
+    /**
      * The playground's "run" command reuses the deployment gate's whole-graph rules
      * just before dispatching the traveler: draft authoring allows partial models,
      * but a runnable graph must honor the suspend/resume contract - here a suspend

@@ -195,6 +195,12 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    `scheduler.environment.name`, rather than taking `prod` and running every job on a DR site as well. The scheduler example uses
    the new key. **Upgrade note:** rename `scheduler.environment` to `scheduler.environment.name`; an application that sets only the
    old key keeps working until then.
+7. **The companion endpoint reports a `create node` on an existing node as a failure.** For a name the model already holds,
+   `create node` prints `node {name} already exists` and changes nothing, yet the synchronous companion endpoint
+   (`POST /api/companion/{id}/sync`) answered `ok: true`, so a driver that trusted `ok` believed it had changed the node. The
+   endpoint now returns `ok: false` with that line as its `error`. The match is on the whole line's shape, because the help
+   pages of `import` and `export` use the words "already exists" in their prose. Java engine. **Upgrade note:** a driver that
+   sent `create node` to replace a node now sees the failure it always was; `update node` replaces a node.
 
 ---
 ## Version 4.12.25, 10/12/2026
