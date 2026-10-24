@@ -5,4 +5,4 @@
     and its splitter fixed rather than refused; and a check that preserves each form's existing rendering is what let the
     safeguard land with no working query broken.
   - Decision fact [[minimalist-jsonpath-rfc-9535]]; origin: 2026-10-22-040817 (narrative in the 2026-10-22 logs through 2026-10-22-175132).
-  <!-- id: minimalist-jsonpath | created: 2026-10-22 | last_used: 2026-10-22 | uses: 10 | tier: active | origin: 2026-10-22-040817 -->
+  <!-- id: minimalist-jsonpath | created: 2026-10-22 | last_used: 2026-10-22 | uses: 10 | tier: archive-candidate | origin: 2026-10-22-040817 -->

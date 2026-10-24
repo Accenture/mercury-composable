@@ -3,4 +3,4 @@
   json-smart and accessors-smart from every module, so there is no version left to align. The Boot BOM overriding a
   transitive version for every consumer is kept in `conv-library-pins-are-direct-dependencies`.
   (origin: 2026-10-22-031653; closed in 2026-10-22-053616)
-  <!-- id: json-path-boot-bom-override | created: 2026-10-22 | last_used: 2026-10-22 | uses: 3 | tier: active | origin: 2026-10-22-031653 -->
+  <!-- id: json-path-boot-bom-override | created: 2026-10-22 | last_used: 2026-10-22 | uses: 3 | tier: archive-candidate | origin: 2026-10-22-031653 -->

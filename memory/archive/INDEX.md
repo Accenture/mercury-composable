@@ -269,3 +269,4 @@
 - release-4-12-24 — Release v4.12.24 — SHIPPED 2026-10-12: the Guava resolution the field's Snyk gate rejected… — faded — 2026-Q4.md
 - release-4-12-25 — Release v4.12.25 — SHIPPED 2026-10-13 (Java only): the field's Sonar findings on 4.12.24 c… — faded — 2026-Q4.md
 - decimal-statement-exact-arithmetic — Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math` — the high-precision `C… — faded — 2026-Q4.md
+- playground-graph-image-png-only — The Playground's graph image export is PNG only, rendered by `html-to-image` pinned at 1.1… — faded — 2026-Q4.md

@@ -46,16 +46,22 @@ system/
   twin-kafka               ← a SECOND Kafka cluster on top of minimalist-kafka (dual-cluster bridge)
   ai-contract-provider     ← serves the version-matched AI documentation contract
 extensions/                ← optional add-ons: reactive-postgres (R2DBC), opentelemetry-forwarder,
-                             sync-over-async, minigraph-state-redis (graph suspend/resume store)
+                             dynatrace-oneagent (live invocation observers, ADR-0032), redis-connection,
+                             distributed-cache, sync-over-async, minigraph-state-redis (graph suspend/resume
+                             store); api-playground is a standalone app outside the reactor
 connectors/                ← Kafka pub/sub adapters + presence/service monitoring
   core/{cloud-connector, service-monitor}
   adapters/kafka/{kafka-connector, kafka-presence}
-helpers/                   ← standalone dev servers, no Docker (kafka-standalone, redis-standalone)
+helpers/                   ← standalone dev servers, no Docker (kafka-standalone, redis-standalone,
+                             schema-registry-standalone) and the graph-packager tool
 examples/                  ← reference apps; composable-example is the primary demo
-  (lambda, rest-spring-4, composable, kotlin, scheduler, minigraph, kafka-demo)
+  (lambda, rest-spring-4, composable, kotlin, scheduler, minigraph, kafka-demo, sync-over-async-demo,
+  distributed-cache-example, twin-kafka-demo)
 templates/                 ← copy-out starter projects for the three layers, Maven or Gradle
   (starter-function, starter-flow, starter-graph — reactor-built, standalone poms)
 benchmark/benchmark-reporter ← self-contained perf harness (benchmark-client retired 4.6.2)
+lab/                       ← dev-machine labs, each with its own aggregator pom, OUTSIDE the root reactor
+                             (lab/dynatrace-oneagent; see conv-lab-outside-root-reactor)
 docs/ (guides/, arch-decisions/)  ← docs (mkdocs `docs_dir: docs`);
                                   arch-decisions/ADR.md = the ADR ledger (holds durable design rationale)
 draft-design-specs/        ← committed working design specs (public since 2026-08)
