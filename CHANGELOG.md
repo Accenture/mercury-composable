@@ -84,8 +84,8 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    (not UTC, not a Unix timestamp), so the answer never depends on where the application runs. A date of another shape, a day the
    calendar lacks (`2027-02-29`), a fractional number of days, a null argument and a result outside the years 0000 to 9999 are
    refused by name. Pinned by the engine-neutral `date-plugin-vectors.json` (65 vectors), the plugin and gate tests and the graph
-   fixture `unit-test-date-arithmetic-1`; the graph contract types the results (`string`, `integer`). Java only for now: the
-   Rust port gains them when it catches up. **Upgrade note:** none - two new plugins.
+   fixture `unit-test-date-arithmetic-1`; the graph contract types the results (`string`, `integer`). Both engines: the Rust
+   port's twin is its Increment 189, on the same vectors. **Upgrade note:** none - two new plugins.
 
 ### Changed
 
