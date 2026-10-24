@@ -368,8 +368,10 @@
   pre-filled it. Agent-side guard: when the agent cannot update a PR's title itself, the handoff
   says that the title on GitHub is now wrong and must be replaced in the squash dialog.
   Fourth instance, the trailer (2026-10-24): PR #586's squash `356b5190` carries the same `Co-Authored-By` line three
-  times, from the contributor's commit and the agent's two commits pushed onto the PR branch. Agent-side guard: a commit
-  pushed onto a PR branch carries no trailer, since the PR body's footer has one (the protocol's "omit per-commit copies").
+  times, from the contributor's commit and the agent's two commits pushed onto the PR branch. The first guard recorded for
+  it, leaving the trailer off a commit on a PR branch, was WRONG: #588's squash `5b5cab91` then carried none, because
+  GitHub builds the squash message from the commits' messages and does not copy the PR body's footer. Guard: every commit
+  keeps the trailer, and the squash dialog trims the copies to one, the same review moment as the title.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-24 | uses: 99 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
