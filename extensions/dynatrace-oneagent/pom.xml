@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.platformlambda</groupId>
     <artifactId>dynatrace-oneagent</artifactId>
-    <version>4.12.25</version>
+    <version>4.12.26</version>
     <packaging>jar</packaging>
     <name>Dynatrace OneAgent invocation observer extension</name>
     <description>
@@ -42,7 +42,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.12.25</version>
+            <version>4.12.26</version>
         </dependency>
 
         <!-- Apache-2.0, no dependencies of its own; inert (no-op) when no OneAgent is attached to the JVM -->
@@ -56,7 +56,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>event-script-engine</artifactId>
-            <version>4.12.25</version>
+            <version>4.12.26</version>
             <scope>test</scope>
         </dependency>
         <dependency>
