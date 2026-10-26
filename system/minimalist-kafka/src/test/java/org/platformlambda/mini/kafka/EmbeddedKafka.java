@@ -113,10 +113,13 @@ final class EmbeddedKafka implements AutoCloseable {
 
     private static void formatStorage(Path logDir, Map<String, Short> featureLevels) {
         try (PrintStream quiet = new PrintStream(OutputStream.nullOutputStream(), true, StandardCharsets.UTF_8)) {
+            // the metadata log lives in the only log directory: since Kafka 4.4 the formatter writes the
+            // bootstrap snapshot (the feature levels) only into the directory named here
             Formatter formatter = new Formatter()
                     .setNodeId(NODE_ID)
                     .setClusterId(Uuid.randomUuid().toString())
                     .setDirectories(List.of(logDir.toString()))
+                    .setMetadataLogDirectory(logDir.toString())
                     .setControllerListenerName(CONTROLLER_LISTENER)
                     .setPrintStream(quiet);
             featureLevels.forEach(formatter::setFeatureLevel);

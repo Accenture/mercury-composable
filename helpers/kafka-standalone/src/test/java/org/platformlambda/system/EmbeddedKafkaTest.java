@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -74,6 +75,14 @@ class EmbeddedKafkaTest {
             // exercises the "directory already exists" cleanup path, then the real KRaft Formatter
             invokeFormatStorage(new EmbeddedKafka(true), config);
             assertTrue(Files.exists(dir), "the log directory should be (re)created and formatted");
+            // the feature levels (group.version for the KIP-848 consumer protocol among them) travel in the
+            // bootstrap snapshot of the metadata log; without it the broker starts with none finalized
+            Path metadataLog = dir.resolve("__cluster_metadata-0");
+            assertTrue(Files.isDirectory(metadataLog), "the metadata log should be formatted");
+            try (Stream<Path> files = Files.list(metadataLog)) {
+                assertTrue(files.anyMatch(f -> f.getFileName().toString().endsWith(".checkpoint")),
+                        "the bootstrap snapshot should be written into the metadata log");
+            }
         } finally {
             Utility.getInstance().cleanupDir(dir.toFile());
         }

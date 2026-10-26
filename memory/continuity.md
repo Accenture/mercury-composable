@@ -28,8 +28,10 @@
   RFC 9535 fails when a flow or a graph is compiled, at startup; a direct Jayway or json-smart user declares them), Fixed 3
   (`netty.version` 4.2.19.Final under the Spring Boot parent), Fixed 6 (`scheduler.environment.name`), Fixed 2 (failed tasks traced as
   failures). Sweep 50 build files / 114 plus the lab's three literals. Readiness: `mvn -o clean install` BUILD SUCCESS 6:02, 263 suites,
-  2793 tests, 0 failures, 3 skipped. **Rust:** #398 merge `9a205c06` = tag, crates 12/12 at 17:00Z, caught up from 4.12.24. **The
-  field's CI, Snyk and Sonar result on 4.12.26 is the acceptance to record.** The packs stay at 4.12.21 - **their catch-up is HELD
+  2793 tests, 0 failures, 3 skipped. **Rust:** #398 merge `9a205c06` = tag, crates 12/12 at 17:00Z, caught up from 4.12.24. **Field
+  result 2026-10-26: Snyk FAILED** on two critical findings in `tomcat-embed-core` 11.0.26; fixed on branch `fix/tomcat-11.0.27`
+  (Tomcat 11.0.27, Spring Boot 4.1.2, Vert.x 5.2.2, Caffeine 3.3.1, Gson 2.15.0, Jackson 2.22.4 and 3.2.4, ClassGraph 4.8.199, Kafka 4.4.0; Java only, the Rust port has no Tomcat), for the next
+  release when Eric calls it; Sonar's result not reported. The packs stay at 4.12.21 - **their catch-up is HELD
   (Eric, 2026-10-14) until the higher AI models are available on Bedrock; the additional tests and the fine tuning come first**.
   Origin 2026-10-26-170700.md.
   Prior: v4.12.25 (2026-10-13 02:14:53Z — Java only: every finding of the field's Sonar gate on 4.12.24 closed, no behaviour change
@@ -507,7 +509,14 @@
   reported it - so exclude it from the artifact that declares it and check with `dependency:tree -Dverbose`; (2) every module's
   parent is `spring-boot-starter-parent`, whose BOM overrides a transitive version for each consumer, which is why
   `netty.version` is set in all 38 poms - and why `json-path` resolves 2.10.0 (Boot's) in 34 modules while platform-core
-  declares 3.0.0. Relates
+  declares 3.0.0. **Both ways round (2026-10-26, the Tomcat fix for 4.12.26):** Caffeine 3.3.1, declared in platform-core,
+  reached no consumer (40 nodes stayed on Boot 4.1.2's 3.2.4) until `caffeine.version` joined `netty.version` in the 41 poms,
+  and Gson had shipped that way in 4.12.26 (the nine poms without `gson.version` resolved Boot's 2.13.2, 20 nodes, under the
+  2.14.0 the others set; now 2.15.0 in all 41); and an override written when it was ahead of Boot falls behind the next Boot - the Reactor BOM a pom imports itself
+  (2025.0.7, which takes precedence over the parent's), `httpcore5.version` 5.4.3 and the literal `r2dbc-postgresql`
+  1.1.2.RELEASE would each have held its library below Boot 4.1.2. So a Boot bump compares every property and pin the poms
+  set with the new `spring-boot-dependencies` properties, and a library bump in platform-core asks whether Boot manages it.
+  Relates
   [[conv-template-version-sweep]] (the other reactor-wide sweep).
   <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-22 | uses: 7 | tier: archive-candidate | origin: 2026-10-12-221919 -->
 

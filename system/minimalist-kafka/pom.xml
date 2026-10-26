@@ -18,7 +18,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.2</version>
     </parent>
 
     <properties>
@@ -26,8 +26,10 @@
         <java.version>21</java.version>
         <junit-jupiter.version>6.1.3</junit-jupiter.version>
         <netty.version>4.2.19.Final</netty.version>
-        <jackson-2-bom.version>2.22.3</jackson-2-bom.version>
-        <jackson-bom.version>3.2.3</jackson-bom.version>
+        <caffeine.version>3.3.1</caffeine.version>
+        <gson.version>2.15.0</gson.version>
+        <jackson-2-bom.version>2.22.4</jackson-2-bom.version>
+        <jackson-bom.version>3.2.4</jackson-bom.version>
         <log4j2.version>2.26.1</log4j2.version>
         <!-- Security override: the Confluent registry client pulls httpclient5, whose paired
              httpcore5/httpcore5-h2 carries a Snyk HIGH (CWE-770, resource allocation without
@@ -35,10 +37,10 @@
              the version (management beats nearest-wins, so a direct pin here would not reach
              consumers) - override its property instead. Every module that resolves the Confluent
              chain needs this same override. Remove when Spring Boot's managed version reaches 5.4.3. -->
-        <httpcore5.version>5.4.3</httpcore5.version>
+        <httpcore5.version>5.4.4</httpcore5.version>
         <!-- Pin the Kafka client to the same version as the embedded broker used in tests
              (kafka_2.13) to avoid client/broker protocol skew. -->
-        <kafka.version>4.3.1</kafka.version>
+        <kafka.version>4.4.0</kafka.version>
         <!-- Provides the out-of-the-box Schema Registry serializers (interop with existing client
              projects). Confluent Platform 8.3.x's own tested pairing is Apache Kafka 4.3.x, matching
              the kafka.version pinned above. We still pin our own kafka-clients rather than inherit a
@@ -52,7 +54,7 @@
             <dependency>
                 <groupId>io.projectreactor</groupId>
                 <artifactId>reactor-bom</artifactId>
-                <version>2025.0.7</version>
+                <version>2025.0.8</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -128,21 +130,25 @@
             </exclusions>
         </dependency>
 
-        <!-- CVE-2026-87823 (CWE-190 integer overflow, CVSS 8.8): kafka-clients 4.3.1 - the
-             newest release - ships zstd-jni 1.5.6-10, and no kafka-clients upgrade carries the
-             fix, so the fixed zstd-jni is pinned DIRECTLY (runtime, like the transitive it
-             replaces). Nearest-wins resolution makes this pin effective for every downstream
-             consumer of this module too. Remove when kafka-clients ships zstd-jni >= 1.5.7-14. -->
+        <!-- CVE-2026-87823 (CWE-190 integer overflow, CVSS 8.8): kafka-clients before 4.4.0 ships
+             zstd-jni 1.5.6-10. kafka-clients 4.4.0 ships the fixed 1.5.7-17, but Spring Boot 4.1.2
+             manages kafka-clients 4.2.2, which an application whose parent is spring-boot-starter-parent
+             gets unless it sets kafka.version, so zstd-jni stays pinned DIRECTLY (runtime, like the
+             transitive it replaces) at kafka-clients 4.4.0's version. Nearest-wins resolution makes
+             this pin effective for every downstream consumer of this module too. Remove when Spring
+             Boot manages a kafka-clients that ships zstd-jni >= 1.5.7-14. -->
         <dependency>
             <groupId>com.github.luben</groupId>
             <artifactId>zstd-jni</artifactId>
-            <version>1.5.7-16</version>
+            <version>1.5.7-17</version>
             <scope>runtime</scope>
         </dependency>
 
         <!-- Confluent JSON Schema serializer/deserializer (used as a library to (de)serialize the
              Confluent wire format - magic byte + global schema id + payload). We keep our own pinned
-             kafka-clients, so exclude the transitive one to avoid version skew. -->
+             kafka-clients, so exclude the transitive one to avoid version skew. Its schema generator
+             brings ClassGraph 4.8.138, which loses to platform-core's version but stays in the
+             dependency graph a scanner reads, so it is excluded too. -->
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-json-schema-serializer</artifactId>
@@ -155,6 +161,10 @@
                 <exclusion>
                     <groupId>com.google.guava</groupId>
                     <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.github.classgraph</groupId>
+                    <artifactId>classgraph</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
