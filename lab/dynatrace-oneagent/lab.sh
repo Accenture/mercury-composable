@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 ROOT=../..
-VERSION=4.12.25
+VERSION=4.12.26
 APPS="lab-broker lab-edge lab-worker"
 
 usage() {

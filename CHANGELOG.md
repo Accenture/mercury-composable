@@ -10,7 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Each change merged to `main` after v4.12.25 is listed here; it moves under its release heading when the version is cut.
+Nothing yet. Each change merged to `main` after v4.12.26 is listed here; it moves under its release heading when the version is cut.
+
+---
+## Version 4.12.26, 10/26/2026
+
+JSONPath follows RFC 9535 on both engines: an in-house engine, `minimalist-jsonpath`, replaces Jayway JsonPath and takes
+`json-smart`, reported vulnerable with no fixed release, out of every dependency tree (Changed 4). An APM agent such as
+Dynatrace OneAgent gains a code-level view of every composable-function hop through live invocation observers (Added 7,
+ADR-0032). Flows and graphs gain the date plugins `f:addDays` and `f:daysBetween` (Added 8), `reactive-postgres` gains
+multi-row inserts and multi-table transactions (Added 1 and 3), and the MiniGraph Playground gains mock model variables, a PNG
+export and the graph-set worked example. The ASM, Vert.x and Netty advisories are closed (Fixed 3), and a failed function is
+traced as a failure (Fixed 2). In lock-step with Rust 4.12.26, which catches up from 4.12.24 (4.12.25 was Java only).
+**Upgrade notes:** read Changed 4 before upgrading - a `$` path outside RFC 9535 now fails when a flow or a graph is compiled,
+at startup, and an application that used Jayway or json-smart directly declares them itself. An application whose parent is
+`spring-boot-starter-parent` sets `netty.version` to `4.2.19.Final` (Fixed 3). Rename `scheduler.environment` to
+`scheduler.environment.name` (Fixed 6; the old key keeps working until then). A dashboard or alert on a trace's success now
+sees failed tasks as failures (Fixed 2). Changed 1 and Fixed 8 concern the dev-mode Playground and its companion driver only.
 
 ### Added
 
@@ -172,6 +188,17 @@ Each change merged to `main` after v4.12.25 is listed here; it moves under its r
    - **A value that carried query syntax** into a `$` path - a wildcard, a filter, `..` or a quote - now fails the mapping
      instead of changing the query. In a knowledge graph, a text value inside a literal the author quoted
      (`'{model.team}'`) is no longer quoted a second time, so that form now works.
+5. **The MiniGraph Playground example deploys tutorials 2 to 14 as a graph set, and an import from a deployed model prints one
+   line less (#567).** The example is now the worked example of graph sets (ADR-0027): `tutorial-1` and `support-triage` stay
+   loose graphs, and tutorials 2 to 14 deploy as the set `tutorials` (`resources/graph/tutorials.pack`, version 1.0 - the graph
+   packager's output for the engine's tutorial files, byte for byte), unpacked into `file:/tmp/unpack`. When `import graph` falls
+   back to a deployed graph model, the Playground no longer adds "Please export an updated version and re-import to instantiate
+   an instance model" after "Found deployed graph model in {location}": the next line, "Graph model imported as draft", already
+   says what happened, and the five tutorial help pages that quote the output follow. The unpack examples in `help package`, the
+   starter-graph template's commented manifest and the AI agent guide used a folder under `/tmp/graph`, which the graph-set
+   loader refuses because it is the Playground's temporary folder (`location.graph.temp`); they now use `file:/tmp/unpack` and
+   state the rule, and the configuration reference's refusal sentence names a folder inside the temporary folder too. The
+   Playground bundle is rebuilt. **Upgrade note:** none - an example's deploy layout, one line of dev-mode output and the docs.
 
 ### Fixed
 
