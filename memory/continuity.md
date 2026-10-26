@@ -19,18 +19,22 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.25 (2026-10-13 02:14:53Z — **Java only: every finding of the field's Sonar gate on 4.12.24 closed**: release
-  PR #562 squash `f496291e` = tag `v4.12.25` = the main head at the tag; pom verified at the tag; the GitHub release is published (not a
-  draft) and its notes name Sonar; agent-memory green on the tag commit, the CI build still running at verification (02:20Z). **Content:**
-  #560 (`a4d94916`) and #561 (`d776685d`) - forty code smells and one bug (the Kotlin example's `!!`), no behaviour change
-  ([[conv-sonar-gate-heuristics]]); **the field's pipeline PASSED on that content before the cut (CI, Snyk, Sonar, 2026-10-13)**, so the
-  release is pre-accepted; its deployment was the event left to record. **FIELD-DEPLOYED 2026-10-14 (Eric): the field's CI
-  pipeline passed on 4.12.25 and it is deployed - the acceptance recorded; nothing pending for this release.** **READ:** no action. Sweep BUILD FILES ONLY 45 / 102. Readiness:
-  `mvn -o clean install` BUILD SUCCESS 7:04, 249 suites, 1830 tests, 0 failures, 3 skipped. **No Rust release (Eric's ruling,
-  2026-10-13):** the port catches up with its next feature or fix ([[conv-ports-adopt-java-release-number]]) - since 2026-10-16 it
-  carries one change past its 4.12.24 tag, the rustls 0.23.46 lockfile bump for four RustSec advisories (mercury #386 merge
-  `4a1cab95`, Increment 180); the packs stay at 4.12.21 - **their 4.12.25 catch-up is HELD (Eric, 2026-10-14) until the
-  higher AI models are available on Bedrock; the additional tests and the fine tuning come first**. Origin 2026-10-13-021606.md.
+- **latest_release:** v4.12.26 (2026-10-26 17:05:51Z — **JSONPath to RFC 9535 through `minimalist-jsonpath` (ADR-0031), live invocation
+  observers for an APM agent (ADR-0032), the date plugins, `reactive-postgres` batches and transactions, the Playground round, and the
+  ASM, Vert.x and Netty advisories closed; lock-step with Rust 4.12.26**: release PR #593 squash `50964467` = tag `v4.12.26` = the main
+  head at the tag (the title and one trailer clean); the root pom 4.12.26 and no build file on 4.12.25 at the tag; the GitHub release is
+  published (not a draft), its notes the CHANGELOG section word for word; #593's checks green (the Java 21 build 10m17s, the Gradle
+  templates), agent-memory green on the tag commit, CI still running at verification (17:07Z). **READ:** Changed 4 (a `$` path outside
+  RFC 9535 fails when a flow or a graph is compiled, at startup; a direct Jayway or json-smart user declares them), Fixed 3
+  (`netty.version` 4.2.19.Final under the Spring Boot parent), Fixed 6 (`scheduler.environment.name`), Fixed 2 (failed tasks traced as
+  failures). Sweep 50 build files / 114 plus the lab's three literals. Readiness: `mvn -o clean install` BUILD SUCCESS 6:02, 263 suites,
+  2793 tests, 0 failures, 3 skipped. **Rust:** #398 merge `9a205c06` = tag, crates 12/12 at 17:00Z, caught up from 4.12.24. **The
+  field's CI, Snyk and Sonar result on 4.12.26 is the acceptance to record.** The packs stay at 4.12.21 - **their catch-up is HELD
+  (Eric, 2026-10-14) until the higher AI models are available on Bedrock; the additional tests and the fine tuning come first**.
+  Origin 2026-10-26-170700.md.
+  Prior: v4.12.25 (2026-10-13 02:14:53Z — Java only: every finding of the field's Sonar gate on 4.12.24 closed, no behaviour change
+  ([[conv-sonar-gate-heuristics]]); #562 squash `f496291e` = tag; 249 suites / 1830 tests; FIELD-DEPLOYED 2026-10-14 - the field's
+  pipeline passed. Origin 2026-10-13-021606.md.)
   Prior: v4.12.24 (2026-10-12 22:33:21Z — the Guava resolution the field's Snyk gate rejected in 4.12.23, plus the range plugins' bounds
   and refinements (#554–#558), lock-step with Rust 4.12.24; #559 squash `e1940a4d`, tag → `c571e9c3`; Guava 33.7.2-jre, `failureaccess`
   1.0.3 and Tink 1.23.0 as DIRECT dependencies of `minimalist-kafka` with Confluent 8.3.2, Guava out of `platform-core`
