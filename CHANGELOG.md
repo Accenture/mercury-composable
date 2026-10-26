@@ -10,7 +10,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Nothing yet. Each change merged to `main` after v4.12.26 is listed here; it moves under its release heading when the version is cut.
+Each change merged to `main` after v4.12.26 is listed here; it moves under its release heading when the version is cut.
+
+### Changed
+
+1. **Spring Boot 4.1.2.** The parent of every pom that has one moves from 4.1.1 to 4.1.2 (43), and the starter templates'
+   Gradle builds apply the Spring Boot plugin 4.1.2. Boot 4.1.2 brings Spring Framework 7.0.10 and manages Tomcat 11.0.27
+   (Fixed 1). Three versions the poms pin explicitly would have held their library below Boot 4.1.2, so they move to Boot's:
+   the Reactor BOM 2025.0.7 → 2025.0.8 (34 poms; a BOM a pom imports itself takes precedence over the parent's),
+   `httpcore5.version` 5.4.3 → 5.4.4 (8) and `r2dbc-postgresql` 1.1.2.RELEASE → 1.1.3.RELEASE (`reactive-postgres` and
+   `pg-example`). `dependency:tree -Dverbose` over the reactor, the lab, `api-playground` and `pg-example` resolves one version
+   of each: Tomcat 11.0.27, Spring Boot 4.1.2, Spring Framework 7.0.10, Reactor Core 3.8.8, `httpcore5` 5.4.4,
+   `r2dbc-postgresql` 1.1.3.RELEASE and Netty 4.2.19.Final. **Upgrade note:** an application whose parent is
+   `spring-boot-starter-parent` moves it to 4.1.2; one that imports the Reactor BOM itself moves it to 2025.0.8.
+2. **Vert.x 5.2.2.** `platform-core` declares `vertx-core` 5.2.2, the latest patch release, in place of 5.2.1. Vert.x 5.2.2 is
+   built against Netty 4.2.19.Final, as 5.2.1 was, so `netty.version` stays. Every module of the reactor and the lab resolves
+   5.2.2. **Upgrade note:** none - an application takes Vert.x from `platform-core`.
+3. **Caffeine 3.3.1.** `platform-core` declares Caffeine 3.3.1 in place of 3.2.4. Spring Boot 4.1.2 manages 3.2.4, and its
+   dependency management overrides a version that arrives transitively, so with the declaration alone `platform-core` would
+   have been the only module on 3.3.1 (40 dependency nodes stayed on 3.2.4). Every pom that sets `netty.version` now also sets
+   `caffeine.version` to `3.3.1` (41), and every module of the reactor, the lab, `api-playground` and `pg-example` resolves
+   3.3.1. **Upgrade note:** an application whose parent is `spring-boot-starter-parent` sets `caffeine.version` to `3.3.1`,
+   as it sets `netty.version`; without it, Spring Boot gives it Caffeine 3.2.4.
+4. **Gson 2.15.0.** `gson.version` moves from 2.14.0 to 2.15.0 in the 32 poms that set it and is added to the nine that set
+   `netty.version` without it, among them `minimalist-kafka`, `twin-kafka`, `dynatrace-oneagent`, the Redis extensions and
+   `sync-over-async`. In 4.12.26 those nine resolved Spring Boot's managed Gson 2.13.2 (20 dependency nodes), not the
+   2.14.0 the rest of the reactor declared; every module of the reactor, the lab, `api-playground` and `pg-example` now
+   resolves 2.15.0. Gson 2.15.0 deserializes a JSON object into a `LinkedHashMap` instead of its own `LinkedTreeMap`, both in
+   insertion order; Mercury's mapper reads numbers with `ToNumberPolicy.LONG_OR_DOUBLE` and tests no map class, so its output
+   is unchanged. **Upgrade note:** an application whose parent is `spring-boot-starter-parent` sets `gson.version` to
+   `2.15.0`; without it, Spring Boot gives it Gson 2.13.2.
+5. **Jackson 2.22.4 and 3.2.4.** `jackson-2-bom.version` moves from 2.22.3 to 2.22.4 and `jackson-bom.version` from 3.2.3 to
+   3.2.4, patch releases, in the 40 poms that set them. Every module of the reactor, the lab, `api-playground` and
+   `pg-example` resolves one version of each Jackson artifact. **Upgrade note:** an application whose parent is
+   `spring-boot-starter-parent` sets both properties, as it did for 2.22.3 and 3.2.3; Spring Boot 4.1.2 manages 2.21.7 and
+   3.1.7.
+6. **ClassGraph 4.8.199.** `platform-core` declares ClassGraph 4.8.199, the last 4.x release, in place of 4.8.184. Its public API
+   is unchanged and it still runs on Java 8 and later. The releases between carry the fixes of a file-by-file audit, among
+   them the scan of a Spring Boot 3.2+ or 4.x executable jar through Boot's `nested:` URLs, a scan that never returned when
+   started from a thread holding a classloader lock, and a closed `ScanResult` that could unmap a file another thread was
+   reading. Behaviour that changed: a scan that stops making progress fails after one minute instead of hanging, the scanner
+   runs on the calling thread, and the classpath order follows each classloader's delegation. ClassGraph 5 and 6 are a new
+   API; 6 needs Java 25 and 5 covers Java 17 to 24, so the move waits for the Java 25 baseline. Confluent's JSON Schema
+   serializer brought ClassGraph 4.8.138, which lost to platform-core's version but stayed in the dependency graph a scanner
+   reads; `minimalist-kafka` excludes it, so the reactor holds 4.8.199 alone. **Upgrade note:** none - an application takes
+   ClassGraph from `platform-core`, and Spring Boot does not manage it.
+7. **Kafka 4.4.0.** `kafka.version` moves from 4.3.1 to 4.4.0 in the 28 poms that set it, the client and the embedded broker of
+   `kafka-standalone` alike; Kafka 4.4 adds the optional `bootstrap.resolve.timeout.ms`, whose default keeps the earlier
+   behaviour. Kafka 4.4's storage formatter writes the bootstrap snapshot, which carries the feature levels, only into the
+   directory it is told holds the metadata log. The embedded brokers did not name one, so a broker formatted by 4.4 started
+   with no feature finalized, `group.version` among them, and `group.protocol=auto` resolved to `classic`
+   (`GroupProtocolResolverTest` caught it). `kafka-standalone` and the three test brokers now name their log directory as the
+   metadata log directory, and `EmbeddedKafkaTest` checks that the snapshot is written; it fails without the fix.
+   kafka-clients 4.4.0 ships zstd-jni 1.5.7-17, past the fix for CVE-2026-87823, but Spring Boot 4.1.2 manages kafka-clients
+   4.2.2, so the direct `zstd-jni` pin stays, at 1.5.7-17, in `minimalist-kafka`, `kafka-connector` and
+   `kafka-standalone`. Every module of the reactor, the lab, `api-playground` and `pg-example` resolves Kafka 4.4.0 and
+   zstd-jni 1.5.7-17, and neither lz4 nor snappy, which stay excluded. **Upgrade note:** an application whose parent is
+   `spring-boot-starter-parent` sets `kafka.version` to `4.4.0`; without it, Spring Boot gives it kafka-clients 4.2.2.
+
+### Fixed
+
+1. **Tomcat 11.0.27 - the field's Snyk gate on 4.12.26 closed.** Snyk reported two critical findings in `tomcat-embed-core`
+   11.0.26, an access-control bypass (CWE-284) and a missing step in authentication (CWE-304), and the field's pipeline
+   stopped on them. Apache lists seven fixes in 11.0.27 for 11.0.26, three of them Important: an AJP response mix-up
+   (CVE-2026-103119), an HTTP/2 request and response mix-up after an error in async processing (CVE-2026-101356), and a
+   `JNDIRealm` bind credential check that fails open for SASL mechanisms other than GSSAPI (CVE-2026-101296). `tomcat.version`
+   moves to `11.0.27` in every pom that sets it (30, the starter templates and the lab among them), and Spring Boot 4.1.2
+   manages the same version (Changed 1). **Upgrade note:** an application whose parent is `spring-boot-starter-parent` takes
+   Tomcat's version from Spring Boot unless its own pom sets `tomcat.version`: Boot 4.1.2 brings 11.0.27, and Boot 4.1.1 brought
+   11.0.24, so on 4.1.1 set `tomcat.version` to `11.0.27`, as the starter templates do.
 
 ---
 ## Version 4.12.26, 10/26/2026

@@ -99,10 +99,13 @@ public class EmbeddedKafka extends Thread {
         int nodeId = Integer.parseInt(config.getProperty("node.id", "1"));
         String controllerListener = config.getProperty("controller.listener.names", "CONTROLLER");
         try (PrintStream quiet = new PrintStream(OutputStream.nullOutputStream(), true, StandardCharsets.UTF_8)) {
+            // the metadata log lives in the log directory: since Kafka 4.4 the formatter writes the
+            // bootstrap snapshot (the feature levels) only into the directory named here
             new Formatter()
                     .setNodeId(nodeId)
                     .setClusterId(Uuid.randomUuid().toString())
                     .setDirectories(List.of(kafkaLogs.getAbsolutePath()))
+                    .setMetadataLogDirectory(kafkaLogs.getAbsolutePath())
                     .setControllerListenerName(controllerListener)
                     .setPrintStream(quiet)
                     .run();

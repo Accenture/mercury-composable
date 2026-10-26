@@ -7,7 +7,7 @@
  */
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.1.1'
+    id 'org.springframework.boot' version '4.1.2'
 }
 
 // single-source version literal - the Mercury release sweep updates it
