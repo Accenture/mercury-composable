@@ -382,6 +382,10 @@
   its two commits and GitHub's own `Co-authored-by` below a `---------` line, which GitHub adds for a multi-commit squash. A
   clean squash keeps that last line alone (`138ae1be`), so the dialog holds one copy per commit plus one; the handoff says
   to delete everything above the `---------` line's trailer.
+  Sixth instance, a handoff that went stale (2026-10-29): PR #595's squash `f950a4bd` carries three. The handoff, given when
+  the PR held one commit, said to keep one `Co-Authored-By` line. A second commit was then pushed for round 5 without
+  re-sending the handoff, so it no longer named the `---------` rule. Guard: a commit pushed onto an open PR re-sends the
+  squash handoff, with the title on its own line and the trailer rule for the current commit count.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-24 | uses: 99 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
