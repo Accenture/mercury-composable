@@ -39,6 +39,87 @@
 
 ---
 
+## RFC-0011 — The agent loop: `llm.run` in the engines maps tool names to routes; model turns and MCP bindings in the language packs
+**Status:** Open · **Raised:** 2026-10-28 · **Serves:** vision-mercury-composable · **Thread:** `agent-loop-llm-run`
+<!-- id: rfc-0011 | status: open | thread: agent-loop-llm-run -->
+
+**Proposal.** The foundation of Track 2 (the graph as AI SDLC) for a node whose model calls tools while it reasons — the
+concept's adapter family C, built on families A (`llm.chat`) and B (MCP, route-per-tool). The design spec is
+`draft-design-specs/llm-helper-agent-loop.md`, and it carries Eric's rulings of four review rounds on 2026-10-28. What a
+decision would commit the project to:
+
+0. **Narrow loops, composed by the graph.** Each agent loop has a narrow scope — one question, a few tools — so it runs
+   few turns. A graph may hold several loop nodes, each with its own catalog, mode and turn limit. A use case grows by adding
+   loop nodes, not by widening one.
+1. **The agent loop is engine-side function code, route `llm.run`**, in a new opt-in module `extensions/agent-loop`. Java
+   first, then the Rust port catches up. It is not engine core, and it links no provider SDK, no MCP client and no store
+   client. The function is not an agent — the model is — and the `llm.` prefix marks every node whose result is model output.
+2. **The model turn stays `llm.chat` in the language packs**, and it grows a loop contract. The pack keeps the transcript in
+   an access-controlled store of its own (Redis first) and returns a reference to it, together with the calls normalized as
+   `{id, name, input}`. The loop answers with `{id, output | error}` and the expected turn count. The pack builds the one
+   tool-result message and appends it, refusing a stale turn count with 409. The transcript stays in the provider's format,
+   append-only, which the 5.5 models' thinking blocks require. It never crosses an engine codec, its model is pinned at the
+   first turn, and any pack replica can serve any turn.
+3. **A tool name maps to a route.** The catalog is a skill-less dataset node under the graph's island, certified on the
+   graph. Each row holds an API-safe name, a description written on the graph, the input schema, the route, `strict`, and
+   `approval: required` for a high-risk write. The loop checks the catalog before the first turn: names, schemas,
+   approval values, and that every route is reachable. It validates each input before dispatch. An unknown name or a
+   failed call goes back to the model as an error result; only the loop's own machinery fails the node.
+4. **Approval comes in two kinds.** A marked row waits for a person under the node's mode: `auto` by default, or `manual`
+   or `unattended`. No mode runs a marked row unasked. A turn holding a waiting call runs none of its calls. Every call of
+   the turn, with its arguments, rides the outcome envelope (`status: approval`). The graph suspends, and on resume the
+   loop takes the calls from the restored state and matches the decisions to them by call id. Separately, a **business
+   decision** (`true`/`false`, or a 1-based integer) rides the verdict, and the graph's decision node routes it to a
+   suspension or onward. The product owner anticipates both at design time.
+5. **State stays small, and the settings are on the node.** `model.*` holds the status, the decision, the usage, the
+   references and any waiting calls. The settings are constant input mappings on the loop's node, each with a global
+   default in `application.properties`:
+   - `max_turns`, the run's budget and a proxy for its cumulative input tokens; there is no separate token limit;
+   - `result_limit`;
+   - `transcript_ttl`;
+   - `retention`, the audit policy, `0` by default.
+
+   Telemetry is mandatory and carries no content.
+6. **A graph with an agent loop is asynchronous.**
+   - **Unattended:** `graph.extension` gains `async=true`. The node starts a subgraph or a flow and returns at once,
+     taking no `output[]`, which CompileGraph refuses. With `for_each`, it fans out in parallel: `concurrency` bounds the
+     active runs, and the `for_each` suspension rules apply unchanged. The parent answers an HTTP 202 advice, and the
+     subgraph notifies at its end, spanning days with suspend and resume. Event Script's deferred response
+     (`execution: response`) is the model for this.
+   - **Watched:** progress events (`progress`, then a terminal `result` or `error`) carry `seq` per sender, `time`, `cid`,
+     the graph and the node, and `llm.run`'s run, turn, tool and approval events. They never carry content. They go to the
+     **caller's return route**:
+     - for REST, `async.http.response` (final result only) or the progressive-rendering reply lane;
+     - for an event such as a Kafka message, the route in its `x-return-path` header.
+
+     A node opts in with `progress=<text>`, and only then does its function receive `x-return-path`.
+7. **MCP bindings live in the language packs** (Python, then Node.js). They use the official MCP SDK client, never a child
+   process of an engine. Servers are named in the pack's configuration; there is one route per allowlisted remote tool, and
+   boot fails on a missing tool or a changed input schema. The model sees the graph's descriptions, never the server's.
+8. **No nesting, and no A2A.** An agent is a graph node; the graph sequences agents. An external A2A peer, when one is
+   required, is a route and a catalog row.
+
+**Options.** (a) **The loop in the packs**, beside `llm.chat`, with the MCP client inside it: an earlier staged draft.
+It is one process and needs no new contract. But it puts orchestration in the packs, keeps the tool table and the approval
+logic away from the graph that certifies them, and reaches Mercury routes only by a second hop. Rejected in review.
+(b) **The MCP connector or a provider-hosted agent:** the provider runs the loop. It is not available on every platform the
+field uses, it reaches only public MCP URLs, and the per-call controls are thin. Rejected. (c) **One generic `mcp.call`
+route:** this hides the server and the remote tool inside the arguments, where the catalog cannot certify them. Rejected.
+(d) **The loop in the engines** (proposed). It keeps orchestration with the graph, the tool table on the graph, and
+provider and MCP code in the packs. (e) **The transcript held by the engine** and sent to `llm.chat` inline each turn: the
+pack stays stateless, but the transcript crosses the engine's codec and the wire twice per turn. Rejected in round 3 in
+favour of the pack's own store. (f) **A progress route owned by the engine**, which stamps every event: rejected in round
+4, because the caller already names its return route. **Open questions:** none. Rounds 3 and 4 answered Q1–Q11:
+
+- the defaults are 10 turns, a 64 KiB result limit, a 7-day transcript TTL and retention 0;
+- the transcripts may share the suspend store's Redis under their own prefix.
+
+The RFC is ready for promotion when Eric accepts it.
+
+**Resolution.**
+
+---
+
 ## RFC-0010 — An in-house JSONPath engine to RFC 9535: `system/minimalist-jsonpath` replaces Jayway JsonPath
 **Status:** Promoted → ADR-0031 · **Raised:** 2026-10-22 · **Serves:** vision-mercury-composable · **Thread:** `minimalist-jsonpath`
 <!-- id: rfc-0010 | status: promoted | thread: minimalist-jsonpath -->
