@@ -702,6 +702,9 @@
   owns block identity and agreement across runs on stable ids is the determinism measure; agreements are operative-heavy and
   need a relevance axis against the declared processing scope; pass 2 on the blocks alone yields the human-escalation questions
   and conflicts. Thread [[ai-sdlc-document-ingestion]]; the helper's typed parts by reference and the manifest go to an RFC.
+  **Paused 2026-10-28 (Eric) for the agent loop, RFC-0011 ([[agent-loop-llm-run]]):** `llm.run` in the engines maps tool names to
+  routes; `llm.chat` and the MCP bindings live in the packs; agent graphs are asynchronous. The lab resumes once that design and
+  its implementation are solid.
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
