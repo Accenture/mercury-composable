@@ -1,6 +1,6 @@
 # Agent loop (`llm.run`) — tool names map to routes — design spec
 
-**Status:** DRAFT under **RFC-0011** (Open). Four review rounds on 2026-10-28 (Eric), section 14.
+**Status:** DRAFT under **RFC-0011** (Open). Five review rounds on 2026-10-28 (Eric), section 14.
 Not an ADR: the register entry promotes to one when Eric accepts the whole.
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`ai-agent-orchestration.md`](./ai-agent-orchestration.md) adapter families A
@@ -527,20 +527,47 @@ The terminal events:
 **Transport.** On a WebSocket, each event is one text frame. On a streaming HTTP response, each event
 is one server-sent event: `event:` names the `type`, and `data:` carries the JSON.
 
-**The return route is the caller's.** The engine names no progress route of its own. It sends to the
-route the caller supplied, and the engine carries that route from the entry into the graph
-instance:
+**The return route is the caller's, and it is a function route.** The engine names no progress route
+of its own. It sends to the route the caller supplied, and it carries that route from the entry into
+the graph instance:
 
 | Entry | Return route | Receives |
 | --- | --- | --- |
 | REST, a plain response | `async.http.response`, the REST automation's response route | the final result only: one response per request |
 | REST, progressive rendering (`stream: true`) | the request's ordered reply lane | progress events, then the final result |
 | WebSocket session | the session's outbound route | progress events, then the final result |
-| An event, such as a Kafka message | the route named in its `x-return-path` header | progress events, then the final result |
+| Any event: a Kafka message, an Event-over-HTTP call, another flow or graph | the route named in its `x-return-path` header | progress events, then the final result |
 
 A plain REST response takes the final result alone, so progress goes only to a route that accepts a
 stream. An event that enters with `x-return-path` has no other way back, so its final result goes
 there too.
+
+**`x-return-path` is generic.** It carries a composable-function route name and nothing else. The
+engine sends each event to that route by name, as it sends any event, and what serves the route is
+invisible to the graph:
+
+- a function in the same application;
+- a route that another application serves over Event-over-HTTP, through the caller's
+  `yaml.event.over.http` map;
+- a wrapper function that publishes each event to a Kafka topic, keyed by `cid` so that one run's
+  events stay in order on one partition.
+
+A new transport is therefore a new wrapper function, never an engine change. This is the same
+decoupling that every route in Mercury has.
+
+Three rules keep it bounded:
+
+- **Send, never wait.** The engine sends each event and does not wait for a reply. Delivery belongs to
+  the route: a Kafka wrapper gives durability, for example. A failing return route does not fail the
+  graph run.
+- **Order by `seq`.** A transport may not keep order: separate Event-over-HTTP calls can arrive out of
+  order. A receiver orders a sender's events by `seq`, and finds a gap the same way.
+- **Declared routes only.** The caller chooses the route, so the engine sends only to a route the
+  application declares as a return path (`return.path.routes`, a comma-separated list). A route
+  that is not declared is ignored with one warning, and the run continues without progress. On a
+  REST entry the REST automation sets the return route itself, so an inbound HTTP `x-return-path`
+  header has no effect there. Without this rule, a caller could make the engine send events to any
+  route it can name, a store or a write included.
 
 **Opt-in per node.** A graph node opts in with a `progress=<text>` property. The engine then sends
 `node.start` with that text. If the node is a `graph.task`, the engine also passes the return route
@@ -612,7 +639,8 @@ ticket's text can carry instructions. The controls:
 5. MCP children and credentials in the pack's process, with servers named, never addressed;
 6. results capped, and kept as data that the loop never obeys;
 7. narrow loops, and no nesting;
-8. arguments off the trace and off the progress events;
+8. arguments off the trace and off the progress events, and progress sent only to declared return
+   paths;
 9. the transcript in an access-controlled store, and the approval arguments in the suspend store
    under the same control.
 
@@ -662,8 +690,9 @@ These lessons hold on any engine:
    behaviour to Rust.
 3. **The graph engine**: `async=true` on `graph.extension`, with and without `for_each`, and its
    CompileGraph check (section 8.1). Then the return route carried from each entry into the
-   instance, `x-return-path` in the reserved-names guide, the `progress` node property, and
-   `llm.run`'s events (section 8.4).
+   instance, `x-return-path` in the reserved-names guide, the declared return paths
+   (`return.path.routes`), the `progress` node property, and `llm.run`'s events (section 8.4). A
+   sample wrapper that publishes progress to a Kafka topic shows the generic return path.
 4. **MCP bindings in the Python pack**: stdio and HTTP streaming, the allowlist, schema pinning.
    Then the Node.js twin.
 5. **`llm.run` and the graph features in Rust** catch up from the shared vectors.
@@ -732,6 +761,12 @@ loop does not change for it.
     progressive-rendering reply lane. For an event such as a Kafka message, it is the route named in
     the message's `x-return-path` header (section 8.4).
 32. `async=true` supports `for_each` for parallel fan-out (section 8.1).
+
+**Round 5** (after the PR opened):
+
+33. `x-return-path` is generic: a function route name. It may be a route served over Event-over-HTTP,
+    or a wrapper that publishes to a Kafka topic (section 8.4). The rules that bound it are
+    proposed with it: send and never wait, order by `seq`, and declared routes only.
 
 ## 15. Open questions
 
