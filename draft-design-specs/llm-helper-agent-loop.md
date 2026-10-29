@@ -1,6 +1,6 @@
 # Agent loop (`llm.run`) — tool names map to routes — design spec
 
-**Status:** DRAFT under **RFC-0011** (Open). Five review rounds on 2026-10-28 (Eric), section 14.
+**Status:** DRAFT under **RFC-0011** (Open). Six review rounds, 2026-10-28 and 2026-10-29 (Eric), section 14.
 Not an ADR: the register entry promotes to one when Eric accepts the whole.
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`ai-agent-orchestration.md`](./ai-agent-orchestration.md) adapter families A
@@ -569,6 +569,23 @@ Three rules keep it bounded:
   header has no effect there. Without this rule, a caller could make the engine send events to any
   route it can name, a store or a write included.
 
+**Wildcards in `return.path.routes`.** An entry that ends with `*` matches a route prefix. Any other
+entry matches one route exactly. This is the rule `invocation.observer.include` already applies to
+route names, so one convention serves both lists:
+
+```properties
+return.path.routes=order.status.*, progress.relay, kafka.progress.publisher
+```
+
+- `order.status.*` matches `order.status.kafka` and `order.status.mail.v2`, but not `order.status`
+  itself or `order.statuses`. Writing the dot before the `*` makes the prefix end on a whole segment.
+- A bare `*` is refused at startup, because it would declare every route and undo the rule.
+- So is an entry with a `*` anywhere but at the end, and an entry whose fixed part is not a valid
+  route name. Each refusal names the entry.
+
+A team that owns a family of return routes declares the family once. A new wrapper in that family
+then needs no configuration change.
+
 **Opt-in per node.** A graph node opts in with a `progress=<text>` property. The engine then sends
 `node.start` with that text. If the node is a `graph.task`, the engine also passes the return route
 to the function in the same `x-return-path` header. `llm.run` sends its events to that route, and
@@ -767,6 +784,13 @@ loop does not change for it.
 33. `x-return-path` is generic: a function route name. It may be a route served over Event-over-HTTP,
     or a wrapper that publishes to a Kafka topic (section 8.4). The rules that bound it are
     proposed with it: send and never wait, order by `seq`, and declared routes only.
+
+**Round 6** (2026-10-29, after PR #595 merged):
+
+34. The three return-path rules are accepted: send and never wait, order by `seq`, and declared
+    routes only.
+35. `return.path.routes` supports a wildcard, as in `order.status.*` (section 8.4). It follows the
+    prefix rule of `invocation.observer.include`, and a bare `*` is refused.
 
 ## 15. Open questions
 
