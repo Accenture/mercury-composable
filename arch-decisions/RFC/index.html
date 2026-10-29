@@ -3291,7 +3291,7 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 
 <p><strong>Proposal.</strong> The foundation of Track 2 (the graph as AI SDLC) for a node whose model calls tools while it reasons — the
 concept's adapter family C, built on families A (<code>llm.chat</code>) and B (MCP, route-per-tool). The design spec is
-<code>draft-design-specs/llm-helper-agent-loop.md</code>, and it carries Eric's rulings of five review rounds on 2026-10-28. What a
+<code>draft-design-specs/llm-helper-agent-loop.md</code>, and it carries Eric's rulings of six review rounds on 2026-10-28 and 2026-10-29. What a
 decision would commit the project to:</p>
 <ol>
 <li><strong>Narrow loops, composed by the graph.</strong> Each agent loop has a narrow scope — one question, a few tools — so it runs
@@ -3339,8 +3339,9 @@ decision would commit the project to:</p>
      - for any event, the route in its <code>x-return-path</code> header.</p>
 <div class="highlight"><pre><span></span><code> `x-return-path` is generic: a function route name, served locally, over Event-over-HTTP, or by a wrapper that
  publishes to a Kafka topic. The engine sends and never waits; a receiver orders a sender's events by `seq`; and only
- routes the application declares (`return.path.routes`) are honoured. A node opts in with `progress=&lt;text&gt;`, and
- only then does its function receive `x-return-path`.
+ routes the application declares (`return.path.routes`) are honoured (rules accepted in round 6). An entry ending
+ with `*` declares a family by prefix (`order.status.*`), as `invocation.observer.include` does, and a bare `*` is
+ refused. A node opts in with `progress=&lt;text&gt;`, and only then does its function receive `x-return-path`.
 </code></pre></div>
 <ol>
 <li><strong>MCP bindings live in the language packs</strong> (Python, then Node.js). They use the official MCP SDK client, never a child
