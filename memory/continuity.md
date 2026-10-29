@@ -31,8 +31,10 @@
   2793 tests, 0 failures, 3 skipped. **Rust:** #398 merge `9a205c06` = tag, crates 12/12 at 17:00Z, caught up from 4.12.24. **Field
   result 2026-10-26: Snyk FAILED** on two critical findings in `tomcat-embed-core` 11.0.26; fixed on main by #594 (squash `9d2c91dc`)
   (Tomcat 11.0.27, Spring Boot 4.1.2, Vert.x 5.2.2, Caffeine 3.3.1, Gson 2.15.0, Jackson 2.22.4 and 3.2.4, ClassGraph 4.8.199, Kafka 4.4.0; Java only, the Rust port has no Tomcat), unreleased
-  until Eric calls the next release; Sonar's result not reported. The packs stay at 4.12.21 - **their catch-up is HELD
-  (Eric, 2026-10-14) until the higher AI models are available on Bedrock; the additional tests and the fine tuning come first**.
+  until Eric calls the next release; Sonar's result not reported. The packs stay at 4.12.21. **Their catch-up hold of
+  2026-10-14 is LIFTED (Eric, 2026-10-29):** the work and the packs' releases proceed on the Claude API backend (`llm.backend`), which
+  serves every current Claude model, so a cloud platform's model availability never gates them. Bedrock stays a client-construction
+  switch inside the pack.
   Origin 2026-10-26-170700.md.
   Prior: v4.12.25 (2026-10-13 02:14:53Z — Java only: every finding of the field's Sonar gate on 4.12.24 closed, no behaviour change
   ([[conv-sonar-gate-heuristics]]); #562 squash `f496291e` = tag; 249 suites / 1830 tests; FIELD-DEPLOYED 2026-10-14 - the field's
@@ -705,7 +707,8 @@
   mercury-python #44 merge `03c5f57` and mercury-nodejs #112 merge `0ece23f`); the packs' thread closed; the concept doc's Q2 Bedrock
   half done - sprint 1 COMPLETE on main in all four repositories. **Paused 2026-10-14 (Eric):** resumes when the newer
   Claude models are available - additional tests and fine tuning then; **the packs' 4.12.25 catch-up release is HELD until then
-  (Eric)**.
+  (Eric)**. **Hold LIFTED 2026-10-29 (Eric):** the Claude API backend serves every current model, so the work no longer waits on a
+  platform's model availability; development and certification drives run on it, and the packs release when the work is ready.
   **Research 2026-10-15/16 (Eric's direction) - sprint 2 is DOCUMENT INGESTION:** a field
   installation converts legal PDFs into machine-readable blocks that a second round digests into a graph executing the rules
   and math for transaction processing; the general frame is AI nodes that interpret ambiguity and return per-block outcomes a
