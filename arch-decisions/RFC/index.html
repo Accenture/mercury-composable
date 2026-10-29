@@ -2223,6 +2223,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rfc-0011-the-agent-loop-llmrun-in-the-engines-maps-tool-names-to-routes-model-turns-and-mcp-bindings-in-the-language-packs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0011 — The agent loop: llm.run in the engines maps tool names to routes; model turns and MCP bindings in the language packs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3097,6 +3108,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rfc-0011-the-agent-loop-llmrun-in-the-engines-maps-tool-names-to-routes-model-turns-and-mcp-bindings-in-the-language-packs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RFC-0011 — The agent loop: llm.run in the engines maps tool names to routes; model turns and MCP bindings in the language packs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3262,6 +3284,88 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>**Options.** The alternatives on the table, with their trade-offs.
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>**Resolution.** Empty while open; `Promoted → ADR-NNNN (date)` or `Withdrawn (date): &lt;reason&gt;`.
 </code></pre></div>
+<hr />
+<h2 id="rfc-0011-the-agent-loop-llmrun-in-the-engines-maps-tool-names-to-routes-model-turns-and-mcp-bindings-in-the-language-packs">RFC-0011 — The agent loop: <code>llm.run</code> in the engines maps tool names to routes; model turns and MCP bindings in the language packs<a class="headerlink" href="#rfc-0011-the-agent-loop-llmrun-in-the-engines-maps-tool-names-to-routes-model-turns-and-mcp-bindings-in-the-language-packs" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-10-28 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>agent-loop-llm-run</code></p>
+<!-- id: rfc-0011 | status: open | thread: agent-loop-llm-run -->
+
+<p><strong>Proposal.</strong> The foundation of Track 2 (the graph as AI SDLC) for a node whose model calls tools while it reasons — the
+concept's adapter family C, built on families A (<code>llm.chat</code>) and B (MCP, route-per-tool). The design spec is
+<code>draft-design-specs/llm-helper-agent-loop.md</code>, and it carries Eric's rulings of five review rounds on 2026-10-28. What a
+decision would commit the project to:</p>
+<ol>
+<li><strong>Narrow loops, composed by the graph.</strong> Each agent loop has a narrow scope — one question, a few tools — so it runs
+   few turns. A graph may hold several loop nodes, each with its own catalog, mode and turn limit. A use case grows by adding
+   loop nodes, not by widening one.</li>
+<li><strong>The agent loop is engine-side function code, route <code>llm.run</code></strong>, in a new opt-in module <code>extensions/agent-loop</code>. Java
+   first, then the Rust port catches up. It is not engine core, and it links no provider SDK, no MCP client and no store
+   client. The function is not an agent — the model is — and the <code>llm.</code> prefix marks every node whose result is model output.</li>
+<li><strong>The model turn stays <code>llm.chat</code> in the language packs</strong>, and it grows a loop contract. The pack keeps the transcript in
+   an access-controlled store of its own (Redis first) and returns a reference to it, together with the calls normalized as
+   <code>{id, name, input}</code>. The loop answers with <code>{id, output | error}</code> and the expected turn count. The pack builds the one
+   tool-result message and appends it, refusing a stale turn count with 409. The transcript stays in the provider's format,
+   append-only, which the 5.5 models' thinking blocks require. It never crosses an engine codec, its model is pinned at the
+   first turn, and any pack replica can serve any turn.</li>
+<li><strong>A tool name maps to a route.</strong> The catalog is a skill-less dataset node under the graph's island, certified on the
+   graph. Each row holds an API-safe name, a description written on the graph, the input schema, the route, <code>strict</code>, and
+   <code>approval: required</code> for a high-risk write. The loop checks the catalog before the first turn: names, schemas,
+   approval values, and that every route is reachable. It validates each input before dispatch. An unknown name or a
+   failed call goes back to the model as an error result; only the loop's own machinery fails the node.</li>
+<li><strong>Approval comes in two kinds.</strong> A marked row waits for a person under the node's mode: <code>auto</code> by default, or <code>manual</code>
+   or <code>unattended</code>. No mode runs a marked row unasked. A turn holding a waiting call runs none of its calls. Every call of
+   the turn, with its arguments, rides the outcome envelope (<code>status: approval</code>). The graph suspends, and on resume the
+   loop takes the calls from the restored state and matches the decisions to them by call id. Separately, a <strong>business
+   decision</strong> (<code>true</code>/<code>false</code>, or a 1-based integer) rides the verdict, and the graph's decision node routes it to a
+   suspension or onward. The product owner anticipates both at design time.</li>
+<li><strong>State stays small, and the settings are on the node.</strong> <code>model.*</code> holds the status, the decision, the usage, the
+   references and any waiting calls. The settings are constant input mappings on the loop's node, each with a global
+   default in <code>application.properties</code>:</li>
+<li><code>max_turns</code>, the run's budget and a proxy for its cumulative input tokens; there is no separate token limit;</li>
+<li><code>result_limit</code>;</li>
+<li><code>transcript_ttl</code>;</li>
+<li><code>retention</code>, the audit policy, <code>0</code> by default.</li>
+</ol>
+<p>Telemetry is mandatory and carries no content.
+6. <strong>A graph with an agent loop is asynchronous.</strong>
+   - <strong>Unattended:</strong> <code>graph.extension</code> gains <code>async=true</code>. The node starts a subgraph or a flow and returns at once,
+     taking no <code>output[]</code>, which CompileGraph refuses. With <code>for_each</code>, it fans out in parallel: <code>concurrency</code> bounds the
+     active runs, and the <code>for_each</code> suspension rules apply unchanged. The parent answers an HTTP 202 advice, and the
+     subgraph notifies at its end, spanning days with suspend and resume. Event Script's deferred response
+     (<code>execution: response</code>) is the model for this.
+   - <strong>Watched:</strong> progress events (<code>progress</code>, then a terminal <code>result</code> or <code>error</code>) carry <code>seq</code> per sender, <code>time</code>, <code>cid</code>,
+     the graph and the node, and <code>llm.run</code>'s run, turn, tool and approval events. They never carry content. They go to the
+     <strong>caller's return route</strong>:
+     - for REST, <code>async.http.response</code> (final result only) or the progressive-rendering reply lane;
+     - for any event, the route in its <code>x-return-path</code> header.</p>
+<div class="highlight"><pre><span></span><code> `x-return-path` is generic: a function route name, served locally, over Event-over-HTTP, or by a wrapper that
+ publishes to a Kafka topic. The engine sends and never waits; a receiver orders a sender's events by `seq`; and only
+ routes the application declares (`return.path.routes`) are honoured. A node opts in with `progress=&lt;text&gt;`, and
+ only then does its function receive `x-return-path`.
+</code></pre></div>
+<ol>
+<li><strong>MCP bindings live in the language packs</strong> (Python, then Node.js). They use the official MCP SDK client, never a child
+   process of an engine. Servers are named in the pack's configuration; there is one route per allowlisted remote tool, and
+   boot fails on a missing tool or a changed input schema. The model sees the graph's descriptions, never the server's.</li>
+<li><strong>No nesting, and no A2A.</strong> An agent is a graph node; the graph sequences agents. An external A2A peer, when one is
+   required, is a route and a catalog row.</li>
+</ol>
+<p><strong>Options.</strong> (a) <strong>The loop in the packs</strong>, beside <code>llm.chat</code>, with the MCP client inside it: an earlier staged draft.
+It is one process and needs no new contract. But it puts orchestration in the packs, keeps the tool table and the approval
+logic away from the graph that certifies them, and reaches Mercury routes only by a second hop. Rejected in review.
+(b) <strong>The MCP connector or a provider-hosted agent:</strong> the provider runs the loop. It is not available on every platform the
+field uses, it reaches only public MCP URLs, and the per-call controls are thin. Rejected. (c) <strong>One generic <code>mcp.call</code>
+route:</strong> this hides the server and the remote tool inside the arguments, where the catalog cannot certify them. Rejected.
+(d) <strong>The loop in the engines</strong> (proposed). It keeps orchestration with the graph, the tool table on the graph, and
+provider and MCP code in the packs. (e) <strong>The transcript held by the engine</strong> and sent to <code>llm.chat</code> inline each turn: the
+pack stays stateless, but the transcript crosses the engine's codec and the wire twice per turn. Rejected in round 3 in
+favour of the pack's own store. (f) <strong>A progress route owned by the engine</strong>, which stamps every event: rejected in round
+4, because the caller already names its return route. <strong>Open questions:</strong> none. Rounds 3 and 4 answered Q1–Q11:</p>
+<ul>
+<li>the defaults are 10 turns, a 64 KiB result limit, a 7-day transcript TTL and retention 0;</li>
+<li>the transcripts may share the suspend store's Redis under their own prefix.</li>
+</ul>
+<p>The RFC is ready for promotion when Eric accepts it.</p>
+<p><strong>Resolution.</strong></p>
 <hr />
 <h2 id="rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath">RFC-0010 — An in-house JSONPath engine to RFC 9535: <code>system/minimalist-jsonpath</code> replaces Jayway JsonPath<a class="headerlink" href="#rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Promoted → ADR-0031 · <strong>Raised:</strong> 2026-10-22 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>minimalist-jsonpath</code></p>
