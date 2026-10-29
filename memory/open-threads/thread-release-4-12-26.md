@@ -5,4 +5,4 @@
   `latest_release`.
   origin: 2026-10-26-165029; close 2026-10-26-170700.
   → serves: vision-mercury-composable
-  <!-- id: release-4-12-26 | created: 2026-10-26 | last_used: 2026-10-26 | uses: 1 | tier: working | origin: 2026-10-26-165029 -->
+  <!-- id: release-4-12-26 | created: 2026-10-26 | last_used: 2026-10-26 | uses: 2 | tier: active | origin: 2026-10-26-165029 -->

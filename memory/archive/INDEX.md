@@ -265,8 +265,12 @@
 - llm-helper-certification-java — The LLM helper is not engine code: it is a Claude-only function host in the Python and Nod… — faded — 2026-Q4.md
 - pg-single-connection-is-serial — PostgreSQL runs one statement at a time per connection, so "parallel inserts on a single c… — faded — 2026-Q4.md
 - snyk-retired-manifest-placeholders — Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team + — faded — 2026-Q4.md — REACTIVATED 2026-10-23, back in continuity.md (the lab kept out of the root reactor)
-- conv-ports-adopt-java-release-number — Every port adopts the JAVA release number on catch-up — no downstream repo runs its own ve… — faded — 2026-Q4.md
 - release-4-12-24 — Release v4.12.24 — SHIPPED 2026-10-12: the Guava resolution the field's Snyk gate rejected… — faded — 2026-Q4.md
 - release-4-12-25 — Release v4.12.25 — SHIPPED 2026-10-13 (Java only): the field's Sonar findings on 4.12.24 c… — faded — 2026-Q4.md
 - decimal-statement-exact-arithmetic — Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math` — the high-precision `C… — faded — 2026-Q4.md
 - playground-graph-image-png-only — The Playground's graph image export is PNG only, rendered by `html-to-image` pinned at 1.1… — faded — 2026-Q4.md
+- close-stalled-threads-20261022 — Close stalled threads: `thread-doc-improvement-feedback-loop` (54 sessions) CLOSED by Eric… — completed thread swept (older than archive_window) — 2026-Q4.md
+- json-path-boot-bom-override — `json-path` resolved 2.10.0 in every consumer of platform-core, which declared 3.0.0 (the… — completed thread swept (older than archive_window) — 2026-Q4.md
+- minimalist-jsonpath — An in-house JSONPath engine to RFC 9535 replaces Jayway JsonPath (RFC-0010 → ADR-0031; ser… — completed thread swept (older than archive_window) — 2026-Q4.md
+- reverify-invariants-20261022 — Re-verify invariants: Eric walked the 19 `core` facts and the Vision (the 2026-09-17 two-t… — completed thread swept (older than archive_window) — 2026-Q4.md
+- thread-doc-improvement-feedback-loop — Doc-improvement feedback loop (2026-09-01; closed by Eric 2026-10-22 at the gate [[close-s… — completed thread swept (older than archive_window) — 2026-Q4.md

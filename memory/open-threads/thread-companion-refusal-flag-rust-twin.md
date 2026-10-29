@@ -4,4 +4,4 @@
   - **Lesson:** run the twin's tests against the port's old code before assuming the defect is shared: it confirmed the same nine
     misread help pages, and showed `{not json}` was already `ok: false` on Rust.
   - origin: 2026-10-24-023905 (closed in 2026-10-24-040441)
-  <!-- id: companion-refusal-flag-rust-twin | created: 2026-10-24 | last_used: 2026-10-24 | uses: 1 | tier: working | origin: 2026-10-24-023905 -->
+  <!-- id: companion-refusal-flag-rust-twin | created: 2026-10-24 | last_used: 2026-10-24 | uses: 3 | tier: archive-candidate | origin: 2026-10-24-023905 -->

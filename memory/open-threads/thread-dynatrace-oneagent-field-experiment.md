@@ -4,4 +4,4 @@
   - **Lesson:** OneAgent links an executor handoff from a thread with an active PurePath by itself, and an API span only through
     that thread context, so W3C parents do not link OpenTelemetry API spans under it. See [[live-invocation-observers]].
   - origin: 2026-10-22-003118 (narrative in 2026-10-23-005210 and 2026-10-23-215957; closed in 2026-10-24-013405)
-  <!-- id: dynatrace-oneagent-field-experiment | created: 2026-10-21 | last_used: 2026-10-24 | uses: 8 | tier: active | origin: 2026-10-22-003118 -->
+  <!-- id: dynatrace-oneagent-field-experiment | created: 2026-10-21 | last_used: 2026-10-24 | uses: 8 | tier: archive-candidate | origin: 2026-10-22-003118 -->

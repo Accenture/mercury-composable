@@ -12,4 +12,4 @@
   promotion to an ADR (the build plan:
   pack's loop contract and store, `llm.run` in Java, async `graph.extension` and progress events, the Python MCP binding, the
   Rust catch-up). Development runs on the packs' Claude API backend.
-  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-10-28 | uses: 1 | tier: working | origin: 2026-10-28-233011 -->
+  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-10-29 | uses: 2 | tier: working | origin: 2026-10-28-233011 -->
