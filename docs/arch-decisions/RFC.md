@@ -45,7 +45,7 @@
 
 **Proposal.** The foundation of Track 2 (the graph as AI SDLC) for a node whose model calls tools while it reasons — the
 concept's adapter family C, built on families A (`llm.chat`) and B (MCP, route-per-tool). The design spec is
-`draft-design-specs/llm-helper-agent-loop.md`, and it carries Eric's rulings of five review rounds on 2026-10-28. What a
+`draft-design-specs/llm-helper-agent-loop.md`, and it carries Eric's rulings of six review rounds on 2026-10-28 and 2026-10-29. What a
 decision would commit the project to:
 
 0. **Narrow loops, composed by the graph.** Each agent loop has a narrow scope — one question, a few tools — so it runs
@@ -94,8 +94,9 @@ decision would commit the project to:
 
      `x-return-path` is generic: a function route name, served locally, over Event-over-HTTP, or by a wrapper that
      publishes to a Kafka topic. The engine sends and never waits; a receiver orders a sender's events by `seq`; and only
-     routes the application declares (`return.path.routes`) are honoured. A node opts in with `progress=<text>`, and
-     only then does its function receive `x-return-path`.
+     routes the application declares (`return.path.routes`) are honoured (rules accepted in round 6). An entry ending
+     with `*` declares a family by prefix (`order.status.*`), as `invocation.observer.include` does, and a bare `*` is
+     refused. A node opts in with `progress=<text>`, and only then does its function receive `x-return-path`.
 7. **MCP bindings live in the language packs** (Python, then Node.js). They use the official MCP SDK client, never a child
    process of an engine. Servers are named in the pack's configuration; there is one route per allowlisted remote tool, and
    boot fails on a missing tool or a changed input schema. The model sees the graph's descriptions, never the server's.
