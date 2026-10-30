@@ -31,11 +31,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A {@link CachedSchemaRegistryClient} that fronts {@code getSchemaById} - the hot path used by both
- * serialization-by-id and deserialization - with platform-core's in-memory {@link ManagedCache}. A global
+ * A {@link CachedSchemaRegistryClient} that fronts {@code getSchemaById} with platform-core's in-memory
+ * {@link ManagedCache}, and resolves a {@code (subject, version)} to a global id for the producer. A global
  * schema id is immutable in Confluent (ids are content-addressed), so a resolved {@link ParsedSchema} is
- * cached by id and re-served on later lookups, eliminating repeat registry round-trips. The cache is bounded
- * and TTL-expired by the platform housekeeper - nothing is written to disk.
+ * cached by id and re-served on later lookups. The cache is bounded and TTL-expired - nothing is written to
+ * disk.
+ *
+ * <p><b>Who calls {@code getSchemaById}.</b> The library's own code: {@link SchemaCodec}'s schema-type
+ * dispatch on decode, each serde's schema fetch before a serialize, and {@link #resolve}. Confluent's
+ * serializers and deserializers do not: they call {@code getSchemaEntityBySubjectAndId} and
+ * {@code getSchemaBySubjectAndId}, which {@link CachedSchemaRegistryClient} answers from its own per-subject id
+ * cache - no expiry, bounded by the identity-map capacity. On a {@link ManagedCache} miss,
+ * {@code super.getSchemaById} is answered from that cache too, so an expired entry here costs no registry
+ * request; only an id this client has never fetched does.</p>
  *
  * <p><b>Positive results only.</b> A not-found id is never cached (the registry lookup throws before the
  * cache write). Therefore, a schema registered while the app is running becomes visible on the very next lookup -
@@ -43,8 +51,7 @@ import java.util.Map;
  * Confluent's own "missing" caches off, so no layer remembers an absent id.)</p>
  *
  * <p>The TTL comes from {@code application.properties} ({@code schema.registry.cache.ttl}); the cache is built
- * (and cleared at startup) by {@link SchemaCodec}. The Confluent serdes call {@code getSchemaById} through
- * this client, so they transparently benefit, for any schema type.</p>
+ * (and cleared at startup) by {@link SchemaCodec}.</p>
  */
 public class ManagedCacheSchemaRegistryClient extends CachedSchemaRegistryClient {
 
@@ -63,9 +70,9 @@ public class ManagedCacheSchemaRegistryClient extends CachedSchemaRegistryClient
     }
 
     /**
-     * Resolve a schema by global id, serving a cached {@link ParsedSchema} when present and otherwise fetching
-     * from the registry and caching it. The id is content-addressed and immutable, so a cache hit is always
-     * the correct schema.
+     * Resolve a schema by global id, serving a cached {@link ParsedSchema} when present and otherwise asking
+     * {@link CachedSchemaRegistryClient}, which answers from its own id cache or the registry, and caching the
+     * result. The id is content-addressed and immutable, so a cache hit is always the correct schema.
      *
      * @param id the global schema id
      * @return the parsed schema for {@code id}
@@ -90,9 +97,13 @@ public class ManagedCacheSchemaRegistryClient extends CachedSchemaRegistryClient
      * producer-side convenience and never travel on the wire.
      *
      * <p><b>Cache, by mutability.</b> A pinned numeric version is immutable, so its resolution is cached in
-     * {@code versionCache} (long TTL, bounded). A subject's {@code latest} is mutable (a new registration
-     * moves it), so it shares the short-TTL id→schema {@code cache} (under a {@code "latest/"}-namespaced key
-     * that cannot collide with the digit-only id keys) - a short TTL re-resolves a moved {@code latest}.</p>
+     * {@code versionCache} (long TTL, bounded); {@link CachedSchemaRegistryClient} does not cache
+     * {@code getSchemaMetadata(subject, version)}, so without it every publish would ask the registry. A subject's
+     * {@code latest} is mutable (a new registration moves it), so it shares the id→schema {@code cache} (under a
+     * {@code "latest/"}-namespaced key that cannot collide with the digit-only id keys). Once that entry expires,
+     * the next resolve calls {@code getLatestSchemaMetadata}, which Confluent caches for
+     * {@code latest.cache.ttl.sec} (60 seconds by default) from the same fetch, so with a TTL of a minute or more
+     * it asks the registry: a moved {@code latest} is picked up within {@code schema.registry.cache.ttl}.</p>
      *
      * <p>The schema type is taken from the parsed schema (via {@link #getSchemaById(int)}), so it is
      * authoritative - never guessed from a possibly-absent {@code schemaType} - and that lookup also warms the

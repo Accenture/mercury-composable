@@ -91,9 +91,10 @@ public class SchemaCodec {
     private static final String DEFAULT_VERSION_CACHE_TTL = "10d";
     private static final long VERSION_CACHE_MAX_ITEMS = 3000L;
     /**
-     * Name of the platform {@link ManagedCache} that holds id→schema lookups (for monitoring/inspection).
-     * It also holds {@code subject+latest → (id,type)} resolutions (mutable, so the same short TTL applies),
-     * under {@code "latest/"}-namespaced keys that cannot collide with the digit-only id keys.
+     * Name of the platform {@link ManagedCache} that holds the library's own id→schema lookups (for
+     * monitoring/inspection); Confluent's serdes read the registry client's internal id cache instead. It also
+     * holds {@code subject+latest → (id,type)} resolutions (mutable, so the same TTL applies), under
+     * {@code "latest/"}-namespaced keys that cannot collide with the digit-only id keys.
      */
     public static final String CACHE_NAME = "schema.registry";
     /** ManagedCache holding {@code subject+numeric-version → (id,type)} resolutions (immutable, long TTL, bounded). */
@@ -379,7 +380,7 @@ public class SchemaCodec {
     }
 
     /**
-     * Look up the registered {@code schemaType} for a global id (shared, thread-safe, disk-cached).
+     * Look up the registered {@code schemaType} for a global id (shared, thread-safe, cached in memory).
      *
      * @param id the global schema id
      * @return the schema's {@link SchemaType}
@@ -428,7 +429,7 @@ public class SchemaCodec {
     /**
      * Visible for tests.
      *
-     * @return the shared (file-cached) registry client
+     * @return the shared registry client
      */
     public SchemaRegistryClient client() {
         return client;

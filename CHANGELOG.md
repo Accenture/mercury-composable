@@ -115,6 +115,16 @@ Each change merged to `main` after v4.12.26 is listed here; it moves under its r
    `schema-registry.properties`), and a decode that still fails, for a schema
    id the instance has not looked up since it started, dead-letters the record as it does a poison message. **Upgrade note:**
    none - a `schema.enabled` binding without a `dlq-topic` drops such a record, so give it one.
+2. **The schema cache notes say which cache answers which lookup.** The Minimalist Kafka guide, the configuration reference
+   and the javadoc of `ManagedCacheSchemaRegistryClient` said that the `ManagedCache` behind `schema.registry.cache.ttl` saves
+   the serializers and deserializers their registry round trips by id, and that its TTL lets schema changes be picked up. Read
+   from Confluent 8.3.2 and measured against a counting registry: Confluent's client keeps every schema it fetched by id for
+   the life of the process, its serdes read that cache and never the `ManagedCache`, and an id entry that expires is answered
+   from it without a registry request. The TTL decides how soon a subject's new `latest` version is picked up (Confluent's own
+   60-second `latest` cache sits behind it). The pinned-version cache, `schema.registry.version.cache.ttl` (now in the
+   configuration reference), spares the registry a request on every publish, since Confluent does not cache that lookup. A
+   publish whose registry lookup fails fails its flow, and only a flow the Kafka adapter started is retried and dead-lettered.
+   **Upgrade note:** none - documentation only; no behaviour changed.
 
 ---
 ## Version 4.12.26, 10/26/2026

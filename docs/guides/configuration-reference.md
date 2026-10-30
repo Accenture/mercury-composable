@@ -1304,7 +1304,17 @@ Registry client template location; externalize the same way as the producer temp
 |------|---------|
 | duration | `30m` |
 
-Time-to-live for an entry in the in-memory (platform `ManagedCache`) cache of schemas fetched by id. Positive results only — a not-found id is never cached, so a newly-registered schema is visible immediately. The TTL bounds how long a cached schema is reused before re-fetching; `30m` lets schema changes be picked up without a pod restart (lengthen it in production where schemas change rarely). Cleared at startup (rebuildable).
+Time-to-live for an entry in the library's in-memory (platform `ManagedCache`) cache: its own lookups of a schema by id, and a subject's `latest` resolution. Positive results only — a not-found id is never cached, so a newly-registered schema is visible immediately. A global id is immutable, and Confluent's registry client keeps every schema it fetched by id for the life of the process, so an expired id entry is answered from that cache, not the registry. For `latest` the TTL is how long a newly registered version can take to be picked up without a pod restart; lower it to pick one up sooner. Cleared at startup (rebuildable). See the guide's [schema notes](minimalist-kafka.md#schema-notes).
+
+### `schema.registry.version.cache.ttl`
+
+| Type | Default |
+|------|---------|
+| duration | `10d` |
+
+Time-to-live for a pinned `subject` + numeric `version` resolution, bounded to 3000 entries. A pinned version maps to one
+immutable schema id, so the TTL only bounds memory; Confluent's registry client does not cache this lookup, so this cache is
+what spares the registry a request on every publish that names a pinned version. Cleared at startup.
 
 ### `schema.registry.serde.*`
 
