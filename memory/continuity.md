@@ -395,6 +395,12 @@
   `git log` shows a behaviour change as a docs change (the CHANGELOG states it correctly). Guard: once a PR is open, a
   change of another kind - a behaviour change on a docs PR - goes in a PR of its own, so its title is right by
   construction and the dialog has nothing to fix.
+  Eighth instance, the rule was in the handoff (2026-10-30): PR #599's squash `a5bd2bf6` carries three trailers. The
+  handoff, re-sent for the second commit, gave the title on its own line and said to delete everything above the
+  `---------` line; the title held, the trailer step did not. So a handoff alone does not reliably fix the body. What would
+  fix it by construction (not yet chosen by Eric): squash the PR branch to one commit before the merge handoff, so the dialog
+  pre-fills one trailer, or set the repository's squash-message default to the PR title and description, with the trailer
+  once in the PR body's footer (the fourth instance shows a commit-based default never copies it).
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-29 | uses: 105 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
