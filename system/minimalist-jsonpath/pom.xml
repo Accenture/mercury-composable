@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>minimalist-jsonpath</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.26</version>
+    <version>4.12.27</version>
     <name>Minimalist JSONPath (zero-dependency RFC 9535)</name>
     <description>
         A minimalist JSONPath engine written from RFC 9535, the IETF JSONPath standard: a parser that compiles a

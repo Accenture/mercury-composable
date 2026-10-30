@@ -6,7 +6,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>platform-core</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.26</version>
+    <version>4.12.27</version>
     <name>Mercury platform-core module</name>
 
     <parent>
@@ -94,14 +94,14 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minimalist-jsonpath</artifactId>
-            <version>4.12.26</version>
+            <version>4.12.27</version>
         </dependency>
 
         <!-- The MessagePack codec: a zero-dependency module of this repository (system/minimalist-msgpack). -->
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minimalist-msgpack</artifactId>
-            <version>4.12.26</version>
+            <version>4.12.27</version>
         </dependency>
 
         <dependency>

@@ -10,7 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Each change merged to `main` after v4.12.26 is listed here; it moves under its release heading when the version is cut.
+Nothing yet. Each change merged to `main` after v4.12.27 is listed here; it moves under its release heading when the version is cut.
+
+---
+## Version 4.12.27, 10/30/2026
+
+The field's Snyk gate on 4.12.26 is closed: Tomcat 11.0.27 replaces 11.0.26 and its two critical findings (Fixed 1), with Spring
+Boot 4.1.2 and a library round - Vert.x 5.2.2, Caffeine 3.3.1, Gson 2.15.0, Jackson 2.22.4 and 3.2.4, ClassGraph 4.8.199 and
+Kafka 4.4.0 (Changed 1 to 7). A mini-scheduler job takes an optional time zone, so its cron statement keeps its local hour when
+daylight saving moves the UTC offset (Added 1). In `minimalist-kafka`, a dead-letter copy keeps its record's key (Fixed 3), the
+schema codec keeps only the cache Confluent's client lacks (Changed 9), and Guava 32.0.1 leaves the verbose dependency graph
+(Fixed 2). In lock-step with Rust 4.12.27, which carries the dead-letter key and the schema caches. **Upgrade notes:** an application whose parent is `spring-boot-starter-parent` moves it to 4.1.2, or sets
+`tomcat.version` to `11.0.27` on 4.1.1 (Fixed 1), and sets `caffeine.version` to `3.3.1`, `gson.version` to `2.15.0`, the two
+Jackson BOM properties and `kafka.version` to `4.4.0` (Changed 3, 4, 5 and 7); its own `httpcore5.version` may go (Changed 8).
+With `schema.registry.cache.ttl` unset, a newly registered `latest` schema version is picked up within 60 seconds instead of 30
+minutes; a value still set is passed on as `latest.cache.ttl.sec`, with a warning (Changed 9). A dead-letter reprocessor reads
+the original key from the record (Fixed 3). Before giving a scheduled job a `timezone`, check that the state resolver's schedule
+column has room for up to 34 more characters and that its expiry window is more than an hour shorter than the job's period
+(Added 1).
 
 ### Added
 
@@ -89,7 +106,6 @@ Each change merged to `main` after v4.12.26 is listed here; it moves under its r
    from `minimalist-kafka`, `twin-kafka`, `sync-over-async`, the three Kafka examples and the two lab modules; every module
    still resolves `httpcore5` and `httpcore5-h2` 5.4.4. **Upgrade note:** an application whose parent is
    `spring-boot-starter-parent` 4.1.2 may drop its own `httpcore5.version`.
-
 9. **`schema.registry.cache.ttl` retired; the schema codec caches only what Confluent's client does not.** The codec
    fronted Confluent's registry client with a platform `ManagedCache` for lookups by id and for a subject's `latest`
    version, timed by `schema.registry.cache.ttl` (30 minutes). Measured against a counting registry, it saved no request:
