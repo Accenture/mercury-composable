@@ -128,9 +128,23 @@ public class KafkaRequestPublisher implements AutoCloseable {
      */
     public void publishSync(String topic, Integer partition, Map<String, byte[]> headers, byte[] body,
                             long timeoutMs) throws ExecutionException, InterruptedException, TimeoutException {
-        ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<>(topic, partition, null, body);
+        publishSync(topic, partition, null, headers, body, timeoutMs);
+    }
+
+    /**
+     * Publish a keyed message and block until the broker acknowledges it (or the timeout elapses). The
+     * dead-letter path uses it to keep the original record's key, so a keyed record lands on the partition
+     * its key hashes to and a reprocessor reads the key where the producer put it.
+     *
+     * @param key the record key, or {@code null} for a keyless record
+     * @throws ExecutionException if the broker rejected the record (e.g. the topic does not exist)
+     * @throws TimeoutException   if no acknowledgement arrived within {@code timeoutMs}
+     */
+    public void publishSync(String topic, Integer partition, String key, Map<String, byte[]> headers, byte[] body,
+                            long timeoutMs) throws ExecutionException, InterruptedException, TimeoutException {
+        ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<>(topic, partition, key, body);
         if (headers != null) {
-            headers.forEach((key, value) -> producerRecord.headers().add(key, value));
+            headers.forEach((name, value) -> producerRecord.headers().add(name, value));
         }
         send(producerRecord, (metadata, exception) -> { }).get(timeoutMs, TimeUnit.MILLISECONDS);
     }
