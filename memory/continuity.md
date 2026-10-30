@@ -19,23 +19,24 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.26 (2026-10-26 17:05:51Z — **JSONPath to RFC 9535 through `minimalist-jsonpath` (ADR-0031), live invocation
-  observers for an APM agent (ADR-0032), the date plugins, `reactive-postgres` batches and transactions, the Playground round, and the
-  ASM, Vert.x and Netty advisories closed; lock-step with Rust 4.12.26**: release PR #593 squash `50964467` = tag `v4.12.26` = the main
-  head at the tag (the title and one trailer clean); the root pom 4.12.26 and no build file on 4.12.25 at the tag; the GitHub release is
-  published (not a draft), its notes the CHANGELOG section word for word; #593's checks green (the Java 21 build 10m17s, the Gradle
-  templates), agent-memory green on the tag commit, CI still running at verification (17:07Z). **READ:** Changed 4 (a `$` path outside
-  RFC 9535 fails when a flow or a graph is compiled, at startup; a direct Jayway or json-smart user declares them), Fixed 3
-  (`netty.version` 4.2.19.Final under the Spring Boot parent), Fixed 6 (`scheduler.environment.name`), Fixed 2 (failed tasks traced as
-  failures). Sweep 50 build files / 114 plus the lab's three literals. Readiness: `mvn -o clean install` BUILD SUCCESS 6:02, 263 suites,
-  2793 tests, 0 failures, 3 skipped. **Rust:** #398 merge `9a205c06` = tag, crates 12/12 at 17:00Z, caught up from 4.12.24. **Field
-  result 2026-10-26: Snyk FAILED** on two critical findings in `tomcat-embed-core` 11.0.26; fixed on main by #594 (squash `9d2c91dc`)
-  (Tomcat 11.0.27, Spring Boot 4.1.2, Vert.x 5.2.2, Caffeine 3.3.1, Gson 2.15.0, Jackson 2.22.4 and 3.2.4, ClassGraph 4.8.199, Kafka 4.4.0; Java only, the Rust port has no Tomcat), unreleased
-  until Eric calls the next release; Sonar's result not reported. The packs stay at 4.12.21. **Their catch-up hold of
-  2026-10-14 is LIFTED (Eric, 2026-10-29):** the work and the packs' releases proceed on the Claude API backend (`llm.backend`), which
-  serves every current Claude model, so a cloud platform's model availability never gates them. Bedrock stays a client-construction
-  switch inside the pack.
-  Origin 2026-10-26-170700.md.
+- **latest_release:** v4.12.27 (2026-10-30 23:18:11Z — **the field's Snyk fix for 4.12.26 (Tomcat 11.0.27 with Spring Boot 4.1.2 and
+  the library round, #594), a scheduled job's time zone (#599) and the `minimalist-kafka` round (the dead-letter key, the schema
+  cache, Guava 32.0.1 out of the verbose graph, #597 and #598); lock-step with Rust 4.12.27**: release PR #600 squash `2929ea31` = tag
+  `v4.12.27` = the main head at the tag (the title clean, one trailer); the root pom 4.12.27 and no build file on 4.12.26 at the tag;
+  the GitHub release is published (not a draft), its notes the CHANGELOG section under its version heading; agent-memory green on the
+  tag commit, CI still running at verification (23:19Z). **READ:** Fixed 1 and Changed 1, 3, 4, 5 and 7 (an application on the Spring
+  Boot parent moves it to 4.1.2 and sets the listed properties), Changed 9 (`schema.registry.cache.ttl` retired, passed on as
+  `latest.cache.ttl.sec`), Fixed 3 (the dead-letter key), Added 1 (before a job's `timezone`: the resolver's schedule column needs 34
+  more characters - Eric told the field's engineers to check their database and dashboard UI - and its expiry window must be more
+  than an hour shorter than the job's period). Sweep 50 build files / 114 plus the lab's three literals. Readiness: `mvn -o clean
+  install` BUILD SUCCESS 6:53, 265 suites, 2802 tests, 0 failures, 3 skipped. **Rust:** #400 merge `03952aee` = tag, crates 12/12 at
+  23:17Z. Released for the field to test; its CI, Snyk and Sonar result not yet reported. The packs stay at 4.12.21; their catch-up
+  hold was lifted on 2026-10-29 (the Claude API backend serves every current model) and they release when their work is ready.
+  Origin 2026-10-30-231959.md.
+  Prior: v4.12.26 (2026-10-26 17:05:51Z — JSONPath to RFC 9535 through `minimalist-jsonpath` (ADR-0031), live invocation observers for
+  an APM agent (ADR-0032), the date plugins, `reactive-postgres` batches and transactions, the Playground round, the ASM, Vert.x and
+  Netty advisories closed; lock-step with Rust 4.12.26; #593 squash `50964467` = tag; 263 suites / 2793 tests; **Field result
+  2026-10-26: Snyk FAILED** on two critical findings in `tomcat-embed-core` 11.0.26, fixed in 4.12.27. Origin 2026-10-26-170700.md.)
   Prior: v4.12.25 (2026-10-13 02:14:53Z — Java only: every finding of the field's Sonar gate on 4.12.24 closed, no behaviour change
   ([[conv-sonar-gate-heuristics]]); #562 squash `f496291e` = tag; 249 suites / 1830 tests; FIELD-DEPLOYED 2026-10-14 - the field's
   pipeline passed. Origin 2026-10-13-021606.md.)
