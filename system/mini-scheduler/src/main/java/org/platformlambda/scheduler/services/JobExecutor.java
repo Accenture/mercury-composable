@@ -74,7 +74,9 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         return null;
     }
 
-    /** A job's service replied: the job name rides the correlation id after the '@'; tell the resolver the job ended. */
+    /**
+     * A job's service replied: the job name rides the correlation id after the '@'. Tell the resolver the job ended.
+     */
     private void jobCompleted(PostOffice po, String callbackId) {
         var restored = callbackId.substring(callbackId.indexOf('@') + 1);
         ScheduledJob job = JobLoader.getJob(restored);
@@ -134,7 +136,7 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private void executeJob(PostOffice po, ScheduledJob job) {
         po.send(new EventEnvelope().setTo(job.resolver).setBody(job.parameters)
-                .setHeader(SCHEDULE, job.cronSchedule)
+                .setHeader(SCHEDULE, job.schedule)
                 .setHeader(TYPE, START).setHeader(NAME, job.name).setHeader(SERVICE, job.service));
         // encode job name in correlationId
         var cid = Utility.getInstance().getUuid() + "@" + job.name;

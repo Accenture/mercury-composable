@@ -40,6 +40,8 @@ import java.util.Map;
  * 1. start:
  *      header (type = start, name = job_name, schedule = job_cron_statement,
  *              service = task where task is a function route or a flow name)
+ *      (schedule is for information: the cron statement, followed by " @" and the time zone when the job
+ *       names one, e.g. "0 0 9 * * ? @America/New_York")
  *      body (job_parameters)
  *      return true
  * <p>

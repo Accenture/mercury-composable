@@ -1046,7 +1046,8 @@ YAML file(s) defining topic substitution mappings.
 
 ## Scheduler
 
-These properties are used by the optional `mini-scheduler` module.
+These settings are used by the optional `mini-scheduler` module. `yaml.cron` and the `scheduler.environment.*` keys are
+application properties; `deferred.start`, `leader.election` and a job's `timezone` are keys of the cron file itself.
 
 ### `deferred.start`
 
@@ -1054,7 +1055,8 @@ These properties are used by the optional `mini-scheduler` module.
 |------|---------|
 | `boolean` | `false` |
 
-Defer scheduler startup until triggered manually, e.g. to wait for leader election.
+A key of the cron file. Delay each scheduled run by a random 0 to 9 seconds, so that the instances of a cluster reach the
+state resolver at slightly different times and it can tell that a peer has started the job.
 
 ### `leader.election`
 
@@ -1062,7 +1064,23 @@ Defer scheduler startup until triggered manually, e.g. to wait for leader electi
 |------|---------|
 | `boolean` | `false` |
 
-Enable leader election so that only one instance in a cluster runs each scheduled job.
+A key of the cron file. Enable leader election so that only one instance in a cluster runs each scheduled job.
+
+### `jobs[].timezone` {#scheduler-job-timezone}
+
+| Type | Default |
+|------|---------|
+| `String` (time zone id) | the JVM's default time zone |
+
+A key of a job in the cron file: the time zone its `cron` statement is read in, e.g. `timezone: "America/New_York"`. Name a
+region, not an abbreviation: a region's daylight saving moves the job's UTC fire time, so `0 0 9 * * ?` runs at 09:00 New
+York time all year, 13:00 UTC in summer and 14:00 UTC in winter. A fixed offset such as `UTC` or `-05:00` never moves. Without
+the key a job runs in the JVM's time zone, which is UTC in most containers. An id the JVM does not know (`America/NewYork`)
+rejects the job with an error at startup rather than run it on GMT. The startup log names each job's time zone, and the state
+resolver's `schedule` header, recorded for information, carries it after the cron statement: `0 0 9 * * ? @America/New_York`.
+A job without the key sends the statement alone. On a
+changeover day a job set in the hour the clocks skip does not run (02:30 New York time on the second Sunday of March), and a
+job set in the hour they repeat runs once, on the second pass (01:30 on the first Sunday of November, 06:30 UTC).
 
 ### `yaml.cron`
 
@@ -1070,7 +1088,8 @@ Enable leader election so that only one instance in a cluster runs each schedule
 |------|---------|
 | `String` (comma-sep paths) | `file:/tmp/config/cron.yaml, classpath:/cron.yaml` |
 
-Location(s) of the cron job definition file(s). Multiple files are merged.
+Location(s) of the cron file. The scheduler reads the first file that exists and skips the rest, so the files are not merged: a
+file in `/tmp/config` replaces the one in the classpath and must list every job.
 
 ### `scheduler.environment.name` {#scheduler-environment}
 

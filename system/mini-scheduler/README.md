@@ -57,7 +57,8 @@ You can change the file path in application.properties:
 yaml.cron=file:/tmp/config/cron.yaml, classpath:/cron.yaml
 ```
 In this example, it assumes the configuration file is available in "/tmp/config/cron.yaml".
-If it is not there, it will use the default one in the classpath.
+If it is not there, it will use the default one in the classpath. Only the first file found is read,
+so a file in "/tmp/config" must list every job.
 
 Note that the one in the classpath is just an example. Please update the YAML configuration accordingly.
 
@@ -88,6 +89,41 @@ leader.election: false
 ```
 In this example, there are two scheduled jobs (demo-task and demo-flow). The scheduler executes
 the service "hello.world" and the flow "hello-flow" every 10 seconds.
+
+## Time zone
+
+A cron statement is read in the JVM's default time zone, which is UTC in most containers. UTC has no
+daylight saving, so a job whose business hour is local moves by one hour against the local clock twice a
+year. Give the job a `timezone` and Quartz reads its statement in that zone:
+
+```
+jobs:
+  - name: "morning-report"
+    description: "09:00 New York time, all year"
+    cron: "0 0 9 * * ?"
+    timezone: "America/New_York"
+    service: "morning.report"
+    resolver: "v1.state.resolver"
+```
+
+The job runs at 09:00 New York time on both sides of a changeover: 13:00 UTC under daylight saving time
+and 14:00 UTC under standard time. Name a region such as `America/New_York`, not an abbreviation; a fixed
+offset such as `UTC` or `-05:00` never follows daylight saving. A job without the key keeps the JVM's time
+zone, as before. An id the JVM does not know (`America/NewYork`) rejects the job with an error at startup,
+rather than run it on GMT, and the startup log names each job's time zone. On a changeover day a job set in
+the hour the clocks skip does not run, and a job set in the hour they repeat runs once.
+
+The state resolver receives the schedule for information; the job's name is its unique reference. For a
+job that names a time zone, the `schedule` header carries the cron statement followed by ` @` and the zone,
+`0 0 9 * * ? @America/New_York`, so the column that holds the schedule holds both. A job that names none
+sends the statement alone, as before. No zone id contains `@` or a space, so the last ` @` separates the
+two; the suffix adds up to 34 characters (`America/Argentina/ComodRivadavia` is the longest region id).
+
+Keep the resolver's expiry window short. In a region that observes daylight saving, a daily job's runs are
+23 hours apart on the day the clocks go forward and 25 hours apart on the day they go back, so a window as
+long as the job's period - 24 hours for a daily job - would refuse the run after the spring changeover. The
+window only has to stop the instances of a cluster from running the same fire time, which `deferred.start`
+spreads over 0 to 9 seconds; the sample resolver uses 10 seconds.
 
 ## Using this library
 
