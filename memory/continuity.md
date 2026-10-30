@@ -389,6 +389,12 @@
   the PR held one commit, said to keep one `Co-Authored-By` line. A second commit was then pushed for round 5 without
   re-sending the handoff, so it no longer named the `---------` rule. Guard: a commit pushed onto an open PR re-sends the
   squash handoff, with the title on its own line and the trailer rule for the current commit count.
+  Seventh instance, a PR whose kind changed after it opened (2026-10-30): PR #598 was opened as docs-only, then gained a
+  `refactor` commit (the schema cache retired, a config key retired). The handoff gave a replacement title and the
+  `---------` rule, but squash `d6319a3a` landed with the earlier `docs(minimalist-kafka)` title and four trailers, so
+  `git log` shows a behaviour change as a docs change (the CHANGELOG states it correctly). Guard: once a PR is open, a
+  change of another kind - a behaviour change on a docs PR - goes in a PR of its own, so its title is right by
+  construction and the dialog has nothing to fix.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-29 | uses: 105 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
