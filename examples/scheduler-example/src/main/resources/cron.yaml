@@ -8,6 +8,8 @@ jobs:
   - name: "demo-task"
     description: "execute demo service every 15 seconds"
     cron: "0/15 0/1 * 1/1 * ? *"
+    # optional time zone of the cron statement, e.g. "America/New_York" - the JVM's default when absent
+    # timezone: "America/New_York"
     service: "hello.world"
     # optional parameter to tell the service what to do
     parameters:

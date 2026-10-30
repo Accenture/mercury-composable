@@ -31,6 +31,20 @@ jobs:
       probe: "yes"
     resolver: "v1.state.resolver"
 
+  - name: "eastern-probe"
+    description: "09:00 New York time, read by TimeZoneTest - this cron never matches before 2099"
+    cron: "0 0 9 * * ? 2099"
+    timezone: "America/New_York"
+    service: "hello.world"
+    resolver: "v1.state.resolver"
+
+  - name: "misspelt-zone"
+    description: "an unknown time zone, so TimeZoneTest finds this job rejected rather than run on GMT"
+    cron: "0 0 9 * * ? 2099"
+    timezone: "America/NewYork"
+    service: "hello.world"
+    resolver: "v1.state.resolver"
+
 #
 # deferred start adds a randomized delay of 0 to 9 seconds before a scheduled job runs.
 # This reduces the chance of racing condition to a state database.

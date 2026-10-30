@@ -18,6 +18,7 @@
 
 package org.platformlambda.scheduler.models;
 
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,13 +28,16 @@ public class ScheduledJob {
     public final String service;
     public final String cronSchedule;
     public final String resolver;
+    public final ZoneId zone;
     public final Map<String, Object> parameters = new HashMap<>();
 
-    public ScheduledJob(String name, String service, String resolver, String cronSchedule) {
+    /** A job whose cron statement is read in the given time zone, so a region's daylight saving moves its UTC time. */
+    public ScheduledJob(String name, String service, String resolver, String cronSchedule, ZoneId zone) {
         this.name = name;
         this.service = service;
         this.resolver = resolver;
         this.cronSchedule = cronSchedule;
+        this.zone = zone;
     }
 
     public void addParameter(String key, Object value) {

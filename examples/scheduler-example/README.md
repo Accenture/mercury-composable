@@ -94,6 +94,10 @@ leader.election: false
 In this example, there are two scheduled jobs (demo-task and demo-flow). The scheduler executes
 the service "hello.world" every 15 seconds and the flow "hello-flow" every 25 seconds.
 
+A cron statement is read in the JVM's default time zone. A job whose hour belongs to a region adds
+`timezone: "America/New_York"` (or another region id), so it keeps its local hour when daylight saving
+moves the UTC offset; see "Time zone" in the mini-scheduler README.
+
 ## Running this application
 
 1. You can run the application class MainApp from the IDE

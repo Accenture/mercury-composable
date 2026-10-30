@@ -33,8 +33,11 @@ import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -109,9 +112,14 @@ public class JobLoader implements EntryPoint {
         String schedule = config.getProperty(JOBS_PREFIX +i+"].cron");
         String resolver = config.getProperty(JOBS_PREFIX +i+"].resolver");
         Object parameters = config.get(JOBS_PREFIX +i+"].parameters");
-        if (schedule != null && resolver != null && service != null &&
+        String timezone = config.getProperty(JOBS_PREFIX +i+"].timezone");
+        ZoneId zone = getZone(timezone);
+        if (zone == null) {
+            log.error("Invalid job entry#{} - unknown time zone '{}', use a region id such as America/New_York",
+                    i + 1, timezone);
+        } else if (schedule != null && resolver != null && service != null &&
                 validJobName(name) && (service.startsWith("flow://") || util.validServiceName(service))) {
-            ScheduledJob j = new ScheduledJob(name, service, resolver, schedule);
+            ScheduledJob j = new ScheduledJob(name, service, resolver, schedule, zone);
             if (parameters instanceof Map) {
                 Map<String, Object> map = (Map<String, Object>) parameters;
                 for (var entry: map.entrySet()) {
@@ -121,6 +129,22 @@ public class JobLoader implements EntryPoint {
             scheduledJobs.put(name, j);
         } else {
             log.error("Invalid job entry#{} - check name, schedule and service", i + 1);
+        }
+    }
+
+    /**
+     * A job's time zone: the JVM's when the entry names none, and null when the id is not a region such as
+     * America/New_York or an offset such as UTC. java.util.TimeZone would read an unknown id as GMT, so a misspelt
+     * region would run the job at the wrong hour instead of failing.
+     */
+    private ZoneId getZone(String id) {
+        if (id == null || id.isBlank()) {
+            return ZoneId.systemDefault();
+        }
+        try {
+            return ZoneId.of(id.trim());
+        } catch (DateTimeException e) {
+            return null;
         }
     }
 
@@ -136,10 +160,12 @@ public class JobLoader implements EntryPoint {
                     .withIdentity(id, JOBS).build();
             scheduler.addJob(job, true);
             CronTrigger trigger = TriggerBuilder.newTrigger()
-                    .withSchedule(CronScheduleBuilder.cronSchedule(j.cronSchedule))
+                    .withSchedule(CronScheduleBuilder.cronSchedule(j.cronSchedule)
+                            .inTimeZone(TimeZone.getTimeZone(j.zone)))
                     .forJob(id, JOBS).build();
             scheduler.scheduleJob(trigger);
-            log.info("Scheduled job: {}, service: {}, statement: {}", id, j.service, j.cronSchedule);
+            log.info("Scheduled job: {}, service: {}, statement: {}, time zone: {}",
+                    id, j.service, j.cronSchedule, j.zone);
         }
         scheduler.start();
         // shutdown schedule when app stops

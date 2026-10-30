@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Each change merged to `main` after v4.12.26 is listed here; it moves under its release heading when the version is cut.
 
+### Added
+
+1. **A scheduled job's time zone.** A job in the mini-scheduler's cron file takes an optional `timezone`, a region id such as
+   `America/New_York`, and Quartz reads its `cron` statement in that zone. A job set to `0 0 9 * * ?` in New York runs at
+   09:00 local time all year, 13:00 UTC under daylight saving time and 14:00 UTC under standard time, so the cron file no
+   longer needs editing at each changeover when the JVM runs on UTC. An id the JVM does not know rejects the job with an error
+   at startup: `java.util.TimeZone` would have read a misspelt region as GMT. The startup log names each job's time zone.
+   `TimeZoneTest` checks the trigger's zone and its UTC fire times on both sides of a changeover, and fails without the
+   change. **Upgrade note:** none - a job without `timezone` keeps the JVM's default time zone, as before.
+
 ### Changed
 
 1. **Spring Boot 4.1.2.** The parent of every pom that has one moves from 4.1.1 to 4.1.2 (43), and the starter templates'
@@ -138,6 +148,12 @@ Each change merged to `main` after v4.12.26 is listed here; it moves under its r
    is now in the configuration reference, and the guide's publish sentence holds only for a flow the Kafka adapter
    started: a publish whose registry lookup fails fails its flow, which the adapter retries and dead-letters only when
    the adapter started it. **Upgrade note:** none - documentation only.
+3. **The scheduler's cron-file keys.** The configuration reference said that `yaml.cron` merges the files it lists and that
+   `deferred.start` defers the scheduler's startup until it is triggered manually. The scheduler reads the first file that
+   exists, so a file in `/tmp/config` replaces the classpath one and lists every job, and `deferred.start` delays each
+   scheduled run by a random 0 to 9 seconds. The reference now also says that `deferred.start`, `leader.election` and a
+   job's `timezone` (Added 1) are keys of the cron file, not application properties. **Upgrade note:** none -
+   documentation only.
 
 ---
 ## Version 4.12.26, 10/26/2026
