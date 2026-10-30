@@ -9,7 +9,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>graph-packager</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.26</version>
+    <version>4.12.27</version>
     <name>Graph packager - pack, unpack and inspect graph sets</name>
 
     <parent>
@@ -58,7 +58,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>minigraph-playground-engine</artifactId>
-            <version>4.12.26</version>
+            <version>4.12.27</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.graalvm.polyglot</groupId>

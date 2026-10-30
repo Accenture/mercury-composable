@@ -16,7 +16,7 @@
     <groupId>com.accenture.mercury.lab</groupId>
     <artifactId>dynatrace-oneagent-lab</artifactId>
     <packaging>pom</packaging>
-    <version>4.12.26</version>
+    <version>4.12.27</version>
     <name>Dynatrace OneAgent lab (not part of the root reactor)</name>
 
     <modules>
