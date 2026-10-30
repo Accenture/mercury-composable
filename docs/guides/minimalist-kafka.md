@@ -958,9 +958,10 @@ immediately via the [DLQ path](#reliability) rather than retried.
 **A registry outage is treated the same way, once the client's own retries are spent.** The adapter
 dead-letters a record on any failure inside the decode, and a decode can fail for a reason that is not the
 record's: a schema registry that cannot be reached. Confluent's registry client first retries a failed
-request - a network error, or an HTTP 408, 429 or 5xx - three times, with exponential backoff from one
-second and random jitter: against a registry answering 503 to every request, a lookup failed after four
-attempts and about six seconds. `max.retries`, `retries.wait.ms` and `retries.max.wait.ms` in
+request - a network error, or an HTTP 408, 429, 500, 502, 503 or 504 - three times, with exponential
+backoff from one second and random jitter; any other answer fails at once, a 501 or 505 among them, as do a
+not-found id and a refused credential. Against a registry answering 503 to every request, a lookup failed
+after four attempts and about six seconds. `max.retries`, `retries.wait.ms` and `retries.max.wait.ms` in
 `schema-registry.properties` tune it. The decode needs the registry only for a schema id this instance has
 not looked up since it started, because resolved schemas are held in memory (see [Notes](#schema-notes)).
 So the exposure is a registry outage that outlasts those retries while an instance starts or restarts: each

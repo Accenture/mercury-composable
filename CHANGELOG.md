@@ -110,8 +110,9 @@ Each change merged to `main` after v4.12.26 is listed here; it moves under its r
    without a key, so per-entity ordering takes an explicit `partition` header; only a dead-letter copy of a keyed record is
    hashed (Fixed 3). The Schema Registry section documents that JSON Schema validation is off by default and that
    `schema.registry.serde.json.fail.invalid.schema=true` turns it on for publishing and consuming, and what a registry outage
-   does: Confluent's client retries a failed lookup three times with exponential backoff and jitter (`max.retries`,
-   `retries.wait.ms` and `retries.max.wait.ms` in `schema-registry.properties`), and a decode that still fails, for a schema
+   does: Confluent's client retries a lookup that failed on the network or with HTTP 408, 429, 500, 502, 503 or 504 three
+   times with exponential backoff and jitter (`max.retries`, `retries.wait.ms` and `retries.max.wait.ms` in
+   `schema-registry.properties`), and a decode that still fails, for a schema
    id the instance has not looked up since it started, dead-letters the record as it does a poison message. **Upgrade note:**
    none - a `schema.enabled` binding without a `dlq-topic` drops such a record, so give it one.
 
