@@ -35,8 +35,8 @@ jobs:
     description: "09:00 New York time, read by TimeZoneTest - this cron never matches before 2099"
     cron: "0 0 9 * * ? 2099"
     timezone: "America/New_York"
-    service: "hello.world"
-    resolver: "v1.state.resolver"
+    service: "timezone.probe"
+    resolver: "timezone.probe.resolver"
 
   - name: "misspelt-zone"
     description: "an unknown time zone, so TimeZoneTest finds this job rejected rather than run on GMT"

@@ -20,8 +20,14 @@ package com.accenture.scheduler;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.AppStarter;
+import org.platformlambda.core.system.Platform;
+import org.platformlambda.core.system.PostOffice;
+import org.platformlambda.core.util.Utility;
 import org.platformlambda.scheduler.JobLoader;
+import org.platformlambda.scheduler.services.JobExecutor;
 import org.quartz.CronTrigger;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
@@ -30,7 +36,11 @@ import org.quartz.impl.StdSchedulerFactory;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,10 +50,20 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TimeZoneTest {
     private static final String EASTERN_JOB = "eastern-probe";
+    private static final BlockingQueue<Map<String, String>> resolverEvents = new ArrayBlockingQueue<>(4);
 
     @BeforeAll
     static void setup() {
         AppStarter.main(new String[0]);
+        // the service and the state resolver of the test cron's "eastern-probe" job, whose cron never matches
+        TypedLambdaFunction<Map<String, Object>, Void> service = (headers, input, instance) -> null;
+        TypedLambdaFunction<Map<String, Object>, Boolean> resolver = (headers, input, instance) -> {
+            resolverEvents.offer(headers);
+            return true;
+        };
+        var platform = Platform.getInstance();
+        platform.registerPrivate("timezone.probe", service, 1);
+        platform.registerPrivate("timezone.probe.resolver", resolver, 1);
     }
 
     @Test
@@ -63,7 +83,27 @@ class TimeZoneTest {
         var job = JobLoader.getJob("demo-task");
         assertNotNull(job);
         assertEquals(ZoneId.systemDefault(), job.zone);
+        assertEquals(job.cronSchedule, job.schedule);
         assertEquals(TimeZone.getDefault().getID(), cronTrigger("demo-task").getTimeZone().getID());
+    }
+
+    /** The resolver records the schedule for information, so a job's time zone rides after the cron statement. */
+    @Test
+    void theResolverRecordsTheScheduleWithItsTimeZone() throws InterruptedException {
+        var po = new PostOffice("unit.test", Utility.getInstance().getUuid(), "JOB " + EASTERN_JOB);
+        po.send(new EventEnvelope().setTo(JobExecutor.JOB_EXECUTOR)
+                .setHeader("job", EASTERN_JOB).setHeader("operator", "unit.test"));
+        Map<String, String> start = null;
+        for (int i = 0; i < 2 && start == null; i++) {
+            var event = resolverEvents.poll(10, TimeUnit.SECONDS);
+            assertNotNull(event);
+            if ("start".equals(event.get("type"))) {
+                start = event;
+            }
+        }
+        assertNotNull(start);
+        assertEquals(EASTERN_JOB, start.get("name"));
+        assertEquals("0 0 9 * * ? 2099 @America/New_York", start.get("schedule"));
     }
 
     @Test

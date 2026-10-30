@@ -113,6 +113,18 @@ zone, as before. An id the JVM does not know (`America/NewYork`) rejects the job
 rather than run it on GMT, and the startup log names each job's time zone. On a changeover day a job set in
 the hour the clocks skip does not run, and a job set in the hour they repeat runs once.
 
+The state resolver receives the schedule for information; the job's name is its unique reference. For a
+job that names a time zone, the `schedule` header carries the cron statement followed by ` @` and the zone,
+`0 0 9 * * ? @America/New_York`, so the column that holds the schedule holds both. A job that names none
+sends the statement alone, as before. No zone id contains `@` or a space, so the last ` @` separates the
+two; the suffix adds up to 34 characters (`America/Argentina/ComodRivadavia` is the longest region id).
+
+Keep the resolver's expiry window short. In a region that observes daylight saving, a daily job's runs are
+23 hours apart on the day the clocks go forward and 25 hours apart on the day they go back, so a window as
+long as the job's period - 24 hours for a daily job - would refuse the run after the spring changeover. The
+window only has to stop the instances of a cluster from running the same fire time, which `deferred.start`
+spreads over 0 to 9 seconds; the sample resolver uses 10 seconds.
+
 ## Using this library
 
 1. Add the mini-scheduler dependency in pom.xml.

@@ -19,8 +19,13 @@ Each change merged to `main` after v4.12.26 is listed here; it moves under its r
    09:00 local time all year, 13:00 UTC under daylight saving time and 14:00 UTC under standard time, so the cron file no
    longer needs editing at each changeover when the JVM runs on UTC. An id the JVM does not know rejects the job with an error
    at startup: `java.util.TimeZone` would have read a misspelt region as GMT. The startup log names each job's time zone.
-   `TimeZoneTest` checks the trigger's zone and its UTC fire times on both sides of a changeover, and fails without the
-   change. **Upgrade note:** none - a job without `timezone` keeps the JVM's default time zone, as before.
+   The state resolver's `schedule` header, which it records for information, carries the zone after the cron statement,
+   `0 0 9 * * ? @America/New_York`, so an existing schedule column holds both. `TimeZoneTest` checks the trigger's zone,
+   its UTC fire times on both sides of a changeover and the resolver's `schedule`, and fails without the change.
+   **Upgrade note:** none for a job without `timezone`: it keeps the JVM's default time zone and sends the cron statement
+   alone, as before. Before adding `timezone` to a job, check that the resolver's schedule column has room for up to 34
+   more characters, and that its expiry window is more than an hour shorter than the job's period: on the day the clocks
+   go forward, a daily job's runs are 23 hours apart.
 
 ### Changed
 

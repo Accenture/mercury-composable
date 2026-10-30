@@ -1076,7 +1076,9 @@ A key of a job in the cron file: the time zone its `cron` statement is read in, 
 region, not an abbreviation: a region's daylight saving moves the job's UTC fire time, so `0 0 9 * * ?` runs at 09:00 New
 York time all year, 13:00 UTC in summer and 14:00 UTC in winter. A fixed offset such as `UTC` or `-05:00` never moves. Without
 the key a job runs in the JVM's time zone, which is UTC in most containers. An id the JVM does not know (`America/NewYork`)
-rejects the job with an error at startup rather than run it on GMT. The startup log names each job's time zone. On a
+rejects the job with an error at startup rather than run it on GMT. The startup log names each job's time zone, and the state
+resolver's `schedule` header, recorded for information, carries it after the cron statement: `0 0 9 * * ? @America/New_York`.
+A job without the key sends the statement alone. On a
 changeover day a job set in the hour the clocks skip does not run (02:30 New York time on the second Sunday of March), and a
 job set in the hour they repeat runs once, on the second pass (01:30 on the first Sunday of November, 06:30 UTC).
 

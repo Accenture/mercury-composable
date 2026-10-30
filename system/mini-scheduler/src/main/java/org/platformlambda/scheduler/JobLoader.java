@@ -113,8 +113,9 @@ public class JobLoader implements EntryPoint {
         String resolver = config.getProperty(JOBS_PREFIX +i+"].resolver");
         Object parameters = config.get(JOBS_PREFIX +i+"].parameters");
         String timezone = config.getProperty(JOBS_PREFIX +i+"].timezone");
-        ZoneId zone = getZone(timezone);
-        if (zone == null) {
+        boolean hasZone = timezone != null && !timezone.isBlank();
+        ZoneId zone = hasZone ? getZone(timezone) : null;
+        if (hasZone && zone == null) {
             log.error("Invalid job entry#{} - unknown time zone '{}', use a region id such as America/New_York",
                     i + 1, timezone);
         } else if (schedule != null && resolver != null && service != null &&
@@ -133,14 +134,11 @@ public class JobLoader implements EntryPoint {
     }
 
     /**
-     * A job's time zone: the JVM's when the entry names none, and null when the id is not a region such as
-     * America/New_York or an offset such as UTC. java.util.TimeZone would read an unknown id as GMT, so a misspelt
-     * region would run the job at the wrong hour instead of failing.
+     * A job's time zone, or null when the id is not a region such as America/New_York or an offset such as UTC.
+     * java.util.TimeZone would read an unknown id as GMT, so a misspelt region would run the job at the wrong hour
+     * instead of failing.
      */
     private ZoneId getZone(String id) {
-        if (id == null || id.isBlank()) {
-            return ZoneId.systemDefault();
-        }
         try {
             return ZoneId.of(id.trim());
         } catch (DateTimeException e) {

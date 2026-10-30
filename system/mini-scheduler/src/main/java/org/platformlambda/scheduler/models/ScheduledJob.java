@@ -28,16 +28,26 @@ public class ScheduledJob {
     public final String service;
     public final String cronSchedule;
     public final String resolver;
+    /** The time zone the cron statement is read in: the job's own, or the JVM's default when the job names none. */
     public final ZoneId zone;
+    /**
+     * The schedule the state resolver records, for information: the cron statement, followed by " @" and the time zone
+     * when the job names one (e.g. "0 0 9 * * ? @America/New_York"). A job that names none sends the statement alone.
+     */
+    public final String schedule;
     public final Map<String, Object> parameters = new HashMap<>();
 
-    /** A job whose cron statement is read in the given time zone, so a region's daylight saving moves its UTC time. */
+    /**
+     * A job whose cron statement is read in the given time zone, so a region's daylight saving moves its UTC time.
+     * A null zone reads the statement in the JVM's default time zone.
+     */
     public ScheduledJob(String name, String service, String resolver, String cronSchedule, ZoneId zone) {
         this.name = name;
         this.service = service;
         this.resolver = resolver;
         this.cronSchedule = cronSchedule;
-        this.zone = zone;
+        this.zone = zone == null ? ZoneId.systemDefault() : zone;
+        this.schedule = zone == null ? cronSchedule : cronSchedule + " @" + zone.getId();
     }
 
     public void addParameter(String key, Object value) {
