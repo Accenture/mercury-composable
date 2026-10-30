@@ -3668,6 +3668,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#scheduler-job-timezone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jobs[].timezone
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#yamlcron" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6570,6 +6581,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#scheduler-job-timezone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jobs[].timezone
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#yamlcron" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -9261,7 +9283,8 @@ for a setup walkthrough.</p>
 <p>YAML file(s) defining topic substitution mappings.</p>
 <hr />
 <h2 id="scheduler">Scheduler<a class="headerlink" href="#scheduler" title="Permanent link">&para;</a></h2>
-<p>These properties are used by the optional <code>mini-scheduler</code> module.</p>
+<p>These settings are used by the optional <code>mini-scheduler</code> module. <code>yaml.cron</code> and the <code>scheduler.environment.*</code> keys are
+application properties; <code>deferred.start</code>, <code>leader.election</code> and a job's <code>timezone</code> are keys of the cron file itself.</p>
 <h3 id="deferredstart"><code>deferred.start</code><a class="headerlink" href="#deferredstart" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -9277,7 +9300,8 @@ for a setup walkthrough.</p>
 </tr>
 </tbody>
 </table>
-<p>Defer scheduler startup until triggered manually, e.g. to wait for leader election.</p>
+<p>A key of the cron file. Delay each scheduled run by a random 0 to 9 seconds, so that the instances of a cluster reach the
+state resolver at slightly different times and it can tell that a peer has started the job.</p>
 <h3 id="leaderelection"><code>leader.election</code><a class="headerlink" href="#leaderelection" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -9293,7 +9317,31 @@ for a setup walkthrough.</p>
 </tr>
 </tbody>
 </table>
-<p>Enable leader election so that only one instance in a cluster runs each scheduled job.</p>
+<p>A key of the cron file. Enable leader election so that only one instance in a cluster runs each scheduled job.</p>
+<h3 id="scheduler-job-timezone"><code>jobs[].timezone</code><a class="headerlink" href="#scheduler-job-timezone" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (time zone id)</td>
+<td>the JVM's default time zone</td>
+</tr>
+</tbody>
+</table>
+<p>A key of a job in the cron file: the time zone its <code>cron</code> statement is read in, e.g. <code>timezone: "America/New_York"</code>. Name a
+region, not an abbreviation: a region's daylight saving moves the job's UTC fire time, so <code>0 0 9 * * ?</code> runs at 09:00 New
+York time all year, 13:00 UTC in summer and 14:00 UTC in winter. A fixed offset such as <code>UTC</code> or <code>-05:00</code> never moves. Without
+the key a job runs in the JVM's time zone, which is UTC in most containers. An id the JVM does not know (<code>America/NewYork</code>)
+rejects the job with an error at startup rather than run it on GMT. The startup log names each job's time zone, and the state
+resolver's <code>schedule</code> header, recorded for information, carries it after the cron statement: <code>0 0 9 * * ? @America/New_York</code>.
+A job without the key sends the statement alone. On a
+changeover day a job set in the hour the clocks skip does not run (02:30 New York time on the second Sunday of March), and a
+job set in the hour they repeat runs once, on the second pass (01:30 on the first Sunday of November, 06:30 UTC).</p>
 <h3 id="yamlcron"><code>yaml.cron</code><a class="headerlink" href="#yamlcron" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -9309,7 +9357,8 @@ for a setup walkthrough.</p>
 </tr>
 </tbody>
 </table>
-<p>Location(s) of the cron job definition file(s). Multiple files are merged.</p>
+<p>Location(s) of the cron file. The scheduler reads the first file that exists and skips the rest, so the files are not merged: a
+file in <code>/tmp/config</code> replaces the one in the classpath and must list every job.</p>
 <h3 id="scheduler-environment"><code>scheduler.environment.name</code><a class="headerlink" href="#scheduler-environment" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
