@@ -99,9 +99,10 @@ class SecondaryConsumerCodecTest {
         SchemaCodec consumerCodec = SchemaCodec.forConsumer(config, registry.baseUrl(), PREFIX, producerCodec);
         assertNotNull(consumerCodec);
         assertNotSame(producerCodec, consumerCodec, "set: the secondary adapter decodes with its own codec");
-        // built under the secondary consumer prefix - its own id cache (global ids are per registry)
-        assertNotNull(ManagedCache.getInstance(CONSUMER_PREFIX),
-                "the consumer codec's caches carry the secondary.schema.registry.consumer prefix");
+        // built under the secondary consumer prefix - its own registry client and caches (global ids are per
+        // registry)
+        assertNotNull(ManagedCache.getInstance(CONSUMER_PREFIX + ".version"),
+                "the consumer codec's version cache carries the secondary.schema.registry.consumer prefix");
         // the seam works end-to-end: what the secondary producer's codec encodes, the consumer's codec decodes
         int id = producerCodec.client().register(TOPIC + "-value", new JsonSchema(JSON_SCHEMA));
         byte[] framed = producerCodec.newEncoder().serialize(TOPIC, SchemaType.JSON, id, Map.of("hello", "twin"));

@@ -75,6 +75,21 @@ Each change merged to `main` after v4.12.26 is listed here; it moves under its r
    still resolves `httpcore5` and `httpcore5-h2` 5.4.4. **Upgrade note:** an application whose parent is
    `spring-boot-starter-parent` 4.1.2 may drop its own `httpcore5.version`.
 
+9. **`schema.registry.cache.ttl` retired; the schema codec caches only what Confluent's client does not.** The codec
+   fronted Confluent's registry client with a platform `ManagedCache` for lookups by id and for a subject's `latest`
+   version, timed by `schema.registry.cache.ttl` (30 minutes). Measured against a counting registry, it saved no request:
+   Confluent's client keeps every schema fetched by id for the life of the process, its serializers and deserializers
+   never read the `ManagedCache`, and it caches `latest` itself for `latest.cache.ttl.sec` (60 seconds) - so the
+   `ManagedCache` only delayed a newly registered `latest` version from a minute to half an hour. Both are gone. The
+   cache of a pinned `subject` + `version`, which Confluent's client lacks, stays (`schema.registry.version.cache.ttl`).
+   `SchemaCodec.CACHE_NAME` is replaced by `DEFAULT_KEY_PREFIX`, and `ManagedCacheSchemaRegistryClient`'s constructor no
+   longer takes the id cache. **Upgrade note:** with neither key set, a newly registered `latest` version is now picked
+   up within 60 seconds instead of 30 minutes, at one registry request per subject per minute. An application that sets
+   `schema.registry.cache.ttl` (or a prefixed twin: `schema.registry.consumer.cache.ttl`,
+   `secondary.schema.registry.cache.ttl`) keeps its value: it is passed to the registry client as
+   `latest.cache.ttl.sec`, with a warning at startup, unless the registry client template sets that key; move it to
+   `schema-registry.properties` as `latest.cache.ttl.sec` (seconds).
+
 ### Fixed
 
 1. **Tomcat 11.0.27 - the field's Snyk gate on 4.12.26 closed.** Snyk reported two critical findings in `tomcat-embed-core`
@@ -110,10 +125,19 @@ Each change merged to `main` after v4.12.26 is listed here; it moves under its r
    without a key, so per-entity ordering takes an explicit `partition` header; only a dead-letter copy of a keyed record is
    hashed (Fixed 3). The Schema Registry section documents that JSON Schema validation is off by default and that
    `schema.registry.serde.json.fail.invalid.schema=true` turns it on for publishing and consuming, and what a registry outage
-   does: Confluent's client retries a failed lookup three times with exponential backoff and jitter (`max.retries`,
-   `retries.wait.ms` and `retries.max.wait.ms` in `schema-registry.properties`), and a decode that still fails, for a schema
+   does: Confluent's client retries a lookup that failed on the network or with HTTP 408, 429, 500, 502, 503 or 504 three
+   times with exponential backoff and jitter (`max.retries`, `retries.wait.ms` and `retries.max.wait.ms` in
+   `schema-registry.properties`), and a decode that still fails, for a schema
    id the instance has not looked up since it started, dead-letters the record as it does a poison message. **Upgrade note:**
    none - a `schema.enabled` binding without a `dlq-topic` drops such a record, so give it one.
+2. **The schema notes say which cache answers which lookup.** The Minimalist Kafka guide, the configuration reference and
+   the javadoc of `ManagedCacheSchemaRegistryClient`, `JsonSchemaSerde` and `SchemaCodec` credited a `ManagedCache` with
+   saving the serializers and deserializers their registry round trips by id, and said its TTL let schema changes be
+   picked up. Confluent's client keeps every schema it fetched by id for the life of the process and its serdes read
+   that cache (Changed 9 retires the `ManagedCache`). `schema.registry.version.cache.ttl`, the pinned-version cache,
+   is now in the configuration reference, and the guide's publish sentence holds only for a flow the Kafka adapter
+   started: a publish whose registry lookup fails fails its flow, which the adapter retries and dead-letters only when
+   the adapter started it. **Upgrade note:** none - documentation only.
 
 ---
 ## Version 4.12.26, 10/26/2026

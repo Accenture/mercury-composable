@@ -79,7 +79,9 @@ class JsonSchemaSerde implements SchemaSerde {
          * Envelope the value with its (pre-registered) schema, so the serializer uses that schema directly
          * instead of DERIVING one from the value's Map<String,Object> type. The derivation can't introspect
          * the Object-typed map values (noisy "Unable to process java.lang.Object" warnings) and is wasted
-         * work. Use.schema.id still pins the wire id and resolves via getSchemaById (no subject lookup).
+         * work. use.schema.id still pins the wire id; Confluent's serializer looks that id up with the topic's
+         * subject as its cache key (getSchemaEntityBySubjectAndId) - one registry request per subject and id,
+         * then its own cache.
          */
         JsonNode node = JSON.valueToTree(value);
         Object enveloped = JsonSchemaUtils.envelope(jsonSchemaById(schemaId), node);

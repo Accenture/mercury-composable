@@ -95,9 +95,15 @@ class SchemaCodecTest {
         }
     }
 
-    private static boolean schemaCached(int id) {
-        ManagedCache cache = ManagedCache.getInstance(SchemaCodec.CACHE_NAME);
-        return cache != null && cache.exists(Integer.toString(id));
+    /**
+     * Assert that a repeated decode and serialize of {@code framed} are answered from memory - Confluent's own
+     * id cache, which the codec relies on - without a registry lookup.
+     */
+    private static void assertAnsweredFromMemory(SchemaType type, int id, byte[] framed, Map<String, Object> value) {
+        int lookups = registry.lookups();
+        decoder.decode(TOPIC, framed);
+        encoder.serialize(TOPIC, type, id, value);
+        assertEquals(lookups, registry.lookups(), "a repeated decode and serialize ask the registry nothing");
     }
 
     @Test
@@ -112,7 +118,7 @@ class SchemaCodecTest {
         assertInstanceOf(Map.class, decoded);
         assertEquals("world", ((Map<?, ?>) decoded).get("hello"));
 
-        assertTrue(schemaCached(id), "schema cached in memory by id");
+        assertAnsweredFromMemory(SchemaType.JSON, id, framed, Map.of("hello", "again"));
     }
 
     @Test
@@ -169,11 +175,30 @@ class SchemaCodecTest {
         assertEquals(id, codec.resolve(subject, null).id(), "null/blank version means latest");
         assertEquals(id, codec.resolve(subject, "1").id(), "pinned version 1 resolves to the same id");
 
-        // resolution is cached: numeric in the (long-TTL) version cache, latest in the (short-TTL) id cache
+        // resolution is cached: a pinned version in the codec's version cache (Confluent does not cache it),
+        // latest in Confluent's own latest cache (latest.cache.ttl.sec, 60 s by default)
         assertTrue(ManagedCache.getInstance(SchemaCodec.VERSION_CACHE_NAME).exists(subject + "/1"),
                 "numeric version resolution cached");
-        assertTrue(ManagedCache.getInstance(SchemaCodec.CACHE_NAME).exists("latest/" + subject),
-                "latest resolution cached in the id cache under a namespaced key");
+        int lookups = registry.lookups();
+        codec.resolve(subject, "1");
+        codec.resolve(subject, "latest");
+        assertEquals(lookups, registry.lookups(), "a repeated resolve asks the registry nothing");
+    }
+
+    @Test
+    void theRetiredCacheTtlIsPassedOnAsTheLatestCacheTtl() throws Exception {
+        // schema.zero.cache.ttl=0s (test application.properties) reaches Confluent as latest.cache.ttl.sec=0, so a
+        // latest resolution is never cached and each resolve asks the registry; a pinned version stays cached
+        String subject = "zero-ttl-value";
+        int id = codec.client().register(subject, new JsonSchema(
+                "{\"type\":\"object\",\"properties\":{\"zero\":{\"type\":\"string\"}},\"additionalProperties\":true}"));
+        SchemaCodec zero = SchemaCodec.fromConfig(AppConfigReader.getInstance(), registry.baseUrl(), "schema.zero");
+        assertEquals(id, zero.resolve(subject, "latest").id());
+        assertEquals(id, zero.resolve(subject, "1").id());
+        int lookups = registry.lookups();
+        assertEquals(id, zero.resolve(subject, "latest").id());
+        assertEquals(id, zero.resolve(subject, "1").id());
+        assertEquals(lookups + 1, registry.lookups(), "latest asked the registry again; the pinned version did not");
     }
 
     @Test
@@ -217,7 +242,7 @@ class SchemaCodecTest {
         assertInstanceOf(Map.class, decoded);
         assertEquals("avro", ((Map<?, ?>) decoded).get("hello"));
 
-        assertTrue(schemaCached(id), "schema cached in memory by id");
+        assertAnsweredFromMemory(SchemaType.AVRO, id, framed, Map.of("hello", "again"));
     }
 
     @Test
@@ -263,8 +288,11 @@ class SchemaCodecTest {
         // Positive results only: a not-found id must throw and must NOT be remembered, so a schema
         // registered moments later is visible without waiting for a TTL to elapse or a pod restart.
         int unknownId = 987654;
-        assertThrows(RestClientException.class, () -> codec.client().getSchemaById(unknownId));
-        assertFalse(schemaCached(unknownId), "a not-found schema id is never cached");
+        var client = codec.client();
+        int lookups = registry.lookups();
+        assertThrows(RestClientException.class, () -> client.getSchemaById(unknownId));
+        assertThrows(RestClientException.class, () -> client.getSchemaById(unknownId));
+        assertEquals(lookups + 2, registry.lookups(), "a not-found schema id is never cached: each lookup asks again");
     }
 
     @Test
@@ -279,7 +307,6 @@ class SchemaCodecTest {
         assertThrows(RuntimeException.class,
                 () -> encoder.serialize(TOPIC, SchemaType.JSON, futureId, missPayload),
                 "encoding against an unregistered id fails");
-        assertFalse(schemaCached(futureId), "the failed lookup is not cached");
 
         int assigned = codec.client().register("recover-b-value", new JsonSchema(
                 "{\"type\":\"object\",\"properties\":{\"recoverB\":{\"type\":\"string\"}},\"additionalProperties\":true}"));

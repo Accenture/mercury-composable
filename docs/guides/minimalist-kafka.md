@@ -763,7 +763,6 @@ the library keeps its raw `byte[]` behavior.
 
 ```properties
 schema.registry.url=${SCHEMA_REGISTRY_URL:http://127.0.0.1:8081}
-schema.registry.cache.ttl=30m                          # TTL for the in-memory schema cache (by id)
 ```
 
 ### Registry authentication (OAuth 2.0 / basic) {#schema-auth}
@@ -921,7 +920,8 @@ registry with two identities (twin-kafka's secondary cluster has the same opt-in
   switch to remember. The opt-in does not turn schema features on — `schema.registry.url` stays the switch.
 - **The consumer keys derive from the prefix:** `schema.registry.consumer.properties` (the template — reuse the
   producer's file or point at a second one), `schema.registry.consumer.serde.*` (pass-through overrides on top of
-  that template) and `schema.registry.consumer.cache.ttl` (its own caches). The registry URL is shared: a
+  that template) and `schema.registry.consumer.version.cache.ttl` (its own pinned-version cache; its registry
+  client keeps its own id and `latest` caches). The registry URL is shared: a
   consumer decodes messages whose ids were minted by the registry its producers use.
 - **Where an override lands.** A `schema.registry.consumer.serde.*` entry reaches the Confluent deserializer's
   configuration — and through it the DEK-registry client CSFLE builds from that configuration, where key access
@@ -958,16 +958,17 @@ immediately via the [DLQ path](#reliability) rather than retried.
 **A registry outage is treated the same way, once the client's own retries are spent.** The adapter
 dead-letters a record on any failure inside the decode, and a decode can fail for a reason that is not the
 record's: a schema registry that cannot be reached. Confluent's registry client first retries a failed
-request - a network error, or an HTTP 408, 429 or 5xx - three times, with exponential backoff from one
-second and random jitter: against a registry answering 503 to every request, a lookup failed after four
-attempts and about six seconds. `max.retries`, `retries.wait.ms` and `retries.max.wait.ms` in
+request - a network error, or an HTTP 408, 429, 500, 502, 503 or 504 - three times, with exponential
+backoff from one second and random jitter; any other answer fails at once, a 501 or 505 among them, as do a
+not-found id and a refused credential. Against a registry answering 503 to every request, a lookup failed
+after four attempts and about six seconds. `max.retries`, `retries.wait.ms` and `retries.max.wait.ms` in
 `schema-registry.properties` tune it. The decode needs the registry only for a schema id this instance has
 not looked up since it started, because resolved schemas are held in memory (see [Notes](#schema-notes)).
 So the exposure is a registry outage that outlasts those retries while an instance starts or restarts: each
 schema id's first record goes to the `dlq-topic`, or, on a binding without one, is dropped with an `ERROR`
 log. Give every `schema.enabled` binding a `dlq-topic`, so such records can be replayed once the registry is
-back. A publish with a `subject` header meets the same retries, then fails its flow, which the adapter
-retries and then dead-letters.
+back. A publish with a `subject` header meets the same retries, then fails the task that sends it, and so its
+flow: a flow the adapter started is retried and then dead-lettered.
 
 ### Notes {#schema-notes}
 
@@ -977,18 +978,26 @@ retries and then dead-letters.
   a message must match the declared fields, and a non-schema field is dropped on the wire. Avro applies
   declared field defaults for absent fields, and decodes to a generic record (no generated classes), rendered
   to a `Map`.
-- **Schema cache.** Lookups by id are cached **in memory** (platform `ManagedCache`, TTL
-  `schema.registry.cache.ttl`, default `30m`) to cut registry round-trips. A global schema id is immutable, so
-  a cache hit is always the right schema. **Positive results only** — a not-found id is never cached, so a
-  schema registered while the app is running becomes visible on the next lookup. The TTL lets schema changes
-  be picked up without restarting pods (handy in dev / lower environments); lengthen it in production where
-  schemas change rarely. The cache is rebuildable and **cleared at startup**.
+- **Schema cache.** A schema looked up by id stays **in memory** for the life of the process: Confluent's
+  registry client caches every successful lookup by id with no expiry (up to 1000 schemas per subject), and the
+  library's lookups and Confluent's serializers and deserializers all read that cache. A global schema id is
+  immutable, so a cache hit is always the right schema. **Positive results only** — a not-found id is never
+  cached (the library pins Confluent's "missing" caches off), so a schema registered while the app is running
+  becomes visible on the next lookup. The caches are empty at startup and fill on demand.
 - **Subject→id resolution cache.** The producer also caches the *subject (+ version) → schema id* resolution,
   and how long depends on the version. A **pinned numeric version** (`subject` + `version: N`) maps to one
-  immutable schema id, so it is cached **long** (effectively forever). `latest` (the default) can change when a
-  new version is registered, so it is cached on a **short TTL** and re-resolved frequently, picking up a new
-  current version without a restart. Pin a version in production paths where the schema must not shift
-  underneath you; use `latest` in dev / lower environments where tracking the newest schema is convenient.
+  immutable schema id, so the library caches it **long** (`schema.registry.version.cache.ttl`, default `10d`,
+  bounded to 3000 entries); Confluent's client does not cache this lookup, so without it every publish would ask
+  the registry. `latest` (the default) can change when a new version is registered, so Confluent's client caches
+  it briefly - `latest.cache.ttl.sec` in `schema-registry.properties`, 60 seconds by default - and a newly
+  registered version is picked up within that time, without a restart. Pin a version in production paths where
+  the schema must not shift underneath you; use `latest` in dev / lower environments where tracking the newest
+  schema is convenient.
+- **`schema.registry.cache.ttl` is retired.** It timed a cache in front of Confluent's own caches of ids and of
+  `latest`, which saved no registry request. A value an application still sets is passed to the registry client
+  as `latest.cache.ttl.sec`, with a warning at startup, unless `schema-registry.properties` sets
+  `latest.cache.ttl.sec` itself; move the setting there. The same holds for every prefix
+  (`schema.registry.consumer.cache.ttl`, twin-kafka's `secondary.schema.registry.cache.ttl`).
 - **Payload validation is off by default.** Confluent's JSON Schema serializer frames whatever document it is
   given, and its deserializer decodes whatever document it finds, without checking either against the schema.
   `schema.registry.serde.json.fail.invalid.schema=true` turns validation on for both, through the
@@ -1017,7 +1026,8 @@ The essentials:
 | `kafka.flow.retry.backoff.ms` | `500` | Pause between retry attempts. |
 | `schema.registry.url` | — | Confluent Schema Registry URL; unset = [schema features](#schema) off (raw `byte[]`). |
 | `schema.registry.properties` | `classpath:/schema-registry.properties` | Registry client template location — auth/SSL parameters passed verbatim to the Confluent client (see [registry authentication](#schema-auth)). Set to an external file path (or explicit fallback list) to externalize. |
-| `schema.registry.cache.ttl` | `30m` | TTL for the in-memory (`ManagedCache`) schema cache (by id); positive results only; cleared at startup. |
+| `schema.registry.cache.ttl` | — | **Retired.** A value still set is passed to the registry client as `latest.cache.ttl.sec` (see [Notes](#schema-notes)); set `latest.cache.ttl.sec` in `schema-registry.properties` instead (60 seconds by default). |
+| `schema.registry.version.cache.ttl` | `10d` | TTL for the pinned subject+version resolutions (bounded to 3000 entries), which Confluent's client does not cache. |
 | `schema.registry.consumer.properties` | — | Opt in to a [separate registry identity for the consumer side](#schema-consumer-identity): the flow adapter's own registry client template (the producer's file or a second one), with `schema.registry.consumer.serde.*` overrides on top. Unset or blank = the adapter shares the producer's codec. |
 
 ## See also

@@ -1302,9 +1302,26 @@ Registry client template location; externalize the same way as the producer temp
 
 | Type | Default |
 |------|---------|
-| duration | `30m` |
+| duration | — (retired) |
 
-Time-to-live for an entry in the in-memory (platform `ManagedCache`) cache of schemas fetched by id. Positive results only — a not-found id is never cached, so a newly-registered schema is visible immediately. The TTL bounds how long a cached schema is reused before re-fetching; `30m` lets schema changes be picked up without a pod restart (lengthen it in production where schemas change rarely). Cleared at startup (rebuildable).
+**Retired.** It timed an in-memory `ManagedCache` in front of the Confluent registry client's own caches - every
+schema fetched by id, kept for the life of the process, and a subject's `latest` version - and saved no registry
+request. A value an application still sets is passed to the registry client as `latest.cache.ttl.sec` (in seconds,
+logged as a warning at startup), unless the registry client template sets `latest.cache.ttl.sec` itself, so it
+keeps deciding how soon a newly registered `latest` version is picked up. Set `latest.cache.ttl.sec` in
+`schema-registry.properties` instead (60 seconds by default; `0` re-resolves `latest` on every publish). The same
+holds for every prefix: `schema.registry.consumer.cache.ttl`, `secondary.schema.registry.cache.ttl`. See the guide's
+[schema notes](minimalist-kafka.md#schema-notes).
+
+### `schema.registry.version.cache.ttl`
+
+| Type | Default |
+|------|---------|
+| duration | `10d` |
+
+Time-to-live for a pinned `subject` + numeric `version` resolution, bounded to 3000 entries. A pinned version maps to one
+immutable schema id, so the TTL only bounds memory; Confluent's registry client does not cache this lookup, so this cache is
+what spares the registry a request on every publish that names a pinned version. Cleared at startup.
 
 ### `schema.registry.serde.*`
 
@@ -1324,7 +1341,7 @@ credential chain.
 |------|---------|
 | `String` (comma-sep paths) / `String` (prefix family) | — (the flow adapter shares the producer's codec) |
 
-Opt-in [separate Schema Registry identity for the consumer side](minimalist-kafka.md#schema-consumer-identity). When `schema.registry.consumer.properties` names a registry client template, the Kafka flow adapter decodes with its own codec built under the `schema.registry.consumer` prefix — the same `schema.registry.url`, that template (the producer's file or a second one), `schema.registry.consumer.serde.*` pass-through overrides on top of it, and its own `schema.registry.consumer.cache.ttl` — so a CSFLE installation that grants key access through separate produce and consume identity pools can serve both. The consumer codec reads only its own prefix (repeat a `schema.registry.serde.*` KMS credential under it). Unset or blank: unchanged, one shared codec; `schema.registry.url` remains the feature switch.
+Opt-in [separate Schema Registry identity for the consumer side](minimalist-kafka.md#schema-consumer-identity). When `schema.registry.consumer.properties` names a registry client template, the Kafka flow adapter decodes with its own codec built under the `schema.registry.consumer` prefix — the same `schema.registry.url`, that template (the producer's file or a second one), `schema.registry.consumer.serde.*` pass-through overrides on top of it, and its own caches (`schema.registry.consumer.version.cache.ttl` for pinned versions) — so a CSFLE installation that grants key access through separate produce and consume identity pools can serve both. The consumer codec reads only its own prefix (repeat a `schema.registry.serde.*` KMS credential under it). Unset or blank: unchanged, one shared codec; `schema.registry.url` remains the feature switch.
 
 ### `yaml.secondary.kafka.flow.adapter`
 
