@@ -3464,9 +3464,9 @@ crossing the two emulated clusters with trace/correlation continuity — see the
 <td>Secondary registry client template - auth/SSL passed verbatim to the Confluent client. Set to an external file path (or explicit fallback list) to externalize.</td>
 </tr>
 <tr>
-<td><code>secondary.schema.registry.cache.ttl</code></td>
-<td><code>30m</code></td>
-<td>Secondary schema cache TTL (the cache is separate from the primary's - schema ids are per-registry).</td>
+<td><code>secondary.schema.registry.version.cache.ttl</code></td>
+<td><code>10d</code></td>
+<td>Secondary pinned-version cache TTL (separate from the primary's - schema ids are per-registry; the secondary registry client keeps its own id and <code>latest</code> caches). <code>secondary.schema.registry.cache.ttl</code> is retired, as <a href="../minimalist-kafka/#schema-notes">on the primary</a>: a value still set is passed on as <code>latest.cache.ttl.sec</code>.</td>
 </tr>
 <tr>
 <td><code>secondary.schema.registry.consumer.properties</code></td>

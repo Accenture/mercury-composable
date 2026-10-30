@@ -3994,6 +3994,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#schemaregistryversioncachettl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        schema.registry.version.cache.ttl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#schemaregistryserde" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6885,6 +6896,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#schemaregistryversioncachettl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        schema.registry.version.cache.ttl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#schemaregistryserde" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -9699,11 +9721,36 @@ Kafka. See the <a href="../minimalist-kafka/">Kafka Flow Adapter guide</a>. The 
 <tbody>
 <tr>
 <td>duration</td>
-<td><code>30m</code></td>
+<td>— (retired)</td>
 </tr>
 </tbody>
 </table>
-<p>Time-to-live for an entry in the in-memory (platform <code>ManagedCache</code>) cache of schemas fetched by id. Positive results only — a not-found id is never cached, so a newly-registered schema is visible immediately. The TTL bounds how long a cached schema is reused before re-fetching; <code>30m</code> lets schema changes be picked up without a pod restart (lengthen it in production where schemas change rarely). Cleared at startup (rebuildable).</p>
+<p><strong>Retired.</strong> It timed an in-memory <code>ManagedCache</code> in front of the Confluent registry client's own caches - every
+schema fetched by id, kept for the life of the process, and a subject's <code>latest</code> version - and saved no registry
+request. A value an application still sets is passed to the registry client as <code>latest.cache.ttl.sec</code> (in seconds,
+logged as a warning at startup), unless the registry client template sets <code>latest.cache.ttl.sec</code> itself, so it
+keeps deciding how soon a newly registered <code>latest</code> version is picked up. Set <code>latest.cache.ttl.sec</code> in
+<code>schema-registry.properties</code> instead (60 seconds by default; <code>0</code> re-resolves <code>latest</code> on every publish). The same
+holds for every prefix: <code>schema.registry.consumer.cache.ttl</code>, <code>secondary.schema.registry.cache.ttl</code>. See the guide's
+<a href="../minimalist-kafka/#schema-notes">schema notes</a>.</p>
+<h3 id="schemaregistryversioncachettl"><code>schema.registry.version.cache.ttl</code><a class="headerlink" href="#schemaregistryversioncachettl" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>duration</td>
+<td><code>10d</code></td>
+</tr>
+</tbody>
+</table>
+<p>Time-to-live for a pinned <code>subject</code> + numeric <code>version</code> resolution, bounded to 3000 entries. A pinned version maps to one
+immutable schema id, so the TTL only bounds memory; Confluent's registry client does not cache this lookup, so this cache is
+what spares the registry a request on every publish that names a pinned version. Cleared at startup.</p>
 <h3 id="schemaregistryserde"><code>schema.registry.serde.*</code><a class="headerlink" href="#schemaregistryserde" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -9739,7 +9786,7 @@ credential chain.</p>
 </tr>
 </tbody>
 </table>
-<p>Opt-in <a href="../minimalist-kafka/#schema-consumer-identity">separate Schema Registry identity for the consumer side</a>. When <code>schema.registry.consumer.properties</code> names a registry client template, the Kafka flow adapter decodes with its own codec built under the <code>schema.registry.consumer</code> prefix — the same <code>schema.registry.url</code>, that template (the producer's file or a second one), <code>schema.registry.consumer.serde.*</code> pass-through overrides on top of it, and its own <code>schema.registry.consumer.cache.ttl</code> — so a CSFLE installation that grants key access through separate produce and consume identity pools can serve both. The consumer codec reads only its own prefix (repeat a <code>schema.registry.serde.*</code> KMS credential under it). Unset or blank: unchanged, one shared codec; <code>schema.registry.url</code> remains the feature switch.</p>
+<p>Opt-in <a href="../minimalist-kafka/#schema-consumer-identity">separate Schema Registry identity for the consumer side</a>. When <code>schema.registry.consumer.properties</code> names a registry client template, the Kafka flow adapter decodes with its own codec built under the <code>schema.registry.consumer</code> prefix — the same <code>schema.registry.url</code>, that template (the producer's file or a second one), <code>schema.registry.consumer.serde.*</code> pass-through overrides on top of it, and its own caches (<code>schema.registry.consumer.version.cache.ttl</code> for pinned versions) — so a CSFLE installation that grants key access through separate produce and consume identity pools can serve both. The consumer codec reads only its own prefix (repeat a <code>schema.registry.serde.*</code> KMS credential under it). Unset or blank: unchanged, one shared codec; <code>schema.registry.url</code> remains the feature switch.</p>
 <h3 id="yamlsecondarykafkaflowadapter"><code>yaml.secondary.kafka.flow.adapter</code><a class="headerlink" href="#yamlsecondarykafkaflowadapter" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
