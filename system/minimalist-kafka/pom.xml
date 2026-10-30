@@ -31,21 +31,15 @@
         <jackson-2-bom.version>2.22.4</jackson-2-bom.version>
         <jackson-bom.version>3.2.4</jackson-bom.version>
         <log4j2.version>2.26.1</log4j2.version>
-        <!-- Security override: the Confluent registry client pulls httpclient5, whose paired
-             httpcore5/httpcore5-h2 carries a Snyk HIGH (CWE-770, resource allocation without
-             throttling) at Spring Boot's managed 5.4.2. Spring Boot's dependencyManagement pins
-             the version (management beats nearest-wins, so a direct pin here would not reach
-             consumers) - override its property instead. Every module that resolves the Confluent
-             chain needs this same override. Remove when Spring Boot's managed version reaches 5.4.3. -->
-        <httpcore5.version>5.4.4</httpcore5.version>
         <!-- Pin the Kafka client to the same version as the embedded broker used in tests
              (kafka_2.13) to avoid client/broker protocol skew. -->
         <kafka.version>4.4.0</kafka.version>
         <!-- Provides the out-of-the-box Schema Registry serializers (interop with existing client
-             projects). Confluent Platform 8.3.x's own tested pairing is Apache Kafka 4.3.x, matching
-             the kafka.version pinned above. We still pin our own kafka-clients rather than inherit a
-             version - the serializers implement the stable Serializer/Deserializer contract, so they
-             are tolerant of a different Kafka client version. -->
+             projects). Confluent Platform 8.3.x's own tested pairing is Apache Kafka 4.3.x, one minor
+             release behind the kafka.version pinned above. We pin our own kafka-clients rather than
+             inherit a version - the serializers implement the stable Serializer/Deserializer contract,
+             so they are tolerant of a different Kafka client version, and this module's Schema Registry
+             tests run them on the kafka.version above. -->
         <confluent.version>8.3.2</confluent.version>
     </properties>
 
@@ -198,7 +192,9 @@
              (registered as a Confluent RuleExecutor via ServiceLoader) and the local KMS driver used for tests.
              CSFLE is delegated entirely to the Confluent serdes: with these on the classpath and rule.executors
              + KMS configured, encryption/decryption runs on the existing serialize/deserialize path. Absent the
-             config, the serdes behave exactly as before (plaintext). -->
+             config, the serdes behave exactly as before (plaintext). Its encryption-tink and
+             dek-registry-client modules declare Guava 32.0.1, which loses to the Guava above but stays in
+             the dependency graph a scanner reads, so it is excluded with Tink. -->
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry-client-encryption</artifactId>
@@ -211,6 +207,10 @@
                 <exclusion>
                     <groupId>com.google.crypto.tink</groupId>
                     <artifactId>tink</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -239,7 +239,8 @@
         </dependency>
 
         <!-- Local (Tink) KMS driver: a static in-JVM keyset for repeatable CSFLE round-trip tests, so
-             encryption is exercised in CI without cloud credentials. Test scope only. -->
+             encryption is exercised in CI without cloud credentials. Test scope only. Its Guava 32.0.1 is
+             excluded with Tink, as on the encryption artifact above. -->
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry-client-encryption-tink</artifactId>
@@ -249,6 +250,10 @@
                 <exclusion>
                     <groupId>com.google.crypto.tink</groupId>
                     <artifactId>tink</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

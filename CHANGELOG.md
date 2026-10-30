@@ -67,6 +67,13 @@ Each change merged to `main` after v4.12.26 is listed here; it moves under its r
    `kafka-standalone`. Every module of the reactor, the lab, `api-playground` and `pg-example` resolves Kafka 4.4.0 and
    zstd-jni 1.5.7-17, and neither lz4 nor snappy, which stay excluded. **Upgrade note:** an application whose parent is
    `spring-boot-starter-parent` sets `kafka.version` to `4.4.0`; without it, Spring Boot gives it kafka-clients 4.2.2.
+8. **The `httpcore5.version` override retired.** Eight poms set it because Spring Boot once managed `httpcore5` 5.4.2, which
+   carries a Snyk High finding (CWE-770) and reaches every module that resolves Confluent's registry client. Spring Boot 4.1.1
+   manages 5.4.3 and 4.1.2 manages 5.4.4, the version the override set (Changed 1), so the override no longer did anything,
+   and at the next Spring Boot release it would have held `httpcore5` below Boot's version. It is removed, with its comment,
+   from `minimalist-kafka`, `twin-kafka`, `sync-over-async`, the three Kafka examples and the two lab modules; every module
+   still resolves `httpcore5` and `httpcore5-h2` 5.4.4. **Upgrade note:** an application whose parent is
+   `spring-boot-starter-parent` 4.1.2 may drop its own `httpcore5.version`.
 
 ### Fixed
 
@@ -79,6 +86,34 @@ Each change merged to `main` after v4.12.26 is listed here; it moves under its r
    manages the same version (Changed 1). **Upgrade note:** an application whose parent is `spring-boot-starter-parent` takes
    Tomcat's version from Spring Boot unless its own pom sets `tomcat.version`: Boot 4.1.2 brings 11.0.27, and Boot 4.1.1 brought
    11.0.24, so on 4.1.1 set `tomcat.version` to `11.0.27`, as the starter templates do.
+2. **Guava 32.0.1 out of the verbose dependency graph.** Confluent's `kafka-schema-registry-client-encryption-tink` and
+   `dek-registry-client`, which `minimalist-kafka` brings for CSFLE, declare Guava 32.0.1-jre. It lost to the 33.7.2-jre that
+   `minimalist-kafka` declares, so no application ran it, but it stayed in the verbose dependency graph of every application
+   that depends on the library, where a scanner reads it. `minimalist-kafka` now excludes Guava from the encryption artifact and
+   from its test-scope Tink driver, as it already did from the two serializers. The Guava pin in `kafka-demo`,
+   `sync-over-async-demo`, `twin-kafka-demo` and the two lab modules is removed: since 4.12.24 it only rewrote that entry in
+   those five builds. `dependency:tree -Dverbose` over the reactor and the lab shows Guava 33.7.2-jre alone. **Upgrade note:**
+   none - the resolved classpath is unchanged; an application that pinned Guava to pass 4.12.23 may drop the pin, as 4.12.24
+   said.
+3. **The dead-letter copy keeps the record key.** The Kafka flow adapter wrote a failed record to its `dlq-topic` without the
+   key, so a reprocessor lost it and a keyed record landed on a random DLQ partition. `KafkaRequestPublisher.publishSync` gains
+   an overload that takes the key, and the dead-letter write passes the original record's key; a keyless record stays keyless.
+   The copy now lands on the partition its key hashes to (murmur2), as on its source topic. `KafkaFlowConsumerTest` checks the
+   key and failed without the fix. Both clusters of `twin-kafka` share the path. **Upgrade note:** a DLQ reprocessor reads the
+   original key from the record; DLQ copies of one key now share a partition.
+
+### Documentation
+
+1. **The Minimalist Kafka guide, for an application builder.** *Enabling the library* says that Mercury artifacts are not on
+   Maven Central, and the new *An application on a Spring Boot parent* says how such an application keeps the versions
+   Mercury is built and tested with. *Partitioning strategies* now says that `simple.kafka.notification` publishes every record
+   without a key, so per-entity ordering takes an explicit `partition` header; only a dead-letter copy of a keyed record is
+   hashed (Fixed 3). The Schema Registry section documents that JSON Schema validation is off by default and that
+   `schema.registry.serde.json.fail.invalid.schema=true` turns it on for publishing and consuming, and what a registry outage
+   does: Confluent's client retries a failed lookup three times with exponential backoff and jitter (`max.retries`,
+   `retries.wait.ms` and `retries.max.wait.ms` in `schema-registry.properties`), and a decode that still fails, for a schema
+   id the instance has not looked up since it started, dead-letters the record as it does a poison message. **Upgrade note:**
+   none - a `schema.enabled` binding without a `dlq-topic` drops such a record, so give it one.
 
 ---
 ## Version 4.12.26, 10/26/2026

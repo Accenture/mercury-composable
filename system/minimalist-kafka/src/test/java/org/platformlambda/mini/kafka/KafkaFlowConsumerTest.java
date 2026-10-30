@@ -137,6 +137,7 @@ class KafkaFlowConsumerTest {
         assertEquals(1, dlqProducer.history().size(), "exhausted message routed to the DLQ");
         ProducerRecord<String, byte[]> dead = dlqProducer.history().getFirst();
         assertEquals(DLQ_TOPIC, dead.topic(), "the binding's explicitly configured dlq-topic, used verbatim");
+        assertEquals("k", dead.key(), "the dead-letter copy keeps the original record key");
         assertEquals("payload", new String(dead.value(), UTF_8));
         assertEquals("orders", new String(dead.headers().lastHeader("dlq.origin.topic").value(), UTF_8));
         assertNotNull(dead.headers().lastHeader("dlq.error"), "failure cause recorded on the DLQ record");
@@ -428,7 +429,6 @@ class KafkaFlowConsumerTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void aMessageIsOneIncomingHopLinkedByThePublishersTags() {
         List<String> events = new CopyOnWriteArrayList<>();
         InvocationObserver observer = new InvocationObserver() {
@@ -454,16 +454,7 @@ class KafkaFlowConsumerTest {
             }
         };
         AtomicReference<Map<String, String>> flowHeaders = new AtomicReference<>();
-        AtomicInteger attempts = new AtomicInteger();
-        KafkaFlowConsumer consumer = new KafkaFlowConsumer(null, binding().build(), 1000,
-                new RetryPolicy(1, 0, null), null) {
-            @Override
-            EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) {
-                events.add("invoke");
-                flowHeaders.set((Map<String, String>) ((Map<String, Object>) forward.getBody()).get("header"));
-                return new EventEnvelope().setStatus(attempts.incrementAndGet() == 1 ? 500 : 200);
-            }
-        };
+        KafkaFlowConsumer consumer = failsOnceConsumer(events, flowHeaders);
         ConsumerRecord<String, byte[]> r = inboundRecord();
         r.headers().add(KafkaHeaders.OBSERVER_TAG_PREFIX + "dt_tag", "from-the-publisher".getBytes(UTF_8));
 
@@ -521,7 +512,8 @@ class KafkaFlowConsumerTest {
             assertEquals(agentTrace, captured.get().getTraceId());
             assertEquals(agentSpan, captured.get().getSpanId());
             assertTrue(consumer.routeToFlow(traced));
-            assertEquals("0af7651916cd43dd8448eb211c80319c", captured.get().getTraceId(), "the message's own trace wins");
+            assertEquals("0af7651916cd43dd8448eb211c80319c", captured.get().getTraceId(),
+                    "the message's own trace wins");
             assertEquals("b7ad6b7169203331", captured.get().getSpanId());
         } finally {
             InvocationObservers.unregister(agent);
@@ -534,6 +526,24 @@ class KafkaFlowConsumerTest {
 
     private static MockProducer<String, byte[]> autoCompletingProducer() {
         return new MockProducer<>(true, null, new StringSerializer(), new ByteArraySerializer());
+    }
+
+    /**
+     * A consumer allowed one retry whose stubbed flow fails the first attempt with 500 and succeeds on the retry,
+     * recording each invocation in {@code events} and the headers the flow received in {@code flowHeaders}.
+     */
+    @SuppressWarnings("unchecked")
+    private static KafkaFlowConsumer failsOnceConsumer(List<String> events,
+                                                       AtomicReference<Map<String, String>> flowHeaders) {
+        AtomicInteger attempts = new AtomicInteger();
+        return new KafkaFlowConsumer(null, binding().build(), 1000, new RetryPolicy(1, 0, null), null) {
+            @Override
+            EventEnvelope invokeFlow(EventEnvelope forward, String traceId, String tracePath) {
+                events.add("invoke");
+                flowHeaders.set((Map<String, String>) ((Map<String, Object>) forward.getBody()).get("header"));
+                return new EventEnvelope().setStatus(attempts.incrementAndGet() == 1 ? 500 : 200);
+            }
+        };
     }
 
     private static ConsumerRecord<String, byte[]> inboundRecord() {

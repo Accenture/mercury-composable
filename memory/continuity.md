@@ -523,6 +523,12 @@
   (2025.0.7, which takes precedence over the parent's), `httpcore5.version` 5.4.3 and the literal `r2dbc-postgresql`
   1.1.2.RELEASE would each have held its library below Boot 4.1.2. So a Boot bump compares every property and pin the poms
   set with the new `spring-boot-dependencies` properties, and a library bump in platform-core asks whether Boot manages it.
+  **A consumer's own pin hides an exclusion gap (2026-10-30):** the Guava pin five examples and lab modules kept after
+  4.12.24 rewrote the Guava 32.0.1 that two Confluent encryption artifacts (`encryption-tink`, `dek-registry-client`)
+  still declared to `version managed from 32.0.1`, so their verbose graphs looked clean while every application on
+  `minimalist-kafka` saw it `omitted for conflict`. Removing the pins exposed it, and the exclusion went into
+  `minimalist-kafka` itself. Before dropping a pin, compare `dependency:tree -Dverbose` with and without it. The same day
+  `httpcore5.version`, equal to Boot 4.1.2's managed 5.4.4, was retired from its eight poms.
   Relates
   [[conv-template-version-sweep]] (the other reactor-wide sweep).
   <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-26 | uses: 8 | tier: active | origin: 2026-10-12-221919 -->

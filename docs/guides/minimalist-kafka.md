@@ -66,9 +66,35 @@ which is a different concern; this library is an application-level building bloc
 yaml.kafka.flow.adapter=classpath:/kafka-flow-adapter.yaml
 ```
 
+Mercury artifacts are not published to Maven Central. Build the
+[mercury-composable](https://github.com/Accenture/mercury-composable) repository once with `mvn clean install`
+(this installs them into your local Maven repository), or point the build at your organization's artifact
+repository.
+
 The library autoloads at startup (`@MainApplication`): it builds the shared producer and, if
 `yaml.kafka.flow.adapter` is set, starts one consumer thread per topic binding. Either client can be
 [switched off](#opt-out) when the cluster has no credentials for it.
+
+### An application on a Spring Boot parent {#spring-boot-parent}
+
+A rest-spring-4 application has `spring-boot-starter-parent` as its parent, and a plain Mercury application may
+use it for its packaging, as Mercury's own examples do. Spring Boot's dependency management then decides the
+version of every library it manages, including the libraries that reach the application through
+`minimalist-kafka`, and it takes precedence over the versions Mercury's modules declare. Unless the application's
+own pom sets the property Spring Boot reads for a library, the application gets Spring Boot's version, which can
+be older than the one Mercury is built and tested with: Spring Boot manages an older `kafka-clients` line, for
+example.
+
+Set the same version properties as the Mercury example of the release you depend on:
+`examples/kafka-demo/pom.xml` at that release's tag lists them (`kafka.version`, `netty.version`,
+`caffeine.version`, `gson.version`, the Jackson BOMs, `log4j2.version` and the others). A rest-spring-4
+application also follows `tomcat.version`. Then confirm that each library resolves to one version:
+
+```shell
+mvn dependency:tree -Dincludes=org.apache.kafka,io.netty,com.github.ben-manes.caffeine,com.google.code.gson
+```
+
+The release notes in `CHANGELOG.md` name each property an application on a Spring Boot parent must change.
 
 ### Switching off a client you do not use {#opt-out}
 
@@ -352,8 +378,10 @@ contract keeps the building blocks serializer-free; richer encodings layer on to
 > **Why a random partitioner?** Kafka's default is a *sticky* partitioner — throughput-friendly, but at
 > low volume it lands everything on one partition, leaving a multi-instance consumer group mostly idle.
 > The library's `SimpleRandomPartitioner` is perfectly stateless and distributes keyless records
-> uniformly. Records with an explicit `partition` header bypass it, and keyed records keep Kafka's
-> murmur2 key-hash mapping. Set `partitioner.class` in `kafka-producer.properties` to override.
+> uniformly. Records with an explicit `partition` header bypass it, and keyed records keep Kafka's murmur2
+> key-hash mapping; `simple.kafka.notification` publishes without a key, so only a dead-letter copy of a
+> keyed record is hashed (see [partitioning strategies](#partitioning)). Set `partitioner.class` in
+> `kafka-producer.properties` to override.
 
 > **OAuth token URLs are allow-listed automatically.** The Kafka client refuses to fetch an OAuth 2.0
 > token from a URL that is not on the JVM allow-list (the
@@ -401,7 +429,8 @@ On a **failure**, the message is retried up to `kafka.flow.max.retries` times (w
 - The DLQ write is **confirmed** (it blocks on broker acknowledgement, bounded by `kafka.dlq.timeout.ms`);
   on success the offset commits (or, in auto-commit mode, is left to Kafka's own timer as usual).
 - **DLQ topics must be pre-provisioned** (Kafka auto-creation is off in production). The original record's
-  headers are preserved, plus `dlq.origin.topic` and `dlq.error`.
+  key, value and headers are preserved, plus `dlq.origin.topic` and `dlq.error`, so a keyed record lands
+  on the DLQ partition its key hashes to and a reprocessor reads the key where the producer put it.
 
 > **When there's no DLQ, or the DLQ write itself fails (data loss).** A failed write to the DLQ is an
 > *exception of an exception* with no further fallback. Blocking the partition to retry forever would re-run
@@ -562,13 +591,19 @@ Three mechanisms decide which partition an outbound message lands on, in precede
 2. **A custom partitioner in the producer template** — the externalized `kafka-producer.properties`
    may set Kafka's standard `partitioner.class`; the library registers its default with
    `putIfAbsent`, so a template's own value always wins. The Kafka `Partitioner` API receives the
-   record's key and value (payload inspection works — plain JSON bytes on non-schema topics,
-   Confluent-framed bytes on schema topics), but **not the record headers** — header-based
-   partitioning is impossible at this layer, a Kafka API limitation.
+   record's value (payload inspection works — plain JSON bytes on non-schema topics,
+   Confluent-framed bytes on schema topics) and its key, which is null for every record
+   `simple.kafka.notification` publishes, but **not the record headers** — header-based partitioning is
+   impossible at this layer, a Kafka API limitation.
 3. **`SimpleRandomPartitioner` — the library default** for unkeyed records: simple random sampling
    spreads low-volume traffic evenly across partitions (Kafka's own sticky default batches onto one
    partition, which starves multi-instance consumer groups at low volume). Keyed records keep
    Kafka's murmur2 hashing.
+
+**No record key on a publish.** `simple.kafka.notification` publishes every record without a key, so
+Kafka's murmur2 key hashing never decides where it lands; only a [dead-letter](#reliability) copy, which
+keeps its original record's key, is hashed. Records that must stay in order for one entity (a customer, an
+account) take an explicit `partition` header computed from the entity, as below.
 
 **Content-based partitioning — the composable pattern.** When the partition must be derived from a
 record header or a payload key-value (a tenant, an entity id), compute it in the flow — where the
@@ -920,6 +955,20 @@ consumer:
 A **decode failure is a poison message** (retrying won't help), so the raw record is dead-lettered
 immediately via the [DLQ path](#reliability) rather than retried.
 
+**A registry outage is treated the same way, once the client's own retries are spent.** The adapter
+dead-letters a record on any failure inside the decode, and a decode can fail for a reason that is not the
+record's: a schema registry that cannot be reached. Confluent's registry client first retries a failed
+request - a network error, or an HTTP 408, 429 or 5xx - three times, with exponential backoff from one
+second and random jitter: against a registry answering 503 to every request, a lookup failed after four
+attempts and about six seconds. `max.retries`, `retries.wait.ms` and `retries.max.wait.ms` in
+`schema-registry.properties` tune it. The decode needs the registry only for a schema id this instance has
+not looked up since it started, because resolved schemas are held in memory (see [Notes](#schema-notes)).
+So the exposure is a registry outage that outlasts those retries while an instance starts or restarts: each
+schema id's first record goes to the `dlq-topic`, or, on a binding without one, is dropped with an `ERROR`
+log. Give every `schema.enabled` binding a `dlq-topic`, so such records can be replayed once the registry is
+back. A publish with a `subject` header meets the same retries, then fails its flow, which the adapter
+retries and then dead-letters.
+
 ### Notes {#schema-notes}
 
 - **One subject-driven path, two formats.** The producer and consumer are type-generic; only the `subject`
@@ -940,6 +989,14 @@ immediately via the [DLQ path](#reliability) rather than retried.
   new version is registered, so it is cached on a **short TTL** and re-resolved frequently, picking up a new
   current version without a restart. Pin a version in production paths where the schema must not shift
   underneath you; use `latest` in dev / lower environments where tracking the newest schema is convenient.
+- **Payload validation is off by default.** Confluent's JSON Schema serializer frames whatever document it is
+  given, and its deserializer decodes whatever document it finds, without checking either against the schema.
+  `schema.registry.serde.json.fail.invalid.schema=true` turns validation on for both, through the
+  [serde pass-through](#csfle): a non-conforming publish fails the task that sends it (and so the flow), and a
+  non-conforming record on a `schema.enabled` binding is a decode failure, dead-lettered without retry. With a
+  [separate consumer identity](#schema-consumer-identity), repeat the setting under
+  `schema.registry.consumer.serde.*`, since the consumer codec reads only its own prefix. Validation applies
+  to JSON Schema; an Avro record is closed-shape by its encoding.
 - **Worked example.** The [sync-over-async demo](sync-over-async.md) runs the same end-to-end flow over both
   formats (`json-topic-1/2`, `avro-topic-1/2`) alongside the raw `byte[]` path.
 

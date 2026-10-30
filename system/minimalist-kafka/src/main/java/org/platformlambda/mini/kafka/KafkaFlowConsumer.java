@@ -588,7 +588,7 @@ public class KafkaFlowConsumer implements AutoCloseable {
 
     /**
      * Park an un-processable message on the binding's configured {@code dlq-topic} with a <b>confirmed</b>
-     * write, preserving its headers + body. Visible (package-private, non-final) so the commit-gating can be
+     * write, preserving its key, headers + body. Visible (package-private, non-final) so the commit-gating can be
      * unit-tested.
      *
      * <p>If no {@code dlq-topic} is configured, or write to it <b>fails</b>, there is no further
@@ -629,7 +629,8 @@ public class KafkaFlowConsumer implements AutoCloseable {
         deadLetterHeaders.put(DLQ_ERROR_HEADER,
                 (cause != null ? cause.toString() : "unknown").getBytes(StandardCharsets.UTF_8));
         try {
-            publisher.publishSync(deadLetterTopic, null, deadLetterHeaders, consumerRecord.value(), dlqTimeout);
+            publisher.publishSync(deadLetterTopic, null, consumerRecord.key(), deadLetterHeaders,
+                    consumerRecord.value(), dlqTimeout);
             return true;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
