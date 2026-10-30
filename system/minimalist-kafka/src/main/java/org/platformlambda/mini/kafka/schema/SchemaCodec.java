@@ -54,7 +54,7 @@ import java.util.function.Supplier;
  *
  * <p><b>Thread model.</b> The Confluent serializers/deserializers are <b>not thread-safe</b>, so this codec is
  * a <b>factory</b>, not a shared (de)serializer holder: the shared, thread-safe parts - the
- * {@link ManagedCacheSchemaRegistryClient} (id→schema lookups, in-memory cached) and {@link #schemaTypeOf} - stay on
+ * {@link ManagedCacheSchemaRegistryClient} (id→schema lookups, cached in memory) and {@link #schemaTypeOf} - stay on
  * the singleton, while {@link #newEncoder()} / {@link #newDecoder()} mint <b>owner-confined</b> serde sets. A
  * producer keeps one {@link Encoder} per worker instance (an instance is single-flight); a consumer keeps one
  * {@link Decoder} for its single poll thread. So a given Confluent serializer/deserializer is only ever
@@ -85,18 +85,14 @@ public class SchemaCodec {
      * entries ⇒ the serdes build exactly as before (plaintext).
      */
     private static final String SERDE_CONFIG_PREFIX = "schema.registry.serde.";
-    private static final String DEFAULT_CACHE_TTL = "30m";
+    /** The retired {@code <prefix>.cache.ttl}; a value still set is passed on as {@code latest.cache.ttl.sec}. */
+    private static final String RETIRED_CACHE_TTL = ".cache.ttl";
     // A pinned subject+numeric-version is immutable, so it can be cached effectively forever; a long TTL
     // (plus a bounded item count) keeps it fresh enough while removing any unbounded-growth risk.
     private static final String DEFAULT_VERSION_CACHE_TTL = "10d";
     private static final long VERSION_CACHE_MAX_ITEMS = 3000L;
-    /**
-     * Name of the platform {@link ManagedCache} that holds the library's own id→schema lookups (for
-     * monitoring/inspection); Confluent's serdes read the registry client's internal id cache instead. It also
-     * holds {@code subject+latest → (id,type)} resolutions (mutable, so the same TTL applies), under
-     * {@code "latest/"}-namespaced keys that cannot collide with the digit-only id keys.
-     */
-    public static final String CACHE_NAME = "schema.registry";
+    /** The default config-key prefix: {@code schema.registry.url}, {@code schema.registry.properties}, ... */
+    public static final String DEFAULT_KEY_PREFIX = "schema.registry";
     /** ManagedCache holding {@code subject+numeric-version → (id,type)} resolutions (immutable, long TTL, bounded). */
     public static final String VERSION_CACHE_NAME = "schema.registry.version";
     private static final int IDENTITY_MAP_CAPACITY = 1000;
@@ -185,7 +181,7 @@ public class SchemaCodec {
      * @return a codec, or {@code null} when {@code registryUrl} is {@code null}/blank
      */
     public static SchemaCodec fromConfig(ConfigBase config, String registryUrl) {
-        return fromConfig(config, registryUrl, CACHE_NAME);
+        return fromConfig(config, registryUrl, DEFAULT_KEY_PREFIX);
     }
 
     /**
@@ -197,8 +193,9 @@ public class SchemaCodec {
      * so two registries must never share an id-keyed cache.
      *
      * <p>Derivations from the prefix (example: {@code secondary.schema.registry}):
-     * cache TTL keys {@code <prefix>.cache.ttl} / {@code <prefix>.version.cache.ttl}; serde pass-through
-     * prefix {@code <prefix>.serde.}; ManagedCache names {@code <prefix>} and {@code <prefix>.version};
+     * the pinned-version cache TTL key {@code <prefix>.version.cache.ttl} (the retired {@code <prefix>.cache.ttl}
+     * is passed to the registry client as {@code latest.cache.ttl.sec}); serde pass-through
+     * prefix {@code <prefix>.serde.}; ManagedCache name {@code <prefix>.version};
      * client template location key {@code <prefix>.properties} with the file-then-classpath default
      * {@code classpath:/<prefix-with-dashes>.properties}; set {@code <prefix>.properties} explicitly to
      * use an external file or a comma-separated fallback chain.</p>
@@ -214,23 +211,20 @@ public class SchemaCodec {
         }
         String templateFile = keyPrefix.replace('.', '-') + ".properties";
         String templateDefaults = "classpath:/" + templateFile;
-        long ttlMillis = 1000L * Utility.getInstance()
-                .getDurationInSeconds(config.getProperty(keyPrefix + ".cache.ttl", DEFAULT_CACHE_TTL));
         /*
-         * The schema cache is rebuildable from the registry, so clear it at startup - a stale entry (e.g.
-         * after the registry's schemas changed between runs) is never served. It re-populates on demand and
-         * TTL-expires within the run. ManagedCache is a JVM-wide singleton by name, so an earlier run in the
-         * same JVM (e.g. another test) could have left entries behind; clear() guarantees a clean start.
+         * Confluent's registry client caches what the codec looks up, positive results only: every schema it
+         * fetched by id for the life of the client, and a subject's latest version for latest.cache.ttl.sec. The
+         * one lookup it does not cache - a pinned subject+version - gets a ManagedCache of its own. The cache is
+         * rebuildable from the registry, so it is cleared at startup: ManagedCache is a JVM-wide singleton by name,
+         * so an earlier run in the same JVM (e.g. another test) could have left entries behind.
+         *
+         * subject+numeric-version → (id,type): immutable, so a long TTL (default 10d), bounded to 3000 items.
          */
-        ManagedCache cache = ManagedCache.createCache(keyPrefix, ttlMillis);
-        cache.clear();
-        // subject+numeric-version → (id,type): immutable, so a long TTL (default 10d), bounded to 3000 items.
         long versionTtlMillis = 1000L * Utility.getInstance()
                 .getDurationInSeconds(config.getProperty(keyPrefix + ".version.cache.ttl", DEFAULT_VERSION_CACHE_TTL));
         ManagedCache versionCache = ManagedCache.createCache(keyPrefix + ".version",
                 versionTtlMillis, VERSION_CACHE_MAX_ITEMS);
         versionCache.clear();
-        // (subject+latest resolutions share the short-TTL id cache above; no separate cache needed.)
         /*
          * Start from the registry client template (verbatim pass-through), so any Confluent client
          * parameter - OAuth 2.0 bearer auth, basic auth, SSL, optional installation-specific
@@ -254,10 +248,11 @@ public class SchemaCodec {
         srConfig.put(SchemaRegistryClientConfig.MISSING_ID_CACHE_TTL_CONFIG, 0L);
         srConfig.put(SchemaRegistryClientConfig.MISSING_VERSION_CACHE_TTL_CONFIG, 0L);
         srConfig.put(SchemaRegistryClientConfig.MISSING_SCHEMA_CACHE_TTL_CONFIG, 0L);
+        passRetiredCacheTtl(config, keyPrefix, srConfig);
         SchemaRegistryClient client = new ManagedCacheSchemaRegistryClient(List.of(registryUrl),
                 IDENTITY_MAP_CAPACITY,
                 List.of(new JsonSchemaProvider(), new AvroSchemaProvider()),
-                srConfig, cache, versionCache);
+                srConfig, versionCache);
         /*
          * The serdes inherit the SAME registry client template, then apply their own
          * schema.registry.serde.* overrides on top.
@@ -285,10 +280,44 @@ public class SchemaCodec {
         extraSerdeConfig.putAll(serdeOverrides);
         // serdeOverrides counts the <prefix>.serde.* entries - KMS driver settings for CSFLE, or an identity
         // override for a consumer-side codec - so the label states what is known rather than inferring CSFLE
-        log.info("Schema codec ready (registry={}, cache={}, ttlMs={}, types={}, serdeOverrides={}, auth={})",
-                registryUrl, keyPrefix, ttlMillis, List.of(SchemaType.values()), serdeOverrides.size(),
+        log.info("Schema codec ready (registry={}, prefix={}, latestCacheTtlSec={}, types={}, serdeOverrides={}, "
+                        + "auth={})", registryUrl, keyPrefix, SchemaRegistryClientConfig.getLatestTTL(srConfig),
+                List.of(SchemaType.values()), serdeOverrides.size(),
                 bearerAuthSource == null ? "none" : bearerAuthSource);
         return new SchemaCodec(client, registryUrl, extraSerdeConfig);
+    }
+
+    /**
+     * Pass the retired {@code <prefix>.cache.ttl} to the registry client as {@code latest.cache.ttl.sec}. It once
+     * timed a {@link ManagedCache} in front of Confluent's own id and latest-version caches; what it still decides
+     * is how soon a subject's new {@code latest} version is picked up, so a value an application still sets keeps
+     * that say. An explicit {@code latest.cache.ttl.sec} in the registry client template wins, and a value that
+     * is not a duration of zero or more is not passed on (a negative TTL would cache {@code latest} forever).
+     *
+     * @param config    the application configuration
+     * @param keyPrefix the codec's config-key prefix
+     * @param srConfig  the registry client configuration, updated in place
+     */
+    static void passRetiredCacheTtl(ConfigBase config, String keyPrefix, Map<String, Object> srConfig) {
+        String retiredKey = keyPrefix + RETIRED_CACHE_TTL;
+        String retired = config.getProperty(retiredKey);
+        if (retired == null || retired.isBlank()) {
+            return;
+        }
+        String latestKey = SchemaRegistryClientConfig.LATEST_CACHE_TTL_CONFIG;
+        if (srConfig.containsKey(latestKey)) {
+            log.warn("{} is retired and ignored - the registry client template sets {}", retiredKey, latestKey);
+            return;
+        }
+        int seconds = Utility.getInstance().getDurationInSeconds(retired.trim());
+        if (seconds < 0) {
+            log.warn("{} is retired, and '{}' is not a duration - {} keeps the registry client's default",
+                    retiredKey, retired, latestKey);
+            return;
+        }
+        srConfig.put(latestKey, (long) seconds);
+        log.warn("{} is retired - passed to the registry client as {}={}; set {} in the registry client template "
+                + "instead", retiredKey, latestKey, seconds, latestKey);
     }
 
     /**

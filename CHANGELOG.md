@@ -75,6 +75,21 @@ Each change merged to `main` after v4.12.26 is listed here; it moves under its r
    still resolves `httpcore5` and `httpcore5-h2` 5.4.4. **Upgrade note:** an application whose parent is
    `spring-boot-starter-parent` 4.1.2 may drop its own `httpcore5.version`.
 
+9. **`schema.registry.cache.ttl` retired; the schema codec caches only what Confluent's client does not.** The codec
+   fronted Confluent's registry client with a platform `ManagedCache` for lookups by id and for a subject's `latest`
+   version, timed by `schema.registry.cache.ttl` (30 minutes). Measured against a counting registry, it saved no request:
+   Confluent's client keeps every schema fetched by id for the life of the process, its serializers and deserializers
+   never read the `ManagedCache`, and it caches `latest` itself for `latest.cache.ttl.sec` (60 seconds) - so the
+   `ManagedCache` only delayed a newly registered `latest` version from a minute to half an hour. Both are gone. The
+   cache of a pinned `subject` + `version`, which Confluent's client lacks, stays (`schema.registry.version.cache.ttl`).
+   `SchemaCodec.CACHE_NAME` is replaced by `DEFAULT_KEY_PREFIX`, and `ManagedCacheSchemaRegistryClient`'s constructor no
+   longer takes the id cache. **Upgrade note:** with neither key set, a newly registered `latest` version is now picked
+   up within 60 seconds instead of 30 minutes, at one registry request per subject per minute. An application that sets
+   `schema.registry.cache.ttl` (or a prefixed twin: `schema.registry.consumer.cache.ttl`,
+   `secondary.schema.registry.cache.ttl`) keeps its value: it is passed to the registry client as
+   `latest.cache.ttl.sec`, with a warning at startup, unless the registry client template sets that key; move it to
+   `schema-registry.properties` as `latest.cache.ttl.sec` (seconds).
+
 ### Fixed
 
 1. **Tomcat 11.0.27 - the field's Snyk gate on 4.12.26 closed.** Snyk reported two critical findings in `tomcat-embed-core`
@@ -115,16 +130,14 @@ Each change merged to `main` after v4.12.26 is listed here; it moves under its r
    `schema-registry.properties`), and a decode that still fails, for a schema
    id the instance has not looked up since it started, dead-letters the record as it does a poison message. **Upgrade note:**
    none - a `schema.enabled` binding without a `dlq-topic` drops such a record, so give it one.
-2. **The schema cache notes say which cache answers which lookup.** The Minimalist Kafka guide, the configuration reference
-   and the javadoc of `ManagedCacheSchemaRegistryClient` said that the `ManagedCache` behind `schema.registry.cache.ttl` saves
-   the serializers and deserializers their registry round trips by id, and that its TTL lets schema changes be picked up. Read
-   from Confluent 8.3.2 and measured against a counting registry: Confluent's client keeps every schema it fetched by id for
-   the life of the process, its serdes read that cache and never the `ManagedCache`, and an id entry that expires is answered
-   from it without a registry request. The TTL decides how soon a subject's new `latest` version is picked up (Confluent's own
-   60-second `latest` cache sits behind it). The pinned-version cache, `schema.registry.version.cache.ttl` (now in the
-   configuration reference), spares the registry a request on every publish, since Confluent does not cache that lookup. A
-   publish whose registry lookup fails fails its flow, and only a flow the Kafka adapter started is retried and dead-lettered.
-   **Upgrade note:** none - documentation only; no behaviour changed.
+2. **The schema notes say which cache answers which lookup.** The Minimalist Kafka guide, the configuration reference and
+   the javadoc of `ManagedCacheSchemaRegistryClient`, `JsonSchemaSerde` and `SchemaCodec` credited a `ManagedCache` with
+   saving the serializers and deserializers their registry round trips by id, and said its TTL let schema changes be
+   picked up. Confluent's client keeps every schema it fetched by id for the life of the process and its serdes read
+   that cache (Changed 9 retires the `ManagedCache`). `schema.registry.version.cache.ttl`, the pinned-version cache,
+   is now in the configuration reference, and the guide's publish sentence holds only for a flow the Kafka adapter
+   started: a publish whose registry lookup fails fails its flow, which the adapter retries and dead-letters only when
+   the adapter started it. **Upgrade note:** none - documentation only.
 
 ---
 ## Version 4.12.26, 10/26/2026

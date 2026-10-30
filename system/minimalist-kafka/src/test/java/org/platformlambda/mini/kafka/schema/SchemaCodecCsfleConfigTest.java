@@ -93,7 +93,7 @@ class SchemaCodecCsfleConfigTest {
         // registered schema, never from this serde pass-through (see csfleConfigReachesEncoderAndDecoder).
         appConfig.put("schema.registry.serde.access.key.id", "AKIA-example");
         appConfig.put("schema.registry.serde.secret", "my-secret");
-        appConfig.put("schema.registry.cache.ttl", "30m");   // not a serde.* key - must be excluded
+        appConfig.put("schema.registry.version.cache.ttl", "10d");   // not a serde.* key - must be excluded
         appConfig.put("schema.registry.url", "http://localhost:8081"); // likewise excluded
 
         Map<String, Object> extracted = SchemaCodec.extractSerdeConfig(new MapConfig(appConfig));

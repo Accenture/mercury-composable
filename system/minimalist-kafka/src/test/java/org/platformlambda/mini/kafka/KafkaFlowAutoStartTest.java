@@ -116,9 +116,10 @@ class KafkaFlowAutoStartTest {
                 KafkaFlowAutoStart.resolveConsumerSchemaCodec(config, registry.baseUrl(), producerCodec);
         assertNotNull(consumerCodec);
         assertNotSame(producerCodec, consumerCodec, "set: the adapter decodes with its own codec");
-        // built under the consumer prefix - its own id cache, never the producer's (global ids are per registry)
-        assertNotNull(ManagedCache.getInstance(KafkaFlowAutoStart.CONSUMER_REGISTRY_PREFIX),
-                "the consumer codec's caches carry the schema.registry.consumer prefix");
+        // built under the consumer prefix - its own registry client and caches, never the producer's (global ids
+        // are per registry)
+        assertNotNull(ManagedCache.getInstance(KafkaFlowAutoStart.CONSUMER_REGISTRY_PREFIX + ".version"),
+                "the consumer codec's version cache carries the schema.registry.consumer prefix");
         // the seam works end-to-end: what the producer's codec encodes, the consumer's codec decodes - one registry
         int id = producerCodec.client().register(TOPIC + "-value", new JsonSchema(JSON_SCHEMA));
         byte[] framed = producerCodec.newEncoder().serialize(TOPIC, SchemaType.JSON, id, Map.of("hello", "world"));

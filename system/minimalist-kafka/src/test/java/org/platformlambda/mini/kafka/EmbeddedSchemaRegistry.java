@@ -86,6 +86,7 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
     private final String clientSecret;
     private final Set<String> issuedTokens = ConcurrentHashMap.newKeySet();
     private final AtomicInteger tokenRequests = new AtomicInteger(0);
+    private final AtomicInteger lookups = new AtomicInteger(0);
 
     public EmbeddedSchemaRegistry() throws IOException {
         this(null, null);
@@ -122,6 +123,14 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
         return tokenRequests.get();
     }
 
+    /**
+     * @return how many registry lookups were served - {@code GET /schemas/ids/{id}} and
+     *         {@code GET /subjects/{subject}/versions/{version}}, found or not (for cache assertions)
+     */
+    public int lookups() {
+        return lookups.get();
+    }
+
     @Override
     public void close() {
         server.stop(0);
@@ -155,10 +164,12 @@ public class EmbeddedSchemaRegistry implements AutoCloseable {
             if ("POST".equals(method) && p.length == 4 && "subjects".equals(p[1]) && "versions".equals(p[3])) {
                 register(exchange, decode(p[2]));
             } else if ("GET".equals(method) && p.length == 5 && "subjects".equals(p[1]) && "versions".equals(p[3])) {
+                lookups.incrementAndGet();
                 getVersion(exchange, decode(p[2]), p[4]);
             } else if ("POST".equals(method) && p.length == 3 && "subjects".equals(p[1])) {
                 lookup(exchange, decode(p[2]));
             } else if ("GET".equals(method) && p.length == 4 && "schemas".equals(p[1]) && "ids".equals(p[2])) {
+                lookups.incrementAndGet();
                 getById(exchange, Utility.getInstance().str2int(p[3]));
             } else {
                 log.warn("Embedded registry: unhandled {} {}", method, path);
