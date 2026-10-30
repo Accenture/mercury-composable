@@ -1902,6 +1902,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#spring-boot-parent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        An application on a Spring Boot parent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#opt-out" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3310,6 +3321,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#spring-boot-parent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        An application on a Spring Boot parent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#opt-out" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3717,15 +3739,34 @@ activate the inbound adapter. The outbound <code>simple.kafka.notification</code
 </ol>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="na">yaml.kafka.flow.adapter</span><span class="o">=</span><span class="s">classpath:/kafka-flow-adapter.yaml</span>
 </code></pre></div>
+<p>Mercury artifacts are not published to Maven Central. Build the
+<a href="https://github.com/Accenture/mercury-composable">mercury-composable</a> repository once with <code>mvn clean install</code>
+(this installs them into your local Maven repository), or point the build at your organization's artifact
+repository.</p>
 <p>The library autoloads at startup (<code>@MainApplication</code>): it builds the shared producer and, if
 <code>yaml.kafka.flow.adapter</code> is set, starts one consumer thread per topic binding. Either client can be
 <a href="#opt-out">switched off</a> when the cluster has no credentials for it.</p>
+<h3 id="spring-boot-parent">An application on a Spring Boot parent<a class="headerlink" href="#spring-boot-parent" title="Permanent link">&para;</a></h3>
+<p>A rest-spring-4 application has <code>spring-boot-starter-parent</code> as its parent, and a plain Mercury application may
+use it for its packaging, as Mercury's own examples do. Spring Boot's dependency management then decides the
+version of every library it manages, including the libraries that reach the application through
+<code>minimalist-kafka</code>, and it takes precedence over the versions Mercury's modules declare. Unless the application's
+own pom sets the property Spring Boot reads for a library, the application gets Spring Boot's version, which can
+be older than the one Mercury is built and tested with: Spring Boot manages an older <code>kafka-clients</code> line, for
+example.</p>
+<p>Set the same version properties as the Mercury example of the release you depend on:
+<code>examples/kafka-demo/pom.xml</code> at that release's tag lists them (<code>kafka.version</code>, <code>netty.version</code>,
+<code>caffeine.version</code>, <code>gson.version</code>, the Jackson BOMs, <code>log4j2.version</code> and the others). A rest-spring-4
+application also follows <code>tomcat.version</code>. Then confirm that each library resolves to one version:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>mvn<span class="w"> </span>dependency:tree<span class="w"> </span>-Dincludes<span class="o">=</span>org.apache.kafka,io.netty,com.github.ben-manes.caffeine,com.google.code.gson
+</code></pre></div>
+<p>The release notes in <code>CHANGELOG.md</code> name each property an application on a Spring Boot parent must change.</p>
 <h3 id="opt-out">Switching off a client you do not use<a class="headerlink" href="#opt-out" title="Permanent link">&para;</a></h3>
 <p>Both clients start by default. When the cluster grants credentials for only <strong>one</strong> of them — the
 usual case for one leg of a <a href="../twin-kafka/#bridge">bridge</a>, where a Confluent console issues an API
 key for producing <em>or</em> consuming — switch the unused one off:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># a consume-only leg: this cluster issues no producer credentials</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">kafka.producer.enabled</span><span class="o">=</span><span class="s">false</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># a consume-only leg: this cluster issues no producer credentials</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="na">kafka.producer.enabled</span><span class="o">=</span><span class="s">false</span>
 </code></pre></div>
 <table>
 <thead>
@@ -3760,27 +3801,27 @@ key for producing <em>or</em> consuming — switch the unused one off:</p>
 "Kafka off in this profile" switch possible without removing the dependency.</p>
 <h2 id="adapter-yaml">Inbound: the adapter YAML<a class="headerlink" href="#adapter-yaml" title="Permanent link">&para;</a></h2>
 <p><code>kafka-flow-adapter.yaml</code> lists <code>topic -&gt; flow</code> bindings:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">consumer</span><span class="p">:</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'incoming-orders'</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-order'</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="s">'sales-order-group'</span><span class="w">        </span><span class="c1"># optional</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="nt">dlq-topic</span><span class="p">:</span><span class="w"> </span><span class="s">'incoming-orders-dlq'</span><span class="w">  </span><span class="c1"># optional; no DLQ if omitted (failed messages dropped w/ ERROR)</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'incoming-payments'</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-payment'</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="nt">partition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">                      </span><span class="c1"># optional</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic-pattern</span><span class="p">:</span><span class="w"> </span><span class="s">'events\.[a-z]{2}'</span><span class="w"> </span><span class="c1"># optional; regex subscribe instead of a literal 'topic'</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-region-event'</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="s">'region-events-group'</span><span class="w">      </span><span class="c1"># required for topic-pattern bindings</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'clickstream'</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'ingest-clickstream'</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">    </span><span class="nt">auto-commit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                 </span><span class="c1"># optional; trades pod-death redelivery for throughput</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">    </span><span class="nt">max-poll-records</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span><span class="w">             </span><span class="c1"># optional; only meaningful with auto-commit</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'mixed-events'</span><span class="w">             </span><span class="c1"># second-level routing: pick the target per record</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">    </span><span class="nt">serializer</span><span class="p">:</span><span class="w"> </span><span class="s">'json'</span><span class="w">                </span><span class="c1"># optional; best-effort JSON decode on a non-schema topic</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">    </span><span class="nt">flows</span><span class="p">:</span>
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.header.type(order)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://order-flow'</span>
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.body.event.kind(refund)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">task://v1.refund.processor'</span>
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'default</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://catch-all-flow'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">consumer</span><span class="p">:</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'incoming-orders'</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-order'</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="s">'sales-order-group'</span><span class="w">        </span><span class="c1"># optional</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="nt">dlq-topic</span><span class="p">:</span><span class="w"> </span><span class="s">'incoming-orders-dlq'</span><span class="w">  </span><span class="c1"># optional; no DLQ if omitted (failed messages dropped w/ ERROR)</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'incoming-payments'</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-payment'</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="nt">partition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">                      </span><span class="c1"># optional</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic-pattern</span><span class="p">:</span><span class="w"> </span><span class="s">'events\.[a-z]{2}'</span><span class="w"> </span><span class="c1"># optional; regex subscribe instead of a literal 'topic'</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-region-event'</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="s">'region-events-group'</span><span class="w">      </span><span class="c1"># required for topic-pattern bindings</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'clickstream'</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'ingest-clickstream'</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">    </span><span class="nt">auto-commit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                 </span><span class="c1"># optional; trades pod-death redelivery for throughput</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">    </span><span class="nt">max-poll-records</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span><span class="w">             </span><span class="c1"># optional; only meaningful with auto-commit</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'mixed-events'</span><span class="w">             </span><span class="c1"># second-level routing: pick the target per record</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">    </span><span class="nt">serializer</span><span class="p">:</span><span class="w"> </span><span class="s">'json'</span><span class="w">                </span><span class="c1"># optional; best-effort JSON decode on a non-schema topic</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">    </span><span class="nt">flows</span><span class="p">:</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.header.type(order)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://order-flow'</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.body.event.kind(refund)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">task://v1.refund.processor'</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'default</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://catch-all-flow'</span>
 </code></pre></div>
 <table>
 <thead>
@@ -3914,12 +3955,12 @@ from" without any framework-side rule/schema code.</p>
 a composable function's parameter — no <code>model.*</code> relay needed. This is what makes
 <a href="#pattern"><code>topic-pattern</code></a> practical for a "serving" function that must vary its behavior by the concrete
 topic a message arrived on, even though every matched topic shares one <code>flow</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># in the first task of a topic-pattern flow, passed straight to the composable function</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nt">input</span><span class="p">:</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.metadata.topic</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">topic'</span><span class="w">      </span><span class="c1"># e.g. 'events.de' - the function decides per-topic behavior</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.metadata.partition</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">partition'</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.body</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">body'</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'topic.aware.dispatcher'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># in the first task of a topic-pattern flow, passed straight to the composable function</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.metadata.topic</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">topic'</span><span class="w">      </span><span class="c1"># e.g. 'events.de' - the function decides per-topic behavior</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.metadata.partition</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">partition'</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.body</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">body'</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'topic.aware.dispatcher'</span>
 </code></pre></div>
 <p><code>model.*</code> is only needed when a <em>later</em> task (not the one receiving the message) needs the value — store it
 once (<code>'input.metadata.topic -&gt; model.source_topic'</code>) and reference <code>model.source_topic</code> from there on.</p>
@@ -3928,16 +3969,16 @@ once (<code>'input.metadata.topic -&gt; model.source_topic'</code>) and referenc
 (a common Kafka pattern — e.g. a <code>type</code> header distinguishing orders from shipments), <strong>second-level
 routing</strong> picks the target per record instead: replace <code>flow</code> with a <code>flows</code> rule list (exactly one of
 the two, never both):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">consumer</span><span class="p">:</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'mixed-events'</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">serializer</span><span class="p">:</span><span class="w"> </span><span class="s">'json'</span><span class="w">                 </span><span class="c1"># optional; enables the input.body rule below</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="s">'30s'</span><span class="w">                         </span><span class="c1"># optional; deadline for task:// targets (default 30s)</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="nt">flows</span><span class="p">:</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.header.type(order)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://order-flow'</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.header.type(order-*)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://order-variant-flow'</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.header.type(regex:</span><span class="nv"> </span><span class="s">^shipment-(eu|us)$)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://shipment-flow'</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.body.event.kind(refund)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">task://v1.refund.processor'</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'default</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://catch-all-flow'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">consumer</span><span class="p">:</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'mixed-events'</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">serializer</span><span class="p">:</span><span class="w"> </span><span class="s">'json'</span><span class="w">                 </span><span class="c1"># optional; enables the input.body rule below</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="nt">ttl</span><span class="p">:</span><span class="w"> </span><span class="s">'30s'</span><span class="w">                         </span><span class="c1"># optional; deadline for task:// targets (default 30s)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="nt">flows</span><span class="p">:</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.header.type(order)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://order-flow'</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.header.type(order-*)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://order-variant-flow'</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.header.type(regex:</span><span class="nv"> </span><span class="s">^shipment-(eu|us)$)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://shipment-flow'</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.body.event.kind(refund)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">task://v1.refund.processor'</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'default</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">flow://catch-all-flow'</span>
 </code></pre></div>
 <p>Each rule is <code>&lt;selector&gt;(&lt;matcher&gt;) -&gt; &lt;target&gt;</code>, plus the <strong>mandatory</strong> <code>default -&gt; &lt;target&gt;</code> fallback.</p>
 <p><strong>Selectors</strong> inspect one key-value of the inbound record:</p>
@@ -4044,9 +4085,9 @@ manual assignment needs concrete topic-partitions up front.</p>
 subscription automatically as matching topics are created — no adapter-side polling of topic metadata, no
 restart needed when a new matching topic appears. All messages from every matched topic route into the same
 <code>flow</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic-pattern</span><span class="p">:</span><span class="w"> </span><span class="s">'events\.[a-z]{2}'</span><span class="w">   </span><span class="c1"># matches events.de, events.fr, events.us, ...</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-region-event'</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="s">'region-events-group'</span><span class="w">        </span><span class="c1"># required - no sensible default for a regex string</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic-pattern</span><span class="p">:</span><span class="w"> </span><span class="s">'events\.[a-z]{2}'</span><span class="w">   </span><span class="c1"># matches events.de, events.fr, events.us, ...</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-region-event'</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="s">'region-events-group'</span><span class="w">        </span><span class="c1"># required - no sensible default for a regex string</span>
 </code></pre></div>
 <p>Two rules follow from this: <code>topic-pattern</code> cannot be combined with <code>partition</code> (manual assignment needs
 concrete topic-partitions up front, which a pattern doesn't provide), and <code>group</code> must be set explicitly.
@@ -4107,8 +4148,10 @@ contract keeps the building blocks serializer-free; richer encodings layer on to
 <p><strong>Why a random partitioner?</strong> Kafka's default is a <em>sticky</em> partitioner — throughput-friendly, but at
 low volume it lands everything on one partition, leaving a multi-instance consumer group mostly idle.
 The library's <code>SimpleRandomPartitioner</code> is perfectly stateless and distributes keyless records
-uniformly. Records with an explicit <code>partition</code> header bypass it, and keyed records keep Kafka's
-murmur2 key-hash mapping. Set <code>partitioner.class</code> in <code>kafka-producer.properties</code> to override.</p>
+uniformly. Records with an explicit <code>partition</code> header bypass it, and keyed records keep Kafka's murmur2
+key-hash mapping; <code>simple.kafka.notification</code> publishes without a key, so only a dead-letter copy of a
+keyed record is hashed (see <a href="#partitioning">partitioning strategies</a>). Set <code>partitioner.class</code> in
+<code>kafka-producer.properties</code> to override.</p>
 <p><strong>OAuth token URLs are allow-listed automatically.</strong> The Kafka client refuses to fetch an OAuth 2.0
 token from a URL that is not on the JVM allow-list (the
 <code>org.apache.kafka.sasl.oauthbearer.allowed.urls</code> <strong>system property</strong>) — applications used to need a
@@ -4149,7 +4192,8 @@ deadline. There is no separate flow-timeout knob.)</p>
 <li>The DLQ write is <strong>confirmed</strong> (it blocks on broker acknowledgement, bounded by <code>kafka.dlq.timeout.ms</code>);
   on success the offset commits (or, in auto-commit mode, is left to Kafka's own timer as usual).</li>
 <li><strong>DLQ topics must be pre-provisioned</strong> (Kafka auto-creation is off in production). The original record's
-  headers are preserved, plus <code>dlq.origin.topic</code> and <code>dlq.error</code>.</li>
+  key, value and headers are preserved, plus <code>dlq.origin.topic</code> and <code>dlq.error</code>, so a keyed record lands
+  on the DLQ partition its key hashes to and a reprocessor reads the key where the producer put it.</li>
 </ul>
 <blockquote>
 <p><strong>When there's no DLQ, or the DLQ write itself fails (data loss).</strong> A failed write to the DLQ is an
@@ -4267,10 +4311,10 @@ down the same way, its producer flushed within the same grace.</p>
 <p><code>simple.kafka.notification</code> is a composable function that publishes an event to a topic. Send it an
 <code>EventEnvelope</code> with a <code>topic</code> header (required), an optional <code>partition</code> header (see
 <a href="#partitioning">partitioning strategies</a>), a body, and any other headers (forwarded as Kafka headers):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">po</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">"simple.kafka.notification"</span><span class="p">)</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">        </span><span class="p">.</span><span class="na">setHeader</span><span class="p">(</span><span class="s">"topic"</span><span class="p">,</span><span class="w"> </span><span class="s">"outgoing-events"</span><span class="p">)</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">        </span><span class="p">.</span><span class="na">setHeader</span><span class="p">(</span><span class="s">"cid"</span><span class="p">,</span><span class="w"> </span><span class="n">businessCorrelationId</span><span class="p">)</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="p">.</span><span class="na">setBody</span><span class="p">(</span><span class="n">payloadBytes</span><span class="p">));</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">po</span><span class="p">.</span><span class="na">send</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">EventEnvelope</span><span class="p">().</span><span class="na">setTo</span><span class="p">(</span><span class="s">"simple.kafka.notification"</span><span class="p">)</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">        </span><span class="p">.</span><span class="na">setHeader</span><span class="p">(</span><span class="s">"topic"</span><span class="p">,</span><span class="w"> </span><span class="s">"outgoing-events"</span><span class="p">)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">        </span><span class="p">.</span><span class="na">setHeader</span><span class="p">(</span><span class="s">"cid"</span><span class="p">,</span><span class="w"> </span><span class="n">businessCorrelationId</span><span class="p">)</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">        </span><span class="p">.</span><span class="na">setBody</span><span class="p">(</span><span class="n">payloadBytes</span><span class="p">));</span>
 </code></pre></div>
 <p>The body is <code>byte[]</code> (published verbatim — the minimalist default), or a <strong><code>Map</code>/<code>List</code>, automatically
 serialized to JSON bytes</strong> — the outbound symmetry of the inbound
@@ -4308,40 +4352,45 @@ constraint does not apply to raw <code>byte[]</code> publishing (no Schema Regis
 <li><strong>A custom partitioner in the producer template</strong> — the externalized <code>kafka-producer.properties</code>
    may set Kafka's standard <code>partitioner.class</code>; the library registers its default with
    <code>putIfAbsent</code>, so a template's own value always wins. The Kafka <code>Partitioner</code> API receives the
-   record's key and value (payload inspection works — plain JSON bytes on non-schema topics,
-   Confluent-framed bytes on schema topics), but <strong>not the record headers</strong> — header-based
-   partitioning is impossible at this layer, a Kafka API limitation.</li>
+   record's value (payload inspection works — plain JSON bytes on non-schema topics,
+   Confluent-framed bytes on schema topics) and its key, which is null for every record
+   <code>simple.kafka.notification</code> publishes, but <strong>not the record headers</strong> — header-based partitioning is
+   impossible at this layer, a Kafka API limitation.</li>
 <li><strong><code>SimpleRandomPartitioner</code> — the library default</strong> for unkeyed records: simple random sampling
    spreads low-volume traffic evenly across partitions (Kafka's own sticky default batches onto one
    partition, which starves multi-instance consumer groups at low volume). Keyed records keep
    Kafka's murmur2 hashing.</li>
 </ol>
+<p><strong>No record key on a publish.</strong> <code>simple.kafka.notification</code> publishes every record without a key, so
+Kafka's murmur2 key hashing never decides where it lands; only a <a href="#reliability">dead-letter</a> copy, which
+keeps its original record's key, is hashed. Records that must stay in order for one entity (a customer, an
+account) take an explicit <code>partition</code> header computed from the entity, as below.</p>
 <p><strong>Content-based partitioning — the composable pattern.</strong> When the partition must be derived from a
 record header or a payload key-value (a tenant, an entity id), compute it in the flow — where the
 whole record is visible — and pass the explicit <code>partition</code> header. A tiny selector function plus
 data mapping, no client plumbing:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">tasks</span><span class="p">:</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">      </span><span class="c1"># any header can drive the decision - including ones a Kafka Partitioner could never see</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.header.x-routing-value</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.routing-value'</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.body</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*'</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'partition.selector'</span><span class="w">          </span><span class="c1"># e.g. hash(routing-value) % partition count</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result.partition</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.partition'</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result.payload</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.payload'</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Derive</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">target</span><span class="nv"> </span><span class="s">partition</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">record</span><span class="nv"> </span><span class="s">content'</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span>
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">    </span><span class="nt">next</span><span class="p">:</span>
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'simple.kafka.notification'</span>
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
-<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(outgoing-events)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.topic'</span>
-<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.partition</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.partition'</span><span class="w">   </span><span class="c1"># explicit partition bypasses all partitioners</span>
-<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.payload</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*'</span>
-<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'simple.kafka.notification'</span>
-<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
-<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Publish</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">selected</span><span class="nv"> </span><span class="s">partition'</span>
-<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">tasks</span><span class="p">:</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">      </span><span class="c1"># any header can drive the decision - including ones a Kafka Partitioner could never see</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.header.x-routing-value</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.routing-value'</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'input.body</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*'</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'partition.selector'</span><span class="w">          </span><span class="c1"># e.g. hash(routing-value) % partition count</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result.partition</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.partition'</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'result.payload</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">model.payload'</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Derive</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">target</span><span class="nv"> </span><span class="s">partition</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">record</span><span class="nv"> </span><span class="s">content'</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">    </span><span class="nt">next</span><span class="p">:</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'simple.kafka.notification'</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(outgoing-events)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.topic'</span>
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.partition</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.partition'</span><span class="w">   </span><span class="c1"># explicit partition bypasses all partitioners</span>
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.payload</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*'</span>
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a><span class="w">    </span><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'simple.kafka.notification'</span>
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="w">    </span><span class="nt">output</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">'Publish</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">selected</span><span class="nv"> </span><span class="s">partition'</span>
+<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a><span class="w">    </span><span class="nt">execution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end</span>
 </code></pre></div>
 <p>A deterministic selector (same value → same partition) gives per-entity ordering — the classic reason
 for content-based placement. This is the outbound mirror of <a href="#routing">second-level routing</a>: content
@@ -4362,9 +4411,9 @@ these headers, and a stale one mapped into a notification is not forwarded.</p>
 <h2 id="health">Health check<a class="headerlink" href="#health" title="Permanent link">&para;</a></h2>
 <p>The library ships a ready-made health-check function at route <strong><code>kafka.health</code></strong> (auto-registered when
 the jar is on the classpath). Opt in by listing it as a health dependency in <code>application.properties</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="na">mandatory.health.dependencies</span><span class="o">=</span><span class="s">kafka.health</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="c1"># or, when Kafka should be reported but not fail /health:</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1"># optional.health.dependencies=kafka.health</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="na">mandatory.health.dependencies</span><span class="o">=</span><span class="s">kafka.health</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># or, when Kafka should be reported but not fail /health:</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># optional.health.dependencies=kafka.health</span>
 </code></pre></div>
 <p>The probe is deliberately minimal: one Kafka <strong>Metadata</strong> request (<code>KafkaConsumer.listTopics</code>) using the
 module's <a href="#client-config">consumer template</a> - it joins no consumer group, commits no offsets, and needs
@@ -4453,8 +4502,8 @@ recognized internally so a misconfigured attempt fails clearly (<code>Unsupporte
 <p>Set <code>schema.registry.url</code> to turn the feature on (point it at a real Confluent registry or the local
 <a href="../schema-registry-mock/"><code>schema-registry-standalone</code></a> mock). When it is unset, schema features stay off and
 the library keeps its raw <code>byte[]</code> behavior.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="na">schema.registry.url</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_URL:http://127.0.0.1:8081}</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="na">schema.registry.cache.ttl</span><span class="o">=</span><span class="s">30m                          # TTL for the in-memory schema cache (by id)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="na">schema.registry.url</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_URL:http://127.0.0.1:8081}</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="na">schema.registry.cache.ttl</span><span class="o">=</span><span class="s">30m                          # TTL for the in-memory schema cache (by id)</span>
 </code></pre></div>
 <h3 id="schema-auth">Registry authentication (OAuth 2.0 / basic)<a class="headerlink" href="#schema-auth" title="Permanent link">&para;</a></h3>
 <p>The registry client's connection and security parameters live in the <strong><code>schema-registry.properties</code>
@@ -4464,11 +4513,11 @@ Schema Registry client, so any client
 parameter — including optional, installation-specific ones such as <code>bearer.auth.logical.cluster</code> and
 <code>bearer.auth.identity.pool.id</code> — works without a library change.</p>
 <p>OAuth 2.0 client-credentials (e.g. Azure AD / Entra ID):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="na">bearer.auth.credentials.source</span><span class="o">=</span><span class="s">OAUTHBEARER</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="na">bearer.auth.issuer.endpoint.url</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_OAUTH_TOKEN_URL:}</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="na">bearer.auth.client.id</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_CLIENT_ID:}</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="na">bearer.auth.client.secret</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_CLIENT_SECRET:}</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="na">bearer.auth.scope</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_OAUTH_SCOPE:}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="na">bearer.auth.credentials.source</span><span class="o">=</span><span class="s">OAUTHBEARER</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="na">bearer.auth.issuer.endpoint.url</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_OAUTH_TOKEN_URL:}</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="na">bearer.auth.client.id</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_CLIENT_ID:}</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="na">bearer.auth.client.secret</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_CLIENT_SECRET:}</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="na">bearer.auth.scope</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_OAUTH_SCOPE:}</span>
 </code></pre></div>
 <p>The Confluent client fetches the bearer token from the issuer endpoint with the client id/secret, sends
 it as <code>Authorization: Bearer</code> on every registry request, and <strong>caches it</strong>, refreshing shortly before
@@ -4499,12 +4548,12 @@ unauthenticated registry (like the local mock) keeps working with zero configura
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># in a flow task that publishes via simple.kafka.notification</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nt">input</span><span class="p">:</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(orders)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.topic'</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(orders-value)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.subject'</span><span class="w">    </span><span class="c1"># version omitted → latest</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.payload</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*'</span><span class="w">        </span><span class="c1"># the body: must be byte[] (a JSON document) on the schema path</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'simple.kafka.notification'</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># in a flow task that publishes via simple.kafka.notification</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nt">input</span><span class="p">:</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(orders)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.topic'</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'text(orders-value)</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">header.subject'</span><span class="w">    </span><span class="c1"># version omitted → latest</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'model.payload</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">*'</span><span class="w">        </span><span class="c1"># the body: must be byte[] (a JSON document) on the schema path</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="nt">process</span><span class="p">:</span><span class="w"> </span><span class="s">'simple.kafka.notification'</span>
 </code></pre></div>
 <p>The producer resolves the subject (+ version) to a <strong>global schema id</strong> and its <strong>schema type</strong> from the
 registry, then serializes with Confluent's own serializer. The wire format itself is unchanged — it still
@@ -4561,9 +4610,9 @@ authentication this library uses for its schema lookups (with any
 reserved for genuinely <strong>global, app-level</strong> settings the KMS <em>driver</em> itself needs (not per-subject key
 identity): typically nothing at all if you rely on your cloud's default credential chain (e.g. an IAM role for
 AWS), or explicit driver credentials if you don't:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Only needed if you are not relying on the AWS SDK default credential chain (an IAM role, etc.):</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="na">schema.registry.serde.access.key.id</span><span class="o">=</span><span class="s">${AWS_ACCESS_KEY_ID}</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="na">schema.registry.serde.secret.access.key</span><span class="o">=</span><span class="s">${AWS_SECRET_ACCESS_KEY}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># Only needed if you are not relying on the AWS SDK default credential chain (an IAM role, etc.):</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="na">schema.registry.serde.access.key.id</span><span class="o">=</span><span class="s">${AWS_ACCESS_KEY_ID}</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="na">schema.registry.serde.secret.access.key</span><span class="o">=</span><span class="s">${AWS_SECRET_ACCESS_KEY}</span>
 </code></pre></div>
 <p>Any property under this prefix is merged, prefix stripped, into <strong>both</strong> the serializer's and the
 deserializer's Confluent config map (decrypt is symmetric, so both directions need the same driver
@@ -4585,13 +4634,13 @@ everything the service consumes, and a message decoded under the wrong identity 
 (dead-lettered) with no configuration remedy. Set <code>schema.registry.consumer.properties</code> to give the flow
 adapter its own codec, built under the <code>schema.registry.consumer</code> key prefix against the <strong>same</strong>
 <code>schema.registry.url</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># Producer identity (unchanged)</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="na">schema.registry.url</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_URL}</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="na">schema.registry.properties</span><span class="o">=</span><span class="s">classpath:/schema-registry.properties</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="c1"># Consumer identity: the SAME template, plus the one override that differs</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="na">schema.registry.consumer.properties</span><span class="o">=</span><span class="s">classpath:/schema-registry.properties</span>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="na">schema.registry.consumer.serde.bearer.auth.identity.pool.id</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_CONSUME_POOL_ID}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Producer identity (unchanged)</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="na">schema.registry.url</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_URL}</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="na">schema.registry.properties</span><span class="o">=</span><span class="s">classpath:/schema-registry.properties</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="c1"># Consumer identity: the SAME template, plus the one override that differs</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="na">schema.registry.consumer.properties</span><span class="o">=</span><span class="s">classpath:/schema-registry.properties</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="na">schema.registry.consumer.serde.bearer.auth.identity.pool.id</span><span class="o">=</span><span class="s">${SCHEMA_REGISTRY_CONSUME_POOL_ID}</span>
 </code></pre></div>
 <p>It is the prefix seam <a href="../twin-kafka/">twin-kafka</a> uses for a second cluster's registry, applied here to one
 registry with two identities (twin-kafka's secondary cluster has the same opt-in under
@@ -4622,14 +4671,27 @@ registry's own access grants decide the boundary.</p>
 the registered schema's type, dispatches to the matching deserializer, and hands the flow a <strong><code>Map</code></strong> as
 <code>input.body</code> (instead of <code>byte[]</code>). No flow-YAML change is needed (<code>input.body -&gt; *</code> is type-neutral); a
 schema-fed flow task simply takes <code>Map&lt;String,Object&gt;</code> instead of <code>byte[]</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nt">consumer</span><span class="p">:</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'orders'</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-order'</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="s">'order-group'</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">    </span><span class="nt">schema.enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">consumer</span><span class="p">:</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">topic</span><span class="p">:</span><span class="w"> </span><span class="s">'orders'</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="nt">flow</span><span class="p">:</span><span class="w"> </span><span class="s">'process-order'</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="s">'order-group'</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">    </span><span class="nt">schema.enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 <p>A <strong>decode failure is a poison message</strong> (retrying won't help), so the raw record is dead-lettered
 immediately via the <a href="#reliability">DLQ path</a> rather than retried.</p>
+<p><strong>A registry outage is treated the same way, once the client's own retries are spent.</strong> The adapter
+dead-letters a record on any failure inside the decode, and a decode can fail for a reason that is not the
+record's: a schema registry that cannot be reached. Confluent's registry client first retries a failed
+request - a network error, or an HTTP 408, 429 or 5xx - three times, with exponential backoff from one
+second and random jitter: against a registry answering 503 to every request, a lookup failed after four
+attempts and about six seconds. <code>max.retries</code>, <code>retries.wait.ms</code> and <code>retries.max.wait.ms</code> in
+<code>schema-registry.properties</code> tune it. The decode needs the registry only for a schema id this instance has
+not looked up since it started, because resolved schemas are held in memory (see <a href="#schema-notes">Notes</a>).
+So the exposure is a registry outage that outlasts those retries while an instance starts or restarts: each
+schema id's first record goes to the <code>dlq-topic</code>, or, on a binding without one, is dropped with an <code>ERROR</code>
+log. Give every <code>schema.enabled</code> binding a <code>dlq-topic</code>, so such records can be replayed once the registry is
+back. A publish with a <code>subject</code> header meets the same retries, then fails its flow, which the adapter
+retries and then dead-letters.</p>
 <h3 id="schema-notes">Notes<a class="headerlink" href="#schema-notes" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>One subject-driven path, two formats.</strong> The producer and consumer are type-generic; only the <code>subject</code>
@@ -4650,6 +4712,14 @@ immediately via the <a href="#reliability">DLQ path</a> rather than retried.</p>
   new version is registered, so it is cached on a <strong>short TTL</strong> and re-resolved frequently, picking up a new
   current version without a restart. Pin a version in production paths where the schema must not shift
   underneath you; use <code>latest</code> in dev / lower environments where tracking the newest schema is convenient.</li>
+<li><strong>Payload validation is off by default.</strong> Confluent's JSON Schema serializer frames whatever document it is
+  given, and its deserializer decodes whatever document it finds, without checking either against the schema.
+  <code>schema.registry.serde.json.fail.invalid.schema=true</code> turns validation on for both, through the
+  <a href="#csfle">serde pass-through</a>: a non-conforming publish fails the task that sends it (and so the flow), and a
+  non-conforming record on a <code>schema.enabled</code> binding is a decode failure, dead-lettered without retry. With a
+  <a href="#schema-consumer-identity">separate consumer identity</a>, repeat the setting under
+  <code>schema.registry.consumer.serde.*</code>, since the consumer codec reads only its own prefix. Validation applies
+  to JSON Schema; an Avro record is closed-shape by its encoding.</li>
 <li><strong>Worked example.</strong> The <a href="../sync-over-async/">sync-over-async demo</a> runs the same end-to-end flow over both
   formats (<code>json-topic-1/2</code>, <code>avro-topic-1/2</code>) alongside the raw <code>byte[]</code> path.</li>
 </ul>
