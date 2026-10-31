@@ -24,13 +24,14 @@
   cache, Guava 32.0.1 out of the verbose graph, #597 and #598); lock-step with Rust 4.12.27**: release PR #600 squash `2929ea31` = tag
   `v4.12.27` = the main head at the tag (the title clean, one trailer); the root pom 4.12.27 and no build file on 4.12.26 at the tag;
   the GitHub release is published (not a draft), its notes the CHANGELOG section under its version heading; agent-memory green on the
-  tag commit, CI still running at verification (23:19Z). **READ:** Fixed 1 and Changed 1, 3, 4, 5 and 7 (an application on the Spring
+  tag commit, and CI too (checked 2026-10-30). **READ:** Fixed 1 and Changed 1, 3, 4, 5 and 7 (an application on the Spring
   Boot parent moves it to 4.1.2 and sets the listed properties), Changed 9 (`schema.registry.cache.ttl` retired, passed on as
   `latest.cache.ttl.sec`), Fixed 3 (the dead-letter key), Added 1 (before a job's `timezone`: the resolver's schedule column needs 34
   more characters - Eric told the field's engineers to check their database and dashboard UI - and its expiry window must be more
   than an hour shorter than the job's period). Sweep 50 build files / 114 plus the lab's three literals. Readiness: `mvn -o clean
   install` BUILD SUCCESS 6:53, 265 suites, 2802 tests, 0 failures, 3 skipped. **Rust:** #400 merge `03952aee` = tag, crates 12/12 at
-  23:17Z. Released for the field to test; its CI, Snyk and Sonar result not yet reported. The packs stay at 4.12.21; their catch-up
+  23:17Z. **Field result 2026-10-30: the field's CI pipeline PASSED, Snyk and Sonar included**; the rollout to its lower
+  environments follows. The packs stay at 4.12.21; their catch-up
   hold was lifted on 2026-10-29 (the Claude API backend serves every current model) and they release when their work is ready.
   Origin 2026-10-30-231959.md.
   Prior: v4.12.26 (2026-10-26 17:05:51Z — JSONPath to RFC 9535 through `minimalist-jsonpath` (ADR-0031), live invocation observers for
