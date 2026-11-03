@@ -102,6 +102,9 @@ class ScheduleAdminTest extends TestBase {
         assertNotNull(detail, "job state record should become readable after the manual run");
         assertEquals("demo-task", detail.getElement("name"));
         assertEquals("hello.world", detail.getElement("service"));
+        // the resolver stores the firing id with the parameters; the dashboard filters the system's keys out
+        assertEquals("world", detail.getElement("parameters.hello"));
+        assertNull(detail.getElement("parameters._firing"));
     }
 
     @Test

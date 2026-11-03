@@ -21,6 +21,11 @@ set "leader.election" to true.
 
 (Alternatively, you may also turn on Quartz's cluster mode and configure the database accordingly.)
 
+The scheduler waits 3 seconds for the state resolver and the environment store, and asks a question that
+times out again, up to 3 times. The parameters the resolver receives carry the firing's id under
+`_firing`, and `GET /api/schedule/{name}` filters that key out of the stored record when it reads it; see
+"Slow answers: retries and the firing id" in the mini-scheduler README.
+
 ## Active-active sites: one environment runs the jobs
 
 A scheduler deployed in two sites (Production and DR) active-active fires every job in both; a job that

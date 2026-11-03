@@ -21,6 +21,35 @@ set "leader.election" to true.
 
 (Alternatively, you may also turn on Quartz's cluster mode and configure the database accordingly.)
 
+## Slow answers: retries and the firing id
+
+At every scheduled point the scheduler asks two functions and waits for their answers: the environment
+store (see below) and the state resolver's `expires`. Each question waits 3 seconds. One that is not
+answered in time is asked again, up to 3 times, so a function that answers slowly at a cold start is
+retried instead of failing the job. Each timed-out attempt is a warning in the application log, and a
+question that was answered after a retry says so:
+
+```
+WARN  State resolver v1.state.resolver for job demo-task - attempt 1 of 4 timed out after 3000 ms, retrying
+INFO  State resolver v1.state.resolver for job demo-task answered at attempt 2 of 4
+```
+
+When no attempt is answered, the job is skipped for that firing, with an error and a warning naming it.
+An error answer is not retried.
+
+A timed-out question is not cancelled: the resolver still works on it, and only its answer is discarded.
+So every question one firing asks carries the same id: the parameters the resolver receives with
+`expires` and with `start` hold it under `_firing`. A resolver whose `expires` only reads its record,
+as the sample does, can ignore it. A resolver that claims the job while it answers `expires` stores the
+`_firing` with its claim and answers `true` again when the same `_firing` asks: the retried question is
+its own, not a peer's. Without that, the retry finds the claim its timed-out attempt made, answers "not
+expired", and the job is skipped; the scheduler logs a warning when that happens after a timeout.
+
+A parameter key that starts with `_` is reserved for the system: the scheduler ignores one in a job's
+own `parameters`, with a warning at startup, and the job's service or flow never receives `_firing`. A
+resolver that stores the parameters stores `_firing` with them, so a dashboard that shows them filters
+the `_` keys out when it reads them, as the example's `GET /api/schedule/{name}` does.
+
 ## Active-active sites: one environment runs the jobs
 
 A scheduler deployed in two sites (Production and DR) active-active fires every job in both; a job that

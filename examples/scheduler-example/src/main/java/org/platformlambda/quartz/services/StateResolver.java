@@ -42,7 +42,7 @@ import java.util.Map;
  *              service = task where task is a function route or a flow name)
  *      (schedule is for information: the cron statement, followed by " @" and the time zone when the job
  *       names one, e.g. "0 0 9 * * ? @America/New_York")
- *      body (job_parameters)
+ *      body (job_parameters, plus "_firing", the firing's id - a key that starts with "_" is the system's)
  *      return true
  * <p>
  * 2. end:
@@ -50,9 +50,12 @@ import java.util.Map;
  *      body (not used)
  *      return true
  * <p>
- * 2. expires:
+ * 3. expires:
  *      header (type = expires, name = job_name)
+ *      body (job_parameters, plus "_firing")
  *      return true or false
+ *      (a question not answered within 3 seconds is asked again, up to 3 times, with the same "_firing",
+ *       so a resolver that claims the job when it answers returns true again for the same "_firing")
  */
 // S5443 (publicly writable directory): /tmp/scheduler-states IS the sample resolver's state store by design -
 // throwaway local data; production resolvers persist to a database or distributed cache

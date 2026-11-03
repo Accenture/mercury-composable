@@ -43,6 +43,7 @@ public class ScheduleAdmin implements TypedLambdaFunction<AsyncHttpRequest, Even
     private static final String TEMP = "/tmp/scheduler-states";
     private static final String START = "start";
     private static final String END = "end";
+    private static final String PARAMETERS = "parameters";
     private static final File TEMP_FOLDER = new File(TEMP);
 
     @Override
@@ -60,7 +61,7 @@ public class ScheduleAdmin implements TypedLambdaFunction<AsyncHttpRequest, Even
             } else {
                 File f = new File(TEMP_FOLDER, name);
                 if (f.exists()) {
-                    var result = getJob(util.file2str(f));
+                    var result = withoutSystemParameters(getJob(util.file2str(f)));
                     return new EventEnvelope().setBody(result).setHeader(CONTENT_TYPE, APPLICATION_JSON);
                 } else {
                     throw new IllegalArgumentException("Job not found");
@@ -109,6 +110,23 @@ public class ScheduleAdmin implements TypedLambdaFunction<AsyncHttpRequest, Even
     @SuppressWarnings("unchecked")
     private Map<String, Object> getJob(String json) {
         return SimpleMapper.getInstance().getMapper().readValue(json, Map.class);
+    }
+
+    /**
+     * A job's record as the dashboard shows it. A parameter key that starts with "_" belongs to the system - the
+     * scheduler adds "_firing" to the parameters the state resolver stores - so it is filtered out when read.
+     */
+    private static Map<String, Object> withoutSystemParameters(Map<String, Object> record) {
+        if (record != null && record.get(PARAMETERS) instanceof Map<?, ?> parameters) {
+            var shown = new HashMap<String, Object>();
+            parameters.forEach((key, value) -> {
+                if (!String.valueOf(key).startsWith(ScheduledJob.RESERVED_PREFIX)) {
+                    shown.put(String.valueOf(key), value);
+                }
+            });
+            record.put(PARAMETERS, shown);
+        }
+        return record;
     }
 
     private Map<String, Object> getJobTime(String json) {

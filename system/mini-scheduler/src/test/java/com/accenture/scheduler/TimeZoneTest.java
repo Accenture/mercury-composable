@@ -58,7 +58,7 @@ class TimeZoneTest {
         // the service and the state resolver of the test cron's "eastern-probe" job, whose cron never matches
         TypedLambdaFunction<Map<String, Object>, Void> service = (headers, input, instance) -> null;
         TypedLambdaFunction<Map<String, Object>, Boolean> resolver = (headers, input, instance) -> {
-            resolverEvents.offer(headers);
+            resolverEvents.add(headers);
             return true;
         };
         var platform = Platform.getInstance();

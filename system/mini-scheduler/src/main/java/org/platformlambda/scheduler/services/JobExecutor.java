@@ -29,6 +29,7 @@ import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.scheduler.ActiveEnvironment;
 import org.platformlambda.scheduler.JobLoader;
+import org.platformlambda.scheduler.RetryRequest;
 import org.platformlambda.scheduler.models.ScheduledJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,14 +69,15 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         } else {
             var job = JobLoader.getJob(headers.get(JOB));
             if (job != null) {
-                jobTriggered(po, job, headers.get(OPERATOR));
+                jobTriggered(po, job, headers.get(OPERATOR), Utility.getInstance().getUuid());
             }
         }
         return null;
     }
 
     /**
-     * A job's service replied: the job name rides the correlation id after the '@'. Tell the resolver the job ended.
+     * A job's service replied: the job name rides the correlation id after the firing's id and an '@'. Tell the
+     * resolver the job ended.
      */
     private void jobCompleted(PostOffice po, String callbackId) {
         var restored = callbackId.substring(callbackId.indexOf('@') + 1);
@@ -86,10 +88,11 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     /**
-     * The scheduled point (RFC-0008): an operator's run is explicit and honoured on a standby instance too;
-     * a Quartz trigger runs the job's normal path on an active instance and is skipped with one line otherwise.
+     * The scheduled point (RFC-0008): an operator's run is explicit and honoured on a standby instance too.
+     * A Quartz trigger runs the job's normal path on an active instance and is skipped with one line otherwise.
+     * The firing's id is the same for every request this run makes to the state resolver.
      */
-    private void jobTriggered(PostOffice po, ScheduledJob job, String operator)
+    private void jobTriggered(PostOffice po, ScheduledJob job, String operator, String firing)
             throws ExecutionException, InterruptedException {
         var env = ActiveEnvironment.getInstance();
         var active = env.isActiveNow();
@@ -100,16 +103,17 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                 log.info("Operator {} runs {} manually on a standby instance - the active environment is {}, " +
                         "this instance is {}", operator, job.name, env.getActive(), env.getEnvironment());
             }
-            executeJob(po, job);
+            executeJob(po, job, firing);
         } else if (active) {
-            prepareJob(po, job);
+            prepareJob(po, job, firing);
         } else {
             log.info("Standby: job {} skipped - the active environment is {}, this instance is {}",
                     job.name, env.getActive(), env.getEnvironment());
         }
     }
 
-    private void prepareJob(PostOffice po, ScheduledJob job) throws ExecutionException, InterruptedException {
+    private void prepareJob(PostOffice po, ScheduledJob job, String firing)
+            throws ExecutionException, InterruptedException {
         // check if a job has already started by a peer
         if (JobLoader.needLeaderElection()) {
             String me = Platform.getInstance().getOrigin();
@@ -124,22 +128,22 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                         }
                         if (me.equals(selected)) {
                             log.info("Ready to run {}", job.name);
-                            executeJob(po, job);
+                            executeJob(po, job, firing);
                         } else {
                             log.info("Skip {} because peer {} is handling it", job.name, selected);
                         }
                     });
-        } else if (readyToExecute(po, job)) {
-            executeJob(po, job);
+        } else if (readyToExecute(po, job, firing)) {
+            executeJob(po, job, firing);
         }
     }
 
-    private void executeJob(PostOffice po, ScheduledJob job) {
-        po.send(new EventEnvelope().setTo(job.resolver).setBody(job.parameters)
+    private void executeJob(PostOffice po, ScheduledJob job, String firing) {
+        po.send(new EventEnvelope().setTo(job.resolver).setBody(resolverParameters(job, firing))
                 .setHeader(SCHEDULE, job.schedule)
                 .setHeader(TYPE, START).setHeader(NAME, job.name).setHeader(SERVICE, job.service));
-        // encode job name in correlationId
-        var cid = Utility.getInstance().getUuid() + "@" + job.name;
+        // encode the firing and the job name in correlationId
+        var cid = firing + "@" + job.name;
         if (job.service.startsWith(FLOW_PROTOCOL)) {
             var flowId = job.service.substring(FLOW_PROTOCOL.length());
             var flow = Flows.getFlow(flowId);
@@ -162,15 +166,43 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
         }
     }
 
-    private boolean readyToExecute(PostOffice po, ScheduledJob job)
+    /**
+     * Ask the state resolver whether the job's previous run has expired. A timed-out question is asked again with the
+     * same firing id ({@link RetryRequest}), so a resolver that claims the job when it answers can tell its own claim
+     * from a peer's. No answer, an error or "not expired" skips the job for this firing.
+     */
+    private boolean readyToExecute(PostOffice po, ScheduledJob job, String firing)
             throws ExecutionException, InterruptedException {
-        if (po.exists(job.resolver)) {
-            var event = new EventEnvelope().setTo(job.resolver).setHeader(TYPE, EXPIRES).setHeader(NAME, job.name);
-            var result = po.request(event, 5000).get();
-            return Boolean.TRUE == result.getBody();
-        } else {
+        if (!po.exists(job.resolver)) {
             log.error("Resolver service {} does not exist", job.resolver);
+            return false;
         }
-        return false;
+        var reply = RetryRequest.send(po, () -> new EventEnvelope().setTo(job.resolver).setHeader(TYPE, EXPIRES)
+                .setHeader(NAME, job.name).setBody(resolverParameters(job, firing)),
+                "State resolver " + job.resolver + " for job " + job.name);
+        var result = reply.event();
+        if (reply.timedOut()) {
+            log.warn("Job {} skipped for this firing - state resolver {} did not answer", job.name, job.resolver);
+            return false;
+        }
+        if (result.getStatus() != 200) {
+            log.warn("Job {} skipped - state resolver {} answered status {}, {}", job.name, job.resolver,
+                    result.getStatus(), result.getError());
+            return false;
+        }
+        var ready = Boolean.TRUE.equals(result.getBody());
+        if (!ready && reply.attempts() > 1) {
+            log.warn("Job {} skipped - state resolver {} answered not expired after an attempt had timed out. " +
+                    "A resolver that claims the job when it answers should answer true again for the same {} ({})",
+                    job.name, job.resolver, ScheduledJob.FIRING, firing);
+        }
+        return ready;
+    }
+
+    /** The job's parameters as the state resolver receives them, with the firing's id under {@code _firing}. */
+    private static Map<String, Object> resolverParameters(ScheduledJob job, String firing) {
+        var parameters = new HashMap<>(job.parameters);
+        parameters.put(ScheduledJob.FIRING, firing);
+        return parameters;
     }
 }

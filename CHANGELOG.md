@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Each change merged to `main` after v4.12.27 is listed here; it moves under its release heading when the version is cut.
 
+### Added
+
+1. **The firing id in the state resolver's parameters.** Every question one firing of a scheduled job asks the state
+   resolver carries the same id: the parameters the resolver receives with `expires` (which had no body before) and with
+   `start` hold it under `_firing`, so a resolver that claims the job while it answers `expires` can tell its own
+   retried question (Changed 2) from a peer's. A parameter key that starts with `_` is reserved for the system: the
+   scheduler ignores one in a job's own `parameters`, with a warning at startup, and a job's service or flow never
+   receives `_firing`. The example's `GET /api/schedule/{name}` filters `_` keys out of the stored record when it reads
+   it. **Upgrade note:** a resolver that stores the parameters stores `_firing` with them, so a dashboard that shows them
+   filters the `_` keys out. A resolver that claims the job in `expires` stores `_firing` with its claim and answers
+   `true` again for the same `_firing`; without it, a retry finds the timed-out attempt's claim and the job is skipped,
+   with a warning. A job whose own parameter key starts with `_` loses it, with a warning, until it is renamed.
+
 ### Changed
 
 1. **The Playground's LLM relay names the helpers' new folder.** Both language packs moved their LLM helper from
@@ -19,6 +32,25 @@ Each change merged to `main` after v4.12.27 is listed here; it moves under its r
    503 that the Playground answers when no helper is mapped now reads "start the LLM helper (extensions/llm-helper of
    mercury-python or mercury-nodejs)". The relay's javadoc and the commented start commands in its `event-over-http.yaml`
    follow. **Upgrade note:** none - the route, its status and the rest of the message are unchanged.
+2. **The scheduler asks a slow state resolver or environment store again.** At every scheduled point the scheduler
+   waits for two answers: the environment store's active environment and the state resolver's `expires`. Each question
+   waited 5 seconds once, and a resolver slow at a cold start failed the job with an unhandled timeout. Each question
+   now waits 3 seconds and is asked again, up to 3 times (`RetryRequest`); each timed-out attempt is a warning in the
+   application log, an answer after a retry is logged too, and only a timeout is retried, never an error answer. When
+   no attempt is answered the job is skipped for that firing, with an error and a warning naming it, and the store's
+   read keeps the last value, as before; the operator's call that sets the active environment retries the same way.
+   `ResolverRetryTest`, `RetryRequestTest` and `ActiveEnvironmentTest.aLateStoreReadIsRetried` fail without the retry.
+   **Upgrade note:** a function the scheduler waits on answers within 3 seconds once it is warm; a question can now take
+   up to 12 seconds before the job is skipped, against 5 before. A resolver that claims the job in `expires` reads
+   Added 1.
+
+### Fixed
+
+1. **An environment store that answers an error keeps the active environment.** `ActiveEnvironment.refresh()` took the
+   body of any answer as the environment's name, so a store that threw set the active environment to the error's
+   text, and every instance stood by until the next good read. A read now counts only when the store answers 200;
+   any other answer is logged and keeps the current value, as a timeout already did.
+   `ActiveEnvironmentTest.aStoreErrorKeepsTheCurrentValue` fails without the fix. **Upgrade note:** none.
 
 ### Documentation
 

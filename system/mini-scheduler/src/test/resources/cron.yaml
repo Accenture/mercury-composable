@@ -38,6 +38,15 @@ jobs:
     service: "timezone.probe"
     resolver: "timezone.probe.resolver"
 
+  - name: "retry-probe"
+    description: "a state resolver that answers its first question late, read by ResolverRetryTest - this cron never matches before 2099"
+    cron: "0 0 0 1 1 ? 2099"
+    service: "retry.probe"
+    resolver: "retry.probe.resolver"
+    parameters:
+      probe: "yes"
+      _reserved: "a key that starts with _ is reserved for the system, so the loader drops it"
+
   - name: "misspelt-zone"
     description: "an unknown time zone, so TimeZoneTest finds this job rejected rather than run on GMT"
     cron: "0 0 9 * * ? 2099"

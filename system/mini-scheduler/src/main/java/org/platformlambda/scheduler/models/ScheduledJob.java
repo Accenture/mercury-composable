@@ -23,6 +23,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ScheduledJob {
+    /** A parameter key that starts with "_" is reserved for the system: a job's own parameters never use one. */
+    public static final String RESERVED_PREFIX = "_";
+    /**
+     * The firing's id, added to the parameters the state resolver receives with "expires" and "start". It is the same
+     * for every request one firing makes, so a resolver can tell a retried question from a peer's.
+     */
+    public static final String FIRING = "_firing";
 
     public final String name;
     public final String service;
