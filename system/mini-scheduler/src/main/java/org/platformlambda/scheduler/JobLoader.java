@@ -105,7 +105,6 @@ public class JobLoader implements EntryPoint {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void loadConfig(ConfigReader config, int i) {
         String name = config.getProperty(JOBS_PREFIX +i+"].name");
         String service = config.getProperty(JOBS_PREFIX +i+"].service");
@@ -121,15 +120,25 @@ public class JobLoader implements EntryPoint {
         } else if (schedule != null && resolver != null && service != null &&
                 validJobName(name) && (service.startsWith("flow://") || util.validServiceName(service))) {
             ScheduledJob j = new ScheduledJob(name, service, resolver, schedule, zone);
-            if (parameters instanceof Map) {
-                Map<String, Object> map = (Map<String, Object>) parameters;
-                for (var entry: map.entrySet()) {
-                    j.addParameter(entry.getKey(), entry.getValue());
-                }
+            if (parameters instanceof Map<?, ?> map) {
+                addParameters(j, map);
             }
             scheduledJobs.put(name, j);
         } else {
             log.error("Invalid job entry#{} - check name, schedule and service", i + 1);
+        }
+    }
+
+    /** A job's parameters, without a key that starts with "_": that prefix is reserved for the system. */
+    private void addParameters(ScheduledJob job, Map<?, ?> parameters) {
+        for (var entry: parameters.entrySet()) {
+            var key = String.valueOf(entry.getKey());
+            if (key.startsWith(ScheduledJob.RESERVED_PREFIX)) {
+                log.warn("Job {} parameter {} ignored - a key that starts with '{}' is reserved for the system",
+                        job.name, key, ScheduledJob.RESERVED_PREFIX);
+            } else {
+                job.addParameter(key, entry.getValue());
+            }
         }
     }
 

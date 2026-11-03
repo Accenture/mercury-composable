@@ -27,6 +27,7 @@ import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.scheduler.ActiveEnvironment;
+import org.platformlambda.scheduler.RetryRequest;
 import org.platformlambda.scheduler.services.JobExecutor;
 
 import java.util.Map;
@@ -35,6 +36,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,12 +48,21 @@ class ActiveEnvironmentTest {
     private static final ConcurrentMap<String, String> store = new ConcurrentHashMap<>();
     private static final BlockingQueue<Map<String, String>> probe = new ArrayBlockingQueue<>(4);
     private static final String PROBE_JOB = "standby-probe";
+    /** The store's next reads that answer late, as at a cold start, or fail. */
+    private static final AtomicInteger slowReads = new AtomicInteger();
+    private static final AtomicInteger failedReads = new AtomicInteger();
 
     @BeforeAll
     static void setup() {
         AppStarter.main(new String[0]);
         TypedLambdaFunction<Map<String, Object>, Object> f = (headers, input, instance) -> {
             if (ActiveEnvironment.GET.equals(headers.get(ActiveEnvironment.TYPE))) {
+                if (slowReads.getAndUpdate(n -> Math.max(0, n - 1)) > 0) {
+                    Utility.getInstance().sleep(RetryRequest.TIMEOUT + 500);
+                }
+                if (failedReads.getAndUpdate(n -> Math.max(0, n - 1)) > 0) {
+                    throw new IllegalStateException("store unavailable");
+                }
                 return store.get("active");
             }
             if (ActiveEnvironment.SET.equals(headers.get(ActiveEnvironment.TYPE))) {
@@ -64,7 +75,7 @@ class ActiveEnvironmentTest {
         Platform.getInstance().registerPrivate(ActiveEnvironment.DEFAULT_STORE, f, 1);
         // the service of the test cron's "standby-probe" job, whose cron never matches: only the test fires it
         TypedLambdaFunction<Map<String, Object>, Void> service = (headers, input, instance) -> {
-            probe.offer(headers);
+            probe.add(headers);
             return null;
         };
         Platform.getInstance().registerPrivate("standby.probe", service, 1);
@@ -144,6 +155,33 @@ class ActiveEnvironmentTest {
         } finally {
             env.activate("prod", "unit.test");
         }
+    }
+
+    /** A store that answers late at a cold start is asked again, and the retried read restores the value. */
+    @Test
+    void aLateStoreReadIsRetried() {
+        var env = ActiveEnvironment.getInstance();
+        try {
+            env.activate("DR", "unit.test");
+            env.reset();
+            slowReads.set(1);
+            var start = System.currentTimeMillis();
+            assertEquals("DR", env.refresh());
+            assertTrue(System.currentTimeMillis() - start >= RetryRequest.TIMEOUT, "the first read timed out");
+            assertEquals(0, slowReads.get());
+        } finally {
+            env.activate("prod", "unit.test");
+        }
+    }
+
+    /** A store that answers an error leaves the current value: the error's text is not an environment name. */
+    @Test
+    void aStoreErrorKeepsTheCurrentValue() {
+        var env = ActiveEnvironment.getInstance();
+        failedReads.set(1);
+        assertEquals("prod", env.refresh());
+        assertEquals(0, failedReads.get());
+        assertTrue(env.isActive());
     }
 
     @Test

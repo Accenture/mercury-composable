@@ -63,7 +63,9 @@ public final class ActiveEnvironment {
     /** The name's key before 4.12.26, read when it holds a plain value. */
     public static final String LEGACY_ENVIRONMENT = "scheduler.environment";
     public static final String ENVIRONMENT_STORE = "scheduler.environment.store";
-    /** This instance's environment when the property is absent, and the active environment until an operator sets one. */
+    /**
+     * This instance's environment when the property is absent, and the active environment until an operator sets one.
+     */
     public static final String DEFAULT_ENVIRONMENT = "prod";
     public static final String DEFAULT_STORE = "v1.environment.store";
     /** The store contract's header names and values. */
@@ -77,7 +79,8 @@ public final class ActiveEnvironment {
     private static final String STANDBY = "standby";
     private static final String PERSISTENT = "persistent";
     private static final String STORE = "store";
-    private static final long STORE_TIMEOUT = 5000;
+    private static final String STORE_PURPOSE = "Environment store ";
+    private static final String NOT_PERSISTED = "Active environment not persisted by ";
     private static final ActiveEnvironment INSTANCE = new ActiveEnvironment();
 
     private final String localEnvironment;
@@ -127,7 +130,9 @@ public final class ActiveEnvironment {
         return localEnvironment;
     }
 
-    /** The active environment as this instance last read from the store or set; {@code prod} until an operator sets one. */
+    /**
+     * The active environment as this instance last read from the store or set; {@code prod} until an operator sets one.
+     */
     public String getActive() {
         return current.get();
     }
@@ -160,16 +165,21 @@ public final class ActiveEnvironment {
     }
 
     /**
-     * Read the persisted active environment, the source of truth; a store that holds none yet leaves the
-     * current value.
+     * Read the persisted active environment, the source of truth; a store that holds none yet, answers an
+     * error or does not answer leaves the current value. A timed-out read is retried ({@link RetryRequest}).
      *
      * @return the active environment after the read
      */
     public String refresh() {
         if (isPersistent()) {
             try {
-                var result = postOffice().request(new EventEnvelope().setTo(storeRoute).setHeader(TYPE, GET), STORE_TIMEOUT).get();
-                if (result.getBody() instanceof String name && !name.isBlank()) {
+                var reply = RetryRequest.send(postOffice(),
+                        () -> new EventEnvelope().setTo(storeRoute).setHeader(TYPE, GET), STORE_PURPOSE + storeRoute);
+                var result = reply.event();
+                if (result.getStatus() != 200) {
+                    log.warn("Active environment not read from {} - status {}, {}; keeping {}", storeRoute,
+                            result.getStatus(), result.getError(), current.get());
+                } else if (result.getBody() instanceof String name && !name.isBlank()) {
                     current.set(name.trim());
                 }
             } catch (InterruptedException e) {
@@ -177,7 +187,8 @@ public final class ActiveEnvironment {
                 log.warn("Active environment not read from {} - interrupted; keeping {}", storeRoute, current.get());
             } catch (ExecutionException e) {
                 var cause = e.getCause() != null ? e.getCause() : e;
-                log.warn("Active environment not read from {} - {}; keeping {}", storeRoute, cause.getMessage(), current.get());
+                log.warn("Active environment not read from {} - {}; keeping {}", storeRoute, cause.getMessage(),
+                        current.get());
             }
         }
         return current.get();
@@ -205,19 +216,19 @@ public final class ActiveEnvironment {
     }
 
     private void persist(String target, String who) {
-        var event = new EventEnvelope().setTo(storeRoute).setHeader(TYPE, SET)
-                .setHeader(ENVIRONMENT_HEADER, target).setHeader(OPERATOR, who);
         try {
-            var result = postOffice().request(event, STORE_TIMEOUT).get();
+            var result = RetryRequest.send(postOffice(), () -> new EventEnvelope().setTo(storeRoute)
+                    .setHeader(TYPE, SET).setHeader(ENVIRONMENT_HEADER, target).setHeader(OPERATOR, who),
+                    STORE_PURPOSE + storeRoute).event();
             if (result.getStatus() != 200 || !Boolean.TRUE.equals(result.getBody())) {
-                throw new IllegalStateException("Active environment not persisted by " + storeRoute + " - " + result.getBody());
+                throw new IllegalStateException(NOT_PERSISTED + storeRoute + " - " + result.getBody());
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Active environment not persisted by " + storeRoute + " - interrupted");
+            throw new IllegalStateException(NOT_PERSISTED + storeRoute + " - interrupted");
         } catch (ExecutionException e) {
             var cause = e.getCause() != null ? e.getCause() : e;
-            throw new IllegalStateException("Active environment not persisted by " + storeRoute + " - " + cause.getMessage());
+            throw new IllegalStateException(NOT_PERSISTED + storeRoute + " - " + cause.getMessage());
         }
     }
 

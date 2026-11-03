@@ -346,6 +346,17 @@
   extends [[conv-library-pins-are-direct-dependencies]] (the dependency left instead of being pinned). (ADR-0031)
   <!-- id: minimalist-jsonpath-rfc-9535 | created: 2026-10-22 | last_used: 2026-10-30 | uses: 4 | tier: archive-candidate | origin: 2026-10-22-175132 -->
 
+- **The mini-scheduler's state-resolver contract is live in the field, so a change rides inside the existing `parameters`,
+  never a new header or field, and a parameter key that starts with `_` is the system's (Eric, 2026-11-03).** The field
+  stores the resolver's requests in a database whose schema follows the contract, so a new header would be a schema change
+  in every field installation. The firing id that makes a retried `expires` recognisable therefore travels as `_firing` in
+  the parameters the resolver already stores, and a dashboard filters the `_` keys out when it reads them. The same ruling:
+  a slow function the scheduler waits on is retried (`RetryRequest`: 3 s, 3 retries, timeouts only, each logged) rather
+  than given a longer timeout, so a cold start is recorded in the application log. **How to apply:** before changing what
+  the scheduler sends the state resolver or the environment store, ask whether a field installation would have to change
+  a schema to accept it; an additive key in `parameters` is the shape.
+  <!-- id: scheduler-resolver-contract-in-parameters | created: 2026-11-03 | last_used: 2026-11-03 | uses: 1 | tier: working | origin: 2026-11-03-190022 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
