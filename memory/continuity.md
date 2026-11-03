@@ -571,7 +571,7 @@
   result, so `Utility.cleanupDir`; S3398 - a private static method that only a nested class calls moves into that class. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-30 | uses: 17 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-30 | uses: 17 | tier: archive-candidate | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
@@ -624,7 +624,7 @@
   or its child. To audit the tree, collect the keys of every `.properties` file, every `getProperty` and `@OptionalService`
   literal and every configuration-reference heading, then list each key that prefixes another. The 2026-10-23 log has the
   scan; `cloud.connector.health` is a route, not a key. YAML cannot express the collision.
-  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-10-30 | uses: 4 | tier: active | origin: 2026-10-23-215957 -->
+  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-10-30 | uses: 4 | tier: archive-candidate | origin: 2026-10-23-215957 -->
 
 - **A lab or dev-machine tool stays out of the root reactor (Eric, 2026-10-23).** The field's static code analysis scans
   the modules the root `pom.xml` declares, registers each one, and keeps scanning it for good. A module listed there
