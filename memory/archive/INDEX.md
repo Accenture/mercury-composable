@@ -274,3 +274,6 @@
 - minimalist-jsonpath — An in-house JSONPath engine to RFC 9535 replaces Jayway JsonPath (RFC-0010 → ADR-0031; ser… — completed thread swept (older than archive_window) — 2026-Q4.md
 - reverify-invariants-20261022 — Re-verify invariants: Eric walked the 19 `core` facts and the Vision (the 2026-09-17 two-t… — completed thread swept (older than archive_window) — 2026-Q4.md
 - thread-doc-improvement-feedback-loop — Doc-improvement feedback loop (2026-09-01; closed by Eric 2026-10-22 at the gate [[close-s… — completed thread swept (older than archive_window) — 2026-Q4.md
+- live-invocation-observers — Live invocation observers bracket every composable-function hop for an APM agent's code-le… — faded — 2026-Q4.md
+- dynatrace-oneagent-field-experiment — Dynatrace OneAgent compatibility (→ RFC-0009 → ADR-0032; serves [[vision-mercury-composabl… — completed thread swept (older than archive_window) — 2026-Q4.md
+- companion-refusal-flag-rust-twin — The Rust engine's companion endpoint reads the engine's refusal flag (the twin of PR #586;… — completed thread swept (older than archive_window) — 2026-Q4.md

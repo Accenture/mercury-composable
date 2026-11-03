@@ -97,13 +97,14 @@
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-10-29 | through 2026-10-29-012834.md (ON COMMAND + CADENCE — 13 sessions since 2026-10-24-030134:
-  `refresh-metadata` refreshed 26 footers, net tier changes 14 (6 → active, 7 → archive-candidate, 1 reactivated); reactivated 1
-  over-archived fact (`conv-ports-adopt-java-release-number`, declared in 2026-10-26-165029 when Rust skipped 4.12.25, the lint's
-  only error); archived 0 faded facts, so step 6's declaration-gap check had none to examine; swept 5 completed threads; the four
-  closed ones left are stubs inside the window; archive-verify pass; invariants not due (21 of 40); stalled threads none;
-  contradictions none, one stale statement corrected (`latest_release`: the Tomcat fix is on main as #594, not a branch); one
-  drift to settle at RFC-0011's promotion (section Memory Review of the log); live facts 46 → 42. Smoke test not run.)
+- **last_review:** 2026-11-03 | through 2026-11-03-010235.md (CADENCE — 11 sessions since 2026-10-29-012834:
+  `refresh-metadata` refreshed 26 footers, net tier changes 14 (9 → archive-candidate, 2 → active, 3 → archived); archived 1
+  faded fact (`live-invocation-observers`) and KEPT `snyk-retired-manifest-placeholders` as a declaration gap (the 4.12.27
+  release sweep, 2026-10-30-225722, relied on it undeclared); swept 2 completed threads; five closed stubs condensed;
+  archive-verify pass; invariants not due (33 of 40); stalled threads none; contradictions none; the RFC-0011 Blueprint drift
+  carried forward to its promotion; live facts 46 → 43, lines 798 → 783. Smoke test not run.)
+  Prior: 2026-10-29 | through 2026-10-29-012834.md (ON COMMAND + CADENCE — refreshed 26 footers, tier changes 14; reactivated
+  `conv-ports-adopt-java-release-number`; archived 0; swept 5 threads; one stale statement corrected; live facts 46 → 42)
   Prior: 2026-10-24 | through 2026-10-24-030134.md (CADENCE — refreshed 20 footers, tier changes 15; archived 1 faded fact; swept 0
   threads; one declaration gap closed; `memory/instructions.md`'s repository structure corrected; live facts 44 → 43, lines 726)
   Prior: 2026-10-22 | through 2026-10-22-180311.md (CADENCE — refreshed 13 footers, tier changes 7; archived 10 faded facts; swept
@@ -233,7 +234,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-10-26 | uses: 26 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-03 | uses: 29 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -263,7 +264,7 @@
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-10-28 | uses: 35 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-10-28 | uses: 35 | tier: archive-candidate | origin: 2026-09-18-174943 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -327,7 +328,7 @@
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-24 | uses: 24 | tier: active | origin: 2026-10-02-175751 -->
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-24 | uses: 24 | tier: archive-candidate | origin: 2026-10-02-175751 -->
 
 - **JSONPath is RFC 9535 on both engines: Java's `minimalist-jsonpath` replaces Jayway JsonPath and Rust keeps `serde_json_path`;
   a path outside the standard is refused by name before it runs, and a substituted value is checked where it lands (Eric's rulings,
@@ -343,23 +344,7 @@
   `-am test` run fails the AI contract snapshot (no packaged `pom.properties`), so verify with the reactor; the Java and Rust test
   runs collide on port 8090. Applies [[clean-knowledge-design-over-engine-coverage]] (the whole `$` surface, one rule per site);
   extends [[conv-library-pins-are-direct-dependencies]] (the dependency left instead of being pinned). (ADR-0031)
-  <!-- id: minimalist-jsonpath-rfc-9535 | created: 2026-10-22 | last_used: 2026-10-24 | uses: 3 | tier: archive-candidate | origin: 2026-10-22-175132 -->
-
-- **Live invocation observers bracket every composable-function hop for an APM agent's code-level view; Dynatrace OneAgent is
-  the shipped adapter (ADR-0032; #583, 2026-10-24).** Platform-core holds a vendor-neutral seam (`org.platformlambda.core.spi`):
-  `begin` on the thread that runs a function, `send` on the thread that sends, the linkage as an envelope tag (never thread state),
-  `reply` for a reply, `export` for a transport outside the bus (Kafka: `x-mercury-tag-*` headers, one hop per message), and
-  `traceparent` - a request or message that arrives without a trace continues the agent's context, so the Dynatrace trace id IS
-  Mercury's and Mercury's edge span is a child of the agent's node. `extensions/dynatrace-oneagent`
-  (`dynatrace.oneagent.enabled`, off by default) names each hop `Topic: <application> - <route>` in one service. **What a change must
-  keep:** OneAgent off means an empty observer list and Mercury's original behaviour; `invocation.observer.unlinked` breaks one
-  link only (the route's scope closes before its reply, which keeps the caller's tag); OneAgent links an executor handoff from a
-  thread with an active PurePath by itself, and links OpenTelemetry API spans only through that thread context - which is why the
-  OpenTelemetry API adapter was rejected. **The guard:** `InvocationObserverTest`, `OneAgentLinkageTest`, `KafkaFlowConsumerTest`,
-  `RestEndpointTest`, and the lab (`lab/dynatrace-oneagent`, outside the root reactor, [[conv-lab-outside-root-reactor]]) with
-  `./lab.sh lineage`; the evidence is `docs/test-reports/dynatrace-one-agent-integration.md`. Extends
-  [[otel-optional-service-and-negative-control]] (the A-B-A method, used at every step). (ADR-0032)
-  <!-- id: live-invocation-observers | created: 2026-10-24 | last_used: 2026-10-24 | uses: 1 | tier: archive-candidate | origin: 2026-10-24-013405 -->
+  <!-- id: minimalist-jsonpath-rfc-9535 | created: 2026-10-22 | last_used: 2026-10-30 | uses: 4 | tier: archive-candidate | origin: 2026-10-22-175132 -->
 
 ## Conventions
 
@@ -404,7 +389,7 @@
   pre-fills one trailer, or set the repository's squash-message default to the PR title and description, with the trailer
   once in the PR body's footer (the fourth instance shows a commit-based default never copies it).
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-10-29 | uses: 105 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-03 | uses: 113 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -431,7 +416,7 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-10-26 | uses: 48 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-02 | uses: 53 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -445,7 +430,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-26 | uses: 33 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-30 | uses: 35 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast — the in-house codec writes the smallest integer width, so it holds since
   ADR-0028; use `util.str2int/str2long`). (Wording refreshed 2026-10-09 at invariant re-verify — substance unchanged.)
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -545,7 +530,7 @@
   `httpcore5.version`, equal to Boot 4.1.2's managed 5.4.4, was retired from its eight poms.
   Relates
   [[conv-template-version-sweep]] (the other reactor-wide sweep).
-  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-26 | uses: 8 | tier: active | origin: 2026-10-12-221919 -->
+  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-30 | uses: 9 | tier: archive-candidate | origin: 2026-10-12-221919 -->
 
 - **The field's Sonar gate judges NEW code, and five of its heuristics catch prose and framework idioms - write for them (the fifth
   Sonar round, 2026-10-12; the earlier rounds are the archived `thread-sonar-quality-gate-4.6.2`, `thread-sonar-4-9-1-field-rejection`,
@@ -586,7 +571,7 @@
   result, so `Utility.cleanupDir`; S3398 - a private static method that only a nested class calls moves into that class. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-26 | uses: 16 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-30 | uses: 17 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
@@ -611,7 +596,7 @@
   the ignored `dist/`, which compares with the committed bundle (`public/assets`, `template/playground.html`) and with the Rust
   copy, maps excluded, without touching a tracked file; both were byte-identical. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
   only the entry page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-26 | uses: 32 | tier: active | origin: 2026-10-02-015208 -->
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-26 | uses: 32 | tier: archive-candidate | origin: 2026-10-02-015208 -->
 
 - **A reactor build rewrites every example's `target/*.jar` in place, so an app running from one fails at the next class it loads
   for the first time (2026-10-22).** `mvn verify` repackages `examples/*/target/<name>-<version>.jar`. A JVM running from that jar
@@ -624,7 +609,7 @@
   (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
   sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
-  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-10-26 | uses: 9 | tier: active | origin: 2026-10-22-232342 -->
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-10-30 | uses: 12 | tier: active | origin: 2026-10-22-232342 -->
 
 - **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
   properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
@@ -639,7 +624,7 @@
   or its child. To audit the tree, collect the keys of every `.properties` file, every `getProperty` and `@OptionalService`
   literal and every configuration-reference heading, then list each key that prefixes another. The 2026-10-23 log has the
   scan; `cloud.connector.health` is a route, not a key. YAML cannot express the collision.
-  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-10-28 | uses: 3 | tier: active | origin: 2026-10-23-215957 -->
+  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-10-30 | uses: 4 | tier: active | origin: 2026-10-23-215957 -->
 
 - **A lab or dev-machine tool stays out of the root reactor (Eric, 2026-10-23).** The field's static code analysis scans
   the modules the root `pom.xml` declares, registers each one, and keeps scanning it for good. A module listed there
@@ -650,7 +635,7 @@
   relative path the Mercury modules the lab uses, so Maven builds them from source instead of resolving the released
   version of the same number from `~/.m2`, and installs nothing. Its literal version joins the release version sweep.
   Before adding any module to the root reactor, ask whether it ships to the field's artifact repository.
-  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-10-26 | uses: 5 | tier: active | origin: 2026-10-23-215957 -->
+  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-10-30 | uses: 7 | tier: active | origin: 2026-10-23-215957 -->
 
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
@@ -661,7 +646,7 @@
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]]. **Reactivated 2026-10-23:** a lab stays out of the root reactor, so it never
   needs a placeholder ([[conv-lab-outside-root-reactor]]).
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-10-23 | uses: 31 | tier: archive-candidate | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-11-03 | uses: 32 | tier: active | origin: 2026-09-01-022524 -->
 
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
@@ -675,7 +660,7 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-10-29 | uses: 42 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-03 | uses: 46 | tier: active | origin: 2026-09-16-003354 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -759,7 +744,7 @@
   stays LLM/vendor-free with adapters as functions ON the wrappers: the gateway/MCP edge is where
   vendor specifics live, never in the engine.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-10-28 | uses: 28 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-02 | uses: 30 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;
