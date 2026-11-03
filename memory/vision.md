@@ -2,7 +2,8 @@
 
 > Confirmed by maintainer (Eric Law) on 2026-06-20; re-confirmed 2026-07-27 (invariant
 > re-verification walkthrough), 2026-09-16, 2026-09-25 (the first walk of the two-track text), 2026-10-09 and
-> 2026-10-22 (the Type line refreshed: ports catch up, not lock-step). **EVOLVED 2026-09-17 (Eric): the two tracks made explicit** — the
+> 2026-10-22 (the Type line refreshed: ports catch up, not lock-step); the Type line refined 2026-11-03 (Eric: how
+> closely each port catches up). **EVOLVED 2026-09-17 (Eric): the two tracks made explicit** — the
 > graph as application (deterministic) and the graph as AI SDLC (governed AI processing for
 > ambiguity). North star for the VBDI loop;
 > tier `core`, re-confirmed on the invariant-verification cadence. The Blueprint
@@ -72,9 +73,10 @@ the one below:
   pluggable-backend question. This is the foundation **both** tracks stand on.
 
 **Type:** Multi-module Java 21 framework / SDK (Maven reactor, `com.accenture.mercury`,
-version per `continuity.md` → `latest_release`; the official Rust port catches up with Java, the reference
-implementation, when its repository has edits, and the python/node.js language packs carry the Java release
-number they last caught up to).
+version per `continuity.md` → `latest_release`; Java is the reference implementation: the official Rust port
+catches up closely once Java has a new release, and the python/node.js language packs catch up when functionality
+crosses from the engine to the packs (telemetry, AI SDLC), carrying the Java release number they last caught up to,
+which may trail Java further than Rust's).
 
 ## What it should become  *(TARGET)*
 

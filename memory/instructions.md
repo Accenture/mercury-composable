@@ -11,7 +11,9 @@ RPC perform on par with reactive code. An official Rust port exists (github.com/
 The Python and Node.js repos (github.com/Accenture/mercury-python, mercury-nodejs) are **language
 packs**, not engine ports: lightweight Event-over-HTTP function hosts (plus the LLM helper app) that
 carry the Java release number they last caught up to (4.12.21 at this writing — lag is catch-up, not
-divergence). The old full Node.js engine port they replaced is gone; the 2026-07-20 "do not point
+divergence). The Rust port catches up closely once Java has a new release; the packs catch up when functionality
+crosses from the engine to them (telemetry, AI SDLC), so they may trail further (Eric, 2026-11-03). The old full
+Node.js engine port they replaced is gone; the 2026-07-20 "do not point
 readers to it" note is obsolete (corrected at the 2026-10-02 review).
 
 **Type:** Multi-module framework / SDK (Maven reactor)

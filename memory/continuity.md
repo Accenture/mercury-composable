@@ -430,7 +430,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-30 | uses: 35 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-30 | uses: 35 | tier: archive-candidate | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast — the in-house codec writes the smallest integer width, so it holds since
   ADR-0028; use `util.str2int/str2long`). (Wording refreshed 2026-10-09 at invariant re-verify — substance unchanged.)
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -609,7 +609,7 @@
   (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
   sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
-  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-10-30 | uses: 12 | tier: active | origin: 2026-10-22-232342 -->
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-10-30 | uses: 12 | tier: archive-candidate | origin: 2026-10-22-232342 -->
 
 - **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
   properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
@@ -635,7 +635,7 @@
   relative path the Mercury modules the lab uses, so Maven builds them from source instead of resolving the released
   version of the same number from `~/.m2`, and installs nothing. Its literal version joins the release version sweep.
   Before adding any module to the root reactor, ask whether it ships to the field's artifact repository.
-  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-10-30 | uses: 7 | tier: active | origin: 2026-10-23-215957 -->
+  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-10-30 | uses: 7 | tier: archive-candidate | origin: 2026-10-23-215957 -->
 
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
@@ -660,7 +660,11 @@
   rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
   directly when giving this convention, so it stands on its own. Governs the Rust half of
   [[ot-distributed-cache]].
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-03 | uses: 46 | tier: active | origin: 2026-09-16-003354 -->
+  **When each port catches up (Eric, 2026-11-03):** the Rust port catches up closely once Java has a new release, because
+  Java is the reference implementation. The language packs catch up when functionality crosses from the engine to the
+  packs (telemetry, AI SDLC and the like), so their number may trail Java further than Rust's does. Both packs' Visions
+  were amended to say so the same day, settling the versioning threads the 2026-11-03 reviews raised there.
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-03 | uses: 47 | tier: active | origin: 2026-09-16-003354 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
