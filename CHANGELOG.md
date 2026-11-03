@@ -10,7 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Nothing yet. Each change merged to `main` after v4.12.27 is listed here; it moves under its release heading when the version is cut.
+Each change merged to `main` after v4.12.27 is listed here; it moves under its release heading when the version is cut.
+
+### Changed
+
+1. **The Playground's LLM relay names the helpers' new folder.** Both language packs moved their LLM helper from
+   `examples/llm-helper/` to `extensions/llm-helper/` (mercury-python #46, mercury-nodejs #114), so the `llm.stream.relay`
+   503 that the Playground answers when no helper is mapped now reads "start the LLM helper (extensions/llm-helper of
+   mercury-python or mercury-nodejs)". The relay's javadoc and the commented start commands in its `event-over-http.yaml`
+   follow. **Upgrade note:** none - the route, its status and the rest of the message are unchanged.
+
+### Documentation
+
+1. **The LLM helper certification report's reproduce commands start the helpers from `extensions/llm-helper/`.** The
+   report's environment rows, which record the drive of 2026-10-01, keep the folder the helpers lived in then.
 
 ---
 ## Version 4.12.27, 10/30/2026

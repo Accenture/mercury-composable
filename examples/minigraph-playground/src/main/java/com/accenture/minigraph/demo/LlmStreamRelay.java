@@ -41,7 +41,7 @@ import java.util.Map;
  * code and no LLM dependency in the engine.
  * <p>
  * Requires yaml.event.over.http (see application.properties) and a running LLM helper
- * app (examples/llm-helper of mercury-python or mercury-nodejs) with ANTHROPIC_API_KEY in
+ * (extensions/llm-helper of mercury-python or mercury-nodejs) with ANTHROPIC_API_KEY in
  * its environment.
  */
 @PreLoad(route = "llm.stream.relay", instances = 50)
@@ -55,7 +55,7 @@ public class LlmStreamRelay implements TypedLambdaFunction<EventEnvelope, Void> 
         // reachable when registered locally (a test mock) or mapped declaratively
         if (!po.exists(REMOTE_ROUTE) && EventEmitter.getInstance().getEventHttpTarget(REMOTE_ROUTE) == null) {
             new EventStreamWriter(request).fail(new AppException(503,
-                    "AI streaming demo is not configured - start the LLM helper app (examples/llm-helper " +
+                    "AI streaming demo is not configured - start the LLM helper (extensions/llm-helper " +
                     "of mercury-python or mercury-nodejs) with ANTHROPIC_API_KEY in its environment and " +
                     "map llm.stream in event-over-http.yaml"));
             return null;
