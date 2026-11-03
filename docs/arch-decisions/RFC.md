@@ -59,7 +59,8 @@ decision would commit the project to:
    `{id, name, input}`. The loop answers with `{id, output | error}` and the expected turn count. The pack builds the one
    tool-result message and appends it, refusing a stale turn count with 409. The transcript stays in the provider's format,
    append-only, which the 5.5 models' thinking blocks require. It never crosses an engine codec, its model is pinned at the
-   first turn, and any pack replica can serve any turn.
+   first turn (no server-side fallback is sent on a loop turn), and any pack replica can serve any turn. Build plan step 1
+   built this in both packs on 2026-11-03; the spec's sections 3.2 and 3.3 carry the full contract.
 3. **A tool name maps to a route.** The catalog is a skill-less dataset node under the graph's island, certified on the
    graph. Each row holds an API-safe name, a description written on the graph, the input schema, the route, `strict`, and
    `approval: required` for a high-risk write. The loop checks the catalog before the first turn: names, schemas,
