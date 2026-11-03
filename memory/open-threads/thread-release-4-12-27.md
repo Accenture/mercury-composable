@@ -4,4 +4,4 @@
   `schedule`) ships with its storage check in the upgrade note. The field's result is recorded on `latest_release`.
   origin: 2026-10-30-225722; close 2026-10-30-231959.
   → serves: vision-mercury-composable
-  <!-- id: release-4-12-27 | created: 2026-10-30 | last_used: 2026-10-30 | uses: 2 | tier: active | origin: 2026-10-30-225722 -->
+  <!-- id: release-4-12-27 | created: 2026-10-30 | last_used: 2026-10-30 | uses: 2 | tier: archive-candidate | origin: 2026-10-30-225722 -->

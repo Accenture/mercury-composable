@@ -8,8 +8,11 @@
   `async.http.response`, the progressive-rendering lane, or an event's `x-return-path` - a generic function route, local,
   Event-over-HTTP or a Kafka-publishing wrapper, honoured only when declared in `return.path.routes`, which takes a prefix wildcard such as `order.status.*`); transcripts share the suspend store's
   Redis under their own prefix; MCP clients live in the packs, never as an engine's child process; no nesting; `llm.run` in
-  `extensions/agent-loop`. No open question remains. PR #595 (squash `f950a4bd`) merged rounds 1-5; round 6 is PR #596. RFC-0011 stays Open through implementation (Eric: minor design adjustments may follow). Next: the build plan, then acceptance and
-  promotion to an ADR (the build plan:
+  `extensions/agent-loop`. No open question remains. PR #595 (squash `f950a4bd`) merged rounds 1-5; round 6 is PR #596. RFC-0011 stays Open through implementation (Eric: minor design adjustments may follow). **Reviewed and APPROVED
+  2026-11-03 (Eric); the promotion to an ADR is HELD until the end-to-end test from the engines to the language packs for
+  AI SDLC is finished** (recorded on #602). A stdio MCP server runs as a subprocess of the pack - the reason the MCP
+  client moved to the packs - and both packs' Visions allow it (2026-11-03). Next: the build plan, then the end-to-end
+  test, then promotion to an ADR (the build plan:
   pack's loop contract and store, `llm.run` in Java, async `graph.extension` and progress events, the Python MCP binding, the
   Rust catch-up). Development runs on the packs' Claude API backend.
   **Step 1's Python half MERGED 2026-11-03** (mercury-python #46 merge `13cf394`, Eric's move of the helper to
@@ -26,4 +29,4 @@
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
   README, the certification reports) are fixed by #601 (squash `72d43d06`) and mercury #401 (merge `e66ae513`), the packs' by mercury-python #48 (`463e37c`), all
   merged 2026-11-03: no live mention of the old folder is left in the family.
-  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-03 | uses: 10 | tier: working | origin: 2026-10-28-233011 -->
+  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-03 | uses: 11 | tier: working | origin: 2026-10-28-233011 -->
