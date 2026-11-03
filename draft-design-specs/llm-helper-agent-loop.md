@@ -1,7 +1,9 @@
 # Agent loop (`llm.run`) — tool names map to routes — design spec
 
 **Status:** DRAFT under **RFC-0011** (Open). Six review rounds, 2026-10-28 and 2026-10-29 (Eric), section 14.
-Not an ADR: the register entry promotes to one when Eric accepts the whole.
+Build plan step 1 is built in both packs (2026-11-03), and sections 3.2 and 3.3 carry what building it settled.
+**Reviewed and approved by Eric on 2026-11-03.** The promotion to an ADR is held until the end-to-end test
+from the engines to the language packs for AI SDLC is finished.
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`ai-agent-orchestration.md`](./ai-agent-orchestration.md) adapter families A
 (`llm.chat`), B (MCP, route-per-tool) and C (agent-as-node). This paper defines the seam between
@@ -110,34 +112,60 @@ bound to the model and to the conversation, and an edited history is rejected. T
 
 ### 3.2 What `llm.chat` gains (pack change, both packs)
 
-Request fields, all optional; absent means today's behaviour:
+Request fields, all optional; absent means today's behaviour. `tools` makes the request a loop turn,
+and every other field below needs it:
 
 ```text
 tools          [{name, description, input_schema, strict}]
-conversation   the reference returned by the previous turn; absent on the first turn
-turn           the turn count the loop expects the record to hold
-results        [{id, output} | {id, error}]   answers to the previous turn's calls
-ttl            how long the record lives while the run goes on (duration: 30m, 2d)
-retention      how long the record is kept once the model ends the run; 0 deletes it
+conversation   the reference returned by the first turn (32 hex characters); absent on the first turn
+turn           the turn count the loop expects the record to hold; 0 or absent on the first turn
+results        [{id, output} | {id, error}]   one answer per call of the previous turn
+ttl            how long the record lives while the run goes on (duration: 30m, 12h, 2d);
+               default llm.transcript.ttl, 7d
+retention      how long the record is kept once the model ends the run; 0 deletes it;
+               default llm.transcript.retention, 0
 ```
 
 Reply fields when `tools` is present:
 
 ```text
 status         done | tool_use | refusal | cap
-calls          [{id, name, input}]
+text | data    when status = done; data when the request declares an output schema
+calls          [{id, name, input}]   when status = tool_use
+refusal        {category}   when status = refusal
+cap            max_tokens | context   when status = cap: the turn was cut off, or the context is full
 conversation   the reference
 turn           the record's turn count after this turn
+model          the model that served the turn: the one pinned at the first turn
+stop_reason    the provider's stop reason, as returned
 usage          input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens
-refusal        {category} when the model refused
+request_id     the provider's request id, when it returns one
 ```
 
 - **Status, not 422.** With `tools` present, a refusal or a cut-off turn comes back as a status, not
-  as today's 422, so the loop can name it.
-- **The append check.** A request whose `turn` differs from the record's count is refused with 409.
-  A duplicated resume can then never fork a conversation.
-- **Caching is the pack's job.** Tools and system come first, unchanged across turns, and the pack
-  marks the cache breakpoints.
+  as today's 422, so the loop can name it. A cut-off turn returns no calls, so none of its truncated
+  calls can run.
+- **The loop fields need `tools`.** `conversation`, `turn`, `results`, `ttl` or `retention` without
+  `tools` is a 400 that names the field. `llm.stream` has no loop contract: `tools` or any loop field
+  on it is a 400.
+- **The append check.** A request whose `turn` differs from the record's count is refused with 409,
+  and so is a turn on a closed record (section 3.3: one the model ended with a `retention` above `0`,
+  or one cut off at `max_tokens`) and a write that loses the compare-and-set to a concurrent turn. A
+  conversation that ended with `retention` `0`, or expired, is a 404. A duplicated resume can then
+  never fork a conversation.
+- **The model stays pinned.** A later turn that names a `params.model` other than the record's is a
+  400. No server-side refusal fallback is sent on a loop turn: a fallback would move the conversation
+  to another model, whose replay rules would edit the append-only record (section 3.1). The loop sees
+  the refusal as `status: refusal` and names it.
+- **The results.** A later turn carries one result per call of the previous turn; a missing,
+  unknown or duplicated id is a 400. The pack writes them as one user message in call order, whatever
+  order they arrive in. An `output` or `error` that is not a string is written as compact JSON, its
+  keys in the order given.
+- **Caching is the pack's job.** Tools and system come first, unchanged across turns. The pack marks
+  the system block, and the request's top-level cache marker caches the conversation as it grows. No
+  stored block is ever marked, since the transcript goes back exactly as the provider returned it.
+- **A completion outside the contract is a 502**: a `tool_use` stop that carries no call, or another
+  stop reason (`pause_turn`, for example). The loop fails the node (section 4).
 - **Sampling parameters stay out**: current models refuse them.
 - **The first turn** carries `prompt` or `messages` as today. The pack creates the record and
   returns its reference.
@@ -145,8 +173,15 @@ refusal        {category} when the model refused
 ### 3.3 The transcript store (in the packs)
 
 The pack's configuration names the store: Redis first, pluggable, with credentials by reference
-(`llm.transcript.store`, plus that backend's connection keys). Only the pack reads or writes a
-transcript. The engine never holds one.
+(`llm.transcript.store`: `redis`, or `memory` for a single process, plus that backend's connection
+keys). Only the pack reads or writes a transcript. The engine never holds one. A loop turn on a pack
+with no store configured is a 503 that names the key, and so is a store that does not answer; the
+loop fails the node (section 4).
+
+The Redis record is a hash, `transcript:{conversation}`, with two fields: `turn` and `record`
+(versioned JSON: the model, the messages, the calls waiting for a result, and whether the run has
+ended). One script writes it as a compare-and-set on `turn`. Both packs use the same script and the same record, so a
+deployment may run either pack, or both, against one Redis, and any replica serves any turn.
 
 A deployment may share one Redis between the transcripts and `minigraph-state-redis` (the graph's
 suspend store). Each keeps its own key prefix: `transcript:{conversation}` for the pack, and
@@ -158,9 +193,11 @@ Lifetime:
 
 - Every write sets the record's TTL to the request's `ttl`. A run that is waiting for a person
   therefore keeps its transcript.
-- When the model ends the run (done, a refusal, the context window), the pack applies `retention`.
-  The default `0` deletes the record.
-- A run the loop stops itself (a turn limit, the deadline) keeps its `ttl` and expires with it.
+- When the model ends the run (done, a refusal, the context window), the pack closes the record and
+  applies `retention`. The default `0` deletes the record.
+- A run the loop stops itself (a turn limit, the deadline) keeps its `ttl` and expires with it. So
+  does a turn cut off at `max_tokens`: the pack closes the record, since the run cannot go on, but
+  the model did not end it.
 
 ## 4. The loop
 
@@ -603,7 +640,9 @@ so v1 does not forward them.
 ## 9. MCP bindings in the language packs
 
 No engine process runs a child process for a stdio MCP server. The MCP client lives in the packs,
-Python first, then Node.js. The concept's security seam (§3.3) is restored: stdio children and
+Python first, then Node.js. A stdio server runs as a subprocess of the pack, which is the reason the
+MCP client work moved from the engines to the packs (ruling 15); the packs allow a subprocess for it
+(Eric, 2026-11-03). The concept's security seam (§3.3) is restored: stdio children and
 server credentials stay in the pack's process and environment, never in the JVM or the Rust engine.
 
 **The client library is the official MCP SDK**, not the Anthropic SDK: `mcp` on PyPI
@@ -700,7 +739,9 @@ These lessons hold on any engine:
 ## 13. Build plan
 
 1. **The loop contract in the Python pack**: `llm.chat` gains the contract of section 3.2 and the
-   transcript store of section 3.3, with shared vectors. Then the Node.js twin.
+   transcript store of section 3.3, with shared vectors. Then the Node.js twin. **Built 2026-11-03**
+   (mercury-python #47, mercury-nodejs #115): the 66 shared cases of `llm-loop-vectors.json` pass on
+   both packs, on the memory store, a Redis fake and a live Redis.
 2. **`llm.run` in Java** (`extensions/agent-loop`): the loop, the pre-flight check, the modes and
    approvals, the settings, the envelope. Tests run on a scripted `llm.chat` route, with no tokens
    spent. Shared loop vectors (scripted turns → expected route calls and envelope) carry the

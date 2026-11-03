@@ -43,6 +43,9 @@
 **Status:** Open · **Raised:** 2026-10-28 · **Serves:** vision-mercury-composable · **Thread:** `agent-loop-llm-run`
 <!-- id: rfc-0011 | status: open | thread: agent-loop-llm-run -->
 
+**Reviewed and approved by Eric on 2026-11-03.** The promotion to an ADR is held until the end-to-end test from the
+engines to the language packs for AI SDLC is finished.
+
 **Proposal.** The foundation of Track 2 (the graph as AI SDLC) for a node whose model calls tools while it reasons — the
 concept's adapter family C, built on families A (`llm.chat`) and B (MCP, route-per-tool). The design spec is
 `draft-design-specs/llm-helper-agent-loop.md`, and it carries Eric's rulings of six review rounds on 2026-10-28 and 2026-10-29. What a
@@ -59,7 +62,8 @@ decision would commit the project to:
    `{id, name, input}`. The loop answers with `{id, output | error}` and the expected turn count. The pack builds the one
    tool-result message and appends it, refusing a stale turn count with 409. The transcript stays in the provider's format,
    append-only, which the 5.5 models' thinking blocks require. It never crosses an engine codec, its model is pinned at the
-   first turn, and any pack replica can serve any turn.
+   first turn (no server-side fallback is sent on a loop turn), and any pack replica can serve any turn. Build plan step 1
+   built this in both packs on 2026-11-03; the spec's sections 3.2 and 3.3 carry the full contract.
 3. **A tool name maps to a route.** The catalog is a skill-less dataset node under the graph's island, certified on the
    graph. Each row holds an API-safe name, a description written on the graph, the input schema, the route, `strict`, and
    `approval: required` for a high-risk write. The loop checks the catalog before the first turn: names, schemas,
@@ -98,7 +102,8 @@ decision would commit the project to:
      with `*` declares a family by prefix (`order.status.*`), as `invocation.observer.include` does, and a bare `*` is
      refused. A node opts in with `progress=<text>`, and only then does its function receive `x-return-path`.
 7. **MCP bindings live in the language packs** (Python, then Node.js). They use the official MCP SDK client, never a child
-   process of an engine. Servers are named in the pack's configuration; there is one route per allowlisted remote tool, and
+   process of an engine: a stdio server runs as a subprocess of the pack, which is why the MCP client lives there. Servers
+   are named in the pack's configuration; there is one route per allowlisted remote tool, and
    boot fails on a missing tool or a changed input schema. The model sees the graph's descriptions, never the server's.
 8. **No nesting, and no A2A.** An agent is a graph node; the graph sequences agents. An external A2A peer, when one is
    required, is a route and a catalog row.
