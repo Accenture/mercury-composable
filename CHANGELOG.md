@@ -10,7 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Each change merged to `main` after v4.12.27 is listed here; it moves under its release heading when the version is cut.
+Nothing yet. Each change merged to `main` after v4.12.28 is listed here; it moves under its release heading when the version is cut.
+
+---
+## Version 4.12.28, 11/3/2026
+
+Java only. The mini-scheduler asks a slow state resolver or environment store again after a timeout and records each
+timed-out attempt in the application log (Changed 2), every question one firing asks the state resolver carries the same
+`_firing` id in its parameters (Added 1), and an environment store that answers an error keeps the active environment
+(Fixed 1). The Playground's LLM relay names the helpers' new folder (Changed 1). The Rust port has no scheduler and catches
+up in its next round. **Upgrade notes:** before deploying, give a state resolver that claims the job while it answers
+`expires` the `_firing` check - it stores `_firing` with its claim and answers `true` again for the same `_firing` -
+or a retry after a cold start skips the job, with a warning. A resolver that stores the parameters stores `_firing` with
+them, so a dashboard that shows them filters the `_` keys out, and a job's own parameter key that starts with `_` is
+dropped, with a warning (Added 1). A function the scheduler waits on answers within 3 seconds once it is warm; a question
+now takes up to 12 seconds before the job is skipped (Changed 2).
 
 ### Added
 
