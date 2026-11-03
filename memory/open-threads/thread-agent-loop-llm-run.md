@@ -21,5 +21,5 @@
   `llm.stream`; another `params.model` than the pinned one is a 400; an ended or expired conversation is a 404 and a
   closed one a 409; a result that is not text is compact JSON. Then the Node twin (the same move and vectors), and step 2.
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
-  README, the certification reports) are fixed by #601 and mercury #401 (open, 2026-11-03), the packs' by mercury-python #48.
+  README, the certification reports) are fixed by mercury #401 (merged 2026-11-03, `e66ae513`) and #601 (open), the packs' by mercury-python #48 (merged, `463e37c`).
   <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-10-29 | uses: 2 | tier: working | origin: 2026-10-28-233011 -->
