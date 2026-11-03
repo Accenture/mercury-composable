@@ -2,7 +2,8 @@
 
 **Status:** DRAFT under **RFC-0011** (Open). Six review rounds, 2026-10-28 and 2026-10-29 (Eric), section 14.
 Build plan step 1 is built in both packs (2026-11-03), and sections 3.2 and 3.3 carry what building it settled.
-Not an ADR: the register entry promotes to one when Eric accepts the whole.
+**Reviewed and approved by Eric on 2026-11-03.** The promotion to an ADR is held until the end-to-end test
+from the engines to the language packs for AI SDLC is finished.
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`ai-agent-orchestration.md`](./ai-agent-orchestration.md) adapter families A
 (`llm.chat`), B (MCP, route-per-tool) and C (agent-as-node). This paper defines the seam between
@@ -639,7 +640,9 @@ so v1 does not forward them.
 ## 9. MCP bindings in the language packs
 
 No engine process runs a child process for a stdio MCP server. The MCP client lives in the packs,
-Python first, then Node.js. The concept's security seam (§3.3) is restored: stdio children and
+Python first, then Node.js. A stdio server runs as a subprocess of the pack, which is the reason the
+MCP client work moved from the engines to the packs (ruling 15); the packs allow a subprocess for it
+(Eric, 2026-11-03). The concept's security seam (§3.3) is restored: stdio children and
 server credentials stay in the pack's process and environment, never in the JVM or the Rust engine.
 
 **The client library is the official MCP SDK**, not the Anthropic SDK: `mcp` on PyPI
