@@ -14,8 +14,8 @@
   Rust catch-up). Development runs on the packs' Claude API backend.
   **Step 1's Python half MERGED 2026-11-03** (mercury-python #46 merge `13cf394`, Eric's move of the helper to
   `extensions/llm-helper/`, and #47 merge `8f9ae34`, the loop contract; 66 shared cases in `llm-loop-vectors.json`, green
-  on memory, a Redis fake and a live Redis). The Node twin's move, in lockstep (Eric), is on mercury-nodejs
-  `refactor/llm-helper-extension` (`d2f904b`, PR #114); its loop contract follows. Small adjustments for the design spec, to fold into sections 3.2 and 3.3 in a docs PR here: a
+  on memory, a Redis fake and a live Redis). The Node twin's move, in lockstep (Eric), MERGED as mercury-nodejs
+  #114 (merge `62958b5`, 2026-11-03); its loop contract follows. Small adjustments for the design spec, to fold into sections 3.2 and 3.3 in a docs PR here: a
   `cap` reply field (`max_tokens` or `context`); no server-side refusal fallback on a loop turn (the pinned, append-only
   record); a loop turn without a configured store is a 503; the loop fields need `tools` on `llm.chat` and are a 400 on
   `llm.stream`; another `params.model` than the pinned one is a 400; an ended or expired conversation is a 404 and a
