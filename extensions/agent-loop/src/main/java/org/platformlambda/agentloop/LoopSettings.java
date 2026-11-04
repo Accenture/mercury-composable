@@ -109,10 +109,8 @@ public record LoopSettings(String mode, int maxTurns, int resultLimit, String tr
      * @throws IllegalArgumentException naming the first bad value
      */
     public static LoopSettings resolve(Map<String, Object> input, Defaults defaults) {
-        var mode = input.get(MODE_INPUT);
-        if (mode == null) {
-            mode = WRITE;
-        }
+        var given = input.get(MODE_INPUT);
+        var mode = given == null ? WRITE : String.valueOf(given);
         if (!MODES.contains(mode)) {
             throw new IllegalArgumentException("mode must be write, auto, manual or unattended");
         }
@@ -125,7 +123,7 @@ public record LoopSettings(String mode, int maxTurns, int resultLimit, String tr
         var retention = duration(RETENTION_INPUT, input.get(RETENTION_INPUT), Defaults.RETENTION_KEY,
                 defaults.retention(), 0);
         var timeout = duration(TIMEOUT_INPUT, input.get(TIMEOUT_INPUT), Defaults.TIMEOUT_KEY, defaults.timeout(), 1);
-        return new LoopSettings((String) mode, maxTurns, resultLimit, ttl, retention, seconds(timeout) * 1000L);
+        return new LoopSettings(mode, maxTurns, resultLimit, ttl, retention, seconds(timeout) * 1000L);
     }
 
     private static int positive(String name, Object given, String key, String fallback) {
