@@ -44,13 +44,18 @@
   returned to the model as the call's result - the transcript stays append-only and the packs do not change. **Ruling 39 (Eric,
   2026-11-04): no compaction in `llm.run`;** if a loop needs it, the provider's server-side compaction in the packs'
   `llm.chat` behind a pack setting, deferred until a realistic loop reaches `cap: context` (docs PR #608, MERGED 2026-11-04, squash `abe43450`). **Step 3a built
-  2026-11-04: PR #609** (branch `feat/graph-extension-async`, commit `8693df4f`; spec section 8.1 *As built*): `async=true`
+  2026-11-04: PR #609, MERGED 2026-11-04 04:50Z, squash `5e528e9c`** (branch `feat/graph-extension-async`; spec section 8.1 *As built*): `async=true`
   on `graph.extension` starts the target and continues; the node's `ttl` or the target's own TTL; a failure to start (an
   unknown graph or flow, 404; an input the target's root schema refuses, 400, checked before any run) routes to
   `exception=`; `for_each` with a sliding `concurrency` window; CompileGraph refuses `async` elsewhere, a non-boolean
-  value and an `output[]` on an async node. Next: step 3b (the return route per entry, `x-return-path`,
-  `return.path.routes`, the `progress` property, `llm.run`'s events, a Kafka sample; no WebSocket entry runs a deployed
-  graph today), step 4 (the Python MCP binding), then the Rust catch-up from `llm-run-vectors.json`.
+  value and an `output[]` on an async node. **Step 3b built 2026-11-04: PR #611** (branch
+  `feat/graph-progress-events`, commit `6d261db0`; spec sections 8.2 and 8.4 *As built*; Eric: the WebSocket entry is
+  in 3b): progress events, then a terminal `result` or `error`, on a REST `stream: true` lane, the new WebSocket entry
+  `/ws/graph-run/{graph_id}` (off by default), or a declared `x-return-path` (`return.path.routes`, prefix `*`);
+  `progress=<text>` on a node; a node's function and a synchronous subgraph get the node's private relay
+  (`graph.progress.*`), drained before the terminal event; `llm.run`'s seven events (105 loop vectors); the HTTP edge
+  drops a late single-shot reply to a started stream; `kafka.progress.publisher` in kafka-demo. Next: the merge of
+  #611, which completes step 3; step 4 (the Python MCP binding), then the Rust catch-up from `llm-run-vectors.json`.
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
   README, the certification reports) are fixed by #601 (squash `72d43d06`) and mercury #401 (merge `e66ae513`), the packs' by mercury-python #48 (`463e37c`), all
   merged 2026-11-03: no live mention of the old folder is left in the family.
