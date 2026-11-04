@@ -201,6 +201,19 @@ Lifetime:
   does a turn cut off at `max_tokens`: the pack closes the record, since the run cannot go on, but
   the model did not end it.
 
+**Compaction (deferred; Eric, 2026-11-04, ruling 39).** A loop that runs many turns can grow its
+conversation toward the model's context window. The loop never holds the transcript, so it cannot
+compact it, and a client-side rewrite (a sliding window, a summary of earlier turns, old tool results
+trimmed) is an edit that the 5.5 models refuse (section 3.1). If a use case needs it, compaction is
+the provider's own, server-side, in the pack's `llm.chat` behind a setting of the pack: the API's
+compaction (or its context editing, which clears old tool results) returns its block as assistant
+content, and the pack stores and replays it like any other, so the record stays append-only and the
+loop contract does not change. Both are in beta, and their availability on each backend, Bedrock
+among them, is checked before they are used. Until then a full window is an outcome, `cap: context`,
+which the graph routes; narrow loops, a `result_limit` set low for a node that runs many turns, and
+payloads by reference keep the conversation small. The end-to-end test shows whether a realistic loop
+reaches the window at all.
+
 ## 4. The loop
 
 One `llm.run` call runs turns until one of these stops it:
@@ -901,6 +914,10 @@ loop does not change for it.
     the same conversation, asks through a catalog row with `ask: true` and no route: the call waits in
     every mode except `unattended`, and the resume's `{id, answer}` is the call's result (section 7.3).
     Options that map to the graph's own branches stay the business decision of section 7.2.
+39. Compaction is not built into `llm.run`, which never holds the transcript. If a loop needs it, it
+    is the provider's server-side compaction in the packs' `llm.chat`, behind a pack setting, so the
+    record stays append-only and the loop contract is unchanged; deferred until a realistic loop
+    reaches `cap: context` (section 3.3).
 
 ## 15. Open questions
 
