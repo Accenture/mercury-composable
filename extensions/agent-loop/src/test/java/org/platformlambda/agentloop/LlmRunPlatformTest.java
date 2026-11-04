@@ -47,10 +47,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * llm.run through the platform: the route registers itself from the classpath scan, the model turn is a scripted
- * llm.chat function, and the tools are real routes, so the path graph.task uses is exercised - the request and
- * response codec, a route that throws, a route that times out, and a failure that reaches the caller with its
- * status.
+ * {@code llm.run} through the platform: the route registers itself from the classpath scan, the model turn is a
+ * scripted {@code llm.chat} function, and the tools are real routes, so the path {@code graph.task} uses is exercised -
+ * the request and response codec, a route that throws, a route that times out, and a failure that reaches the caller
+ * with its status.
  */
 class LlmRunPlatformTest {
     private static final String CREDIT_LIMIT = "test.credit.limit";
@@ -97,9 +97,9 @@ class LlmRunPlatformTest {
         REQUESTS.clear();
     }
 
-    private static Map<String, Object> row(String name, String route) {
+    private static Map<String, Object> row(String route) {
         var row = new LinkedHashMap<String, Object>();
-        row.put("name", name);
+        row.put("name", "lookup");
         row.put("description", "A tool for the test.");
         row.put("input_schema", Map.of("type", "object", "properties", Map.of("id", Map.of("type", "string")),
                 "required", List.of("id")));
@@ -109,7 +109,7 @@ class LlmRunPlatformTest {
 
     private static Map<String, Object> input(String route, Object... settings) {
         var input = new LinkedHashMap<String, Object>();
-        input.put("tools", List.of(row("lookup", route)));
+        input.put("tools", List.of(row(route)));
         input.put("prompt", "May C-1 order 4200 EUR?");
         for (int i = 0; i < settings.length; i += 2) {
             input.put((String) settings[i], settings[i + 1]);
@@ -152,7 +152,7 @@ class LlmRunPlatformTest {
         assertEquals(List.of(Map.of("id", "c1", "name", "lookup", "route", CREDIT_LIMIT, "status", "ok")),
                 envelope.get("calls"));
         assertEquals(2, REQUESTS.size());
-        var first = REQUESTS.get(0);
+        var first = REQUESTS.getFirst();
         assertEquals("May C-1 order 4200 EUR?", first.get("prompt"));
         var tools = (List<Map<String, Object>>) first.get("tools");
         assertFalse(tools.getFirst().containsKey("route"), "the model never sees a route");

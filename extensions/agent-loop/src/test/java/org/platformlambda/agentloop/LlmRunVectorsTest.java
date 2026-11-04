@@ -45,8 +45,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Runs the shared vector file {@code llm-run-vectors.json} (byte-identical in the Rust repository) against the
- * loop, with a scripted llm.chat and scripted tool routes behind the gateway and a clock the script advances. No
+ * Runs the shared vector file {@code llm-run-vectors.json} (byte-identical in the Rust repository) against the loop,
+ * with a scripted {@code llm.chat} and scripted tool routes behind the gateway and a clock the script advances. No
  * token is spent and nothing waits on real time.
  */
 class LlmRunVectorsTest {
@@ -128,7 +128,6 @@ class LlmRunVectorsTest {
                 (String) config.getOrDefault(LoopSettings.Defaults.TIMEOUT_KEY, builtIn.timeout()));
     }
 
-    @SuppressWarnings("unchecked")
     private static void runSchemaCase(Map<String, Object> c) {
         if (c.containsKey("error")) {
             var schema = c.get("schema");
@@ -146,8 +145,8 @@ class LlmRunVectorsTest {
     }
 
     /**
-     * The scripted side of a case: llm.chat answers each turn in order after checking the request the loop sent,
-     * and each route call is matched by route and body among the calls the script expects before the next turn.
+     * The scripted side of a case: {@code llm.chat} answers each turn in order after checking the request the loop
+     * sent, and each route call is matched by route and body among the calls the script expects before the next turn.
      */
     private static final class ScriptedGateway implements LoopGateway {
         private final Set<String> routes = new HashSet<>();

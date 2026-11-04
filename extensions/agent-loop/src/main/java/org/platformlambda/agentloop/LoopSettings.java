@@ -31,8 +31,8 @@ import java.util.regex.Pattern;
  * @param mode the approval mode: auto, manual or unattended
  * @param maxTurns the conversation's turn limit, a proxy for the input tokens the run accumulates
  * @param resultLimit the largest tool result, in characters of JSON text
- * @param transcriptTtl how long a running or waiting transcript lives, as sent to llm.chat
- * @param retention how long a finished run's transcript is kept, as sent to llm.chat
+ * @param transcriptTtl how long a running or waiting transcript lives, as sent to {@code llm.chat}
+ * @param retention how long a finished run's transcript is kept, as sent to {@code llm.chat}
  * @param timeoutMs the loop's deadline, from its start
  */
 public record LoopSettings(String mode, int maxTurns, int resultLimit, String transcriptTtl, String retention,
@@ -46,8 +46,8 @@ public record LoopSettings(String mode, int maxTurns, int resultLimit, String tr
     static final String TRANSCRIPT_TTL_INPUT = "transcript_ttl";
     static final String RETENTION_INPUT = "retention";
     static final String TIMEOUT_INPUT = "timeout";
-    private static final Pattern DURATION = Pattern.compile("([0-9]+)([smhd]?)");
-    private static final Pattern DIGITS = Pattern.compile("[0-9]+");
+    private static final Pattern DURATION = Pattern.compile("(\\d+)([smhd]?)");
+    private static final Pattern DIGITS = Pattern.compile("\\d+");
     private static final String DURATION_RULE = " must be a duration such as 30m, 12h or 2d (seconds, s, m, h, d)";
 
     /**
@@ -57,7 +57,7 @@ public record LoopSettings(String mode, int maxTurns, int resultLimit, String tr
      * @param resultLimit {@code llm.run.result.limit}, default 65536
      * @param transcriptTtl {@code llm.run.transcript.ttl}, default 7d
      * @param retention {@code llm.run.transcript.retention}, default 0
-     * @param timeout {@code llm.run.timeout}, default 25s - below the graph's default model.ttl of 30 seconds
+     * @param timeout {@code llm.run.timeout}, default 25s - below the graph's default {@code model.ttl} of 30 seconds
      */
     public record Defaults(String maxTurns, String resultLimit, String transcriptTtl, String retention,
                            String timeout) {
@@ -125,7 +125,7 @@ public record LoopSettings(String mode, int maxTurns, int resultLimit, String tr
         var where = given == null ? key : name;
         var value = given == null ? fallback : given;
         BigDecimal n = null;
-        if (value instanceof Number number && !(value instanceof Boolean)) {
+        if (value instanceof Number number) {
             n = ToolSchema.toDecimal(number);
         } else if (value instanceof String text && DIGITS.matcher(text.trim()).matches()) {
             n = new BigDecimal(text.trim());
@@ -144,8 +144,7 @@ public record LoopSettings(String mode, int maxTurns, int resultLimit, String tr
         String text = null;
         if (value instanceof String s) {
             text = s.trim();
-        } else if (value instanceof Number number && !(value instanceof Boolean)
-                && ToolSchema.isIntegral(ToolSchema.toDecimal(number))) {
+        } else if (value instanceof Number number && ToolSchema.isIntegral(ToolSchema.toDecimal(number))) {
             text = ToolSchema.render(ToolSchema.toDecimal(number));
         }
         if (text == null || !DURATION.matcher(text).matches() || seconds(text) < minimum) {

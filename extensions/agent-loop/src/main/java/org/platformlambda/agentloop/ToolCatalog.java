@@ -167,15 +167,6 @@ public final class ToolCatalog {
     }
 
     /**
-     * The rows in catalog order.
-     *
-     * @return the rows
-     */
-    public List<Row> rows() {
-        return new ArrayList<>(rows.values());
-    }
-
-    /**
      * The tools as the model sees them: name, description, input schema and strict. The route and the approval
      * mark stay in the catalog.
      *

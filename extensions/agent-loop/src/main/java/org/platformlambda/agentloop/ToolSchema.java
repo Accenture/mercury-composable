@@ -19,6 +19,7 @@
 package org.platformlambda.agentloop;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -80,7 +81,7 @@ public final class ToolSchema {
             MIN_ITEMS, MAX_ITEMS);
     /** Keywords that document and never validate. */
     public static final List<String> DOCUMENTARY = List.of("title", "description", "default", "examples", "format");
-    private static final List<String> TYPES = List.of(OBJECT, ARRAY, STRING, NUMBER, INTEGER, BOOLEAN, NULL);
+    private static final List<String> KNOWN_TYPES = List.of(OBJECT, ARRAY, STRING, NUMBER, INTEGER, BOOLEAN, NULL);
     /** The types a type-specific keyword applies to. */
     private static final Map<String, List<String>> APPLIES_TO = Map.ofEntries(
             Map.entry(PROPERTIES, List.of(OBJECT)), Map.entry(REQUIRED, List.of(OBJECT)),
@@ -204,10 +205,17 @@ public final class ToolSchema {
         if (type == null) {
             return List.of();
         }
-        List<?> names = type instanceof List<?> list ? list : List.of(type);
+        var result = typeNames(where, type instanceof List<?> list ? list : List.of(type));
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException(where + "." + TYPE + " must be " + TYPE_NAMES + ", or a list of them");
+        }
+        return result;
+    }
+
+    private static List<String> typeNames(String where, List<?> names) {
         var result = new ArrayList<String>();
         for (var name : names) {
-            if (!(name instanceof String text) || !TYPES.contains(text)) {
+            if (!(name instanceof String text) || !KNOWN_TYPES.contains(text)) {
                 throw new IllegalArgumentException(where + "." + TYPE + " must be " + TYPE_NAMES +
                         ", or a list of them");
             }
@@ -215,9 +223,6 @@ public final class ToolSchema {
                 throw new IllegalArgumentException(where + "." + TYPE + " lists '" + text + "' twice");
             }
             result.add(text);
-        }
-        if (result.isEmpty()) {
-            throw new IllegalArgumentException(where + "." + TYPE + " must be " + TYPE_NAMES + ", or a list of them");
         }
         return List.copyOf(result);
     }
@@ -268,7 +273,7 @@ public final class ToolSchema {
         if (value == null) {
             return null;
         }
-        if (value instanceof Number n && !(value instanceof Boolean)) {
+        if (value instanceof Number n) {
             return toDecimal(n);
         }
         throw new IllegalArgumentException(where + "." + key + " must be a number");
@@ -487,32 +492,22 @@ public final class ToolSchema {
     // ------------------------------------------------------------------ JSON values
 
     /**
-     * The JSON kind of a value: null, boolean, integer (a number with no fractional part), number, string,
+     * What a decoded JSON value is: null, boolean, integer (a number with no fractional part), number, string,
      * array or object.
      *
      * @param value a decoded JSON value
-     * @return its kind
+     * @return the name of what it is
      */
     static String kindOf(Object value) {
-        if (value == null) {
-            return NULL;
-        }
-        if (value instanceof Boolean) {
-            return BOOLEAN;
-        }
-        if (value instanceof Number n) {
-            return isIntegral(toDecimal(n)) ? INTEGER : NUMBER;
-        }
-        if (value instanceof String) {
-            return STRING;
-        }
-        if (value instanceof List) {
-            return ARRAY;
-        }
-        if (value instanceof Map) {
-            return OBJECT;
-        }
-        return value.getClass().getSimpleName();
+        return switch (value) {
+            case null -> NULL;
+            case Boolean ignored -> BOOLEAN;
+            case Number n -> isIntegral(toDecimal(n)) ? INTEGER : NUMBER;
+            case String ignored -> STRING;
+            case List<?> ignored -> ARRAY;
+            case Map<?, ?> ignored -> OBJECT;
+            default -> value.getClass().getSimpleName();
+        };
     }
 
     static BigDecimal toDecimal(Number n) {
@@ -526,7 +521,9 @@ public final class ToolSchema {
     /** A number as both engines print it: no exponent, no trailing zeros, no decimal point when whole. */
     static String render(BigDecimal n) {
         var stripped = n.stripTrailingZeros();
-        return stripped.scale() < 0 ? stripped.setScale(0).toPlainString() : stripped.toPlainString();
+        // a negative scale only widens to whole digits, so nothing is ever rounded
+        return stripped.scale() < 0 ? stripped.setScale(0, RoundingMode.UNNECESSARY).toPlainString() :
+                stripped.toPlainString();
     }
 
     /** JSON equality: numbers by value, lists in order, maps by keys and values. */
@@ -534,19 +531,13 @@ public final class ToolSchema {
         if (a == null || b == null) {
             return a == b;
         }
-        if (a instanceof Boolean || b instanceof Boolean) {
-            return a.equals(b);
-        }
-        if (a instanceof Number x && b instanceof Number y) {
-            return toDecimal(x).compareTo(toDecimal(y)) == 0;
-        }
-        if (a instanceof List<?> x && b instanceof List<?> y) {
-            return listEquals(x, y);
-        }
-        if (a instanceof Map<?, ?> x && b instanceof Map<?, ?> y) {
-            return mapEquals(x, y);
-        }
-        return a.equals(b);
+        // a Boolean is not a Number in Java, so true never equals 1
+        return switch (a) {
+            case Number x when b instanceof Number y -> toDecimal(x).compareTo(toDecimal(y)) == 0;
+            case List<?> x when b instanceof List<?> y -> listEquals(x, y);
+            case Map<?, ?> x when b instanceof Map<?, ?> y -> mapEquals(x, y);
+            default -> a.equals(b);
+        };
     }
 
     private static boolean listEquals(List<?> x, List<?> y) {
@@ -565,8 +556,8 @@ public final class ToolSchema {
         if (!new HashSet<>(x.keySet()).equals(new HashSet<>(y.keySet()))) {
             return false;
         }
-        for (var key : x.keySet()) {
-            if (!jsonEquals(x.get(key), y.get(key))) {
+        for (var entry : x.entrySet()) {
+            if (!jsonEquals(entry.getValue(), y.get(entry.getKey()))) {
                 return false;
             }
         }

@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * The agent loop (RFC-0011, section 4): one run of model turns to an outcome. Each turn goes to {@code llm.chat},
@@ -100,7 +102,7 @@ public class AgentLoop {
             LoopSettings.TRANSCRIPT_TTL_INPUT, LoopSettings.RETENTION_INPUT, LoopSettings.TIMEOUT_INPUT, CONVERSATION,
             TURN, APPROVAL, DECISIONS);
     private static final Pattern REFERENCE = Pattern.compile("[0-9a-f]{32}");
-    private static final Pattern WHOLE_NUMBER = Pattern.compile("[0-9]{1,9}");
+    private static final Pattern WHOLE_NUMBER = Pattern.compile("\\d{1,9}");
     private static final String LLM_CHAT_FAILED = "llm.chat failed - ";
     private static final String OUTSIDE_CONTRACT = "llm.chat answered outside the loop contract - ";
     private static final String NO_LONGER_MATCHES = "') no longer matches the tool catalog or the mode";
@@ -110,7 +112,7 @@ public class AgentLoop {
     private final LongSupplier clock;
 
     /**
-     * @param gateway how the loop reaches llm.chat and the tools' routes
+     * @param gateway how the loop reaches {@code llm.chat} and the tools' routes
      * @param defaults the global defaults of the settings
      * @param clock the time in milliseconds, from which the deadline is measured
      */
@@ -195,13 +197,14 @@ public class AgentLoop {
             if (budget < MIN_STEP_MS) {
                 return cap(run, CAP_DEADLINE);
             }
-            var reply = modelTurn(run, results, budget);
-            if (reply == null) {
+            var turn = modelTurn(run, results, budget);
+            if (turn.isEmpty()) {
                 return cap(run, CAP_DEADLINE);
             }
+            var reply = turn.get();
             var outcome = outcome(run, reply);
-            if (outcome != null) {
-                return outcome;
+            if (outcome.isPresent()) {
+                return outcome.get();
             }
             if (run.turn >= run.settings.maxTurns()) {
                 return cap(run, CAP_TURNS);
@@ -217,14 +220,14 @@ public class AgentLoop {
         }
     }
 
-    /** One model turn, or null when it timed out: the loop's deadline, named as a cap. */
+    /** One model turn's reply, or empty when the turn timed out: the loop's deadline, named as a cap. */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> modelTurn(Run run, List<Map<String, Object>> results, long budget)
+    private Optional<Map<String, Object>> modelTurn(Run run, List<Map<String, Object>> results, long budget)
             throws AppException {
         var request = chatRequest(run, results, budget);
         var response = await(() -> gateway.chat(request, budget + RESERVE_MS / 2));
         if (response.getStatus() == 408) {
-            return null;
+            return Optional.empty();
         }
         if (response.hasError()) {
             throw new AppException(response.getStatus(), LLM_CHAT_FAILED + errorText(response));
@@ -234,36 +237,32 @@ public class AgentLoop {
         }
         var reply = (Map<String, Object>) response.getBody();
         noteTurn(run, reply);
-        return reply;
+        return Optional.of(reply);
     }
 
-    /** The envelope for a model outcome, or null for a tool_use turn. */
-    private static Map<String, Object> outcome(Run run, Map<String, Object> reply) throws AppException {
+    /** The envelope for a model outcome, or empty for a tool_use turn. */
+    private static Optional<Map<String, Object>> outcome(Run run, Map<String, Object> reply) throws AppException {
         var status = reply.get(STATUS);
         if (DONE.equals(status)) {
-            return done(run, reply);
+            return Optional.of(done(run, reply));
         }
         if (REFUSAL.equals(status)) {
-            return envelope(run, REFUSAL).with(REFUSAL, reply.get(REFUSAL)).build();
+            return Optional.of(envelope(run, REFUSAL).with(REFUSAL, reply.get(REFUSAL)).build());
         }
         if (CAP.equals(status)) {
-            return envelope(run, CAP).with(CAP, reply.get(CAP)).build();
+            return Optional.of(envelope(run, CAP).with(CAP, reply.get(CAP)).build());
         }
         if (!TOOL_USE.equals(status)) {
             throw new AppException(502, OUTSIDE_CONTRACT + "status '" + status + "'");
         }
-        return null;
+        return Optional.empty();
     }
 
     // ------------------------------------------------------------------ inputs
 
     private static void checkInputNames(Map<String, Object> input) {
-        var unknown = new TreeSet<String>();
-        for (var key : input.keySet()) {
-            if (!INPUTS.contains(key)) {
-                unknown.add(key);
-            }
-        }
+        var unknown = input.keySet().stream().filter(key -> !INPUTS.contains(key))
+                .collect(Collectors.toCollection(TreeSet::new));
         if (!unknown.isEmpty()) {
             throw new IllegalArgumentException("not an input of llm.run: " + String.join(", ", unknown) +
                     " - the inputs are " + String.join(", ", INPUTS.subList(0, INPUTS.size() - 1)) + " and " +
@@ -332,7 +331,7 @@ public class AgentLoop {
     }
 
     private static int intOf(Object value) {
-        if (value instanceof Number n && !(value instanceof Boolean)) {
+        if (value instanceof Number n) {
             var d = ToolSchema.toDecimal(n);
             if (ToolSchema.isIntegral(d) && d.abs().compareTo(java.math.BigDecimal.valueOf(Integer.MAX_VALUE)) <= 0) {
                 return d.intValueExact();
@@ -442,17 +441,13 @@ public class AgentLoop {
             }
             var call = (Map<String, Object>) item;
             var name = call.get(NAME) instanceof String text ? text : String.valueOf(call.get(NAME));
-            planned.add(evaluate(run, id, name, call.get(INPUT), true));
+            planned.add(evaluate(run, id, name, call.get(INPUT)));
         }
         return planned;
     }
 
-    /**
-     * The steps of section 4 for one call: resolve the name, validate the input, check approval.
-     *
-     * @param mayWait false on a resume, where a call that would wait has been decided already
-     */
-    private static Planned evaluate(Run run, String id, String name, Object input, boolean mayWait) {
+    /** The steps of section 4 for one call: resolve the name, validate the input, check approval. */
+    private static Planned evaluate(Run run, String id, String name, Object input) {
         var row = run.catalog.get(name);
         if (row == null) {
             return new Planned(id, name, null, input, Outcome.ERROR, UNKNOWN, "unknown tool '" + name + "'");
@@ -468,7 +463,7 @@ public class AgentLoop {
             return new Planned(id, name, row, input, Outcome.ERROR, REFUSED,
                     "'" + name + "' needs a person's approval, and this run is unattended");
         }
-        if (mayWait && (LoopSettings.MANUAL.equals(mode) || row.approval())) {
+        if (LoopSettings.MANUAL.equals(mode) || row.approval()) {
             return new Planned(id, name, row, input, Outcome.WAIT, null, null);
         }
         return new Planned(id, name, row, input, Outcome.RUN, null, null);
@@ -545,7 +540,7 @@ public class AgentLoop {
         var row = run.catalog.get(name);
         var route = call.get(ROUTE);
         boolean sameRoute = row == null ? route == null : row.route().equals(route);
-        var fresh = evaluate(run, id, name, call.get(INPUT), true);
+        var fresh = evaluate(run, id, name, call.get(INPUT));
         boolean wait = Boolean.TRUE.equals(call.get(WAIT));
         if (!sameRoute || wait != (fresh.outcome() == Outcome.WAIT)) {
             throw mismatch(i, id);
@@ -597,11 +592,9 @@ public class AgentLoop {
      */
     private List<Map<String, Object>> dispatch(Run run, List<Planned> planned) throws AppException {
         var budget = timeLeft(run);
-        var futures = new ArrayList<CompletableFuture<EventEnvelope>>();
-        for (var p : planned) {
-            futures.add(p.outcome() == Outcome.RUN ?
-                    safely(() -> gateway.call(p.row().route(), p.input(), budget)) : null);
-        }
+        // every request is issued here, on the worker thread, before any is awaited
+        List<CompletableFuture<EventEnvelope>> futures = planned.stream().map(p -> p.outcome() == Outcome.RUN ?
+                safely(() -> gateway.call(p.row().route(), p.input(), budget)) : null).toList();
         var results = new ArrayList<Map<String, Object>>();
         for (int i = 0; i < planned.size(); i++) {
             var p = planned.get(i);
@@ -690,17 +683,13 @@ public class AgentLoop {
     static EventEnvelope failure(Throwable e) {
         var cause = (e instanceof CompletionException || e instanceof ExecutionException) && e.getCause() != null ?
                 e.getCause() : e;
-        int status;
-        if (cause instanceof AppException app) {
-            status = app.getStatus();
-        } else if (cause instanceof TimeoutException) {
-            status = 408;
-        } else if (cause instanceof IllegalArgumentException) {
-            // the platform's routing error: nothing serves the route any more
-            status = 404;
-        } else {
-            status = 500;
-        }
+        int status = switch (cause) {
+            case AppException app -> app.getStatus();
+            case TimeoutException ignored -> 408;
+            // the platform's routing error: no function serves the route now
+            case IllegalArgumentException ignored -> 404;
+            default -> 500;
+        };
         return new EventEnvelope().setStatus(status).setBody(String.valueOf(cause.getMessage()));
     }
 

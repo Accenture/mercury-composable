@@ -23,7 +23,7 @@ import org.platformlambda.core.models.EntryPoint;
 
 /**
  * Minimal entry point for the platform tests - this module is a library, so a test-scope application shell is
- * all the platform needs to boot and run the PreLoad scan that registers llm.run.
+ * all the platform needs to boot and run the PreLoad scan that registers {@code llm.run}.
  */
 @MainApplication
 public class TestApp implements EntryPoint {

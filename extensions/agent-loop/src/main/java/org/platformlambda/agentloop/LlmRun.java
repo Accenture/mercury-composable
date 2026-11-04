@@ -19,6 +19,7 @@
 package org.platformlambda.agentloop;
 
 import org.platformlambda.core.annotations.PreLoad;
+import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.system.PostOffice;
 import org.slf4j.Logger;
@@ -41,7 +42,7 @@ public class LlmRun implements TypedLambdaFunction<Map<String, Object>, Map<Stri
     @Override
     @SuppressWarnings("unchecked")
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
-            throws Exception {
+            throws AppException {
         var po = new PostOffice(headers, instance);
         var loop = new AgentLoop(new PlatformGateway(po), LoopSettings.Defaults.fromConfig(),
                 System::currentTimeMillis);

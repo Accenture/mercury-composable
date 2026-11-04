@@ -27,7 +27,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * The loop's routes through the platform, the path {@code graph.task} uses: a local route is a local call, and a
  * language pack's route ({@code llm.chat}, an MCP binding) is one Event-over-HTTP hop. The PostOffice is the
- * llm.run function's own, so every request issued on its worker thread carries the llm.run span as its parent.
+ * {@code llm.run} function's own, so every request issued on its worker thread carries the {@code llm.run} span as its
+ * parent.
  */
 public class PlatformGateway implements LoopGateway {
     /** The model turn's route, served by a language pack's LLM helper. */
