@@ -33,6 +33,20 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
    in every mode except `unattended` (where it goes back as "nobody to ask"), and the resume's decision `{id, answer}`
    is the call's result. Options that map to the graph's own branches stay a business decision node's.
 
+### Fixed
+
+1. **A flow with no callback is closed when it aborts.** A flow started by `FlowExecutor.launch` with no callback, or
+   by an event to `event.script.manager` with no reply-to address, has nobody to tell when it aborts, yet
+   `TaskExecutor.abortFlow` sent its error to that missing address. The send threw before `endFlow` ran, so a flow
+   that timed out, or that a missing task route aborted, stayed in the flow registry with its task references. A
+   timed-out flow then ran on when its slow task answered, and stayed open for good if the task never answered; a
+   flow aborted by a missing route stayed open until its ttl. A flow aborted by a task failure was closed only by a
+   second abort, which logged a misleading "Missing routing path" error. The abort now sends its error only when
+   there is a reply-to address, as the normal response already did, and otherwise logs that the flow aborted, with
+   its status and reason. `FlowAbortWithoutCallbackTest` fails without the fix on the timeout and the missing route.
+   **Upgrade note:** none; an aborted flow with no callback logs one error, `Flow <id>:<instance> aborted with status
+   <status> - <reason>`, in place of "Missing routing path".
+
 ---
 ## Version 4.12.28, 11/3/2026
 

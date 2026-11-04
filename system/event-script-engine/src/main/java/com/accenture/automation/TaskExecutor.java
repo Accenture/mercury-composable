@@ -306,14 +306,21 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             flowInstance.setResponded(true);
             Map<String, Object> result = getFlowErrorMap(status, message);
             flowInstance.setReference(ERROR, result);
-            EventEnvelope error = new EventEnvelope();
-            // restore the original correlation-ID to the calling party
-            error.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.internalCorrelationId)
-                 .setSpanId(parentSpanId);
-            error.setStatus(status).setBody(result);
-            PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
-                                            flowInstance.getTraceId(), flowInstance.getTracePath());
-            po.send(error);
+            if (flowInstance.replyTo != null) {
+                EventEnvelope error = new EventEnvelope();
+                // restore the original correlation-ID to the calling party
+                error.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.internalCorrelationId)
+                     .setSpanId(parentSpanId);
+                error.setStatus(status).setBody(result);
+                PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
+                                                flowInstance.getTraceId(), flowInstance.getTracePath());
+                po.send(error);
+            } else {
+                // A flow launched with no callback has no calling party, so this log is the record of the abort.
+                // Sending to a null address would throw before endFlow and leave the flow instance open.
+                log.error("Flow {}:{} aborted with status {} - {}",
+                        flowInstance.getFlow().id, flowInstance.id, status, message);
+            }
         }
         endFlow(flowInstance, false);
     }
