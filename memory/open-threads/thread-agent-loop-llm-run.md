@@ -43,7 +43,7 @@
   in every mode but `unattended`, where it goes back as "nobody to ask"; the resume's decision for it carries `answer`,
   returned to the model as the call's result - the transcript stays append-only and the packs do not change. **Ruling 39 (Eric,
   2026-11-04): no compaction in `llm.run`;** if a loop needs it, the provider's server-side compaction in the packs'
-  `llm.chat` behind a pack setting, deferred until a realistic loop reaches `cap: context` (docs PR #608). Next: step 3
+  `llm.chat` behind a pack setting, deferred until a realistic loop reaches `cap: context` (docs PR #608, MERGED 2026-11-04, squash `abe43450`). Next: step 3
   (async `graph.extension`, progress events), step 4 (the Python MCP binding), then the Rust catch-up from
   `llm-run-vectors.json`. Next after the merge: step 3 (async `graph.extension`, progress
   events) and step 4 (the Python MCP binding).
