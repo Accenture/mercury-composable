@@ -3419,10 +3419,15 @@ to avoid breaking the system unintentionally.</p>
 <td style="text-align: left;">Redis store for graph resume (atomic consume-on-retrieve)</td>
 <td style="text-align: left;">minigraph-state-redis</td>
 </tr>
+<tr>
+<td style="text-align: left;">llm.run</td>
+<td style="text-align: left;">The agent loop: model turns through <code>llm.chat</code>, tools by route</td>
+<td style="text-align: left;">agent-loop</td>
+</tr>
 </tbody>
 </table>
 <p>Routes from the last rows belong to <strong>opt-in extension modules</strong> (<code>minimalist-kafka</code>,
-<code>sync-over-async</code>, <code>minigraph-state-redis</code>) and the knowledge graph engine: they are reserved only
+<code>sync-over-async</code>, <code>minigraph-state-redis</code>, <code>agent-loop</code>) and the knowledge graph engine: they are reserved only
 when that module is on the classpath. <code>sync.prepare</code> and <code>sync.await</code> are the ready-made facade
 tasks an application wires into its own <code>sync-to-async</code> flow (see
 <a href="../event-script/syntax/">Event Script Syntax</a>); like every reserved route, do not register your own
