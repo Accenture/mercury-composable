@@ -78,7 +78,9 @@ decision would commit the project to:
    the turn, with its arguments, rides the outcome envelope (`status: approval`). The graph suspends, and on resume the
    loop takes the calls from the restored state and matches the decisions to them by call id. Separately, a **business
    decision** (`true`/`false`, or a 1-based integer) rides the verdict, and the graph's decision node routes it to a
-   suspension or onward. The product owner anticipates both at design time.
+   suspension or onward. The product owner anticipates both at design time. A choice that must return into the same
+   conversation is a question for a person: a catalog row with `ask: true` and no route, whose call waits and whose
+   resume carries the person's `answer` as the call's result (Eric, 2026-11-04).
 5. **State stays small, and the settings are on the node.** `model.*` holds the status, the decision, the usage, the
    references and any waiting calls. The settings are constant input mappings on the loop's node, each with a global
    default in `application.properties`:

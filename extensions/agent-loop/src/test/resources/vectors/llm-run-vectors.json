@@ -506,7 +506,7 @@
       "expect": {
         "error": {
           "status": 400,
-          "message": "tools[1].wirte is not a field of a tool row - the fields are name, description, input_schema, route, strict and write"
+          "message": "tools[1].wirte is not a field of a tool row - the fields are name, description, input_schema, route, strict, write and ask"
         }
       }
     },
@@ -572,7 +572,7 @@
       "expect": {
         "error": {
           "status": 400,
-          "message": "tools[1].approval is not a field of a tool row - the fields are name, description, input_schema, route, strict and write"
+          "message": "tools[1].approval is not a field of a tool row - the fields are name, description, input_schema, route, strict, write and ask"
         }
       }
     },
@@ -10814,6 +10814,3022 @@
         "error": {
           "status": 400,
           "message": "decisions[0].note must be text"
+        }
+      }
+    },
+    {
+      "name": "prep/ask-is-a-boolean",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": "yes"
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?"
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "tools[2].ask must be true or false"
+        }
+      }
+    },
+    {
+      "name": "prep/an-ask-row-has-no-route",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true,
+            "route": "issue.create"
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?"
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "tools[2] asks a person, so it has no route"
+        }
+      }
+    },
+    {
+      "name": "prep/an-ask-row-is-not-a-write",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true,
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?"
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "tools[2] asks a person, so it cannot be a write"
+        }
+      }
+    },
+    {
+      "name": "prep/a-row-without-a-route-must-ask",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            }
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?"
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "tools[2].route is missing"
+        }
+      }
+    },
+    {
+      "name": "ask/a-question-waits-for-a-person",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "name": "ask_officer",
+                "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 2,
+                      "maxItems": 5
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "tool_use",
+            "calls": [
+              {
+                "id": "c1",
+                "name": "ask_officer",
+                "input": {
+                  "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                  "options": [
+                    "Book it now: it is within the limit",
+                    "Hold it for the officer's review"
+                  ]
+                }
+              }
+            ],
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "model": "claude-opus-5-5",
+            "stop_reason": "tool_use",
+            "usage": {
+              "input_tokens": 900,
+              "output_tokens": 60,
+              "cache_creation_input_tokens": 800,
+              "cache_read_input_tokens": 0
+            },
+            "request_id": "req_1"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "approval",
+          "approval": {
+            "calls": [
+              {
+                "id": "c1",
+                "name": "ask_officer",
+                "input": {
+                  "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                  "options": [
+                    "Book it now: it is within the limit",
+                    "Hold it for the officer's review"
+                  ]
+                },
+                "wait": true,
+                "ask": true
+              }
+            ]
+          },
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 1,
+          "turns": 1,
+          "usage": {
+            "input_tokens": 900,
+            "output_tokens": 60,
+            "cache_creation_input_tokens": 800,
+            "cache_read_input_tokens": 0
+          },
+          "calls": [],
+          "model": "claude-opus-5-5"
+        }
+      }
+    },
+    {
+      "name": "ask/a-question-waits-in-auto-and-holds-the-turn",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "mode": "auto"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "name": "ask_officer",
+                "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 2,
+                      "maxItems": 5
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "tool_use",
+            "calls": [
+              {
+                "id": "c1",
+                "name": "ask_officer",
+                "input": {
+                  "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                  "options": [
+                    "Book it now: it is within the limit",
+                    "Hold it for the officer's review"
+                  ]
+                }
+              },
+              {
+                "id": "c2",
+                "name": "credit_limit",
+                "input": {
+                  "id": "C-1"
+                }
+              }
+            ],
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "model": "claude-opus-5-5",
+            "stop_reason": "tool_use",
+            "usage": {
+              "input_tokens": 900,
+              "output_tokens": 60,
+              "cache_creation_input_tokens": 800,
+              "cache_read_input_tokens": 0
+            },
+            "request_id": "req_1"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "approval",
+          "approval": {
+            "calls": [
+              {
+                "id": "c1",
+                "name": "ask_officer",
+                "input": {
+                  "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                  "options": [
+                    "Book it now: it is within the limit",
+                    "Hold it for the officer's review"
+                  ]
+                },
+                "wait": true,
+                "ask": true
+              },
+              {
+                "id": "c2",
+                "name": "credit_limit",
+                "route": "credit.limit.lookup",
+                "input": {
+                  "id": "C-1"
+                },
+                "wait": false
+              }
+            ]
+          },
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 1,
+          "turns": 1,
+          "usage": {
+            "input_tokens": 900,
+            "output_tokens": 60,
+            "cache_creation_input_tokens": 800,
+            "cache_read_input_tokens": 0
+          },
+          "calls": [],
+          "model": "claude-opus-5-5"
+        }
+      }
+    },
+    {
+      "name": "ask/unattended-has-nobody-to-ask",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "mode": "unattended"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "name": "ask_officer",
+                "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 2,
+                      "maxItems": 5
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "tool_use",
+            "calls": [
+              {
+                "id": "c1",
+                "name": "ask_officer",
+                "input": {
+                  "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                  "options": [
+                    "Book it now: it is within the limit",
+                    "Hold it for the officer's review"
+                  ]
+                }
+              }
+            ],
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "model": "claude-opus-5-5",
+            "stop_reason": "tool_use",
+            "usage": {
+              "input_tokens": 900,
+              "output_tokens": 60,
+              "cache_creation_input_tokens": 800,
+              "cache_read_input_tokens": 0
+            },
+            "request_id": "req_1"
+          }
+        },
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "name": "ask_officer",
+                "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 2,
+                      "maxItems": 5
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "results": [
+              {
+                "id": "c1",
+                "error": "'ask_officer' asks a person, and this run has nobody to ask"
+              }
+            ],
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "done",
+            "text": "Yes: C-1's limit is 5000 EUR, so the order of 4200 EUR fits.",
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 2,
+            "model": "claude-opus-5-5",
+            "stop_reason": "end_turn",
+            "usage": {
+              "input_tokens": 120,
+              "output_tokens": 40,
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 800
+            },
+            "request_id": "req_2"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "done",
+          "text": "Yes: C-1's limit is 5000 EUR, so the order of 4200 EUR fits.",
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 2,
+          "turns": 2,
+          "usage": {
+            "input_tokens": 1020,
+            "output_tokens": 100,
+            "cache_creation_input_tokens": 800,
+            "cache_read_input_tokens": 800
+          },
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "status": "refused"
+            }
+          ],
+          "model": "claude-opus-5-5"
+        }
+      }
+    },
+    {
+      "name": "ask/an-invalid-question-goes-back",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "name": "ask_officer",
+                "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 2,
+                      "maxItems": 5
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "tool_use",
+            "calls": [
+              {
+                "id": "c1",
+                "name": "ask_officer",
+                "input": {
+                  "question": ""
+                }
+              }
+            ],
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "model": "claude-opus-5-5",
+            "stop_reason": "tool_use",
+            "usage": {
+              "input_tokens": 900,
+              "output_tokens": 60,
+              "cache_creation_input_tokens": 800,
+              "cache_read_input_tokens": 0
+            },
+            "request_id": "req_1"
+          }
+        },
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "name": "ask_officer",
+                "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 2,
+                      "maxItems": 5
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "results": [
+              {
+                "id": "c1",
+                "error": "invalid input for 'ask_officer': input.options: is required; input.question: must be at least 1 characters"
+              }
+            ],
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "done",
+            "text": "Yes: C-1's limit is 5000 EUR, so the order of 4200 EUR fits.",
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 2,
+            "model": "claude-opus-5-5",
+            "stop_reason": "end_turn",
+            "usage": {
+              "input_tokens": 120,
+              "output_tokens": 40,
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 800
+            },
+            "request_id": "req_2"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "done",
+          "text": "Yes: C-1's limit is 5000 EUR, so the order of 4200 EUR fits.",
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 2,
+          "turns": 2,
+          "usage": {
+            "input_tokens": 1020,
+            "output_tokens": 100,
+            "cache_creation_input_tokens": 800,
+            "cache_read_input_tokens": 800
+          },
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "status": "invalid"
+            }
+          ],
+          "model": "claude-opus-5-5"
+        }
+      }
+    },
+    {
+      "name": "ask/resume-the-answer-is-the-call-result",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+        "turn": 1,
+        "approval": {
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "input": {
+                "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                "options": [
+                  "Book it now: it is within the limit",
+                  "Hold it for the officer's review"
+                ]
+              },
+              "wait": true,
+              "ask": true
+            },
+            {
+              "id": "c2",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup",
+              "input": {
+                "id": "C-1"
+              },
+              "wait": false
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "id": "c1",
+            "answer": 2
+          }
+        ],
+        "mode": "auto"
+      },
+      "turns": [
+        {
+          "before": [
+            {
+              "route": "credit.limit.lookup",
+              "body": {
+                "id": "C-1"
+              },
+              "reply": {
+                "id": "C-1",
+                "limit": 5000,
+                "currency": "EUR"
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "name": "ask_officer",
+                "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 2,
+                      "maxItems": 5
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "results": [
+              {
+                "id": "c1",
+                "output": 2
+              },
+              {
+                "id": "c2",
+                "output": {
+                  "id": "C-1",
+                  "limit": 5000,
+                  "currency": "EUR"
+                }
+              }
+            ],
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "done",
+            "text": "The order is held for your review.",
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 2,
+            "model": "claude-opus-5-5",
+            "stop_reason": "end_turn",
+            "usage": {
+              "input_tokens": 120,
+              "output_tokens": 40,
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 800
+            },
+            "request_id": "req_2"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "done",
+          "text": "The order is held for your review.",
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 2,
+          "turns": 1,
+          "usage": {
+            "input_tokens": 120,
+            "output_tokens": 40,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 800
+          },
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "status": "answered"
+            },
+            {
+              "id": "c2",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup",
+              "status": "ok"
+            }
+          ],
+          "model": "claude-opus-5-5"
+        }
+      }
+    },
+    {
+      "name": "ask/resume-a-text-answer",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+        "turn": 1,
+        "approval": {
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "input": {
+                "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                "options": [
+                  "Book it now: it is within the limit",
+                  "Hold it for the officer's review"
+                ]
+              },
+              "wait": true,
+              "ask": true
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "id": "c1",
+            "answer": "Hold it for the officer's review"
+          }
+        ]
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "name": "ask_officer",
+                "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 2,
+                      "maxItems": 5
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "results": [
+              {
+                "id": "c1",
+                "output": "Hold it for the officer's review"
+              }
+            ],
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "done",
+            "text": "The order is held for your review.",
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 2,
+            "model": "claude-opus-5-5",
+            "stop_reason": "end_turn",
+            "usage": {
+              "input_tokens": 120,
+              "output_tokens": 40,
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 800
+            },
+            "request_id": "req_2"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "done",
+          "text": "The order is held for your review.",
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 2,
+          "turns": 1,
+          "usage": {
+            "input_tokens": 120,
+            "output_tokens": 40,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 800
+          },
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "status": "answered"
+            }
+          ],
+          "model": "claude-opus-5-5"
+        }
+      }
+    },
+    {
+      "name": "ask/resume-a-question-and-a-write-in-one-turn",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+        "turn": 1,
+        "approval": {
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "input": {
+                "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                "options": [
+                  "Book it now: it is within the limit",
+                  "Hold it for the officer's review"
+                ]
+              },
+              "wait": true,
+              "ask": true
+            },
+            {
+              "id": "c2",
+              "name": "create_issue",
+              "route": "issue.create",
+              "input": {
+                "title": "Order of 4200 EUR for C-1",
+                "priority": "high"
+              },
+              "wait": true
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "id": "c1",
+            "answer": 2
+          },
+          {
+            "id": "c2",
+            "approved": true
+          }
+        ]
+      },
+      "turns": [
+        {
+          "before": [
+            {
+              "route": "issue.create",
+              "body": {
+                "title": "Order of 4200 EUR for C-1",
+                "priority": "high"
+              },
+              "reply": {
+                "key": "ABC-1"
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "name": "ask_officer",
+                "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 2,
+                      "maxItems": 5
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "results": [
+              {
+                "id": "c1",
+                "output": 2
+              },
+              {
+                "id": "c2",
+                "output": {
+                  "key": "ABC-1"
+                }
+              }
+            ],
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "done",
+            "text": "Opened ABC-1 and held the order.",
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 2,
+            "model": "claude-opus-5-5",
+            "stop_reason": "end_turn",
+            "usage": {
+              "input_tokens": 120,
+              "output_tokens": 40,
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 800
+            },
+            "request_id": "req_2"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "done",
+          "text": "Opened ABC-1 and held the order.",
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 2,
+          "turns": 1,
+          "usage": {
+            "input_tokens": 120,
+            "output_tokens": 40,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 800
+          },
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "status": "answered"
+            },
+            {
+              "id": "c2",
+              "name": "create_issue",
+              "route": "issue.create",
+              "status": "ok"
+            }
+          ],
+          "model": "claude-opus-5-5"
+        }
+      }
+    },
+    {
+      "name": "ask/resume-a-question-needs-an-answer",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+        "turn": 1,
+        "approval": {
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "input": {
+                "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                "options": [
+                  "Book it now: it is within the limit",
+                  "Hold it for the officer's review"
+                ]
+              },
+              "wait": true,
+              "ask": true
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "id": "c1",
+            "approved": true
+          }
+        ]
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "decisions[0] answers the question in call 'c1': {id, answer}"
+        }
+      }
+    },
+    {
+      "name": "ask/resume-an-answer-carries-no-note",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+        "turn": 1,
+        "approval": {
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "input": {
+                "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                "options": [
+                  "Book it now: it is within the limit",
+                  "Hold it for the officer's review"
+                ]
+              },
+              "wait": true,
+              "ask": true
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "id": "c1",
+            "answer": 1,
+            "note": "Fine."
+          }
+        ]
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "decisions[0] answers the question in call 'c1': {id, answer}"
+        }
+      }
+    },
+    {
+      "name": "ask/resume-a-tool-call-takes-no-answer",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+        "turn": 1,
+        "approval": {
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "input": {
+                "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                "options": [
+                  "Book it now: it is within the limit",
+                  "Hold it for the officer's review"
+                ]
+              },
+              "wait": true,
+              "ask": true
+            },
+            {
+              "id": "c2",
+              "name": "create_issue",
+              "route": "issue.create",
+              "input": {
+                "title": "Order of 4200 EUR for C-1",
+                "priority": "high"
+              },
+              "wait": true
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "id": "c1",
+            "answer": 1
+          },
+          {
+            "id": "c2",
+            "answer": 1
+          }
+        ]
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "decisions[1] must be {id, approved, note} with approved true or false"
+        }
+      }
+    },
+    {
+      "name": "ask/resume-a-decision-names-its-call",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+        "turn": 1,
+        "approval": {
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "input": {
+                "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                "options": [
+                  "Book it now: it is within the limit",
+                  "Hold it for the officer's review"
+                ]
+              },
+              "wait": true,
+              "ask": true
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "answer": 1
+          }
+        ]
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "decisions[0] must be {id, approved, note}, or {id, answer} for a question"
+        }
+      }
+    },
+    {
+      "name": "ask/resume-a-shown-question-keeps-its-mark",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+        "turn": 1,
+        "approval": {
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "input": {
+                "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                "options": [
+                  "Book it now: it is within the limit",
+                  "Hold it for the officer's review"
+                ]
+              },
+              "wait": true
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "id": "c1",
+            "approved": true
+          }
+        ]
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "approval.calls[0] ('c1') no longer matches the tool catalog or the mode"
+        }
+      }
+    },
+    {
+      "name": "ask/resume-unattended-after-a-question",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          },
+          {
+            "name": "ask_officer",
+            "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "question": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 2,
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "question",
+                "options"
+              ],
+              "additionalProperties": false
+            },
+            "ask": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+        "turn": 1,
+        "approval": {
+          "calls": [
+            {
+              "id": "c1",
+              "name": "ask_officer",
+              "input": {
+                "question": "How should the order of 4200 EUR for C-1 go ahead?",
+                "options": [
+                  "Book it now: it is within the limit",
+                  "Hold it for the officer's review"
+                ]
+              },
+              "wait": true,
+              "ask": true
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "id": "c1",
+            "answer": 1
+          }
+        ],
+        "mode": "unattended"
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "approval.calls[0] ('c1') no longer matches the tool catalog or the mode"
         }
       }
     }

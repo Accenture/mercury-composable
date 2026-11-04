@@ -269,6 +269,7 @@ input_schema   the schema advertised to the agent, and the one the loop validate
 route          the composable-function route
 strict         true | (absent)     grammar-constrained arguments
 write          true | (absent)     a tool that writes, section 7.1 (round 7; was approval: required)
+ask            true | (absent)     a question for a person, with no route and no write mark, section 7.3
 ```
 
 A route name such as `orders.search` cannot be an advertised name: the API refuses a dot. The row
@@ -333,7 +334,7 @@ The outcome envelope:
 status         done | approval | refusal | cap
 data | text    the outcome; data when the node declares an output schema
 decision       optional: true | false, or a 1-based integer for multiple options
-approval       when status = approval: {calls: [{id, name, route, input, wait}]}
+approval       when status = approval: {calls: [{id, name, route, input, wait, ask}]}
 cap            when status = cap: turns | deadline | context | max_tokens
 refusal        when status = refusal: {category}
 conversation   the reference to the transcript in the pack's store, never the transcript
@@ -341,7 +342,7 @@ turn           the conversation's turn count, for the next call's append check
 turns          the turns this run took
 usage          accumulated input, output, cache-creation and cache-read tokens
 calls          [{id, name, route, status}]   names, routes and outcomes; arguments stay off
-               (status: ok | error | unknown | invalid | refused)
+               (status: ok | error | unknown | invalid | refused | answered)
 model
 ```
 
@@ -447,6 +448,27 @@ investigate (llm.run) → triage (decision on status, then on decision)
 
 Every loop in the graph carries a counter in `model.*` that bounds it, and the bound exits to a
 person or a recovery node.
+
+When the options are the graph's own branches, this pattern is the whole answer: the output schema
+declares the options (an `enum` of the actions the graph can take) and the recommended `decision`, the
+graph suspends, and a decision node routes the person's choice, a 1-based integer.
+
+### 7.3 A question for a person (the ask row)
+
+Some choices must go back into the same conversation: the model drafts options and carries on with
+the one a person picks, with all it has learned so far. A conversation continues only from a waiting
+call, so the question is a call (Eric, 2026-11-04, ruling 38). The catalog holds a row with
+`ask: true` and no route; the model calls it with an input its schema shapes, a question and its
+options for example.
+
+- The call waits for a person in every mode except `unattended`, where it goes back to the model as
+  "nobody to ask". The turn is held as for any waiting call, and the approval block shows the call with
+  `ask: true` and no route.
+- Its decision is `{id, answer}`. The answer, text or any JSON value, goes back to the model as the
+  call's result, and the call log reports `answered`. A question's decision carries no `approved` or
+  `note`, and a tool call's decision carries no `answer`.
+- An ask row has no route and no write mark. The transcript stays append-only (a tool use answered by
+  a tool result), so the packs do not change.
 
 ## 8. Asynchronous by design
 
@@ -773,7 +795,7 @@ These lessons hold on any engine:
 2. **`llm.run` in Java** (`extensions/agent-loop`): the loop, the pre-flight check, the modes and
    approvals, the settings, the envelope. Tests run on a scripted `llm.chat` route, with no tokens
    spent. Shared loop vectors (scripted turns → expected route calls and envelope) carry the
-   behaviour to Rust. **Built 2026-11-03**: `llm-run-vectors.json` holds 81 loop cases and 29 schema
+   behaviour to Rust. **Built 2026-11-03**: `llm-run-vectors.json` holds 98 loop cases and 29 schema
    cases, and a platform test runs the route with real tool routes.
 3. **The graph engine**: `async=true` on `graph.extension`, with and without `for_each`, and its
    CompileGraph check (section 8.1). Then the return route carried from each entry into the
@@ -875,6 +897,10 @@ loop does not change for it.
     `approval: required`, so it says what the tool is and each mode is a policy over it. Each node's
     narrow catalog reduces the risk of misuse, and an agentic graph designed for automation should
     not stop for a person on every write. Supersedes ruling 21 and the default of ruling 14.
+38. A model that recommends options for a person to choose, and must carry on with the choice in
+    the same conversation, asks through a catalog row with `ask: true` and no route: the call waits in
+    every mode except `unattended`, and the resume's `{id, answer}` is the call's result (section 7.3).
+    Options that map to the graph's own branches stay the business decision of section 7.2.
 
 ## 15. Open questions
 

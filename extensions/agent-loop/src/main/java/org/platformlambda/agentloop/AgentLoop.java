@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
@@ -95,6 +96,9 @@ public class AgentLoop {
     static final String UNKNOWN = "unknown";
     static final String INVALID = "invalid";
     static final String REFUSED = "refused";
+    static final String ANSWERED = "answered";
+    static final String ASK = "ask";
+    static final String ANSWER = "answer";
     static final List<String> USAGE_KEYS = List.of("input_tokens", "output_tokens", "cache_creation_input_tokens",
             "cache_read_input_tokens");
     static final List<String> INPUTS = List.of(TOOLS, SYSTEM, PROMPT, MESSAGES, SCHEMA, MODEL, PARAMS,
@@ -122,11 +126,14 @@ public class AgentLoop {
         this.clock = clock;
     }
 
-    private enum Outcome { RUN, WAIT, ERROR }
+    private enum Outcome { RUN, WAIT, ERROR, ANSWER }
 
-    /** One call of a turn, planned: run it, wait for a person, or answer it with an error. */
+    /**
+     * One call of a turn, planned: run it, wait for a person, answer it with an error, or answer it with what a person
+     * said. {@code value} is the error text for ERROR and the person's answer for ANSWER.
+     */
     private record Planned(String id, String name, ToolCatalog.Row row, Object input, Outcome outcome,
-                           String label, String error) { }
+                           String label, Object value) { }
 
     /** The run's own state; the transcript is never part of it. */
     private static final class Run {
@@ -459,6 +466,13 @@ public class AgentLoop {
                     "invalid input for '" + name + "': " + ToolSchema.report(violations));
         }
         var mode = run.settings.mode();
+        if (row.ask()) {
+            // a question for a person waits in every mode that has a person to ask
+            return LoopSettings.UNATTENDED.equals(mode) ?
+                    new Planned(id, name, row, input, Outcome.ERROR, REFUSED,
+                            "'" + name + "' asks a person, and this run has nobody to ask") :
+                    new Planned(id, name, row, input, Outcome.WAIT, null, null);
+        }
         if (row.write() && LoopSettings.UNATTENDED.equals(mode)) {
             return new Planned(id, name, row, input, Outcome.ERROR, REFUSED,
                     "'" + name + "' is a write, and this run is unattended");
@@ -475,11 +489,14 @@ public class AgentLoop {
             var call = new LinkedHashMap<String, Object>();
             call.put(ID, p.id());
             call.put(NAME, p.name());
-            if (p.row() != null) {
+            if (p.row() != null && p.row().route() != null) {
                 call.put(ROUTE, p.row().route());
             }
             call.put(INPUT, p.input());
             call.put(WAIT, p.outcome() == Outcome.WAIT);
+            if (p.row() != null && p.row().ask()) {
+                call.put(ASK, true);
+            }
             calls.add(call);
         }
         var block = new LinkedHashMap<String, Object>();
@@ -517,7 +534,9 @@ public class AgentLoop {
     private static Map<String, Object> shownCall(Object item, int i) throws AppException {
         if (item instanceof Map && ((Map<String, Object>) item).get(ID) instanceof String
                 && ((Map<String, Object>) item).get(WAIT) instanceof Boolean
-                && ((Map<String, Object>) item).get(NAME) instanceof String) {
+                && ((Map<String, Object>) item).get(NAME) instanceof String
+                && (((Map<String, Object>) item).get(ASK) == null
+                    || ((Map<String, Object>) item).get(ASK) instanceof Boolean)) {
             return (Map<String, Object>) item;
         }
         throw shapeError(i);
@@ -539,16 +558,21 @@ public class AgentLoop {
         var name = (String) call.get(NAME);
         var row = run.catalog.get(name);
         var route = call.get(ROUTE);
-        boolean sameRoute = row == null ? route == null : row.route().equals(route);
+        boolean shownAsk = Boolean.TRUE.equals(call.get(ASK));
+        boolean sameRow = row == null ? route == null && !shownAsk :
+                Objects.equals(row.route(), route) && row.ask() == shownAsk;
         var fresh = evaluate(run, id, name, call.get(INPUT));
         boolean wait = Boolean.TRUE.equals(call.get(WAIT));
-        if (!sameRoute || wait != (fresh.outcome() == Outcome.WAIT)) {
+        if (!sameRow || wait != (fresh.outcome() == Outcome.WAIT)) {
             throw mismatch(i, id);
         }
         if (!wait) {
             return fresh;
         }
         var decision = decisions.get(id);
+        if (row.ask()) {
+            return new Planned(id, name, row, call.get(INPUT), Outcome.ANSWER, ANSWERED, decision.get(ANSWER));
+        }
         if (Boolean.TRUE.equals(decision.get(APPROVED))) {
             return new Planned(id, name, row, call.get(INPUT), Outcome.RUN, null, null);
         }
@@ -563,17 +587,18 @@ public class AgentLoop {
         var byId = new HashMap<String, Map<String, Object>>();
         for (int i = 0; i < given.size(); i++) {
             var where = "decisions[" + i + "]";
-            if (!(given.get(i) instanceof Map) || !(((Map<String, Object>) given.get(i)).get(ID) instanceof String id)
-                    || !(((Map<String, Object>) given.get(i)).get(APPROVED) instanceof Boolean)) {
-                throw new AppException(400, where + " must be {id, approved, note} with approved true or false");
+            if (!(given.get(i) instanceof Map<?, ?> item) || !(item.get(ID) instanceof String id)) {
+                throw new AppException(400, where + " must be {id, approved, note}, or {id, answer} for a question");
             }
             var decision = (Map<String, Object>) given.get(i);
-            var note = decision.get(NOTE);
-            if (note != null && !(note instanceof String)) {
-                throw new AppException(400, where + ".note must be text");
-            }
-            if (!waiting.containsKey(id)) {
+            var call = waiting.get(id);
+            if (call == null) {
                 throw new AppException(400, where + ".id '" + id + "' is not a call waiting for approval");
+            }
+            if (Boolean.TRUE.equals(call.get(ASK))) {
+                checkAnswer(where, id, decision);
+            } else {
+                checkApproval(where, decision);
             }
             if (byId.put(id, decision) != null) {
                 throw new AppException(400, where + ".id '" + id + "' is decided twice");
@@ -585,6 +610,24 @@ public class AgentLoop {
             }
         }
         return byId;
+    }
+
+    /** A question's decision is exactly {id, answer}: the person's answer is the call's result. */
+    private static void checkAnswer(String where, String id, Map<String, Object> decision) throws AppException {
+        if (decision.get(ANSWER) == null || decision.containsKey(APPROVED) || decision.containsKey(NOTE)) {
+            throw new AppException(400, where + " answers the question in call '" + id + "': {id, answer}");
+        }
+    }
+
+    /** A tool call's decision is {id, approved, note}: approved true or false, the note optional text. */
+    private static void checkApproval(String where, Map<String, Object> decision) throws AppException {
+        if (!(decision.get(APPROVED) instanceof Boolean) || decision.containsKey(ANSWER)) {
+            throw new AppException(400, where + " must be {id, approved, note} with approved true or false");
+        }
+        var note = decision.get(NOTE);
+        if (note != null && !(note instanceof String)) {
+            throw new AppException(400, where + ".note must be text");
+        }
     }
 
     /**
@@ -610,15 +653,18 @@ public class AgentLoop {
                     label = OK;
                     result.put(OUTPUT, capped(response.getBody(), run.settings.resultLimit()));
                 }
+            } else if (p.outcome() == Outcome.ANSWER) {
+                label = p.label();
+                result.put(OUTPUT, capped(p.value(), run.settings.resultLimit()));
             } else {
                 label = p.label();
-                result.put(ERROR, p.error());
+                result.put(ERROR, p.value());
             }
             results.add(result);
             var entry = new LinkedHashMap<String, Object>();
             entry.put(ID, p.id());
             entry.put(NAME, p.name());
-            if (p.row() != null) {
+            if (p.row() != null && p.row().route() != null) {
                 entry.put(ROUTE, p.row().route());
             }
             entry.put(STATUS, label);

@@ -25,9 +25,13 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
    with one decision per waiting call, and stops at `max_turns`, at its `timeout`, at a refusal or at a cut-off turn.
    It answers with an envelope a decision node routes on. Settings and their global defaults: `llm.run.max.turns`
    (10), `llm.run.result.limit` (65536), `llm.run.transcript.ttl` (7d), `llm.run.transcript.retention` (0) and
-   `llm.run.timeout` (25s, below the graph's default `model.ttl`). The shared vector file `llm-run-vectors.json` (81
+   `llm.run.timeout` (25s, below the graph's default `model.ttl`). The shared vector file `llm-run-vectors.json` (98
    loop cases, 29 schema cases) carries the behaviour to the Rust port. **Upgrade note:** none; nothing changes until
    an application adds the module, and `llm.run` is a reserved route name once it does.
+2. **A question for a person in the agent loop's catalog (RFC-0011, section 7.3).** A row with `ask: true` and no route
+   lets the model recommend options and carry on with the one a person picks, in the same conversation: the call waits
+   in every mode except `unattended` (where it goes back as "nobody to ask"), and the resume's decision `{id, answer}`
+   is the call's result. Options that map to the graph's own branches stay a business decision node's.
 
 ---
 ## Version 4.12.28, 11/3/2026

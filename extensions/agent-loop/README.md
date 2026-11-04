@@ -69,9 +69,10 @@ input[]=text(55s) -> timeout
 | `name` | The name the model sees: `^[a-zA-Z0-9_-]{1,128}$`, unique. A route name has a dot, so a row maps an API-safe name to it. |
 | `description` | What the model reads about the tool, written on the graph. Required. |
 | `input_schema` | The schema the model fills and the loop validates against, of `type` `object` (the vocabulary below). |
-| `route` | The composable-function route the loop calls. The model never sees it. |
+| `route` | The composable-function route the loop calls. The model never sees it. Required, except on a row that asks a person. |
 | `strict` | `true` asks the pack for grammar-constrained arguments. Optional. |
 | `write` | `true` marks a tool that writes; the node's mode decides whether it waits for a person. Optional. |
+| `ask` | `true` makes the row a question for a person, with no route (see below). Optional. |
 
 Any other field is refused, so a misspelt `write` can never let a write run. Before the first model turn the loop
 checks the whole catalog, and that every route is served: a local function, the mesh, or an Event-over-HTTP target.
@@ -122,13 +123,13 @@ once (default 50).
 | `status` | `done`, `approval`, `refusal` or `cap`. |
 | `text` or `data` | The outcome, when `done`: `data` when the node declares an output schema. |
 | `decision` | Lifted from `data.decision` when the output schema declares it. |
-| `approval` | When `status` is `approval`: `{calls: [{id, name, route, input, wait}]}`. |
+| `approval` | When `status` is `approval`: `{calls: [{id, name, route, input, wait, ask}]}`; `ask: true` marks a question. |
 | `cap` | When `status` is `cap`: `turns`, `deadline`, `context` or `max_tokens`. |
 | `refusal` | When `status` is `refusal`: `{category}`. |
 | `conversation`, `turn` | The transcript's reference and turn count, for a resume. |
 | `turns` | The model turns this call took. |
 | `usage` | The tokens this call spent: input, output, cache creation and cache read. |
-| `calls` | `[{id, name, route, status}]` for each call answered: `ok`, `error`, `unknown`, `invalid` or `refused`. No arguments. |
+| `calls` | `[{id, name, route, status}]` for each call answered: `ok`, `error`, `unknown`, `invalid`, `refused` or `answered`. No arguments. |
 | `model` | The model that served the turns. |
 
 A decision node routes on `status` first, then on `decision`. Only the loop's own machinery throws, so the node's
@@ -184,6 +185,32 @@ the call that runs is the call that was shown. An approved call and every call w
 goes back to the model as an error carrying the reviewer's note. A waiting call without a decision, a decision for any
 other id, an id decided twice, or a call that no longer matches the catalog or the mode throws with status 400.
 
+### A question for a person
+
+When the model should recommend options and a person chooses, and the model must carry on with the choice in the
+same conversation, the catalog holds a row that asks a person: `ask: true` and no route. The model calls it like any
+tool, with an input the row's schema shapes, for example a question and its options:
+
+```json
+{ "name": "ask_officer", "ask": true,
+  "description": "Ask the credit officer to choose one of the options you propose. The answer is the option's number.",
+  "input_schema": { "type": "object",
+                    "properties": { "question": { "type": "string" },
+                                    "options": { "type": "array", "items": { "type": "string" } } },
+                    "required": ["question", "options"] } }
+```
+
+The call waits for a person in every mode except `unattended`, where it goes back to the model as "nobody to ask", so
+the turn is held as for any waiting call and the approval block shows it with `ask: true` and no route. Its decision
+is `{id, answer}`: the person's answer, text or any JSON value, goes back to the model as the call's result, and the
+call log reports it as `answered`. A question's decision carries no `approved` or `note`, and a tool call's decision
+carries no `answer`. An ask row has no `write` mark.
+
+When the options are the actions the graph already has branches for, the business-decision pattern needs no question
+row: the output schema declares the options (an `enum`) and a recommended `decision`, the graph suspends, and a
+decision node routes the person's choice. A question row is for a choice that must return into the same
+conversation.
+
 ## Telemetry
 
 The `llm.run` span parents every `llm.chat` turn and every tool call. Its annotations carry the status, the turn
@@ -194,7 +221,7 @@ its log line.
 
 `LlmRunVectorsTest` runs the shared vector file `src/test/resources/vectors/llm-run-vectors.json` against the loop: a
 scripted `llm.chat` checks every request the loop sends and answers it, scripted tool routes answer the calls, and a
-clock the script advances drives the deadline. No token is spent. The file carries 81 loop cases and 29 schema cases,
+clock the script advances drives the deadline. No token is spent. The file carries 98 loop cases and 29 schema cases,
 and the Rust port catches up from it byte-identical. `LlmRunPlatformTest` runs `llm.run` through the platform:
 registered by the classpath scan, with real routes, a route that throws, and a route that times out.
 

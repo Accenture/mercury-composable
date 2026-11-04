@@ -32,10 +32,10 @@ import java.util.regex.Pattern;
 /**
  * A loop node's tool catalog (RFC-0011, section 5): the rows the model may call, each mapping an API-safe name to
  * a composable-function route. The catalog is graph data, certified with the graph, so it is checked whole before
- * the first model turn: a name the API would refuse, a duplicate, a schema outside the vocabulary, a write mark
- * that is not true or false, a field that is not a row's, or a route nothing serves. Any of them throws before a
- * token is spent - the loop's failure, unlike a name the model invents, which goes back to the model as an error
- * result.
+ * the first model turn: a name the API would refuse, a duplicate, a schema outside the vocabulary, a write or ask
+ * mark that is not true or false, a row that asks a person and has a route or a write mark, a field that is not a
+ * row's, or a route nothing serves. Any of them throws before a token is spent - the loop's failure, unlike a name
+ * the model invents, which goes back to the model as an error result.
  */
 public final class ToolCatalog {
     static final Pattern NAME = Pattern.compile("^[a-zA-Z0-9_-]{1,128}$");
@@ -45,7 +45,9 @@ public final class ToolCatalog {
     private static final String ROUTE = "route";
     private static final String STRICT = "strict";
     private static final String WRITE_KEY = "write";
-    private static final List<String> FIELDS = List.of(NAME_KEY, DESCRIPTION, INPUT_SCHEMA, ROUTE, STRICT, WRITE_KEY);
+    private static final String ASK_KEY = "ask";
+    private static final List<String> FIELDS = List.of(NAME_KEY, DESCRIPTION, INPUT_SCHEMA, ROUTE, STRICT, WRITE_KEY,
+            ASK_KEY);
 
     /**
      * One row of the catalog.
@@ -54,13 +56,14 @@ public final class ToolCatalog {
      * @param description the description written on the graph
      * @param inputSchema the schema as written, advertised to the model
      * @param schema the compiled schema the loop validates against
-     * @param route the composable-function route
+     * @param route the composable-function route, or null for a row that asks a person
      * @param strict grammar-constrained arguments, or null when the row does not say
      * @param write true when the tool writes: it waits for a person in mode write, and is refused in mode
      *              unattended
+     * @param ask true when the row asks a person: the call waits, and the person's answer is its result
      */
     public record Row(String name, String description, Map<String, Object> inputSchema, ToolSchema schema,
-                      String route, Boolean strict, boolean write) { }
+                      String route, Boolean strict, boolean write, boolean ask) { }
 
     private final Map<String, Row> rows = new LinkedHashMap<>();
 
@@ -91,7 +94,7 @@ public final class ToolCatalog {
             for (var key : new TreeSet<>(row.keySet())) {
                 if (!FIELDS.contains(key)) {
                     throw new IllegalArgumentException(where + "." + key + " is not a field of a tool row - " +
-                            "the fields are name, description, input_schema, route, strict and write");
+                            "the fields are name, description, input_schema, route, strict, write and ask");
                 }
             }
             var parsed = parseRow(where, row, reachable, catalog.rows.keySet());
@@ -117,14 +120,12 @@ public final class ToolCatalog {
         if (!schema.types().equals(List.of(ToolSchema.OBJECT))) {
             throw new IllegalArgumentException(where + "." + INPUT_SCHEMA + ".type must be 'object'");
         }
-        if (!(row.get(ROUTE) instanceof String route) || route.isBlank()) {
-            throw new IllegalArgumentException(where + ".route is missing");
+        var ask = row.get(ASK_KEY);
+        if (ask != null && !(ask instanceof Boolean)) {
+            throw new IllegalArgumentException(where + ".ask must be true or false");
         }
-        var target = route.trim();
-        if (!reachable.test(target)) {
-            throw new IllegalArgumentException(where + ".route '" + target + "' is not reachable - no local " +
-                    "function, Event-over-HTTP target or mesh route serves it");
-        }
+        boolean asks = Boolean.TRUE.equals(ask);
+        var target = asks ? noRoute(where, row) : route(where, row, reachable);
         var strict = row.get(STRICT);
         if (strict != null && !(strict instanceof Boolean)) {
             throw new IllegalArgumentException(where + ".strict must be true or false");
@@ -133,8 +134,31 @@ public final class ToolCatalog {
         if (write != null && !(write instanceof Boolean)) {
             throw new IllegalArgumentException(where + ".write must be true or false");
         }
+        if (asks && Boolean.TRUE.equals(write)) {
+            throw new IllegalArgumentException(where + " asks a person, so it cannot be a write");
+        }
         return new Row(name, description, (Map<String, Object>) row.get(INPUT_SCHEMA), schema, target,
-                (Boolean) strict, Boolean.TRUE.equals(write));
+                (Boolean) strict, Boolean.TRUE.equals(write), asks);
+    }
+
+    /** A row that asks a person has no route: the loop never calls anything for it. */
+    private static String noRoute(String where, Map<String, Object> row) {
+        if (row.containsKey(ROUTE)) {
+            throw new IllegalArgumentException(where + " asks a person, so it has no route");
+        }
+        return null;
+    }
+
+    private static String route(String where, Map<String, Object> row, Predicate<String> reachable) {
+        if (!(row.get(ROUTE) instanceof String route) || route.isBlank()) {
+            throw new IllegalArgumentException(where + ".route is missing");
+        }
+        var target = route.trim();
+        if (!reachable.test(target)) {
+            throw new IllegalArgumentException(where + ".route '" + target + "' is not reachable - no local " +
+                    "function, Event-over-HTTP target or mesh route serves it");
+        }
+        return target;
     }
 
     @SuppressWarnings("unchecked")
