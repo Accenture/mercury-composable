@@ -3342,7 +3342,8 @@ decision would commit the project to:</p>
      taking no <code>output[]</code>, which CompileGraph refuses. With <code>for_each</code>, it fans out in parallel: <code>concurrency</code> bounds the
      active runs, and the <code>for_each</code> suspension rules apply unchanged. The parent answers an HTTP 202 advice, and the
      subgraph notifies at its end, spanning days with suspend and resume. Event Script's deferred response
-     (<code>execution: response</code>) is the model for this.
+     (<code>execution: response</code>) is the model for this. Build plan step 3 built it in Java on 2026-11-04; the spec's
+     section 8.1 marks what building it settled.
    - <strong>Watched:</strong> progress events (<code>progress</code>, then a terminal <code>result</code> or <code>error</code>) carry <code>seq</code> per sender, <code>time</code>, <code>cid</code>,
      the graph and the node, and <code>llm.run</code>'s run, turn, tool and approval events. They never carry content. They go to the
      <strong>caller's return route</strong>:
