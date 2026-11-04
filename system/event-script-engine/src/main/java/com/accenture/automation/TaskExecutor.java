@@ -306,16 +306,40 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
             flowInstance.setResponded(true);
             Map<String, Object> result = getFlowErrorMap(status, message);
             flowInstance.setReference(ERROR, result);
-            EventEnvelope error = new EventEnvelope();
-            // restore the original correlation-ID to the calling party
-            error.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.internalCorrelationId)
-                 .setSpanId(parentSpanId);
-            error.setStatus(status).setBody(result);
-            PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
-                                            flowInstance.getTraceId(), flowInstance.getTracePath());
-            po.send(error);
+            if (flowInstance.replyTo == null) {
+                // A flow launched with no callback has no calling party, so this log is the record of the abort.
+                log.error("Flow {}:{} aborted with status {} - {}",
+                        flowInstance.getFlow().id, flowInstance.id, status, message);
+            } else {
+                sendAbort(flowInstance, status, message, result, parentSpanId);
+            }
         }
+        // the abort always ends the flow, or the instance and its task references would stay in memory
         endFlow(flowInstance, false);
+    }
+
+    /**
+     * Tell the calling party that the flow aborted.
+     * <p>
+     * A send that throws would skip endFlow, so a calling party that cannot be reached, such as a
+     * callback route that is no longer served, is logged with the abort instead.
+     */
+    private void sendAbort(FlowInstance flowInstance, int status, Object message, Map<String, Object> result,
+                           String parentSpanId) {
+        EventEnvelope error = new EventEnvelope();
+        // restore the original correlation-ID to the calling party
+        error.setTo(flowInstance.replyTo).setCorrelationId(flowInstance.internalCorrelationId)
+             .setSpanId(parentSpanId);
+        error.setStatus(status).setBody(result);
+        PostOffice po = new PostOffice(TaskExecutor.SERVICE_NAME,
+                                        flowInstance.getTraceId(), flowInstance.getTracePath());
+        try {
+            po.send(error);
+        } catch (IllegalArgumentException e) {
+            log.error("Flow {}:{} aborted with status {} - {}. Unable to tell {} - {}",
+                    flowInstance.getFlow().id, flowInstance.id, status, message, flowInstance.replyTo,
+                    e.getMessage());
+        }
     }
 
     @SuppressWarnings("unchecked")
