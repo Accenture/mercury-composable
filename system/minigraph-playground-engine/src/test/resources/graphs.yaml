@@ -117,3 +117,16 @@ graphs:
   # the date plugins: addDays and daysBetween in a data mapper - a due date from the payment terms and
   # the days between it and the payment date, in either order
   - 'unit-test-date-arithmetic-1'
+  # asynchronous graph.extension (RFC-0011 section 8.1): start a target and answer at once - a subgraph, a
+  # for_each fan-out bounded by concurrency, a flow; a target that does not exist and a refused input are a
+  # failure to start, routed to the node's exception handler; the err graphs are deliberately invalid
+  - 'unit-test-async-sub'
+  - 'unit-test-async-1'
+  - 'unit-test-async-2'
+  - 'unit-test-async-3'
+  - 'unit-test-async-4'
+  - 'unit-test-async-5'
+  - 'unit-test-async-6'
+  - 'unit-test-async-err1'
+  - 'unit-test-async-err2'
+  - 'unit-test-async-err3'

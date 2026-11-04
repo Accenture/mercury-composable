@@ -1,5 +1,6 @@
 flows:
   - 'graph-executor.yml'
   - 'flow-11.yml'
+  - 'async-recorder.yml'
 
 location: 'classpath:/flows/'
