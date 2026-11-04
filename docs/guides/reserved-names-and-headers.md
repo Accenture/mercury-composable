@@ -68,9 +68,10 @@ to avoid breaking the system unintentionally.
 | graph.resume                 | Restore workflow state and continue past the suspension point | minigraph        |
 | v1.redis.persist.model       | Redis store for graph suspend (SETEX with native expiry)      | minigraph-state-redis |
 | v1.redis.retrieve.model      | Redis store for graph resume (atomic consume-on-retrieve)     | minigraph-state-redis |
+| llm.run                      | The agent loop: model turns through `llm.chat`, tools by route | agent-loop |
 
 Routes from the last rows belong to **opt-in extension modules** (`minimalist-kafka`,
-`sync-over-async`, `minigraph-state-redis`) and the knowledge graph engine: they are reserved only
+`sync-over-async`, `minigraph-state-redis`, `agent-loop`) and the knowledge graph engine: they are reserved only
 when that module is on the classpath. `sync.prepare` and `sync.await` are the ready-made facade
 tasks an application wires into its own `sync-to-async` flow (see
 [Event Script Syntax](event-script/syntax.md)); like every reserved route, do not register your own

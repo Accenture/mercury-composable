@@ -43,6 +43,15 @@ this module depends on; sync-over-async itself only adds the Redis cross-pod ret
 This module is under active development (prototype). See the module's own `README.md` for the threading
 model and the virtual-thread-safety evidence for the blocking Lettuce sync API.
 
+## Agent loop (`llm.run`)
+
+The agent loop of RFC-0011: a graph node calls `llm.run` with a tool catalog fixed on the graph, and the loop runs
+model turns through a language pack's `llm.chat` and calls a composable-function route for each tool the model asks
+for. The node's mode governs the use of tools: `write` (the default) holds a tool marked as a write for a person,
+`auto` runs every call, `manual` holds every call and `unattended` refuses a marked write; the graph suspends and
+resumes around a held call. Adding the jar registers the route; the module links no provider SDK, no MCP client and
+no store client, and the transcript stays in the pack's store. See the module's own `README.md`.
+
 ## API playground
 
 The API playground is an example application to deploy multiple OpenAPI 3.0 yaml files to test
