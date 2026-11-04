@@ -46,9 +46,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -90,10 +91,9 @@ class EventOverHttpStreamTest extends TestBase {
         // it violates the envelope dialect in the exact ways the client must catch
         var util = Utility.getInstance();
         var config = AppConfigReader.getInstance();
-        int mockPort = util.str2int(config.getProperty("sse.mock.port", "58586"));
-        var latch = new CountDownLatch(1);
+        int mockPort = util.str2int(config.getProperty("sse.mock.port", "28586"));
         mockPeer = Platform.getInstance().getVertx().createHttpServer();
-        mockPeer.requestHandler(request -> {
+        var listening = mockPeer.requestHandler(request -> {
             HttpServerResponse response = request.response();
             response.putHeader("content-type", TEXT_EVENT_STREAM);
             response.setChunked(true);
@@ -129,8 +129,17 @@ class EventOverHttpStreamTest extends TestBase {
                     response.end();
                 }
             }
-        }).listen(mockPort).onSuccess(server -> latch.countDown());
-        assertTrue(latch.await(10, TimeUnit.SECONDS), "misbehaving-peer mock must start");
+        }).listen(mockPort);
+        // wait on the listen's own outcome: a refused bind fails at once and names its cause,
+        // where a wait on success alone expired with nothing in the log
+        try {
+            listening.toCompletionStage().toCompletableFuture().get(30, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+            fail("misbehaving-peer mock could not listen on port " + mockPort + " (sse.mock.port) - "
+                    + e.getCause(), e.getCause());
+        } catch (TimeoutException e) {
+            fail("misbehaving-peer mock reported no listen outcome on port " + mockPort + " in 30 seconds");
+        }
     }
 
     @AfterAll
