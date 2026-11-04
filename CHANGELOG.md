@@ -35,17 +35,19 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
 
 ### Fixed
 
-1. **A flow with no callback is closed when it aborts.** A flow started by `FlowExecutor.launch` with no callback, or
-   by an event to `event.script.manager` with no reply-to address, has nobody to tell when it aborts, yet
-   `TaskExecutor.abortFlow` sent its error to that missing address. The send threw before `endFlow` ran, so a flow
-   that timed out, or that a missing task route aborted, stayed in the flow registry with its task references. A
+1. **An aborted flow is closed when its caller cannot be told.** A flow started by `FlowExecutor.launch` with no
+   callback, or by an event to `event.script.manager` with no reply-to address, has nobody to tell when it aborts,
+   yet `TaskExecutor.abortFlow` sent its error to that missing address. A callback route that is no longer served,
+   as when the caller's instance has gone, failed the same way. The send threw before `endFlow` ran, so a flow that
+   timed out, or that a missing task route aborted, stayed in the flow registry with its task references. A
    timed-out flow then ran on when its slow task answered, and stayed open for good if the task never answered; a
    flow aborted by a missing route stayed open until its ttl. A flow aborted by a task failure was closed only by a
-   second abort, which logged a misleading "Missing routing path" error. The abort now sends its error only when
-   there is a reply-to address, as the normal response already did, and otherwise logs that the flow aborted, with
-   its status and reason. `FlowAbortWithoutCallbackTest` fails without the fix on the timeout and the missing route.
-   **Upgrade note:** none; an aborted flow with no callback logs one error, `Flow <id>:<instance> aborted with status
-   <status> - <reason>`, in place of "Missing routing path".
+   second abort, which logged a misleading "Missing routing path" or "Route ... not found" error. The abort now
+   sends its error only when there is a reply-to address, as the normal response already did, and logs the abort,
+   with its status and reason, when there is none or when the send fails; it then always ends the flow.
+   `FlowAbortWithoutCallbackTest` fails without the fix on the timeout and the missing route, for both causes.
+   **Upgrade note:** none; an aborted flow whose caller cannot be told logs one error, `Flow <id>:<instance> aborted
+   with status <status> - <reason>`, followed by `. Unable to tell <route> - <cause>` when the callback route is gone.
 
 ---
 ## Version 4.12.28, 11/3/2026

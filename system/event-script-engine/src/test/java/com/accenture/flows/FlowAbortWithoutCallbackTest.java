@@ -40,18 +40,21 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * An aborted flow is closed whether or not its caller supplied a callback.
+ * An aborted flow is closed whether or not its caller can be told.
  * <p>
- * A flow launched with no callback has no reply-to address. When it aborts, the task executor
- * must still end the flow instance, so the instance leaves the flow registry and its task
- * references are released. The probe function records the flow instance id, then fails, stalls
- * past the flow ttl, or passes on to a task whose function is not deployed.
+ * A flow launched with no callback has no reply-to address, and a callback route that is not
+ * served cannot take the error. Either way, when the flow aborts the task executor must still
+ * end the flow instance, so the instance leaves the flow registry and its task references are
+ * released. The probe function records the flow instance id, then fails, stalls past the flow
+ * ttl, or passes on to a task whose function is not deployed.
  */
 class FlowAbortWithoutCallbackTest extends TestBase {
     private static final String ORIGINATOR = "unit.test";
     private static final String FLOW_ID = "abort-without-callback-test";
     private static final String PROBE = "abort.probe";
     private static final String CALLBACK = "abort.probe.callback";
+    // a callback route that no function serves, as when the caller's instance has gone
+    private static final String GONE_CALLBACK = "abort.probe.callback.gone";
     private static final String TOKEN = "token";
     private static final String MODE = "mode";
     private static final String FAIL = "fail";
@@ -173,5 +176,23 @@ class FlowAbortWithoutCallbackTest extends TestBase {
         assertNotNull(error, "the callback must receive the timeout");
         assertEquals(408, error.get(STATUS), "the callback must receive status 408: " + error);
         assertTrue(closedInTime(id), "a flow that times out must be closed at its ttl");
+    }
+
+    @Test
+    void taskFailureWithGoneCallbackClosesTheFlow() throws Exception {
+        String id = launch(FAIL, 0, GONE_CALLBACK);
+        assertTrue(closedInTime(id), "a flow that aborts on a task failure must be closed when its callback is gone");
+    }
+
+    @Test
+    void timeoutWithGoneCallbackClosesTheFlow() throws Exception {
+        String id = launch(STALL, SHORT_TTL_MS, GONE_CALLBACK);
+        assertTrue(closedInTime(id), "a flow that times out must be closed at its ttl when its callback is gone");
+    }
+
+    @Test
+    void missingRouteWithGoneCallbackClosesTheFlow() throws Exception {
+        String id = launch(PASS, 0, GONE_CALLBACK);
+        assertTrue(closedInTime(id), "a flow that aborts on a missing route must be closed when its callback is gone");
     }
 }

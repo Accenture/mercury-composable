@@ -1,5 +1,6 @@
 #
-# A flow that aborts when no caller waits for its result (FlowAbortWithoutCallbackTest).
+# A flow that aborts when its caller cannot be told: no callback, or a callback route that is gone
+# (FlowAbortWithoutCallbackTest).
 #
 # The probe records the flow instance id from model.instance, then does what input.body.mode asks:
 # - fail:  throw, and the flow has no exception handler, so it aborts
@@ -8,7 +9,7 @@
 #
 flow:
   id: 'abort-without-callback-test'
-  description: 'Pin - an aborted flow is closed whether or not the caller supplied a callback'
+  description: 'Pin - an aborted flow is closed whether or not its caller can be told'
   ttl: 10s
 
 first.task: 'abort.probe'
