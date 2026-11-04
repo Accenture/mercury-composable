@@ -2757,6 +2757,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Reserved event header names">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#x-return-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        x-return-path - the return route for progress events
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3111,6 +3128,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Reserved event header names">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#x-return-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        x-return-path - the return route for progress events
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3424,6 +3458,16 @@ to avoid breaking the system unintentionally.</p>
 <td style="text-align: left;">The agent loop: model turns through <code>llm.chat</code>, tools by route</td>
 <td style="text-align: left;">agent-loop</td>
 </tr>
+<tr>
+<td style="text-align: left;">graph.progress.*</td>
+<td style="text-align: left;">The relay of one node of a watched graph run: its progress events to the caller</td>
+<td style="text-align: left;">minigraph</td>
+</tr>
+<tr>
+<td style="text-align: left;">graph.run.socket.reply</td>
+<td style="text-align: left;">The flow reply of a graph run started from a WebSocket session (<code>/ws/graph-run/{graph_id}</code>)</td>
+<td style="text-align: left;">minigraph</td>
+</tr>
 </tbody>
 </table>
 <p>Routes from the last rows belong to <strong>opt-in extension modules</strong> (<code>minimalist-kafka</code>,
@@ -3510,6 +3554,18 @@ of your function.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kd">var</span><span class="w"> </span><span class="n">po</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PostOffice</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span><span class="w"> </span><span class="n">instance</span><span class="p">);</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">String</span><span class="w"> </span><span class="n">businessCorrelationId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">po</span><span class="p">.</span><span class="na">getMyCorrelationId</span><span class="p">();</span><span class="w">   </span><span class="c1">// upstream correlation-id, propagated to this function</span>
 </code></pre></div>
+<h3 id="x-return-path"><code>x-return-path</code> - the return route for progress events<a class="headerlink" href="#x-return-path" title="Permanent link">&para;</a></h3>
+<p>An event that starts a graph run - a Kafka message, an Event-over-HTTP call, another flow - may name a composable
+function route in its <code>x-return-path</code> header (the run's <code>input.header</code>). The graph engine sends the run's progress
+events and its final result to that route only when the application declares it in
+<a href="../configuration-reference/#return-path-routes"><code>return.path.routes</code></a>; an undeclared route is ignored with one
+warning. On a REST entry the REST automation sets the return route itself, so an inbound HTTP <code>x-return-path</code> header
+has no effect there.</p>
+<p>The engine also passes <code>x-return-path</code> to the function of a <code>graph.task</code> node that carries <code>progress</code>, and to a
+synchronous subgraph: the value is the node's relay route (<code>graph.progress.*</code>), never the caller's route. A node
+without <code>progress</code> never sees the header, and a graph cannot map it (<code>header.x-return-path</code> fails CompileGraph).
+<code>llm.run</code> sends its own progress events to the route the header names. See
+<a href="../knowledge-graph/skills-reference/#progress">Progress events</a>.</p>
 <h2 id="reserved-http-header-names">Reserved HTTP header names<a class="headerlink" href="#reserved-http-header-names" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

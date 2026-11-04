@@ -1652,6 +1652,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#progress" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Progress events — watching a run
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3376,6 +3387,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#progress" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Progress events — watching a run
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4278,6 +4300,78 @@ structure (see <a href="../command-reference/#island">Island — the knowledge l
 <a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>connect person-name to mdm-profile with provider
 <a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>connect person-address to mdm-profile with provider
 </code></pre></div>
+<h2 id="progress">Progress events — watching a run<a class="headerlink" href="#progress" title="Permanent link">&para;</a></h2>
+<p>A caller that watches a run gets <strong>progress events</strong> while it goes on, then <strong>one terminal event</strong>: <code>result</code> (the
+run's response, a suspension's advice included) or <code>error</code>. A caller that waits for the result alone gets nothing
+new. The entry decides the transport:</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Return route</th>
+<th>Receives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>REST, a plain response</td>
+<td>the REST automation's response route</td>
+<td>the final result only, as before</td>
+</tr>
+<tr>
+<td>REST with <code>stream: true</code></td>
+<td>the request's ordered reply lane</td>
+<td>progress events, then the result, as server-sent events (<code>event:</code> names the type); a run that sends no progress answers single-shot</td>
+</tr>
+<tr>
+<td>WebSocket, <code>/ws/graph-run/{graph_id}</code></td>
+<td>the session</td>
+<td>one text frame per event; the session closes after the result (<a href="../../configuration-reference/#graph-websocket-enabled"><code>graph.websocket.enabled</code></a>)</td>
+</tr>
+<tr>
+<td>any event (Kafka, Event-over-HTTP, another flow)</td>
+<td>the route its <a href="../../reserved-names-and-headers/#x-return-path"><code>x-return-path</code></a> names</td>
+<td>progress events, then the result, when <a href="../../configuration-reference/#return-path-routes"><code>return.path.routes</code></a> declares the route</td>
+</tr>
+</tbody>
+</table>
+<p><strong>A node opts in with <code>progress={text}</code>.</strong> The engine sends <code>node.start</code> with the text when it reaches the node.
+On a <code>graph.task</code> node the function also gets <code>x-return-path</code> for its own events - <code>llm.run</code> sends <code>run.start</code>,
+<code>turn.start</code>, <code>turn.end</code>, <code>tool.start</code>, <code>tool.end</code>, <code>approval.wait</code> and <code>run.end</code> - and a synchronous
+<code>graph.extension</code> subgraph returns its events the same way, naming itself. A node without the property sends
+nothing and passes nothing, so a function that forwards its headers cannot leak a caller's return path.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>create node investigate
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>with type Task
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>with properties
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>skill=graph.task
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>task=llm.run
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>progress=Investigating the order
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>input[]=f:json(credit-tools.tools) -&gt; tools
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>input[]=input.body.question -&gt; prompt
+</code></pre></div>
+<p>Every event is one JSON object:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"progress"</span><span class="p">,</span><span class="w"> </span><span class="nt">"event"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tool.start"</span><span class="p">,</span><span class="w"> </span><span class="nt">"seq"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">"time"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-11-04T23:30:11.120Z"</span><span class="p">,</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="w">  </span><span class="nt">"cid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"6f1e0c2a8b4d4f7e9a3c5d2b1e0f4a7c"</span><span class="p">,</span><span class="w"> </span><span class="nt">"graph"</span><span class="p">:</span><span class="w"> </span><span class="s2">"credit-review"</span><span class="p">,</span><span class="w"> </span><span class="nt">"node"</span><span class="p">:</span><span class="w"> </span><span class="s2">"investigate"</span><span class="p">,</span>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"turn"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"credit_limit"</span><span class="p">,</span><span class="w"> </span><span class="nt">"route"</span><span class="p">:</span><span class="w"> </span><span class="s2">"credit.limit.lookup"</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+<ul>
+<li><code>seq</code> counts from 1 for each sender - the engine, or one <code>llm.run</code> call - which <code>graph</code> and <code>node</code> identify, so a
+  receiver orders a sender's events by <code>seq</code> and finds a gap the same way. A transport may not keep order.</li>
+<li><code>message</code> (on <code>node.start</code>, the property's text) and <code>data</code> carry names, routes, counts and statuses only: never
+  model output, a tool's input or a tool's result.</li>
+<li>The terminal event carries <code>status</code>, and <code>body</code> on a <code>result</code> or <code>message</code> on an <code>error</code>.</li>
+</ul>
+<p><strong>How it works.</strong> The function of a node with <code>progress</code> is given the node's <strong>relay</strong> (<code>graph.progress.*</code>, a
+private route of the run), not the caller's route: the relay names the sender's graph and node, frames each event
+for the transport, and is drained before the terminal event, so every event a sender sent arrives before the end.
+The engine sends and never waits: delivery belongs to the route (a Kafka wrapper gives durability), and a failing
+return route never fails the run. A run that ends without a terminal event of its own - a flow timeout - still
+ends its caller's channel with an <code>error</code>. A run that suspends sends its advice as the <code>result</code>; a resume is a new
+run, watched or not.</p>
+<p><strong>The generic return path.</strong> <code>x-return-path</code> names any composable function: a local function, a route another
+application serves over Event-over-HTTP, or a wrapper that publishes each event to a Kafka topic - the
+<code>kafka.progress.publisher</code> sample in <code>examples/kafka-demo</code> computes the partition from the event's <code>cid</code>, so one
+run's events stay in order on one partition. A new transport is a new wrapper function, never an engine change.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../command-reference/">MiniGraph command grammar</a> — the full command language, the
