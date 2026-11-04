@@ -57,6 +57,7 @@ decision would commit the project to:
 1. **The agent loop is engine-side function code, route `llm.run`**, in a new opt-in module `extensions/agent-loop`. Java
    first, then the Rust port catches up. It is not engine core, and it links no provider SDK, no MCP client and no store
    client. The function is not an agent — the model is — and the `llm.` prefix marks every node whose result is model output.
+   Build plan step 2 built it in Java on 2026-11-03; the spec's sections 4 to 6.1 mark what building it settled.
 2. **The model turn stays `llm.chat` in the language packs**, and it grows a loop contract. The pack keeps the transcript in
    an access-controlled store of its own (Redis first) and returns a reference to it, together with the calls normalized as
    `{id, name, input}`. The loop answers with `{id, output | error}` and the expected turn count. The pack builds the one

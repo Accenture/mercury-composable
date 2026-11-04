@@ -32,6 +32,7 @@
         <module>extensions/sync-over-async</module>
         <module>extensions/minigraph-state-redis</module>
         <module>extensions/distributed-cache</module>
+        <module>extensions/agent-loop</module>
 
         <!-- Core cloud libraries -->
         <module>connectors/core/cloud-connector</module>

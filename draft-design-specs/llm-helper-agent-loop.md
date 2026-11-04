@@ -2,6 +2,8 @@
 
 **Status:** DRAFT under **RFC-0011** (Open). Six review rounds, 2026-10-28 and 2026-10-29 (Eric), section 14.
 Build plan step 1 is built in both packs (2026-11-03), and sections 3.2 and 3.3 carry what building it settled.
+Build plan step 2 is built in Java (`extensions/agent-loop`, 2026-11-03), and sections 4 to 6.1 carry what building
+it settled, for review.
 **Reviewed and approved by Eric on 2026-11-03.** The promotion to an ADR is held until the end-to-end test
 from the engines to the language packs for AI SDLC is finished.
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
@@ -240,7 +242,12 @@ retries anything else through `RESET`.
 
 **The deadline.** `graph.task` bounds the call by the graph's `model.ttl` (30 seconds unless the
 graph sets it). The loop takes its deadline from the time left. It gives each `llm.chat` turn a
-`timeout_ms` below that, so the loop's own limit fires first and names itself.
+`timeout_ms` below that, so the loop's own limit fires first and names itself. *As built:* `graph.task`
+does not tell a function its time to live, so the loop's deadline is its own `timeout` input (section
+6.1), set below the node's `ttl`. The loop keeps one second back to answer, gives each turn the rest as
+`timeout_ms` and each round of tool calls the same bound, and starts neither with less than a second
+left. A turn that times out in the pack (408) is the cap `deadline`, not a failure. Step 3 may have
+`graph.task` pass its time to live instead.
 
 **No nesting.** A catalog row is a unit of work, never another agent loop. An agent is a graph node.
 A node that runs `llm.run` returns its outcome and decision. The next node evaluates them, and may
@@ -305,7 +312,14 @@ the graph. That is the certification boundary, and the answer to the concept's Q
 Before the first model turn, the loop checks that every name is valid and unique, every schema
 parses, every `approval` value is known, and every route is reachable (local, an Event-over-HTTP
 target, or the mesh). Any failure throws before a token is spent. This is the loop's failure, and
-it differs from an unknown name the model invents, which goes back to the model.
+it differs from an unknown name the model invents, which goes back to the model. *As built:* a field
+that is not a row's is refused too, so a misspelt `approval` can never let a write run; and an input
+schema is a closed subset of JSON Schema (the dialect the model is given, not the graph contract's
+OpenAPI 3.0 subset): `type` (a name or a list, `null` included), `properties`, `required`,
+`additionalProperties`, `items`, `enum`, `const`, the four bounds as numbers, `minLength`,
+`maxLength`, `pattern`, `minItems` and `maxItems`, with `title`, `description`, `default`,
+`examples` and `format` documentary. Any other keyword is refused, and so is one that cannot apply
+to the declared type. `llm.chat` itself must be reachable too (503).
 
 ## 6. What the graph sees
 
@@ -327,6 +341,7 @@ turn           the conversation's turn count, for the next call's append check
 turns          the turns this run took
 usage          accumulated input, output, cache-creation and cache-read tokens
 calls          [{id, name, route, status}]   names, routes and outcomes; arguments stay off
+               (status: ok | error | unknown | invalid | refused)
 model
 ```
 
@@ -351,6 +366,7 @@ engine's `application.properties`:
 | `result_limit` | `llm.run.result.limit=65536` | the largest tool result, in characters of JSON text |
 | `transcript_ttl` | `llm.run.transcript.ttl=7d` | how long a running or waiting transcript lives; at least the longest approval wait |
 | `retention` | `llm.run.transcript.retention=0` | how long a finished run's transcript is kept for audit; `0` deletes it at the end |
+| `timeout` | `llm.run.timeout=25s` | the loop's deadline, below the node's `ttl` (as built, section 4) |
 
 The loop passes `transcript_ttl` and `retention` to `llm.chat` on every turn (section 3.2). The
 deployment's audit policy is therefore one default in the engine's configuration, which a node
@@ -359,7 +375,12 @@ key.
 
 The other inputs describe the run: `system`, `prompt` or `messages`, `schema` (the output schema),
 `model` and `tools`. On a resume, they are `conversation`, `turn`, `approval` (from `model.*`) and
-`decisions` (from the resume request).
+`decisions` (from the resume request). *As built:* `params` carries the other `llm.chat` parameters
+(`max_tokens`, `effort`); the loop sets `params.timeout_ms`, and `params.model` is the `model` input's.
+Any other input is refused with the list of inputs, so a misspelt setting never falls back to its
+default. A resume drops `prompt` and `messages`, which the node still maps. `max_turns` bounds the
+conversation's turn count, so a resume spends from the same budget, and a `tool_use` turn at the
+limit stops before its calls run.
 
 ## 7. Approval: two kinds
 
@@ -745,7 +766,8 @@ These lessons hold on any engine:
 2. **`llm.run` in Java** (`extensions/agent-loop`): the loop, the pre-flight check, the modes and
    approvals, the settings, the envelope. Tests run on a scripted `llm.chat` route, with no tokens
    spent. Shared loop vectors (scripted turns → expected route calls and envelope) carry the
-   behaviour to Rust.
+   behaviour to Rust. **Built 2026-11-03**: `llm-run-vectors.json` holds 76 loop cases and 29 schema
+   cases, and a platform test runs the route with real tool routes.
 3. **The graph engine**: `async=true` on `graph.extension`, with and without `for_each`, and its
    CompileGraph check (section 8.1). Then the return route carried from each entry into the
    instance, `x-return-path` in the reserved-names guide, the declared return paths

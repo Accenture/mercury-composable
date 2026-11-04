@@ -10,7 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Nothing yet. Each change merged to `main` after v4.12.28 is listed here; it moves under its release heading when the version is cut.
+Each change merged to `main` after v4.12.28 is listed here; it moves under its release heading when the version is cut.
+
+### Added
+
+1. **The agent loop, `llm.run`, in the new opt-in module `extensions/agent-loop` (RFC-0011, build plan step 2).** A
+   graph node calls `llm.run` with `graph.task`, giving it a tool catalog held on the graph, a prompt and its
+   settings. The loop sends each model turn to `llm.chat`, served by the LLM helper of mercury-python or
+   mercury-nodejs (`extensions/llm-helper`, with a transcript store configured), and calls the route each tool's name
+   maps to. Before the first turn it checks the whole catalog and that every route is served, so a bad catalog fails
+   before a token is spent. It validates each input against the row's schema (a closed JSON Schema subset), holds a
+   marked write for a person (`mode`: `auto`, `manual` or `unattended`), resumes from the approval block with one
+   decision per waiting call, and stops at `max_turns`, at its `timeout`, at a refusal or at a cut-off turn. It
+   answers with an envelope a decision node routes on. Settings and their global defaults: `llm.run.max.turns` (10),
+   `llm.run.result.limit` (65536), `llm.run.transcript.ttl` (7d), `llm.run.transcript.retention` (0) and
+   `llm.run.timeout` (25s, below the graph's default `model.ttl`). The shared vector file `llm-run-vectors.json` (76
+   loop cases, 29 schema cases) carries the behaviour to the Rust port. **Upgrade note:** none; nothing changes until
+   an application adds the module, and `llm.run` is a reserved route name once it does.
 
 ---
 ## Version 4.12.28, 11/3/2026
