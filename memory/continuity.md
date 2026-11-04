@@ -582,7 +582,17 @@
   back. **Ninth round (IntelliJ, after #583-#588, 2026-10-24):** a
   method that returns null on one path flags every call chained on its result, so a test helper asserts the value non-null
   and returns it; a parameter that every caller passes the same value is dropped; `forEach(File::delete)` ignores the
-  result, so `Utility.cleanupDir`; S3398 - a private static method that only a nested class calls moves into that class. A pre-existing finding counts as new the next
+  result, so `Utility.cleanupDir`; S3398 - a private static method that only a nested class calls moves into that class. **Tenth
+  round (IntelliJ on the new `agent-loop` module, #605, 2026-11-04), after a pre-review pass that already applied the rules
+  above:** a `Boolean` is not a `Number` in Java, so `instanceof Number && !(instanceof Boolean)` is dead code (Python's guard,
+  where `bool` subclasses `int`; written four times); S1845 compares a class's FIELDS, so check every field against every
+  constant mechanically (lower-case both), not the pairs that come to mind - `types` and `TYPES` slipped past a pass that
+  renamed `minimum`; a null map returned as a sentinel is S1168, so `Optional`; an `instanceof` chain is a pattern `switch`,
+  with `when` guards for a two-value check; `keySet` plus `get` is `entrySet`; `setScale` takes a `RoundingMode`; a route name
+  such as `llm.chat` in javadoc reads to the grammar checker as a sentence end, so `{@code llm.chat}`. False positives: "class
+  never used" on a `@PreLoad` function (the classpath scan registers it), "envelop" for the noun, "resume" read as "résumé". A
+  refactor of an equality helper that the vector harness also compares with needs a fresh negative control, or a broken
+  helper passes every case. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-04 | uses: 19 | tier: active | origin: 2026-10-13-001452 -->

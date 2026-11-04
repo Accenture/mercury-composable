@@ -25,7 +25,8 @@
   record); a loop turn without a configured store is a 503; the loop fields need `tools` on `llm.chat` and are a 400 on
   `llm.stream`; another `params.model` than the pinned one is a 400; an ended or expired conversation is a 404 and a
   closed one a 409; a result that is not text is compact JSON. **Step 2 built 2026-11-04: PR #605** (`llm.run` in Java,
-  `extensions/agent-loop`; branch `feat/agent-loop-llm-run`, OPEN for Eric's review): the loop, the pre-flight check, the
+  `extensions/agent-loop`; branch `feat/agent-loop-llm-run`, commits `e98ed202` and `d855501d` - the IDE's findings, no
+  behaviour change; OPEN for Eric's review): the loop, the pre-flight check, the
   three modes with approval and resume, the settings (`llm.run.*`), the envelope; `llm-run-vectors.json` (76 loop cases,
   29 schema cases) for the Rust catch-up and a platform test; five defaults await Eric's ruling in the PR (a `timeout`
   input, since `graph.task` passes no time to live; the module's own JSON Schema subset; unknown inputs and row fields
