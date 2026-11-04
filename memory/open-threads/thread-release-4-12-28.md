@@ -4,4 +4,4 @@
   trailer, the title intact), the shape [[conv-squash-title-prefill-check]]'s eighth instance pointed to.
   origin: 2026-11-03-212127.
   → serves: vision-mercury-composable
-  <!-- id: release-4-12-28 | created: 2026-11-03 | last_used: 2026-11-03 | uses: 1 | tier: working | origin: 2026-11-03-192705 -->
+  <!-- id: release-4-12-28 | created: 2026-11-03 | last_used: 2026-11-03 | uses: 2 | tier: active | origin: 2026-11-03-192705 -->

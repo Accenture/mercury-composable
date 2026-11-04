@@ -24,9 +24,14 @@
   `cap` reply field (`max_tokens` or `context`); no server-side refusal fallback on a loop turn (the pinned, append-only
   record); a loop turn without a configured store is a 503; the loop fields need `tools` on `llm.chat` and are a 400 on
   `llm.stream`; another `params.model` than the pinned one is a 400; an ended or expired conversation is a 404 and a
-  closed one a 409; a result that is not text is compact JSON. Next: step 2 (`llm.run` in Java,
-  `extensions/agent-loop`).
+  closed one a 409; a result that is not text is compact JSON. **Step 2 built 2026-11-04: PR #605** (`llm.run` in Java,
+  `extensions/agent-loop`; branch `feat/agent-loop-llm-run`, OPEN for Eric's review): the loop, the pre-flight check, the
+  three modes with approval and resume, the settings (`llm.run.*`), the envelope; `llm-run-vectors.json` (76 loop cases,
+  29 schema cases) for the Rust catch-up and a platform test; five defaults await Eric's ruling in the PR (a `timeout`
+  input, since `graph.task` passes no time to live; the module's own JSON Schema subset; unknown inputs and row fields
+  refused; `max_turns` over the conversation; `params`). Next after the merge: step 3 (async `graph.extension`, progress
+  events) and step 4 (the Python MCP binding).
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
   README, the certification reports) are fixed by #601 (squash `72d43d06`) and mercury #401 (merge `e66ae513`), the packs' by mercury-python #48 (`463e37c`), all
   merged 2026-11-03: no live mention of the old folder is left in the family.
-  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-03 | uses: 11 | tier: working | origin: 2026-10-28-233011 -->
+  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-04 | uses: 12 | tier: working | origin: 2026-10-28-233011 -->

@@ -237,7 +237,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-03 | uses: 29 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-04 | uses: 31 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -358,7 +358,7 @@
   than given a longer timeout, so a cold start is recorded in the application log. **How to apply:** before changing what
   the scheduler sends the state resolver or the environment store, ask whether a field installation would have to change
   a schema to accept it; an additive key in `parameters` is the shape.
-  <!-- id: scheduler-resolver-contract-in-parameters | created: 2026-11-03 | last_used: 2026-11-03 | uses: 1 | tier: working | origin: 2026-11-03-190022 -->
+  <!-- id: scheduler-resolver-contract-in-parameters | created: 2026-11-03 | last_used: 2026-11-03 | uses: 2 | tier: active | origin: 2026-11-03-190022 -->
 
 ## Conventions
 
@@ -403,7 +403,7 @@
   pre-fills one trailer, or set the repository's squash-message default to the PR title and description, with the trailer
   once in the PR body's footer (the fourth instance shows a commit-based default never copies it).
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-03 | uses: 114 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-04 | uses: 118 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -430,7 +430,7 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-02 | uses: 53 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-04 | uses: 56 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -444,7 +444,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-10-30 | uses: 35 | tier: archive-candidate | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-11-03 | uses: 37 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast — the in-house codec writes the smallest integer width, so it holds since
   ADR-0028; use `util.str2int/str2long`). (Wording refreshed 2026-10-09 at invariant re-verify — substance unchanged.)
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -585,7 +585,7 @@
   result, so `Utility.cleanupDir`; S3398 - a private static method that only a nested class calls moves into that class. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-10-30 | uses: 17 | tier: archive-candidate | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-04 | uses: 19 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
@@ -623,7 +623,7 @@
   (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
   sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
-  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-10-30 | uses: 12 | tier: archive-candidate | origin: 2026-10-22-232342 -->
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-04 | uses: 14 | tier: active | origin: 2026-10-22-232342 -->
 
 - **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
   properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
@@ -649,7 +649,7 @@
   relative path the Mercury modules the lab uses, so Maven builds them from source instead of resolving the released
   version of the same number from `~/.m2`, and installs nothing. Its literal version joins the release version sweep.
   Before adding any module to the root reactor, ask whether it ships to the field's artifact repository.
-  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-10-30 | uses: 7 | tier: archive-candidate | origin: 2026-10-23-215957 -->
+  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-11-04 | uses: 9 | tier: active | origin: 2026-10-23-215957 -->
 
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
@@ -660,7 +660,7 @@
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]]. **Reactivated 2026-10-23:** a lab stays out of the root reactor, so it never
   needs a placeholder ([[conv-lab-outside-root-reactor]]).
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-11-03 | uses: 32 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-11-03 | uses: 33 | tier: active | origin: 2026-09-01-022524 -->
 
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
@@ -678,7 +678,7 @@
   Java is the reference implementation. The language packs catch up when functionality crosses from the engine to the
   packs (telemetry, AI SDLC and the like), so their number may trail Java further than Rust's does. Both packs' Visions
   were amended to say so the same day, settling the versioning threads the 2026-11-03 reviews raised there.
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-03 | uses: 47 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-03 | uses: 48 | tier: active | origin: 2026-09-16-003354 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
