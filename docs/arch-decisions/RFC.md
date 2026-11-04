@@ -97,7 +97,8 @@ decision would commit the project to:
      taking no `output[]`, which CompileGraph refuses. With `for_each`, it fans out in parallel: `concurrency` bounds the
      active runs, and the `for_each` suspension rules apply unchanged. The parent answers an HTTP 202 advice, and the
      subgraph notifies at its end, spanning days with suspend and resume. Event Script's deferred response
-     (`execution: response`) is the model for this.
+     (`execution: response`) is the model for this. Build plan step 3 built it in Java on 2026-11-04; the spec's
+     section 8.1 marks what building it settled.
    - **Watched:** progress events (`progress`, then a terminal `result` or `error`) carry `seq` per sender, `time`, `cid`,
      the graph and the node, and `llm.run`'s run, turn, tool and approval events. They never carry content. They go to the
      **caller's return route**:

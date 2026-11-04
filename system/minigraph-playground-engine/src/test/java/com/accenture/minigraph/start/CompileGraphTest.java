@@ -232,6 +232,27 @@ class CompileGraphTest {
     }
 
     @Test
+    void anAsynchronousExtensionIsValidated() {
+        // RFC-0011 section 8.1: 'async' starts a graph.extension target and returns at once - err1 'async' on
+        // graph.task, err2 a value that is neither true nor false, err3 an output mapping on an asynchronous node,
+        // which would read a result that never arrives
+        for (var id : List.of("unit-test-async-sub", "unit-test-async-1", "unit-test-async-2", "unit-test-async-5")) {
+            assertTrue(CompiledGraphs.graphExists(id), id + " must compile");
+        }
+        var expected = Map.of(
+                "unit-test-async-err1", "node start - 'async' is only applicable to a node with skill graph.extension",
+                "unit-test-async-err2", "node start - 'async' must be true or false",
+                "unit-test-async-err3", "node start - an asynchronous graph.extension returns nothing, " +
+                        "so it takes no 'output'");
+        for (var entry : expected.entrySet()) {
+            assertFalse(CompiledGraphs.graphExists(entry.getKey()), entry.getKey() + " must fail the gate");
+            var graph = importGraph(entry.getKey());
+            var ex = assertThrows(IllegalArgumentException.class, () -> GraphModelValidator.validate(graph));
+            assertEquals(entry.getValue(), ex.getMessage());
+        }
+    }
+
+    @Test
     void descriptorNodesMayCarryInputOutputWithoutASkill() {
         // Guards the narrowing: 'input'/'output' are NOT the signal. A Provider node uses 'input'
         // for its HTTP request shape and a Dictionary node uses 'output' for its projection, and

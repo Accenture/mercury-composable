@@ -110,6 +110,7 @@ public class GraphModelValidator {
         validateWorkingNodeHasSkill(graph);
         validateSuspendResume(graph);
         validateNodeTtl(graph);
+        validateAsyncExtension(graph);
         validateModelMetadataImmutability(graph);
         validateJsonPaths(graph);
         validateSchemas(graph);
@@ -457,6 +458,34 @@ public class GraphModelValidator {
                         + " - 'ttl' is only applicable to the suspend node or a node with skill "
                         + GraphExtension.ROUTE + ", " + GraphApiFetcher.ROUTE + ", " + GraphTask.ROUTE
                         + " or " + GraphJs.ROUTE);
+            }
+        }
+    }
+
+    /**
+     * The 'async' node parameter starts a {@code graph.extension} target and returns at once (RFC-0011 section
+     * 8.1). On any other skilled node it is rejected rather than silently ignored, and its value is true or false.
+     * An asynchronous node returns nothing, so an 'output' mapping on it would read a result that never
+     * arrives: the check is complete, because the mapping is on the node itself.
+     */
+    private static void validateAsyncExtension(MiniGraph graph) {
+        for (SimpleNode node : graph.getNodes()) {
+            var skill = node.getProperty(SKILL);
+            var async = node.getProperty(GraphExtension.ASYNC);
+            if (skill == null || async == null) {
+                continue;
+            }
+            if (!GraphExtension.ROUTE.equals(String.valueOf(skill))) {
+                throw new IllegalArgumentException(NODE_NAME + node.getAlias()
+                        + " - 'async' is only applicable to a node with skill " + GraphExtension.ROUTE);
+            }
+            var value = String.valueOf(async);
+            if (!"true".equals(value) && !"false".equals(value)) {
+                throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " - 'async' must be true or false");
+            }
+            if (GraphExtension.isAsync(node) && !textEntries(node.getProperty(OUTPUT)).isEmpty()) {
+                throw new IllegalArgumentException(NODE_NAME + node.getAlias()
+                        + " - an asynchronous graph.extension returns nothing, so it takes no 'output'");
             }
         }
     }

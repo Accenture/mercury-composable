@@ -32,6 +32,15 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
    lets the model recommend options and carry on with the one a person picks, in the same conversation: the call waits
    in every mode except `unattended` (where it goes back as "nobody to ask"), and the resume's decision `{id, answer}`
    is the call's result. Options that map to the graph's own branches stay a business decision node's.
+3. **An asynchronous `graph.extension` (RFC-0011, section 8.1, build plan step 3).** `async=true` starts the target, a
+   deployed graph or a flow, and continues to the next node at once, so a graph whose work runs longer than a caller
+   waits can answer with an advice (an HTTP 202) while the target runs. The target inherits the business correlation
+   ID and runs under its own TTL, or the node's `ttl` when it declares one; nothing comes back, so the deployment gate
+   refuses an `output[]` on the node, and refuses `async` on any other skill. `exception=` covers only a failure to
+   start: a target that does not exist, or an input the target graph's root `schema` refuses, checked before the run
+   starts. With `for_each` the node starts one run per element, `concurrency` bounding how many are active, and checks
+   every element's input before any run starts. The end of each run is logged with its status. **Upgrade note:** none;
+   a node without `async` runs as before.
 
 ---
 ## Version 4.12.28, 11/3/2026

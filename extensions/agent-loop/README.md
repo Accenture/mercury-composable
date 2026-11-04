@@ -229,5 +229,6 @@ registered by the classpath scan, with real routes, a route that throws, and a r
 mvn test -f extensions/agent-loop/pom.xml
 ```
 
-Not built yet (the build plan's later steps): progress events to a caller's return route, and the asynchronous
-`graph.extension` that runs a graph holding a loop.
+A graph holding a loop runs asynchronously: a `graph.extension` node with `async=true` starts it and continues at
+once, so the caller gets an advice while the loop runs (the MiniGraph skills reference, *Asynchronous*). Not built
+yet (the build plan's later steps): progress events to a caller's return route.

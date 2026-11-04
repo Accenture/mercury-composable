@@ -533,6 +533,18 @@ parallel:
   element has finished starts ONE asynchronous subgraph. Inside it, a synchronous `for_each` fans
   out, and the subgraph notifies at its end. The parent cannot join runs it does not wait for.
 
+*As built:* a node `ttl`, when declared, is the target's TTL; without one the target runs under a
+flow's own `ttl`, or for a deployed graph the TTL of the flow that runs graphs. A failure to start is
+a target that does not exist, a graph id or a `flow://` id alike (both staged as 404, so unlike a
+synchronous node an unknown flow is `exception=`-routable), or an input the target graph's root
+`schema` refuses (400): the node validates the input as the target's root would, before the run
+starts, because a refused input would otherwise surface only inside a run the caller was told had
+started. With `for_each` every element's input is validated before any run starts, so a refused
+element starts none. The node waits on each run in the background, for the run's TTL plus five
+seconds, to start the next element as one ends and to log each run's end with its status; nothing
+reaches the parent. `async` on another skill, a value other than `true` or `false`, and an `output[]`
+on an asynchronous node each fail CompileGraph.
+
 The parent graph continues to its end node, which maps the advice into the graph's output. The
 generic `/api/graph/{graph_id}` endpoint returns it unchanged:
 
@@ -811,7 +823,8 @@ These lessons hold on any engine:
    behaviour to Rust. **Built 2026-11-03**: `llm-run-vectors.json` holds 98 loop cases and 29 schema
    cases, and a platform test runs the route with real tool routes.
 3. **The graph engine**: `async=true` on `graph.extension`, with and without `for_each`, and its
-   CompileGraph check (section 8.1). Then the return route carried from each entry into the
+   CompileGraph check (section 8.1) - **built 2026-11-04** (`AsyncExtensionTest`, end to end through the
+   HTTP stack, and the gate's three refusals in `CompileGraphTest`). Then the return route carried from each entry into the
    instance, `x-return-path` in the reserved-names guide, the declared return paths
    (`return.path.routes`), the `progress` node property, and `llm.run`'s events (section 8.4). A
    sample wrapper that publishes progress to a Kafka topic shows the generic return path.
