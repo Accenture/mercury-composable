@@ -653,6 +653,21 @@
   scan; `cloud.connector.health` is a route, not a key. YAML cannot express the collision.
   <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-10-30 | uses: 4 | tier: archive-candidate | origin: 2026-10-23-215957 -->
 
+- **A test server's fixed port stays below 32768, and a wait on its listen covers failure too (2026-11-04, PR #607).**
+  `EventOverHttpStreamTest`'s mock peer listened on 58586 and waited on `onSuccess` alone. CI failed three times with
+  "misbehaving-peer mock must start" (2026-10-06 twice, 2026-11-04), and the failure was first read as a slow runner.
+  The cause was a refused bind. 58586 lies in the ephemeral range of Linux (32768-60999), macOS and Windows
+  (49152-65535), so the client side of one of the suite's many loopback connections can hold it. A refused bind
+  completes the listen's `Future` with a failure, which nothing waited on, so the wait expired and logged nothing.
+  **How to apply:** bind port 0 when the test can learn the port. When a static config must address the server (the
+  mock's `${sse.mock.port}` in `event-over-http.yaml`), use a fixed port below 32768 that no other test uses. Wait on
+  the listen's own outcome, for example `listen(p).toCompletionStage().toCompletableFuture().get(...)`, so a refused
+  bind fails at once with its cause. **Reading the evidence:** a timed wait that expires at its exact bound, on a
+  runner whose neighbouring classes ran at normal speed, more likely saw a callback that never fired than a slow one.
+  A macOS negative control must hold the port on `::` with `IPV6_V6ONLY=0`: a listener on `127.0.0.1` or on IPv4
+  `0.0.0.0` alone lets Vert.x bind anyway.
+  <!-- id: conv-test-fixed-port-outside-ephemeral | created: 2026-11-04 | last_used: 2026-11-04 | uses: 1 | tier: working | origin: 2026-11-04-031520 -->
+
 - **A lab or dev-machine tool stays out of the root reactor (Eric, 2026-10-23).** The field's static code analysis scans
   the modules the root `pom.xml` declares, registers each one, and keeps scanning it for good. A module listed there
   becomes a long-term field scan target, and removing it later needs a placeholder pom, the reason the Spring Boot 3
