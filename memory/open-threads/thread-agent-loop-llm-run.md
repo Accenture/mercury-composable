@@ -48,15 +48,17 @@
   on `graph.extension` starts the target and continues; the node's `ttl` or the target's own TTL; a failure to start (an
   unknown graph or flow, 404; an input the target's root schema refuses, 400, checked before any run) routes to
   `exception=`; `for_each` with a sliding `concurrency` window; CompileGraph refuses `async` elsewhere, a non-boolean
-  value and an `output[]` on an async node. **Step 3b built 2026-11-04: PR #611** (branch
-  `feat/graph-progress-events`, commit `6d261db0`; spec sections 8.2 and 8.4 *As built*; Eric: the WebSocket entry is
-  in 3b): progress events, then a terminal `result` or `error`, on a REST `stream: true` lane, the new WebSocket entry
+  value and an `output[]` on an async node. **Step 3b built 2026-11-04: PR #611, MERGED 2026-11-04 05:03Z, squash
+  `889c6f9d`** (spec sections 8.2 and 8.4 *As built*; Eric: the WebSocket entry is in 3b) - **step 3 COMPLETE**: progress events, then a terminal `result` or `error`, on a REST `stream: true` lane, the new WebSocket entry
   `/ws/graph-run/{graph_id}` (off by default), or a declared `x-return-path` (`return.path.routes`, prefix `*`);
   `progress=<text>` on a node; a node's function and a synchronous subgraph get the node's private relay
   (`graph.progress.*`), drained before the terminal event; `llm.run`'s seven events (105 loop vectors); the HTTP edge
-  drops a late single-shot reply to a started stream; `kafka.progress.publisher` in kafka-demo. Next: the merge of
-  #611, which completes step 3; step 4 (the Python MCP binding), then the Rust catch-up from `llm-run-vectors.json`.
+  drops a late single-shot reply to a started stream; `kafka.progress.publisher` in kafka-demo. Next: step 4 (the
+  Python MCP binding, then Node), then step 5, the Rust catch-up from `llm-run-vectors.json` and the graph features
+  (#609, #611) - including the Playground help pages they changed, released to the Java target only, so the Rust
+  catch-up runs `npm run release:rust` ([[playground-webapp-single-source]]) - then the end-to-end test and the ADR
+  promotion.
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
   README, the certification reports) are fixed by #601 (squash `72d43d06`) and mercury #401 (merge `e66ae513`), the packs' by mercury-python #48 (`463e37c`), all
   merged 2026-11-03: no live mention of the old folder is left in the family.
-  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-04 | uses: 13 | tier: working | origin: 2026-10-28-233011 -->
+  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-04 | uses: 16 | tier: working | origin: 2026-10-28-233011 -->

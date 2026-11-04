@@ -100,12 +100,14 @@
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-11-03 | through 2026-11-03-010235.md (CADENCE — 11 sessions since 2026-10-29-012834:
-  `refresh-metadata` refreshed 26 footers, net tier changes 14 (9 → archive-candidate, 2 → active, 3 → archived); archived 1
-  faded fact (`live-invocation-observers`) and KEPT `snyk-retired-manifest-placeholders` as a declaration gap (the 4.12.27
-  release sweep, 2026-10-30-225722, relied on it undeclared); swept 2 completed threads; five closed stubs condensed;
-  archive-verify pass; invariants not due (33 of 40); stalled threads none; contradictions none; the RFC-0011 Blueprint drift
-  carried forward to its promotion; live facts 46 → 43, lines 798 → 783. Smoke test not run.)
+- **last_review:** 2026-11-04 | through 2026-11-04-050444.md (CADENCE — 13 sessions since 2026-11-03-010235, run after #611
+  merged as Eric chose: `refresh-metadata` refreshed 11 footers, tier changes 5 (all archive-candidate → active); archived 1
+  faded fact (`minimalist-jsonpath-rfc-9535`, ADR-0031 keeps the decision) and KEPT `playground-webapp-single-source` and
+  `conv-library-pins-are-direct-dependencies` as declaration gaps (#609/#611's Java-only help release; #605's new pom with
+  the pins); swept 5 completed threads; archive-verify pass; invariants DUE (47 of 40) → [[reverify-invariants-20261104]]
+  raised; stalled threads none; contradictions none; live facts 46 → 41. Smoke test not run.)
+  Prior: 2026-11-03 | through 2026-11-03-010235.md (CADENCE — refreshed 26 footers, tier changes 14; archived 1 faded fact and
+  KEPT `snyk-retired-manifest-placeholders` as a declaration gap; swept 2 threads; live facts 46 → 43, lines 798 → 783)
   Prior: 2026-10-29 | through 2026-10-29-012834.md (ON COMMAND + CADENCE — refreshed 26 footers, tier changes 14; reactivated
   `conv-ports-adopt-java-release-number`; archived 0; swept 5 threads; one stale statement corrected; live facts 46 → 42)
   Prior: 2026-10-24 | through 2026-10-24-030134.md (CADENCE — refreshed 20 footers, tier changes 15; archived 1 faded fact; swept 0
@@ -136,7 +138,10 @@
   in the nature of the work and where execution goes; AI gains a **run-time participant** role. **The north star MOVED: the
   next invariant re-verify must check the 2026-09-17 text, not the 2026-06-20 one.** [[bp-agent-orchestration]] is Track 2's
   Blueprint gap; Track 1 and the collaboration foundation are delivered.
-- **last_invariant_check:** 2026-10-22 | 2026-10-22-234147.md (COMPLETE — Eric walked the 19 `core` facts and the Vision — **the 2026-09-17
+- **last_invariant_check:** 2026-11-04 | 2026-11-04-050444.md (PROMPTED — the 2026-11-04 review raised
+  [[reverify-invariants-20261104]] for Eric's walk of the 19 `core` facts and the Vision; the stamp reads COMPLETE once he
+  confirms or supersedes each.)
+  Prior: 2026-10-22 | 2026-10-22-234147.md (COMPLETE — Eric walked the 19 `core` facts and the Vision — **the 2026-09-17
   two-track text** — against live-tree evidence at the 2026-10-22 review's gate [[reverify-invariants-20261022]]; ALL CONFIRMED, Java 21 still
   the toolchain until the field runs Java 25; two wordings refreshed: `event-api-local-routes-only` (the routes it reaches itself, the mesh
   included; never a relay through its own Event-over-HTTP map) and the Vision's Type line (the Rust port catches up with Java, the reference
@@ -237,7 +242,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-04 | uses: 32 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-04 | uses: 36 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -267,7 +272,7 @@
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-10-28 | uses: 35 | tier: archive-candidate | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-11-04 | uses: 36 | tier: active | origin: 2026-09-18-174943 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -331,23 +336,7 @@
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-10-24 | uses: 24 | tier: archive-candidate | origin: 2026-10-02-175751 -->
-
-- **JSONPath is RFC 9535 on both engines: Java's `minimalist-jsonpath` replaces Jayway JsonPath and Rust keeps `serde_json_path`;
-  a path outside the standard is refused by name before it runs, and a substituted value is checked where it lands (Eric's rulings,
-  2026-10-22; RFC-0010 promoted to ADR-0031; PR #579 squash `68637dd6`, mercury #391, #392 and #393).** **Why:** `json-smart`
-  2.6.0's advisory has no fix and json-path calls its parser directly; the engines had two grammars, and Rust hid a parse error as a
-  null; and a value inserted as written could change a query. **What a change must keep:** (1) Mercury's two rules, the result shape
-  by kind of path and a hyphen in a dotted name, identical on both engines; (2) a flow drops the task and a graph is rejected, the
-  compilers' own units; (3) JSONPath stands only in a data mapping's source, a simple plugin's `$` argument (the splitter keeps it
-  whole) and a data dictionary's default, never inside a `{reference}`; (4) substitution first, then the checks by site - a
-  dot-bracket key path in a name, an integer in an index, escaped in a literal, and bare in a filter a literal, Event Script keeping
-  text that is already one literal as written (numeric text compares as a number). **The guard** for any change is the compliance
-  suite on both engines plus the shared `jsonpath-source-vectors.json`, byte-identical. **Gotchas met on the way:** a partial
-  `-am test` run fails the AI contract snapshot (no packaged `pom.properties`), so verify with the reactor; the Java and Rust test
-  runs collide on port 8090. Applies [[clean-knowledge-design-over-engine-coverage]] (the whole `$` surface, one rule per site);
-  extends [[conv-library-pins-are-direct-dependencies]] (the dependency left instead of being pinned). (ADR-0031)
-  <!-- id: minimalist-jsonpath-rfc-9535 | created: 2026-10-22 | last_used: 2026-10-30 | uses: 4 | tier: archive-candidate | origin: 2026-10-22-175132 -->
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-11-04 | uses: 25 | tier: active | origin: 2026-10-02-175751 -->
 
 - **The mini-scheduler's state-resolver contract is live in the field, so a change rides inside the existing `parameters`,
   never a new header or field, and a parameter key that starts with `_` is the system's (Eric, 2026-11-03).** The field
@@ -408,7 +397,7 @@
   Tenth instance (2026-11-04): PR #610's squash `89ffe5d9`, a two-commit PR that a side session opened, carries two
   `Co-Authored-By` lines, one per commit; the title held. A side session's PR needs the same handoff rule.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-04 | uses: 118 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-04 | uses: 122 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -435,7 +424,7 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-04 | uses: 57 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-04 | uses: 61 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -549,7 +538,7 @@
   `httpcore5.version`, equal to Boot 4.1.2's managed 5.4.4, was retired from its eight poms.
   Relates
   [[conv-template-version-sweep]] (the other reactor-wide sweep).
-  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-10-30 | uses: 9 | tier: archive-candidate | origin: 2026-10-12-221919 -->
+  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-11-04 | uses: 10 | tier: active | origin: 2026-10-12-221919 -->
 
 - **The field's Sonar gate judges NEW code, and five of its heuristics catch prose and framework idioms - write for them (the fifth
   Sonar round, 2026-10-12; the earlier rounds are the archived `thread-sonar-quality-gate-4.6.2`, `thread-sonar-4-9-1-field-rejection`,
@@ -600,7 +589,7 @@
   helper passes every case. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-04 | uses: 20 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-04 | uses: 24 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
@@ -625,7 +614,7 @@
   the ignored `dist/`, which compares with the committed bundle (`public/assets`, `template/playground.html`) and with the Rust
   copy, maps excluded, without touching a tracked file; both were byte-identical. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
   only the entry page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-10-26 | uses: 32 | tier: archive-candidate | origin: 2026-10-02-015208 -->
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-04 | uses: 34 | tier: active | origin: 2026-10-02-015208 -->
 
 - **A reactor build rewrites every example's `target/*.jar` in place, so an app running from one fails at the next class it loads
   for the first time (2026-10-22).** `mvn verify` repackages `examples/*/target/<name>-<version>.jar`. A JVM running from that jar
@@ -638,7 +627,7 @@
   (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
   sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
-  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-04 | uses: 14 | tier: active | origin: 2026-10-22-232342 -->
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-04 | uses: 17 | tier: active | origin: 2026-10-22-232342 -->
 
 - **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
   properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
@@ -653,7 +642,7 @@
   or its child. To audit the tree, collect the keys of every `.properties` file, every `getProperty` and `@OptionalService`
   literal and every configuration-reference heading, then list each key that prefixes another. The 2026-10-23 log has the
   scan; `cloud.connector.health` is a route, not a key. YAML cannot express the collision.
-  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-10-30 | uses: 4 | tier: archive-candidate | origin: 2026-10-23-215957 -->
+  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-11-04 | uses: 5 | tier: active | origin: 2026-10-23-215957 -->
 
 - **A test server's fixed port stays below 32768, and a wait on its listen covers failure too (2026-11-04, PR #607).**
   `EventOverHttpStreamTest`'s mock peer listened on 58586 and waited on `onSuccess` alone. CI failed three times with

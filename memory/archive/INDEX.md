@@ -277,3 +277,9 @@
 - live-invocation-observers — Live invocation observers bracket every composable-function hop for an APM agent's code-le… — faded — 2026-Q4.md
 - dynatrace-oneagent-field-experiment — Dynatrace OneAgent compatibility (→ RFC-0009 → ADR-0032; serves [[vision-mercury-composabl… — completed thread swept (older than archive_window) — 2026-Q4.md
 - companion-refusal-flag-rust-twin — The Rust engine's companion endpoint reads the engine's refusal flag (the twin of PR #586;… — completed thread swept (older than archive_window) — 2026-Q4.md
+- minimalist-jsonpath-rfc-9535 — JSONPath is RFC 9535 on both engines: Java's `minimalist-jsonpath` replaces Jayway JsonPat… — faded — 2026-Q4.md
+- date-plugins-rust-twin — The Rust engine gains `f:addDays` and `f:daysBetween` (the twin of #591; closed 2026-10-24… — faded — 2026-Q4.md
+- minimalist-kafka-dlq-rulings — minimalist-kafka's dead-letter path: two rulings (raised and closed 2026-10-30, Eric's rul… — faded — 2026-Q4.md
+- minimalist-kafka-guide-rust-twin — The Rust port caught up with the minimalist-kafka guide gaps and the dead-letter key (done… — faded — 2026-Q4.md
+- minimalist-kafka-schema-cache-ruling — Is `minimalist-kafka`'s ManagedCache in front of Confluent's registry client needed? Ruled… — faded — 2026-Q4.md
+- release-4-12-26 — Release v4.12.26 — SHIPPED 2026-10-26 on both engines: JSONPath to RFC 9535, live invocati… — faded — 2026-Q4.md
