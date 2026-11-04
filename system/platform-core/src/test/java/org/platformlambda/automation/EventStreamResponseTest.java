@@ -156,6 +156,17 @@ class EventStreamResponseTest extends TestBase {
     }
 
     @Test
+    void aSingleShotReplyAfterTheHeadIsDroppedAndTheStreamGoesOn() throws IOException, InterruptedException {
+        var response = get("/api/hello/stream?mode=single-after-stream", "text/event-stream");
+        assertEquals(200, response.statusCode());
+        List<String> body = plain(collect(response));
+        assertTrue(body.contains("data: one"), body.toString());
+        assertTrue(body.contains("data: two"), "the stream goes on after the dropped reply: " + body);
+        assertTrue(body.contains("event: done"), body.toString());
+        assertFalse(body.toString().contains("late"), "a single-shot reply cannot write to a started stream");
+    }
+
+    @Test
     void failureBeforeFirstSegmentIsANormalHttpError() throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(URI.create(base + "/api/hello/stream?mode=error-first"))
                 .timeout(Duration.ofSeconds(20)).header("Accept", "application/json").build();

@@ -41,6 +41,27 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
    starts. With `for_each` the node starts one run per element, `concurrency` bounding how many are active, and checks
    every element's input before any run starts. The end of each run is logged with its status. **Upgrade note:** none;
    a node without `async` runs as before.
+4. **Progress events from a graph run (RFC-0011, section 8.4, build plan step 3).** A caller that watches a run gets
+   progress events while it goes on, then one terminal event, `result` or `error`: on a REST endpoint with
+   `stream: true` as server-sent events (a run that sends none still answers single-shot), on the new WebSocket entry
+   `/ws/graph-run/{graph_id}` as text frames (off by default, `graph.websocket.enabled`; `graph.websocket.ttl`, 30m),
+   or, for any other entry, to the route its `x-return-path` header names when `return.path.routes` declares it (a
+   prefix entry ends with `*`; a bare `*` is refused at startup). A node opts in with `progress=<text>`: the engine
+   sends `node.start`, a `graph.task` function gets the node's relay route as `x-return-path`, and a synchronous
+   subgraph returns its events through it. `llm.run` sends `run.start`, `turn.start`, `turn.end`, `tool.start`,
+   `tool.end`, `approval.wait` and `run.end` to the route its caller names (seven new loop vectors pin them for the
+   Rust port). Events carry names, routes, counts and statuses only, and are not traced. A plain REST request is
+   unchanged, and an inbound HTTP `x-return-path` header has no effect. `examples/kafka-demo` adds
+   `kafka.progress.publisher`, a return route that publishes each event to a Kafka topic, one run per partition.
+   **Upgrade note:** CompileGraph refuses a blank `progress` and an input mapping to `header.x-return-path`;
+   `graph.progress.*` and `graph.run.socket.reply` are reserved route names.
+
+### Changed
+
+1. **A single-shot reply that reaches a streaming HTTP response whose head is already sent is dropped with one
+   warning** (`async.http.response`), so the stream's own terminal event ends it. It used to throw an
+   `IllegalStateException` (`Response head already sent`) and log its stack trace, which a graph run whose flow timed
+   out after it had streamed progress did on every such timeout. What the client receives is unchanged.
 
 ---
 ## Version 4.12.28, 11/3/2026

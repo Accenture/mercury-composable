@@ -34,6 +34,8 @@ import org.platformlambda.core.system.EventStreamWriter;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @EventInterceptor
 public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Void> {
+    private static final Logger log = LoggerFactory.getLogger(AsyncHttpResponse.class);
     private static final SimpleXmlWriter xmlWriter = new SimpleXmlWriter();
     private static final String APPLICATION_JSON = "application/json";
     private static final String APPLICATION_XML = "application/xml";
@@ -106,6 +109,12 @@ public class AsyncHttpResponse implements TypedLambdaFunction<EventEnvelope, Voi
             return null;
         }
         HttpServerResponse response = holder.request.response();
+        if (response.headWritten()) {
+            // a single-shot reply after a stream committed the head (a flow's timeout after its run streamed
+            // progress, for example): the head cannot change, and the stream's own terminal ends the response
+            log.warn("Single-shot reply to {} dropped - its streaming response has already started", requestId);
+            return null;
+        }
         setBusinessCorrelationIdHeader(response, holder);
         boolean isHeadMethod = HEAD.equals(holder.method);
         var md = new HttpResMetadata();

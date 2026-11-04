@@ -575,6 +575,14 @@ The user stays on the line for a moderately long run, up to about 30 minutes:
 Engine work: today a graph instance keeps its return route (`reply_to`) and replies once, at the
 end. Progress sent mid-run is the staged follow-up the concept names under Q8.
 
+*As built:* the entry is `/ws/graph-run/{graph_id}`, off by default (`graph.websocket.enabled`),
+because a WebSocket path is outside the REST automation and its authentication. The session's
+first text frame is `{header, body}` (an `X-Correlation-Id` header names the business correlation
+ID), each run's TTL is `graph.websocket.ttl` (30 minutes), one session runs one graph, and a frame
+that is not a JSON object ends the session with a 400 error event. The run's flow replies to an
+engine route, `graph.run.socket.reply`, which ends the session only for a run whose graph never
+started.
+
 ### 8.3 Time limits, layered
 
 | Layer | Bounds | Sized for |
@@ -712,6 +720,45 @@ reserved-names guide.
 **The model's own progress notes** (`display: "updates"` on the 5.5 models) are model-written text,
 so v1 does not forward them.
 
+*As built:*
+
+- **The entry is read from the flow's reply route**, which the REST automation sets:
+  `async.http.response` is a plain request, `async.http.response.stream.{n}` a `stream: true` one,
+  and any other is an event entry, whose `x-return-path` is read from the run's `input.header` (case
+  insensitive). A REST stream opens at the run's first event, so a run that sends none answers
+  single-shot, as before.
+- **A node's function gets the node's relay, not the caller's route.** A relay is a private route
+  of the run, `graph.progress.{instance}.{n}`, registered the first time a node with `progress`
+  needs it and released when the run ends. It names the sender's `graph` and `node` (and the `cid`)
+  when the sender does not, frames each event for the transport, and passes only `progress` events:
+  a synchronous subgraph's own terminal event is not the run's end. So `llm.run` sends to the route
+  it is given and needs no other header, a REST stream gets its framing, and a synchronous subgraph,
+  given its parent node's relay as `x-return-path`, needs no declaration: a live relay is trusted
+  as the parent's, and an asynchronous target never inherits it.
+- **The terminal event follows every event a sender sent:** before it, the run drains each relay
+  with one request, which a single-instance relay answers only after the events queued before it.
+  Without the drain a fast sender's last events can arrive after the terminal event and be dropped,
+  as a 5000-event test shows.
+- **A run that ends without a terminal event** (its flow timed out) still ends its channel: the
+  flow's end-of-flow listener sends `error` with the flow's status. On a REST stream the flow's own
+  single-shot 408 reaches a stream whose head is out; the HTTP edge now drops such a reply with one
+  warning instead of throwing, and the stream ends with `error` and `done`.
+- **Every finished stream ends with `done`**, after a `result` or an `error` event: a graph's error
+  is the run's outcome, not a broken stream.
+- **`llm.run`'s events** carry `{type, event, seq, time, cid, data}`, untraced. `turn.end` names the
+  pack's `stop_reason`; `tool.end`'s `ms` is measured per call, and the tool events of one turn are
+  sent in call order; a call that never runs has no tool events; `run.end`'s status is the
+  envelope's, or `error` when the loop throws; a refused input sends nothing. Seven loop vectors
+  pin the sequence for the Rust port.
+- **`return.path.routes`** follows `invocation.observer.include`. A refused entry is logged by name
+  at startup and declares nothing (the application still starts, as for any failing startup
+  module).
+- **CompileGraph** refuses a blank `progress` on a skilled node and an input mapping to
+  `header.x-return-path`.
+- **The Kafka sample** is `kafka.progress.publisher` in `examples/kafka-demo`.
+  `simple.kafka.notification` publishes without a record key, so the sample computes the partition
+  from the event's `cid` (the guide's content-based partitioning), keeping one run on one partition.
+
 ## 9. MCP bindings in the language packs
 
 No engine process runs a child process for a stdio MCP server. The MCP client lives in the packs,
@@ -827,7 +874,9 @@ These lessons hold on any engine:
    HTTP stack, and the gate's three refusals in `CompileGraphTest`). Then the return route carried from each entry into the
    instance, `x-return-path` in the reserved-names guide, the declared return paths
    (`return.path.routes`), the `progress` node property, and `llm.run`'s events (section 8.4). A
-   sample wrapper that publishes progress to a Kafka topic shows the generic return path.
+   sample wrapper that publishes progress to a Kafka topic shows the generic return path - **built
+   2026-11-04**, with the WebSocket entry of section 8.2 (`ProgressEventTest`, end to end on all
+   four entries; seven loop vectors for `llm.run`'s events).
 4. **MCP bindings in the Python pack**: stdio and HTTP streaming, the allowlist, schema pinning.
    Then the Node.js twin.
 5. **`llm.run` and the graph features in Rust** catch up from the shared vectors.

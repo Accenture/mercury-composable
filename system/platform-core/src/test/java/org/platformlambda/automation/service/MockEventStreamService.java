@@ -86,6 +86,17 @@ public class MockEventStreamService implements LambdaFunction {
                 out.fail(new AppException(503, "backend on fire"));
             }
             case "error-first" -> out.fail(new AppException(503, "no backend"));
+            case "single-after-stream" -> {
+                // a single-shot reply reaches a stream whose head is out, then the stream ends itself
+                out.first(200, TEXT_EVENT_STREAM);
+                out.write("one");
+                util.sleep(PACE);
+                EventEmitter.getInstance().send(new EventEnvelope().setTo(request.getReplyTo())
+                        .setCorrelationId(request.getCorrelationId()).setStatus(408).setBody("late"));
+                util.sleep(PACE);
+                out.write("two");
+                out.close();
+            }
             case "stall" -> {
                 // one-second idle allowance, then silence - the housekeeper must fail it in-band
                 out.first(200, TEXT_EVENT_STREAM, 1);

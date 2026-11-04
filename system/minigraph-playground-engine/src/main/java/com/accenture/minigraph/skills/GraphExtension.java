@@ -22,6 +22,7 @@ import com.accenture.automation.EventScriptManager;
 import com.accenture.minigraph.common.GraphLambdaFunction;
 import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.models.GraphInstance;
+import com.accenture.minigraph.progress.ReturnChannel;
 import com.accenture.models.Flows;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
@@ -122,6 +123,7 @@ public class GraphExtension extends GraphLambdaFunction {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " -  "+extension+" does not exist");
         }
         Deque<EventEnvelope> stack = new ArrayDeque<>();
+        var returnPath = returnPathFor(graphInstance, node);
         // release one set of parameters from the array for each data dictionary item
         for (var parameters : forEachParameters(stateMachine, nodeName, size)) {
             // the iteration's position rides as a header, exactly as the business cid does:
@@ -129,7 +131,7 @@ public class GraphExtension extends GraphLambdaFunction {
             // subgraph's suspend/resume key includes it, so N iterations of one subgraph no
             // longer collide on one record. Only the for_each path sets it - a single
             // delegation has no index and keeps its existing store key.
-            stack.add(forwardEvent(graphInstance, extension, parameters, stack.size(), timeout));
+            stack.add(forwardEvent(graphInstance, extension, parameters, stack.size(), timeout, returnPath));
         }
         runConcurrentRequests(po, graphInstance, node, extension, concurrency, stack, timeout);
         var outputMapping = getEntries(node.getProperty(OUTPUT));
@@ -212,7 +214,8 @@ public class GraphExtension extends GraphLambdaFunction {
         if (extension.startsWith(FLOW_PROTOCOL) && Flows.getFlow(extension.substring(FLOW_PROTOCOL.length())) == null) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " -  "+extension+" does not exist");
         }
-        var forward = forwardEvent(graphInstance, extension, fetchedParameters(stateMachine, nodeName), null, ttl);
+        var forward = forwardEvent(graphInstance, extension, fetchedParameters(stateMachine, nodeName), null, ttl,
+                returnPathFor(graphInstance, node));
         // clean up working area
         stateMachine.removeElement(nodeName + FETCH);
         // issue the request on the worker thread so the outbound event carries this span
@@ -287,7 +290,8 @@ public class GraphExtension extends GraphLambdaFunction {
         Long nodeTtl = node.getProperty(TTL) == null? null : getEffectiveTtl(graphInstance, node);
         var runs = new ArrayList<EventEnvelope>();
         for (var parameters : elements) {
-            runs.add(forwardEvent(graphInstance, extension, parameters, indexed? runs.size() : null, nodeTtl));
+            // an asynchronous target reports to nobody: it never inherits this run's return path
+            runs.add(forwardEvent(graphInstance, extension, parameters, indexed? runs.size() : null, nodeTtl, null));
         }
         var refused = refusedInput(po, graphInstance, extension, runs, indexed);
         if (refused.isPresent()) {
@@ -403,10 +407,11 @@ public class GraphExtension extends GraphLambdaFunction {
      * @param parameters the target's input body
      * @param index the element's position in a for_each list, or null
      * @param ttl the target's TTL in milliseconds, or null for the target's own
+     * @param returnPath the relay a synchronous subgraph returns its progress events through, or null
      * @return the event to send to the event script manager
      */
     private EventEnvelope forwardEvent(GraphInstance graphInstance, String extension, Map<String, Object> parameters,
-                                       Integer index, Long ttl) {
+                                       Integer index, Long ttl, String returnPath) {
         var forward = new EventEnvelope().setTo(EventScriptManager.SERVICE_NAME).setCorrelationId(util.getUuid());
         inheritBusinessCid(forward, graphInstance);
         var dataset = new HashMap<String, Object>();
@@ -418,7 +423,15 @@ public class GraphExtension extends GraphLambdaFunction {
             dataset.put(HEADER, Map.of());
             forward.setHeader(FLOW_ID, extension.substring(FLOW_PROTOCOL.length()));
         } else {
-            dataset.put(HEADER, index == null? Map.of() : Map.of(ITERATION_INDEX_HEADER, String.valueOf(index)));
+            var header = new HashMap<String, Object>();
+            if (index != null) {
+                header.put(ITERATION_INDEX_HEADER, String.valueOf(index));
+            }
+            // a subgraph names itself in its events, which reach this run's caller through this node's relay
+            if (returnPath != null) {
+                header.put(ReturnChannel.X_RETURN_PATH, returnPath);
+            }
+            dataset.put(HEADER, header);
             dataset.put(PATH_PARAMETER, Map.of(GRAPH_ID, extension));
             forward.setHeader(FLOW_ID, GRAPH_EXECUTOR);
         }

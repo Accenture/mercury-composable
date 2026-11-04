@@ -409,6 +409,42 @@ log volume on busy installations.
 
 ---
 
+### `return.path.routes` {#return-path-routes}
+
+| Type | Default |
+|------|---------|
+| `String` (comma-separated route names) | none |
+
+The routes a caller may name as its `x-return-path` (RFC-0011): the graph engine sends a run's progress events and
+its final result to a caller's route only when this list declares it. An entry that ends with `*` matches a route
+prefix (`order.status.*` matches `order.status.kafka`, not `order.status` itself or `order.statuses`); any other
+entry matches one route exactly - the rule `invocation.observer.include` applies to route names. A bare `*`, a `*`
+anywhere but at the end, and an entry whose fixed part is not a valid route name are refused at startup, each
+logged by name, and declare nothing.
+
+```properties
+return.path.routes=order.status.*, progress.relay, kafka.progress.publisher
+```
+
+### `graph.websocket.enabled` {#graph-websocket-enabled}
+
+| Type | Default |
+|------|---------|
+| `boolean` | `false` |
+
+Turns on the WebSocket entry for a watched graph run, `/ws/graph-run/{graph_id}`: the session's first text frame
+(`{"header": {...}, "body": {...}}`) starts the run, and its progress events and result come back as text frames
+before the session closes. Off by default, because a WebSocket path is outside the REST automation and its
+authentication: an application that turns it on puts it behind a gateway that authenticates the upgrade request.
+
+### `graph.websocket.ttl`
+
+| Type | Default |
+|------|---------|
+| duration | `30m` |
+
+The TTL of a graph run started from the WebSocket entry.
+
 ## Component Scanning & Startup
 
 ### `modules.autostart`

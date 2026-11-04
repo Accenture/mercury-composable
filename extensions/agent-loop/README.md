@@ -211,6 +211,27 @@ row: the output schema declares the options (an `enum`) and a recommended `decis
 decision node routes the person's choice. A question row is for a choice that must return into the same
 conversation.
 
+## Progress events
+
+When its caller passes `x-return-path`, the loop sends its progress events there, without waiting. The graph
+engine passes it to a `graph.task` node that carries `progress=<text>` (the MiniGraph skills reference, *Progress
+events*), and any other caller may pass its own route. A caller that passes none gets none.
+
+| `event` | `data` |
+| --- | --- |
+| `run.start` | `model` (when the node names one), `tools` (a count), `max_turns` |
+| `turn.start` | `turn` |
+| `turn.end` | `turn`, `stop_reason`, `usage` |
+| `tool.start` | `turn`, `id`, `name`, `route` |
+| `tool.end` | `turn`, `id`, `name`, `route`, `status`, `ms` |
+| `approval.wait` | `calls`: `[{id, name, route}]` for the calls that wait; the arguments stay in the envelope |
+| `run.end` | `status` (the envelope's, or `error` when the loop throws), `turns`, `usage` |
+
+Each event is `{type: progress, event, seq, time, cid, data}`, numbered from 1 for each call, and carries names,
+routes, counts and statuses only. A call that never runs (an unknown name, an invalid input, a question, a refusal)
+has no tool events, and a turn that times out has no `turn.end`. The graph engine's relay adds `graph` and `node`.
+The events are not traced, so a run adds no span per event.
+
 ## Telemetry
 
 The `llm.run` span parents every `llm.chat` turn and every tool call. Its annotations carry the status, the turn
@@ -221,7 +242,7 @@ its log line.
 
 `LlmRunVectorsTest` runs the shared vector file `src/test/resources/vectors/llm-run-vectors.json` against the loop: a
 scripted `llm.chat` checks every request the loop sends and answers it, scripted tool routes answer the calls, and a
-clock the script advances drives the deadline. No token is spent. The file carries 98 loop cases and 29 schema cases,
+clock the script advances drives the deadline. No token is spent. The file carries 105 loop cases, seven of them pinning the progress events, and 29 schema cases,
 and the Rust port catches up from it byte-identical. `LlmRunPlatformTest` runs `llm.run` through the platform:
 registered by the classpath scan, with real routes, a route that throws, and a route that times out.
 
@@ -230,5 +251,5 @@ mvn test -f extensions/agent-loop/pom.xml
 ```
 
 A graph holding a loop runs asynchronously: a `graph.extension` node with `async=true` starts it and continues at
-once, so the caller gets an advice while the loop runs (the MiniGraph skills reference, *Asynchronous*). Not built
-yet (the build plan's later steps): progress events to a caller's return route.
+once, so the caller gets an advice while the loop runs (the MiniGraph skills reference, *Asynchronous*), or a
+caller watches it through its progress events (above).

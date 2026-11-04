@@ -223,6 +223,16 @@ lands in the catch-all normally.)
 | [`listen-dlq.js`](node/listen-dlq.js) | the **dead-letter side**: prints intercepted records with their `dlq.error` / `dlq.origin.topic` headers (see [the failure path](#failure-path)) |
 | `simple.kafka.notification` | the **producer** side: publish to a topic via data mapping (`text(demo.outbound) -> header.topic`) |
 
+## Progress events from a graph run - the generic return path
+
+`kafka.progress.publisher` (`ProgressPublisher`) is a return route for a watched graph run (RFC-0011): a caller
+names it in its `x-return-path`, the graph application declares it in `return.path.routes`, and the function
+publishes each progress event, and the final result, to `progress.kafka.topic` (default `demo.progress`) through
+`simple.kafka.notification`. The notification publishes without a record key, so the partition is computed from the
+event's `cid` (the content-based partitioning of the minimalist-kafka guide): one run's events stay in order on one
+partition, and a consumer orders them by `seq`. This demo has no graph engine, so the function is the pattern to copy
+into a graph application that publishes progress to Kafka; `ProgressPublisherTest` shows the notification it sends.
+
 ## Notes
 
 - Point at a different broker with `export KAFKA_BOOTSTRAP_SERVERS=host:port` (both the Java app and the

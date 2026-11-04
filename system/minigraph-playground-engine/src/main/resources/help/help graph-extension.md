@@ -46,7 +46,12 @@ for_each[]={array-source} -> model.{var}   (iterate over a runtime list)
 concurrency={1-30}                         (parallel fan-out, default 3)
 exception={error-handler-node}             (jump on failure instead of abort)
 async=true                                 (start the target and continue at once)
+progress={text}                            (a node.start event for a watching caller)
 ```
+
+With progress, a synchronous subgraph returns its own progress events to the
+watching caller through this node, naming itself; an asynchronous target never
+inherits the caller's return path.
 
 Result set
 ----------

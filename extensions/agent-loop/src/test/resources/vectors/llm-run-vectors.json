@@ -1,7 +1,7 @@
 {
   "contract": "llm-run-loop",
   "version": 1,
-  "description": "The agent loop's shared vectors (RFC-0011 build plan step 2): llm.run, run against a scripted llm.chat and scripted tool routes, so no tokens are spent. mercury-composable (Java) and mercury (Rust) ship this file byte-identical. A case names the configuration keys in force (the global defaults of the settings), the tool routes that are reachable (llm.chat is reachable unless llm_chat is false), the llm.run input, its turns and the expectation: the outcome envelope, or the error (status and exact message). The harness's clock starts at 0 when the run starts. A turn may first list the route calls a resume makes before its first model turn (before); otherwise it is one llm.chat exchange: the exact request the loop sends (maps compared by keys, numbers by value), the milliseconds the turn takes on the clock (elapsed_ms, default 0), and the reply body or the error the scripted llm.chat answers with; then the route calls the loop makes before its next turn, in any order, each matched by its route and body and answered with its reply body or its error. Every scripted turn and call must be used, and none other made. The schema cases compile a tool input schema at the place 'schema' and validate an input at the path 'input': the expected violations in order, the capped report when given, or the compile error.",
+  "description": "The agent loop's shared vectors (RFC-0011 build plan step 2): llm.run, run against a scripted llm.chat and scripted tool routes, so no tokens are spent. mercury-composable (Java) and mercury (Rust) ship this file byte-identical. A case names the configuration keys in force (the global defaults of the settings), the tool routes that are reachable (llm.chat is reachable unless llm_chat is false), the llm.run input, its turns and the expectation: the outcome envelope, or the error (status and exact message), and when the case lists events, the progress events the loop sends to its caller's return route (build plan step 3), compared in order: type, event, seq, time (ISO 8601 UTC with milliseconds, from the harness's clock) and data; a case without events does not check them. The harness's clock starts at 0 when the run starts. A turn may first list the route calls a resume makes before its first model turn (before); otherwise it is one llm.chat exchange: the exact request the loop sends (maps compared by keys, numbers by value), the milliseconds the turn takes on the clock (elapsed_ms, default 0), and the reply body or the error the scripted llm.chat answers with; then the route calls the loop makes before its next turn, in any order, each matched by its route and body and answered with its reply body or its error. Every scripted turn and call must be used, and none other made. The schema cases compile a tool input schema at the place 'schema' and validate an input at the path 'input': the expected violations in order, the capped report when given, or the compile error.",
   "cases": [
     {
       "name": "prep/an-unknown-input",
@@ -13831,6 +13831,1858 @@
           "status": 400,
           "message": "approval.calls[0] ('c1') no longer matches the tool catalog or the mode"
         }
+      }
+    },
+    {
+      "name": "progress/one-tool-then-the-answer",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "elapsed_ms": 1500,
+          "reply": {
+            "status": "tool_use",
+            "calls": [
+              {
+                "id": "c1",
+                "name": "credit_limit",
+                "input": {
+                  "id": "C-1"
+                }
+              }
+            ],
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "model": "claude-opus-5-5",
+            "stop_reason": "tool_use",
+            "usage": {
+              "input_tokens": 900,
+              "output_tokens": 60,
+              "cache_creation_input_tokens": 800,
+              "cache_read_input_tokens": 0
+            },
+            "request_id": "req_1"
+          },
+          "calls": [
+            {
+              "route": "credit.limit.lookup",
+              "body": {
+                "id": "C-1"
+              },
+              "reply": {
+                "id": "C-1",
+                "limit": 5000,
+                "currency": "EUR"
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 22500
+            },
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "results": [
+              {
+                "id": "c1",
+                "output": {
+                  "id": "C-1",
+                  "limit": 5000,
+                  "currency": "EUR"
+                }
+              }
+            ],
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "elapsed_ms": 800,
+          "reply": {
+            "status": "done",
+            "text": "Yes: C-1's limit is 5000 EUR, so the order of 4200 EUR fits.",
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 2,
+            "model": "claude-opus-5-5",
+            "stop_reason": "end_turn",
+            "usage": {
+              "input_tokens": 120,
+              "output_tokens": 40,
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 800
+            },
+            "request_id": "req_2"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "done",
+          "text": "Yes: C-1's limit is 5000 EUR, so the order of 4200 EUR fits.",
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 2,
+          "turns": 2,
+          "usage": {
+            "input_tokens": 1020,
+            "output_tokens": 100,
+            "cache_creation_input_tokens": 800,
+            "cache_read_input_tokens": 800
+          },
+          "calls": [
+            {
+              "id": "c1",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup",
+              "status": "ok"
+            }
+          ],
+          "model": "claude-opus-5-5"
+        },
+        "events": [
+          {
+            "type": "progress",
+            "event": "run.start",
+            "seq": 1,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "tools": 2,
+              "max_turns": 10
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.start",
+            "seq": 2,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.end",
+            "seq": 3,
+            "time": "1970-01-01T00:00:01.500Z",
+            "data": {
+              "turn": 1,
+              "stop_reason": "tool_use",
+              "usage": {
+                "input_tokens": 900,
+                "output_tokens": 60,
+                "cache_creation_input_tokens": 800,
+                "cache_read_input_tokens": 0
+              }
+            }
+          },
+          {
+            "type": "progress",
+            "event": "tool.start",
+            "seq": 4,
+            "time": "1970-01-01T00:00:01.500Z",
+            "data": {
+              "turn": 1,
+              "id": "c1",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup"
+            }
+          },
+          {
+            "type": "progress",
+            "event": "tool.end",
+            "seq": 5,
+            "time": "1970-01-01T00:00:01.500Z",
+            "data": {
+              "turn": 1,
+              "id": "c1",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup",
+              "status": "ok",
+              "ms": 0
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.start",
+            "seq": 6,
+            "time": "1970-01-01T00:00:01.500Z",
+            "data": {
+              "turn": 2
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.end",
+            "seq": 7,
+            "time": "1970-01-01T00:00:02.300Z",
+            "data": {
+              "turn": 2,
+              "stop_reason": "end_turn",
+              "usage": {
+                "input_tokens": 120,
+                "output_tokens": 40,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 800
+              }
+            }
+          },
+          {
+            "type": "progress",
+            "event": "run.end",
+            "seq": 8,
+            "time": "1970-01-01T00:00:02.300Z",
+            "data": {
+              "status": "done",
+              "turns": 2,
+              "usage": {
+                "input_tokens": 1020,
+                "output_tokens": 100,
+                "cache_creation_input_tokens": 800,
+                "cache_read_input_tokens": 800
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "progress/an-approval-names-the-waiting-calls",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "model": "claude-opus-5-5"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "model": "claude-opus-5-5",
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "tool_use",
+            "calls": [
+              {
+                "id": "c1",
+                "name": "create_issue",
+                "input": {
+                  "title": "Order of 4200 EUR for C-1",
+                  "priority": "high"
+                }
+              },
+              {
+                "id": "c2",
+                "name": "credit_limit",
+                "input": {
+                  "id": "C-1"
+                }
+              }
+            ],
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "model": "claude-opus-5-5",
+            "stop_reason": "tool_use",
+            "usage": {
+              "input_tokens": 900,
+              "output_tokens": 60,
+              "cache_creation_input_tokens": 800,
+              "cache_read_input_tokens": 0
+            },
+            "request_id": "req_1"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "approval",
+          "approval": {
+            "calls": [
+              {
+                "id": "c1",
+                "name": "create_issue",
+                "route": "issue.create",
+                "input": {
+                  "title": "Order of 4200 EUR for C-1",
+                  "priority": "high"
+                },
+                "wait": true
+              },
+              {
+                "id": "c2",
+                "name": "credit_limit",
+                "route": "credit.limit.lookup",
+                "input": {
+                  "id": "C-1"
+                },
+                "wait": false
+              }
+            ]
+          },
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 1,
+          "turns": 1,
+          "usage": {
+            "input_tokens": 900,
+            "output_tokens": 60,
+            "cache_creation_input_tokens": 800,
+            "cache_read_input_tokens": 0
+          },
+          "calls": [],
+          "model": "claude-opus-5-5"
+        },
+        "events": [
+          {
+            "type": "progress",
+            "event": "run.start",
+            "seq": 1,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "model": "claude-opus-5-5",
+              "tools": 2,
+              "max_turns": 10
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.start",
+            "seq": 2,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.end",
+            "seq": 3,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1,
+              "stop_reason": "tool_use",
+              "usage": {
+                "input_tokens": 900,
+                "output_tokens": 60,
+                "cache_creation_input_tokens": 800,
+                "cache_read_input_tokens": 0
+              }
+            }
+          },
+          {
+            "type": "progress",
+            "event": "approval.wait",
+            "seq": 4,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "calls": [
+                {
+                  "id": "c1",
+                  "name": "create_issue",
+                  "route": "issue.create"
+                }
+              ]
+            }
+          },
+          {
+            "type": "progress",
+            "event": "run.end",
+            "seq": 5,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "status": "approval",
+              "turns": 1,
+              "usage": {
+                "input_tokens": 900,
+                "output_tokens": 60,
+                "cache_creation_input_tokens": 800,
+                "cache_read_input_tokens": 0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "progress/a-resume-runs-the-shown-calls",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+        "turn": 1,
+        "approval": {
+          "calls": [
+            {
+              "id": "c1",
+              "name": "create_issue",
+              "route": "issue.create",
+              "input": {
+                "title": "Order of 4200 EUR for C-1",
+                "priority": "high"
+              },
+              "wait": true
+            },
+            {
+              "id": "c2",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup",
+              "input": {
+                "id": "C-1"
+              },
+              "wait": false
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "id": "c1",
+            "approved": true,
+            "note": "Checked."
+          }
+        ]
+      },
+      "turns": [
+        {
+          "before": [
+            {
+              "route": "issue.create",
+              "body": {
+                "title": "Order of 4200 EUR for C-1",
+                "priority": "high"
+              },
+              "reply": {
+                "key": "ABC-1"
+              }
+            },
+            {
+              "route": "credit.limit.lookup",
+              "body": {
+                "id": "C-1"
+              },
+              "reply": {
+                "id": "C-1",
+                "limit": 5000,
+                "currency": "EUR"
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "results": [
+              {
+                "id": "c1",
+                "output": {
+                  "key": "ABC-1"
+                }
+              },
+              {
+                "id": "c2",
+                "output": {
+                  "id": "C-1",
+                  "limit": 5000,
+                  "currency": "EUR"
+                }
+              }
+            ],
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "done",
+            "text": "Opened ABC-1 for the order.",
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 2,
+            "model": "claude-opus-5-5",
+            "stop_reason": "end_turn",
+            "usage": {
+              "input_tokens": 120,
+              "output_tokens": 40,
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 800
+            },
+            "request_id": "req_2"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "done",
+          "text": "Opened ABC-1 for the order.",
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 2,
+          "turns": 1,
+          "usage": {
+            "input_tokens": 120,
+            "output_tokens": 40,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 800
+          },
+          "calls": [
+            {
+              "id": "c1",
+              "name": "create_issue",
+              "route": "issue.create",
+              "status": "ok"
+            },
+            {
+              "id": "c2",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup",
+              "status": "ok"
+            }
+          ],
+          "model": "claude-opus-5-5"
+        },
+        "events": [
+          {
+            "type": "progress",
+            "event": "run.start",
+            "seq": 1,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "tools": 2,
+              "max_turns": 10
+            }
+          },
+          {
+            "type": "progress",
+            "event": "tool.start",
+            "seq": 2,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1,
+              "id": "c1",
+              "name": "create_issue",
+              "route": "issue.create"
+            }
+          },
+          {
+            "type": "progress",
+            "event": "tool.start",
+            "seq": 3,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1,
+              "id": "c2",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup"
+            }
+          },
+          {
+            "type": "progress",
+            "event": "tool.end",
+            "seq": 4,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1,
+              "id": "c1",
+              "name": "create_issue",
+              "route": "issue.create",
+              "status": "ok",
+              "ms": 0
+            }
+          },
+          {
+            "type": "progress",
+            "event": "tool.end",
+            "seq": 5,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1,
+              "id": "c2",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup",
+              "status": "ok",
+              "ms": 0
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.start",
+            "seq": 6,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 2
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.end",
+            "seq": 7,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 2,
+              "stop_reason": "end_turn",
+              "usage": {
+                "input_tokens": 120,
+                "output_tokens": 40,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 800
+              }
+            }
+          },
+          {
+            "type": "progress",
+            "event": "run.end",
+            "seq": 8,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "status": "done",
+              "turns": 1,
+              "usage": {
+                "input_tokens": 120,
+                "output_tokens": 40,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 800
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "progress/a-call-that-cannot-run-has-no-tool-events",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "mode": "auto"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "tool_use",
+            "calls": [
+              {
+                "id": "c1",
+                "name": "delete_customer",
+                "input": {
+                  "id": "C-1"
+                }
+              }
+            ],
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "model": "claude-opus-5-5",
+            "stop_reason": "tool_use",
+            "usage": {
+              "input_tokens": 900,
+              "output_tokens": 60,
+              "cache_creation_input_tokens": 800,
+              "cache_read_input_tokens": 0
+            },
+            "request_id": "req_1"
+          }
+        },
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "results": [
+              {
+                "id": "c1",
+                "error": "unknown tool 'delete_customer'"
+              }
+            ],
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "done",
+            "text": "Yes: C-1's limit is 5000 EUR, so the order of 4200 EUR fits.",
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 2,
+            "model": "claude-opus-5-5",
+            "stop_reason": "end_turn",
+            "usage": {
+              "input_tokens": 120,
+              "output_tokens": 40,
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 800
+            },
+            "request_id": "req_2"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "done",
+          "text": "Yes: C-1's limit is 5000 EUR, so the order of 4200 EUR fits.",
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 2,
+          "turns": 2,
+          "usage": {
+            "input_tokens": 1020,
+            "output_tokens": 100,
+            "cache_creation_input_tokens": 800,
+            "cache_read_input_tokens": 800
+          },
+          "calls": [
+            {
+              "id": "c1",
+              "name": "delete_customer",
+              "status": "unknown"
+            }
+          ],
+          "model": "claude-opus-5-5"
+        },
+        "events": [
+          {
+            "type": "progress",
+            "event": "run.start",
+            "seq": 1,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "tools": 2,
+              "max_turns": 10
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.start",
+            "seq": 2,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.end",
+            "seq": 3,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1,
+              "stop_reason": "tool_use",
+              "usage": {
+                "input_tokens": 900,
+                "output_tokens": 60,
+                "cache_creation_input_tokens": 800,
+                "cache_read_input_tokens": 0
+              }
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.start",
+            "seq": 4,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 2
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.end",
+            "seq": 5,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 2,
+              "stop_reason": "end_turn",
+              "usage": {
+                "input_tokens": 120,
+                "output_tokens": 40,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 800
+              }
+            }
+          },
+          {
+            "type": "progress",
+            "event": "run.end",
+            "seq": 6,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "status": "done",
+              "turns": 2,
+              "usage": {
+                "input_tokens": 1020,
+                "output_tokens": 100,
+                "cache_creation_input_tokens": 800,
+                "cache_read_input_tokens": 800
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "progress/a-timed-out-turn-has-no-turn-end",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "tool_use",
+            "calls": [
+              {
+                "id": "c1",
+                "name": "credit_limit",
+                "input": {
+                  "id": "C-1"
+                }
+              }
+            ],
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "model": "claude-opus-5-5",
+            "stop_reason": "tool_use",
+            "usage": {
+              "input_tokens": 900,
+              "output_tokens": 60,
+              "cache_creation_input_tokens": 800,
+              "cache_read_input_tokens": 0
+            },
+            "request_id": "req_1"
+          },
+          "calls": [
+            {
+              "route": "credit.limit.lookup",
+              "body": {
+                "id": "C-1"
+              },
+              "reply": {
+                "id": "C-1",
+                "limit": 5000,
+                "currency": "EUR"
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "results": [
+              {
+                "id": "c1",
+                "output": {
+                  "id": "C-1",
+                  "limit": 5000,
+                  "currency": "EUR"
+                }
+              }
+            ],
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "error": {
+            "status": 408,
+            "message": "LLM request timed out after 24000 ms"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "cap",
+          "cap": "deadline",
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 1,
+          "turns": 1,
+          "usage": {
+            "input_tokens": 900,
+            "output_tokens": 60,
+            "cache_creation_input_tokens": 800,
+            "cache_read_input_tokens": 0
+          },
+          "calls": [
+            {
+              "id": "c1",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup",
+              "status": "ok"
+            }
+          ],
+          "model": "claude-opus-5-5"
+        },
+        "events": [
+          {
+            "type": "progress",
+            "event": "run.start",
+            "seq": 1,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "tools": 2,
+              "max_turns": 10
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.start",
+            "seq": 2,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.end",
+            "seq": 3,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1,
+              "stop_reason": "tool_use",
+              "usage": {
+                "input_tokens": 900,
+                "output_tokens": 60,
+                "cache_creation_input_tokens": 800,
+                "cache_read_input_tokens": 0
+              }
+            }
+          },
+          {
+            "type": "progress",
+            "event": "tool.start",
+            "seq": 4,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1,
+              "id": "c1",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup"
+            }
+          },
+          {
+            "type": "progress",
+            "event": "tool.end",
+            "seq": 5,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1,
+              "id": "c1",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup",
+              "status": "ok",
+              "ms": 0
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.start",
+            "seq": 6,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 2
+            }
+          },
+          {
+            "type": "progress",
+            "event": "run.end",
+            "seq": 7,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "status": "cap",
+              "turns": 1,
+              "usage": {
+                "input_tokens": 900,
+                "output_tokens": 60,
+                "cache_creation_input_tokens": 800,
+                "cache_read_input_tokens": 0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "progress/a-failed-turn-ends-with-an-error",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "error": {
+            "status": 529,
+            "message": "LLM provider error - 529 overloaded_error: Overloaded"
+          }
+        }
+      ],
+      "expect": {
+        "error": {
+          "status": 529,
+          "message": "llm.chat failed - LLM provider error - 529 overloaded_error: Overloaded"
+        },
+        "events": [
+          {
+            "type": "progress",
+            "event": "run.start",
+            "seq": 1,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "tools": 2,
+              "max_turns": 10
+            }
+          },
+          {
+            "type": "progress",
+            "event": "turn.start",
+            "seq": 2,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "turn": 1
+            }
+          },
+          {
+            "type": "progress",
+            "event": "run.end",
+            "seq": 3,
+            "time": "1970-01-01T00:00:00.000Z",
+            "data": {
+              "status": "error",
+              "turns": 0,
+              "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "progress/a-refused-input-sends-nothing",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "mode": "yolo"
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "mode must be write, auto, manual or unattended"
+        },
+        "events": []
       }
     }
   ],

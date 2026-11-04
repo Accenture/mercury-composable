@@ -29,6 +29,24 @@ rest:
     headers: header_1
     tracing: true
 
+  # a watched graph run (RFC-0011 section 8.4): progress events, then the result, as server-sent events
+  - service: 'http.flow.adapter'
+    methods: ['POST']
+    url: '/api/stream/graph/{graph_id}'
+    flow: 'graph-executor'
+    timeout: 30s
+    stream: true
+    tracing: true
+
+  # the same, with a flow ttl shorter than a slow task: the run ends on the flow's timeout mid-stream
+  - service: 'http.flow.adapter'
+    methods: ['POST']
+    url: '/api/stream/short/{graph_id}'
+    flow: 'graph-executor'
+    timeout: 2s
+    stream: true
+    tracing: true
+
   - service: 'show.graph.model'
     methods: ['GET']
     url: '/api/graph/model/{graph_id}/{sequence}'

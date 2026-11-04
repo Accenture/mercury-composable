@@ -42,6 +42,12 @@ public class GraphHousekeeper extends GraphLambdaFunction {
             var instanceId = headers.get(INSTANCE_ID);
             var graphInstance = graphInstances.get(instanceId);
             if (graphInstance != null) {
+                // a run that ended without a terminal event (a flow timeout, for example) still ends its channel
+                var channel = graphInstance.getReturnChannel();
+                if (channel != null) {
+                    channel.abandon(input.getBody());
+                    channel.close();
+                }
                 graphInstances.remove(instanceId);
                 log.info("Graph instance {} for model '{}' cleared", instanceId, graphInstance.graphId);
             }
