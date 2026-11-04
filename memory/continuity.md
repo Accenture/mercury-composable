@@ -237,7 +237,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-04 | uses: 31 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-04 | uses: 32 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -433,7 +433,7 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-04 | uses: 56 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-04 | uses: 57 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -598,7 +598,7 @@
   helper passes every case. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-04 | uses: 19 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-04 | uses: 20 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after

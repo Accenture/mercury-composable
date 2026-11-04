@@ -34,8 +34,9 @@
   unknown inputs and row fields refused; `max_turns` over the conversation; `params`), and **the mode governs the use of
   tools, four modes**: `write` (the default) holds a row marked `write: true` (renamed from `approval: required`) for a
   person, `auto` runs every call, `manual` holds every call, `unattended` refuses a marked write - a write runs unasked
-  only under a declared `mode=auto` (supersedes ruling 21 and ruling 14's default). **Next, once #605 merges (Eric,
-  2026-11-04): an "ask a person" catalog row**, for an LLM that recommends options for a person to select and must carry
+  only under a declared `mode=auto` (supersedes ruling 21 and ruling 14's default). **Built after #605 merged: PR #606 (OPEN, branch
+  `feat/agent-loop-ask-row`, commit `c576090b`, spec section 7.3, ruling 38; 98 loop cases): an "ask a person" catalog
+  row** (Eric, 2026-11-04), for an LLM that recommends options for a person to select and must carry
   on in the same conversation (choosing among designed branches already works through section 7.2: the options an
   `enum` in the output schema, `graph.suspend`, the person's 1-based choice routed by a decision node). The row has
   `ask: true` and no route; the model calls it with a question and its options; the loop holds it like any waiting call
@@ -45,4 +46,4 @@
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
   README, the certification reports) are fixed by #601 (squash `72d43d06`) and mercury #401 (merge `e66ae513`), the packs' by mercury-python #48 (`463e37c`), all
   merged 2026-11-03: no live mention of the old folder is left in the family.
-  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-04 | uses: 12 | tier: working | origin: 2026-10-28-233011 -->
+  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-04 | uses: 13 | tier: working | origin: 2026-10-28-233011 -->
