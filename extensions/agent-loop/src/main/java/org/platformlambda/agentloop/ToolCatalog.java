@@ -32,9 +32,10 @@ import java.util.regex.Pattern;
 /**
  * A loop node's tool catalog (RFC-0011, section 5): the rows the model may call, each mapping an API-safe name to
  * a composable-function route. The catalog is graph data, certified with the graph, so it is checked whole before
- * the first model turn: a name the API would refuse, a duplicate, a schema outside the vocabulary, an unknown
- * approval value, a field that is not a row's, or a route nothing serves. Any of them throws before a token is
- * spent - the loop's failure, unlike a name the model invents, which goes back to the model as an error result.
+ * the first model turn: a name the API would refuse, a duplicate, a schema outside the vocabulary, a write mark
+ * that is not true or false, a field that is not a row's, or a route nothing serves. Any of them throws before a
+ * token is spent - the loop's failure, unlike a name the model invents, which goes back to the model as an error
+ * result.
  */
 public final class ToolCatalog {
     static final Pattern NAME = Pattern.compile("^[a-zA-Z0-9_-]{1,128}$");
@@ -43,9 +44,8 @@ public final class ToolCatalog {
     private static final String INPUT_SCHEMA = "input_schema";
     private static final String ROUTE = "route";
     private static final String STRICT = "strict";
-    private static final String APPROVAL = "approval";
-    private static final String REQUIRED = "required";
-    private static final List<String> FIELDS = List.of(NAME_KEY, DESCRIPTION, INPUT_SCHEMA, ROUTE, STRICT, APPROVAL);
+    private static final String WRITE_KEY = "write";
+    private static final List<String> FIELDS = List.of(NAME_KEY, DESCRIPTION, INPUT_SCHEMA, ROUTE, STRICT, WRITE_KEY);
 
     /**
      * One row of the catalog.
@@ -56,10 +56,11 @@ public final class ToolCatalog {
      * @param schema the compiled schema the loop validates against
      * @param route the composable-function route
      * @param strict grammar-constrained arguments, or null when the row does not say
-     * @param approval true when the row is a high-risk write that waits for a person (mode auto)
+     * @param write true when the tool writes: it waits for a person in mode write, and is refused in mode
+     *              unattended
      */
     public record Row(String name, String description, Map<String, Object> inputSchema, ToolSchema schema,
-                      String route, Boolean strict, boolean approval) { }
+                      String route, Boolean strict, boolean write) { }
 
     private final Map<String, Row> rows = new LinkedHashMap<>();
 
@@ -90,7 +91,7 @@ public final class ToolCatalog {
             for (var key : new TreeSet<>(row.keySet())) {
                 if (!FIELDS.contains(key)) {
                     throw new IllegalArgumentException(where + "." + key + " is not a field of a tool row - " +
-                            "the fields are name, description, input_schema, route, strict and approval");
+                            "the fields are name, description, input_schema, route, strict and write");
                 }
             }
             var parsed = parseRow(where, row, reachable, catalog.rows.keySet());
@@ -128,12 +129,12 @@ public final class ToolCatalog {
         if (strict != null && !(strict instanceof Boolean)) {
             throw new IllegalArgumentException(where + ".strict must be true or false");
         }
-        var approval = row.get(APPROVAL);
-        if (approval != null && !REQUIRED.equals(approval)) {
-            throw new IllegalArgumentException(where + ".approval must be 'required' when set");
+        var write = row.get(WRITE_KEY);
+        if (write != null && !(write instanceof Boolean)) {
+            throw new IllegalArgumentException(where + ".write must be true or false");
         }
         return new Row(name, description, (Map<String, Object>) row.get(INPUT_SCHEMA), schema, target,
-                (Boolean) strict, approval != null);
+                (Boolean) strict, Boolean.TRUE.equals(write));
     }
 
     @SuppressWarnings("unchecked")
@@ -167,8 +168,8 @@ public final class ToolCatalog {
     }
 
     /**
-     * The tools as the model sees them: name, description, input schema and strict. The route and the approval
-     * mark stay in the catalog.
+     * The tools as the model sees them: name, description, input schema and strict. The route and the write mark
+     * stay in the catalog.
      *
      * @return the advertised tools, in catalog order
      */

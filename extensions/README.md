@@ -47,9 +47,10 @@ model and the virtual-thread-safety evidence for the blocking Lettuce sync API.
 
 The agent loop of RFC-0011: a graph node calls `llm.run` with a tool catalog fixed on the graph, and the loop runs
 model turns through a language pack's `llm.chat` and calls a composable-function route for each tool the model asks
-for. Approval modes (`auto`, `manual`, `unattended`) hold a high-risk write for a person, and the graph suspends and
-resumes around it. Adding the jar registers the route; the module links no provider SDK, no MCP client and no store
-client, and the transcript stays in the pack's store. See the module's own `README.md`.
+for. The node's mode governs the use of tools: `write` (the default) holds a tool marked as a write for a person,
+`auto` runs every call, `manual` holds every call and `unattended` refuses a marked write; the graph suspends and
+resumes around a held call. Adding the jar registers the route; the module links no provider SDK, no MCP client and
+no store client, and the transcript stays in the pack's store. See the module's own `README.md`.
 
 ## API playground
 

@@ -55,7 +55,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -122,7 +122,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -133,7 +133,7 @@
       "expect": {
         "error": {
           "status": 400,
-          "message": "mode must be auto, manual or unattended"
+          "message": "mode must be write, auto, manual or unattended"
         }
       }
     },
@@ -189,7 +189,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -259,7 +259,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -325,7 +325,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -392,7 +392,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -445,7 +445,7 @@
       }
     },
     {
-      "name": "prep/a-misspelt-approval-is-not-a-field",
+      "name": "prep/a-misspelt-write-mark-is-not-a-field",
       "routes": [
         "credit.limit.lookup",
         "issue.create"
@@ -496,7 +496,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "aproval": "required"
+            "wirte": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -506,7 +506,73 @@
       "expect": {
         "error": {
           "status": 400,
-          "message": "tools[1].aproval is not a field of a tool row - the fields are name, description, input_schema, route, strict and approval"
+          "message": "tools[1].wirte is not a field of a tool row - the fields are name, description, input_schema, route, strict and write"
+        }
+      }
+    },
+    {
+      "name": "prep/the-old-approval-mark-is-not-a-field",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "approval": "required"
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?"
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "tools[1].approval is not a field of a tool row - the fields are name, description, input_schema, route, strict and write"
         }
       }
     },
@@ -836,7 +902,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -851,7 +917,7 @@
       }
     },
     {
-      "name": "prep/an-unknown-approval-value",
+      "name": "prep/write-is-a-boolean",
       "routes": [
         "credit.limit.lookup",
         "issue.create"
@@ -902,7 +968,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "always"
+            "write": "yes"
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -912,7 +978,7 @@
       "expect": {
         "error": {
           "status": 400,
-          "message": "tools[1].approval must be 'required' when set"
+          "message": "tools[1].write must be true or false"
         }
       }
     },
@@ -1007,7 +1073,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer."
@@ -1072,7 +1138,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -1144,7 +1210,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -1213,7 +1279,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -1302,7 +1368,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -1368,7 +1434,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -1582,7 +1648,7 @@
         "issue.create"
       ],
       "input": {
-        "tools": "[{\"name\": \"credit_limit\", \"description\": \"A customer's credit limit and its currency.\", \"input_schema\": {\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"pattern\": \"^C-[0-9]+$\"}}, \"required\": [\"id\"], \"additionalProperties\": false}, \"route\": \"credit.limit.lookup\", \"strict\": true}, {\"name\": \"create_issue\", \"description\": \"Open an issue for a credit officer to review.\", \"input_schema\": {\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\", \"minLength\": 1, \"maxLength\": 80}, \"priority\": {\"type\": \"string\", \"enum\": [\"low\", \"high\"]}}, \"required\": [\"title\"], \"additionalProperties\": false}, \"route\": \"issue.create\", \"approval\": \"required\"}]",
+        "tools": "[{\"name\": \"credit_limit\", \"description\": \"A customer's credit limit and its currency.\", \"input_schema\": {\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\", \"pattern\": \"^C-[0-9]+$\"}}, \"required\": [\"id\"], \"additionalProperties\": false}, \"route\": \"credit.limit.lookup\", \"strict\": true}, {\"name\": \"create_issue\", \"description\": \"Open an issue for a credit officer to review.\", \"input_schema\": {\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\", \"minLength\": 1, \"maxLength\": 80}, \"priority\": {\"type\": \"string\", \"enum\": [\"low\", \"high\"]}}, \"required\": [\"title\"], \"additionalProperties\": false}, \"route\": \"issue.create\", \"write\": true}]",
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
         "prompt": "May customer C-1 place an order of 4200 EUR?"
       },
@@ -1729,7 +1795,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -1917,7 +1983,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -2094,7 +2160,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -2385,7 +2451,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -2626,7 +2692,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -2868,7 +2934,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -3122,7 +3188,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -3374,7 +3440,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -3634,7 +3700,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -3786,7 +3852,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -3934,7 +4000,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -4202,7 +4268,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -4360,7 +4426,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -4519,7 +4585,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -4779,7 +4845,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -5027,7 +5093,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -5154,7 +5220,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -5384,7 +5450,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -5656,7 +5722,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -5794,7 +5860,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -5881,7 +5947,7 @@
       }
     },
     {
-      "name": "approval/auto-a-marked-row-holds-the-whole-turn",
+      "name": "approval/write-is-the-default-mode",
       "routes": [
         "credit.limit.lookup",
         "issue.create"
@@ -5932,7 +5998,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -6068,6 +6134,726 @@
       }
     },
     {
+      "name": "approval/write-a-marked-row-holds-the-whole-turn",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "mode": "write"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "tool_use",
+            "calls": [
+              {
+                "id": "c1",
+                "name": "create_issue",
+                "input": {
+                  "title": "Order of 4200 EUR for C-1",
+                  "priority": "high"
+                }
+              },
+              {
+                "id": "c2",
+                "name": "credit_limit",
+                "input": {
+                  "id": "C-1"
+                }
+              }
+            ],
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "model": "claude-opus-5-5",
+            "stop_reason": "tool_use",
+            "usage": {
+              "input_tokens": 900,
+              "output_tokens": 60,
+              "cache_creation_input_tokens": 800,
+              "cache_read_input_tokens": 0
+            },
+            "request_id": "req_1"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "approval",
+          "approval": {
+            "calls": [
+              {
+                "id": "c1",
+                "name": "create_issue",
+                "route": "issue.create",
+                "input": {
+                  "title": "Order of 4200 EUR for C-1",
+                  "priority": "high"
+                },
+                "wait": true
+              },
+              {
+                "id": "c2",
+                "name": "credit_limit",
+                "route": "credit.limit.lookup",
+                "input": {
+                  "id": "C-1"
+                },
+                "wait": false
+              }
+            ]
+          },
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 1,
+          "turns": 1,
+          "usage": {
+            "input_tokens": 900,
+            "output_tokens": 60,
+            "cache_creation_input_tokens": 800,
+            "cache_read_input_tokens": 0
+          },
+          "calls": [],
+          "model": "claude-opus-5-5"
+        }
+      }
+    },
+    {
+      "name": "approval/auto-a-marked-write-runs",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "mode": "auto"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "tool_use",
+            "calls": [
+              {
+                "id": "c1",
+                "name": "create_issue",
+                "input": {
+                  "title": "Order of 4200 EUR for C-1",
+                  "priority": "high"
+                }
+              },
+              {
+                "id": "c2",
+                "name": "credit_limit",
+                "input": {
+                  "id": "C-1"
+                }
+              }
+            ],
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "model": "claude-opus-5-5",
+            "stop_reason": "tool_use",
+            "usage": {
+              "input_tokens": 900,
+              "output_tokens": 60,
+              "cache_creation_input_tokens": 800,
+              "cache_read_input_tokens": 0
+            },
+            "request_id": "req_1"
+          },
+          "calls": [
+            {
+              "route": "issue.create",
+              "body": {
+                "title": "Order of 4200 EUR for C-1",
+                "priority": "high"
+              },
+              "reply": {
+                "key": "ABC-1"
+              }
+            },
+            {
+              "route": "credit.limit.lookup",
+              "body": {
+                "id": "C-1"
+              },
+              "reply": {
+                "id": "C-1",
+                "limit": 5000,
+                "currency": "EUR"
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "results": [
+              {
+                "id": "c1",
+                "output": {
+                  "key": "ABC-1"
+                }
+              },
+              {
+                "id": "c2",
+                "output": {
+                  "id": "C-1",
+                  "limit": 5000,
+                  "currency": "EUR"
+                }
+              }
+            ],
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "done",
+            "text": "Opened ABC-1 for the order.",
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 2,
+            "model": "claude-opus-5-5",
+            "stop_reason": "end_turn",
+            "usage": {
+              "input_tokens": 120,
+              "output_tokens": 40,
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 800
+            },
+            "request_id": "req_2"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "done",
+          "text": "Opened ABC-1 for the order.",
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 2,
+          "turns": 2,
+          "usage": {
+            "input_tokens": 1020,
+            "output_tokens": 100,
+            "cache_creation_input_tokens": 800,
+            "cache_read_input_tokens": 800
+          },
+          "calls": [
+            {
+              "id": "c1",
+              "name": "create_issue",
+              "route": "issue.create",
+              "status": "ok"
+            },
+            {
+              "id": "c2",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup",
+              "status": "ok"
+            }
+          ],
+          "model": "claude-opus-5-5"
+        }
+      }
+    },
+    {
+      "name": "approval/auto-an-unknown-tool-still-goes-back",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "mode": "auto"
+      },
+      "turns": [
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "prompt": "May customer C-1 place an order of 4200 EUR?",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "tool_use",
+            "calls": [
+              {
+                "id": "c1",
+                "name": "delete_customer",
+                "input": {
+                  "id": "C-1"
+                }
+              }
+            ],
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "model": "claude-opus-5-5",
+            "stop_reason": "tool_use",
+            "usage": {
+              "input_tokens": 900,
+              "output_tokens": 60,
+              "cache_creation_input_tokens": 800,
+              "cache_read_input_tokens": 0
+            },
+            "request_id": "req_1"
+          }
+        },
+        {
+          "request": {
+            "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+            "tools": [
+              {
+                "name": "credit_limit",
+                "description": "A customer's credit limit and its currency.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^C-[0-9]+$"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                },
+                "strict": true
+              },
+              {
+                "name": "create_issue",
+                "description": "Open an issue for a credit officer to review.",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "params": {
+              "timeout_ms": 24000
+            },
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 1,
+            "results": [
+              {
+                "id": "c1",
+                "error": "unknown tool 'delete_customer'"
+              }
+            ],
+            "ttl": "7d",
+            "retention": "0"
+          },
+          "reply": {
+            "status": "done",
+            "text": "Yes: C-1's limit is 5000 EUR, so the order of 4200 EUR fits.",
+            "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+            "turn": 2,
+            "model": "claude-opus-5-5",
+            "stop_reason": "end_turn",
+            "usage": {
+              "input_tokens": 120,
+              "output_tokens": 40,
+              "cache_creation_input_tokens": 0,
+              "cache_read_input_tokens": 800
+            },
+            "request_id": "req_2"
+          }
+        }
+      ],
+      "expect": {
+        "envelope": {
+          "status": "done",
+          "text": "Yes: C-1's limit is 5000 EUR, so the order of 4200 EUR fits.",
+          "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+          "turn": 2,
+          "turns": 2,
+          "usage": {
+            "input_tokens": 1020,
+            "output_tokens": 100,
+            "cache_creation_input_tokens": 800,
+            "cache_read_input_tokens": 800
+          },
+          "calls": [
+            {
+              "id": "c1",
+              "name": "delete_customer",
+              "status": "unknown"
+            }
+          ],
+          "model": "claude-opus-5-5"
+        }
+      }
+    },
+    {
       "name": "approval/manual-every-call-waits",
       "routes": [
         "credit.limit.lookup",
@@ -6119,7 +6905,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -6289,7 +7075,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -6423,7 +7209,7 @@
       }
     },
     {
-      "name": "approval/auto-an-invalid-marked-call-goes-back",
+      "name": "approval/write-an-invalid-marked-call-goes-back",
       "routes": [
         "credit.limit.lookup",
         "issue.create"
@@ -6474,7 +7260,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -6716,7 +7502,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -6880,7 +7666,7 @@
             "results": [
               {
                 "id": "c1",
-                "error": "'create_issue' needs a person's approval, and this run is unattended"
+                "error": "'create_issue' is a write, and this run is unattended"
               },
               {
                 "id": "c2",
@@ -6994,7 +7780,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -7230,7 +8016,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -7454,7 +8240,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -7677,7 +8463,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -7769,7 +8555,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -7870,7 +8656,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -7967,7 +8753,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -8068,7 +8854,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -8165,7 +8951,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -8262,7 +9048,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -8293,6 +9079,104 @@
           ]
         },
         "decisions": []
+      },
+      "turns": [],
+      "expect": {
+        "error": {
+          "status": 400,
+          "message": "approval.calls[0] ('c1') no longer matches the tool catalog or the mode"
+        }
+      }
+    },
+    {
+      "name": "approval/resume-after-the-mode-changed-to-auto",
+      "routes": [
+        "credit.limit.lookup",
+        "issue.create"
+      ],
+      "input": {
+        "tools": [
+          {
+            "name": "credit_limit",
+            "description": "A customer's credit limit and its currency.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^C-[0-9]+$"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "additionalProperties": false
+            },
+            "route": "credit.limit.lookup",
+            "strict": true
+          },
+          {
+            "name": "create_issue",
+            "description": "Open an issue for a credit officer to review.",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "high"
+                  ]
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false
+            },
+            "route": "issue.create",
+            "write": true
+          }
+        ],
+        "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
+        "prompt": "May customer C-1 place an order of 4200 EUR?",
+        "conversation": "9f3c0a1b2c3d4e5f60718293a4b5c6d7",
+        "turn": 1,
+        "approval": {
+          "calls": [
+            {
+              "id": "c1",
+              "name": "create_issue",
+              "route": "issue.create",
+              "input": {
+                "title": "Order of 4200 EUR for C-1",
+                "priority": "high"
+              },
+              "wait": true
+            },
+            {
+              "id": "c2",
+              "name": "credit_limit",
+              "route": "credit.limit.lookup",
+              "input": {
+                "id": "C-1"
+              },
+              "wait": false
+            }
+          ]
+        },
+        "decisions": [
+          {
+            "id": "c1",
+            "approved": true
+          }
+        ],
+        "mode": "auto"
       },
       "turns": [],
       "expect": {
@@ -8354,7 +9238,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -8462,7 +9346,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -8529,7 +9413,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -8598,7 +9482,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -8694,7 +9578,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -8763,7 +9647,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -8855,7 +9739,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": [
@@ -8923,7 +9807,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -8998,7 +9882,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -9158,7 +10042,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -9311,7 +10195,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -9448,7 +10332,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -9556,7 +10440,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -9791,7 +10675,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",
@@ -9887,7 +10771,7 @@
               "additionalProperties": false
             },
             "route": "issue.create",
-            "approval": "required"
+            "write": true
           }
         ],
         "system": "You are a credit officer's assistant. Use the tools to check facts before you answer.",

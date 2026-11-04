@@ -57,7 +57,8 @@ decision would commit the project to:
 1. **The agent loop is engine-side function code, route `llm.run`**, in a new opt-in module `extensions/agent-loop`. Java
    first, then the Rust port catches up. It is not engine core, and it links no provider SDK, no MCP client and no store
    client. The function is not an agent — the model is — and the `llm.` prefix marks every node whose result is model output.
-   Build plan step 2 built it in Java on 2026-11-03; the spec's sections 4 to 6.1 mark what building it settled.
+   Build plan step 2 built it in Java on 2026-11-03; the spec's sections 4 to 6.1 mark what building it settled,
+   accepted by Eric on 2026-11-04 (round 7).
 2. **The model turn stays `llm.chat` in the language packs**, and it grows a loop contract. The pack keeps the transcript in
    an access-controlled store of its own (Redis first) and returns a reference to it, together with the calls normalized as
    `{id, name, input}`. The loop answers with `{id, output | error}` and the expected turn count. The pack builds the one
@@ -67,11 +68,13 @@ decision would commit the project to:
    built this in both packs on 2026-11-03; the spec's sections 3.2 and 3.3 carry the full contract.
 3. **A tool name maps to a route.** The catalog is a skill-less dataset node under the graph's island, certified on the
    graph. Each row holds an API-safe name, a description written on the graph, the input schema, the route, `strict`, and
-   `approval: required` for a high-risk write. The loop checks the catalog before the first turn: names, schemas,
-   approval values, and that every route is reachable. It validates each input before dispatch. An unknown name or a
+   `write: true` for a tool that writes. The loop checks the catalog before the first turn: names, schemas, write
+   marks, and that every route is reachable. It validates each input before dispatch. An unknown name or a
    failed call goes back to the model as an error result; only the loop's own machinery fails the node.
-4. **Approval comes in two kinds.** A marked row waits for a person under the node's mode: `auto` by default, or `manual`
-   or `unattended`. No mode runs a marked row unasked. A turn holding a waiting call runs none of its calls. Every call of
+4. **Approval comes in two kinds.** The node's mode governs the use of tools: `write` by default holds a marked write
+   for a person, `auto` runs every call, `manual` holds every call, and `unattended` turns a marked write back as a
+   refusal (Eric, 2026-11-04: a write runs unasked only under a declared `mode=auto`). A turn holding a waiting call runs
+   none of its calls. Every call of
    the turn, with its arguments, rides the outcome envelope (`status: approval`). The graph suspends, and on resume the
    loop takes the calls from the restored state and matches the decisions to them by call id. Separately, a **business
    decision** (`true`/`false`, or a 1-based integer) rides the verdict, and the graph's decision node routes it to a

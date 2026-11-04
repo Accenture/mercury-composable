@@ -459,11 +459,11 @@ public class AgentLoop {
                     "invalid input for '" + name + "': " + ToolSchema.report(violations));
         }
         var mode = run.settings.mode();
-        if (row.approval() && LoopSettings.UNATTENDED.equals(mode)) {
+        if (row.write() && LoopSettings.UNATTENDED.equals(mode)) {
             return new Planned(id, name, row, input, Outcome.ERROR, REFUSED,
-                    "'" + name + "' needs a person's approval, and this run is unattended");
+                    "'" + name + "' is a write, and this run is unattended");
         }
-        if (LoopSettings.MANUAL.equals(mode) || row.approval()) {
+        if (LoopSettings.MANUAL.equals(mode) || (row.write() && LoopSettings.WRITE.equals(mode))) {
             return new Planned(id, name, row, input, Outcome.WAIT, null, null);
         }
         return new Planned(id, name, row, input, Outcome.RUN, null, null);

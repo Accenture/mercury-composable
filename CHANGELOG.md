@@ -19,12 +19,13 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
    settings. The loop sends each model turn to `llm.chat`, served by the LLM helper of mercury-python or
    mercury-nodejs (`extensions/llm-helper`, with a transcript store configured), and calls the route each tool's name
    maps to. Before the first turn it checks the whole catalog and that every route is served, so a bad catalog fails
-   before a token is spent. It validates each input against the row's schema (a closed JSON Schema subset), holds a
-   marked write for a person (`mode`: `auto`, `manual` or `unattended`), resumes from the approval block with one
-   decision per waiting call, and stops at `max_turns`, at its `timeout`, at a refusal or at a cut-off turn. It
-   answers with an envelope a decision node routes on. Settings and their global defaults: `llm.run.max.turns` (10),
-   `llm.run.result.limit` (65536), `llm.run.transcript.ttl` (7d), `llm.run.transcript.retention` (0) and
-   `llm.run.timeout` (25s, below the graph's default `model.ttl`). The shared vector file `llm-run-vectors.json` (76
+   before a token is spent. It validates each input against the row's schema (a closed JSON Schema subset), applies
+   the node's mode to each tool call (`write`, the default, holds a tool marked `write: true` for a person; `auto`
+   runs every call; `manual` holds every call; `unattended` refuses a marked write), resumes from the approval block
+   with one decision per waiting call, and stops at `max_turns`, at its `timeout`, at a refusal or at a cut-off turn.
+   It answers with an envelope a decision node routes on. Settings and their global defaults: `llm.run.max.turns`
+   (10), `llm.run.result.limit` (65536), `llm.run.transcript.ttl` (7d), `llm.run.transcript.retention` (0) and
+   `llm.run.timeout` (25s, below the graph's default `model.ttl`). The shared vector file `llm-run-vectors.json` (81
    loop cases, 29 schema cases) carries the behaviour to the Rust port. **Upgrade note:** none; nothing changes until
    an application adds the module, and `llm.run` is a reserved route name once it does.
 

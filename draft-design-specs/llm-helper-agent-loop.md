@@ -1,9 +1,9 @@
 # Agent loop (`llm.run`) — tool names map to routes — design spec
 
-**Status:** DRAFT under **RFC-0011** (Open). Six review rounds, 2026-10-28 and 2026-10-29 (Eric), section 14.
+**Status:** DRAFT under **RFC-0011** (Open). Seven review rounds, 2026-10-28 to 2026-11-04 (Eric), section 14.
 Build plan step 1 is built in both packs (2026-11-03), and sections 3.2 and 3.3 carry what building it settled.
 Build plan step 2 is built in Java (`extensions/agent-loop`, 2026-11-03), and sections 4 to 6.1 carry what building
-it settled, for review.
+it settled, accepted by Eric on 2026-11-04 with the four approval modes of section 7.1 (round 7).
 **Reviewed and approved by Eric on 2026-11-03.** The promotion to an ADR is held until the end-to-end test
 from the engines to the language packs for AI SDLC is finished.
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
@@ -58,7 +58,7 @@ reserved for routes whose result is model output, plus the pack's own `llm.healt
 | Role | What it is | What it knows |
 | --- | --- | --- |
 | Graph | Outer control flow: sequence, decisions, approval, compensation | The `llm.run` nodes, their tool catalogs, their modes and limits |
-| Agent loop | `llm.run`, deterministic Java and Rust, one function on each engine | Tool name → route, schemas, approval marks, limits. Never the transcript |
+| Agent loop | `llm.run`, deterministic Java and Rust, one function on each engine | Tool name → route, schemas, write marks, limits. Never the transcript |
 | Model turn | `llm.chat` in a language pack, one completion per call | The provider SDK and wire format. The transcript, in its own store |
 | Agent | The LLM, at the provider | Transcript, system prompt, the tool catalog (name, description, schema) |
 | Tool route | A composable function, local or over Event-over-HTTP | Its own input contract. Nothing about the loop |
@@ -268,7 +268,7 @@ description    written on the graph; the model never sees the MCP server's own d
 input_schema   the schema advertised to the agent, and the one the loop validates against
 route          the composable-function route
 strict         true | (absent)     grammar-constrained arguments
-approval       required | (absent) a high-risk write, section 7
+write          true | (absent)     a tool that writes, section 7.1 (round 7; was approval: required)
 ```
 
 A route name such as `orders.search` cannot be an advertised name: the API refuses a dot. The row
@@ -284,7 +284,7 @@ create node triage-tools
 with type ToolCatalog
 with properties
 tools='''[ { "name": "create_issue", "route": "jira.create.issue",
-             "approval": "required", "description": "…", "input_schema": { } } ]'''
+             "write": true, "description": "…", "input_schema": { } } ]'''
 
 connect root to knowledge with contains
 connect knowledge to triage-tools with data
@@ -300,7 +300,7 @@ with properties
 skill=graph.task
 task=llm.run
 input[]=f:json(triage-tools.tools) -> tools
-input[]=text(auto) -> mode
+input[]=text(write) -> mode
 input[]=int(6) -> max_turns
 ```
 
@@ -310,10 +310,10 @@ the graph. That is the certification boundary, and the answer to the concept's Q
 
 **Pre-flight check.** The routes sit inside a JSON text, so the graph compiler never sees them.
 Before the first model turn, the loop checks that every name is valid and unique, every schema
-parses, every `approval` value is known, and every route is reachable (local, an Event-over-HTTP
+parses, every `write` mark is true or false, and every route is reachable (local, an Event-over-HTTP
 target, or the mesh). Any failure throws before a token is spent. This is the loop's failure, and
 it differs from an unknown name the model invents, which goes back to the model. *As built:* a field
-that is not a row's is refused too, so a misspelt `approval` can never let a write run; and an input
+that is not a row's is refused too, so a misspelt `write` can never let a write run; and an input
 schema is a closed subset of JSON Schema (the dialect the model is given, not the graph contract's
 OpenAPI 3.0 subset): `type` (a name or a list, `null` included), `properties`, `required`,
 `additionalProperties`, `items`, `enum`, `const`, the four bounds as numbers, `minLength`,
@@ -361,7 +361,7 @@ engine's `application.properties`:
 
 | Node input | Global default | Meaning |
 | --- | --- | --- |
-| `mode` | `auto` | approval mode, section 7.1 |
+| `mode` | `write` | the approval mode, which governs the use of tools, section 7.1 |
 | `max_turns` | `llm.run.max.turns=10` | the run's turn limit; a proxy for its cumulative input tokens |
 | `result_limit` | `llm.run.result.limit=65536` | the largest tool result, in characters of JSON text |
 | `transcript_ttl` | `llm.run.transcript.ttl=7d` | how long a running or waiting transcript lives; at least the longest approval wait |
@@ -386,18 +386,25 @@ limit stops before its calls run.
 
 ### 7.1 A tool call that must wait (the node's mode)
 
-A row marked `approval: required` is a high-risk write. The node that calls `llm.run` sets its mode,
-much as Claude Code has permission modes. The difference: the row's mark is fixed on the graph and
-certified with it, where Claude Code's `auto` asks a classifier to judge each call.
+A row marked `write: true` is a tool that writes. The node that calls `llm.run` sets its mode, and
+the mode governs the use of tools, much as Claude Code has permission modes. The difference: the
+row's mark is fixed on the graph and certified with it, where Claude Code's `auto` asks a classifier
+to judge each call.
 
 ```text
-mode=auto        (default) a row marked approval: required waits; every other row runs
+mode=write       (default) a row marked write: true waits for a person; every other row runs
+mode=auto        every call runs, a marked write included: a node designed for automation
 mode=manual      every tool call waits: a supervised run
-mode=unattended  a marked row is refused as a tool error and never waits: a run with nobody to ask
+mode=unattended  a marked write is refused as a tool error and never waits: a run with nobody to ask
 ```
 
-No mode runs a marked row without a person. A node may tighten (`manual`) or refuse (`unattended`),
-never bypass.
+A node runs a write without a person only when the graph says so, `mode=auto`, which is visible on
+the graph and certified with it; a node that sets no mode holds its writes (round 7). Narrow
+catalogs per node reduce the risk of misuse, and a graph designed for automation should not stop for
+a person on every write it was made to make. In `auto`, a write is guarded by the fixed catalog, the
+validated input, the narrow loop, the call log on the envelope and the span, and any business
+decision the graph routes after the loop (section 7.2). A tool result can still carry instructions
+that steer a write, and that is the risk a node accepts by declaring `auto`.
 
 When a turn holds a call that must wait, **the loop runs none of that turn's calls**. It returns
 `status: approval` with every call of the turn, its arguments included, because a person cannot
@@ -712,7 +719,7 @@ ticket's text can carry instructions. The controls:
 1. a fixed catalog per loop, certified on the graph;
 2. descriptions written on the graph, never taken from a server;
 3. inputs validated before dispatch;
-4. approval marks, and the node's mode;
+4. write marks, and the node's mode (a write runs unasked only under a declared `mode=auto`);
 5. MCP children and credentials in the pack's process, with servers named, never addressed;
 6. results capped, and kept as data that the loop never obeys;
 7. narrow loops, and no nesting;
@@ -766,7 +773,7 @@ These lessons hold on any engine:
 2. **`llm.run` in Java** (`extensions/agent-loop`): the loop, the pre-flight check, the modes and
    approvals, the settings, the envelope. Tests run on a scripted `llm.chat` route, with no tokens
    spent. Shared loop vectors (scripted turns → expected route calls and envelope) carry the
-   behaviour to Rust. **Built 2026-11-03**: `llm-run-vectors.json` holds 76 loop cases and 29 schema
+   behaviour to Rust. **Built 2026-11-03**: `llm-run-vectors.json` holds 81 loop cases and 29 schema
    cases, and a platform test runs the route with real tool routes.
 3. **The graph engine**: `async=true` on `graph.extension`, with and without `for_each`, and its
    CompileGraph check (section 8.1). Then the return route carried from each entry into the
@@ -807,7 +814,7 @@ loop does not change for it.
 12. A tool name maps to a route, and the loop calls the route when the agent asks.
 13. No nesting: each `llm.run` is a graph node, and the graph sequences them.
 14. The node calling the loop carries a mode, `auto` by default, which the graph can override.
-    High-risk writes ask for a person.
+    High-risk writes ask for a person. *(The default is superseded in round 7: `write`.)*
 15. No child processes in the JVM. MCP clients live in the language packs.
 16. The loop lives in the engines: Java first, then the Rust port catches up.
 17. The route is `llm.run` (Eric's proposal, agreed in review: the function is not an agent).
@@ -818,7 +825,8 @@ loop does not change for it.
 
 **Round 3** (on the round-2 open questions):
 
-21. Modes: `auto`, `manual` and `unattended`. No mode runs a marked row without a person.
+21. *(Superseded in round 7)* Modes: `auto`, `manual` and `unattended`. No mode runs a marked row
+    without a person.
 22. The run's budget is `max_turns`, a node setting with a global default, as a proxy for cumulative
     input tokens. There is no separate token limit.
 23. Audit retention has a global default in the application's configuration.
@@ -854,6 +862,19 @@ loop does not change for it.
     routes only.
 35. `return.path.routes` supports a wildcard, as in `order.status.*` (section 8.4). It follows the
     prefix rule of `invocation.observer.include`, and a bare `*` is refused.
+
+**Round 7** (2026-11-04, on PR #605, build plan step 2):
+
+36. The five defaults that building step 2 settled are accepted: the loop's `timeout` input, the
+    module's own JSON Schema subset for tool input schemas, unknown inputs and catalog fields refused,
+    `max_turns` over the conversation's turns, and `params` for the other `llm.chat` parameters
+    (sections 4 to 6.1).
+37. The mode governs the use of tools, and there are four: `write` (the default) holds a marked
+    write for a person, `auto` runs every call, `manual` holds every call, and `unattended` turns a
+    marked write back as a refusal. The row's mark is `write: true`, renamed from
+    `approval: required`, so it says what the tool is and each mode is a policy over it. Each node's
+    narrow catalog reduces the risk of misuse, and an agentic graph designed for automation should
+    not stop for a person on every write. Supersedes ruling 21 and the default of ruling 14.
 
 ## 15. Open questions
 

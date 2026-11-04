@@ -21,6 +21,7 @@ package org.platformlambda.agentloop;
 import org.platformlambda.core.util.AppConfigReader;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
  * The loop node's settings (RFC-0011, section 6.1). Each is a constant input mapping on the node, so it is visible
  * on the graph and certified with it; a global default for each lives in the application's configuration.
  *
- * @param mode the approval mode: auto, manual or unattended
+ * @param mode the approval mode: write (the default), auto, manual or unattended
  * @param maxTurns the conversation's turn limit, a proxy for the input tokens the run accumulates
  * @param resultLimit the largest tool result, in characters of JSON text
  * @param transcriptTtl how long a running or waiting transcript lives, as sent to {@code llm.chat}
@@ -37,10 +38,16 @@ import java.util.regex.Pattern;
  */
 public record LoopSettings(String mode, int maxTurns, int resultLimit, String transcriptTtl, String retention,
                            long timeoutMs) {
+    /** A tool marked {@code write: true} waits for a person; every other tool runs. The default. */
+    public static final String WRITE = "write";
+    /** Every tool runs, a marked write included: the node is designed for automation. */
     public static final String AUTO = "auto";
+    /** Every tool call waits for a person: a supervised run. */
     public static final String MANUAL = "manual";
+    /** A marked write goes back to the model as a refusal and never waits: a run with nobody to ask. */
     public static final String UNATTENDED = "unattended";
     static final String MODE_INPUT = "mode";
+    private static final List<String> MODES = List.of(WRITE, AUTO, MANUAL, UNATTENDED);
     static final String MAX_TURNS_INPUT = "max_turns";
     static final String RESULT_LIMIT_INPUT = "result_limit";
     static final String TRANSCRIPT_TTL_INPUT = "transcript_ttl";
@@ -104,10 +111,10 @@ public record LoopSettings(String mode, int maxTurns, int resultLimit, String tr
     public static LoopSettings resolve(Map<String, Object> input, Defaults defaults) {
         var mode = input.get(MODE_INPUT);
         if (mode == null) {
-            mode = AUTO;
+            mode = WRITE;
         }
-        if (!AUTO.equals(mode) && !MANUAL.equals(mode) && !UNATTENDED.equals(mode)) {
-            throw new IllegalArgumentException("mode must be auto, manual or unattended");
+        if (!MODES.contains(mode)) {
+            throw new IllegalArgumentException("mode must be write, auto, manual or unattended");
         }
         int maxTurns = positive(MAX_TURNS_INPUT, input.get(MAX_TURNS_INPUT), Defaults.MAX_TURNS_KEY,
                 defaults.maxTurns());

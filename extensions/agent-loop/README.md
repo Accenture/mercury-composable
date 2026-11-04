@@ -41,7 +41,7 @@ tools='''[ { "name": "credit_limit", "route": "credit.limit.lookup", "strict": t
              "description": "A customer's credit limit and its currency.",
              "input_schema": { "type": "object", "properties": { "id": { "type": "string" } },
                                "required": ["id"], "additionalProperties": false } },
-           { "name": "create_issue", "route": "issue.create", "approval": "required",
+           { "name": "create_issue", "route": "issue.create", "write": true,
              "description": "Open an issue for a credit officer to review.",
              "input_schema": { "type": "object", "properties": { "title": { "type": "string" } },
                                "required": ["title"] } } ]'''
@@ -55,7 +55,7 @@ ttl=60
 input[]=f:json(credit-tools.tools) -> tools
 input[]=text(You are a credit officer's assistant.) -> system
 input[]=input.body.question -> prompt
-input[]=text(auto) -> mode
+input[]=text(write) -> mode
 input[]=int(6) -> max_turns
 input[]=text(55s) -> timeout
 ```
@@ -71,9 +71,9 @@ input[]=text(55s) -> timeout
 | `input_schema` | The schema the model fills and the loop validates against, of `type` `object` (the vocabulary below). |
 | `route` | The composable-function route the loop calls. The model never sees it. |
 | `strict` | `true` asks the pack for grammar-constrained arguments. Optional. |
-| `approval` | `required` marks a high-risk write that waits for a person (see the modes). Optional. |
+| `write` | `true` marks a tool that writes; the node's mode decides whether it waits for a person. Optional. |
 
-Any other field is refused, so a misspelt `approval` can never let a write run. Before the first model turn the loop
+Any other field is refused, so a misspelt `write` can never let a write run. Before the first model turn the loop
 checks the whole catalog, and that every route is served: a local function, the mesh, or an Event-over-HTTP target.
 A failure throws with status 400 before a token is spent. A name the model invents is different: it goes back to the
 model as that call's error, and the model picks another tool or answers.
@@ -105,7 +105,7 @@ Any other input is refused with status 400 that lists the inputs, so a misspelt 
 
 | Input | Global default | Meaning |
 | --- | --- | --- |
-| `mode` | `auto` | The approval mode. |
+| `mode` | `write` | The approval mode, which governs the use of tools. |
 | `max_turns` | `llm.run.max.turns=10` | The conversation's turn limit, a proxy for the input tokens the run accumulates. A resume spends from the same budget. |
 | `result_limit` | `llm.run.result.limit=65536` | The largest tool result, in characters of JSON text. A larger one is cut and marked as cut. |
 | `transcript_ttl` | `llm.run.transcript.ttl=7d` | How long a running or waiting transcript lives. At least the longest approval wait. |
@@ -139,13 +139,22 @@ that call's error, carrying its status and message, never a stack trace.
 
 ## Approval
 
-| `mode` | A row marked `approval: required` | Any other row |
+The mode governs the use of tools:
+
+| `mode` | A row marked `write: true` | Any other row |
 | --- | --- | --- |
-| `auto` | waits for a person | runs |
+| `write` (default) | waits for a person | runs |
+| `auto` | runs | runs |
 | `manual` | waits for a person | waits for a person |
 | `unattended` | goes back to the model as a refusal, never waits | runs |
 
-No mode runs a marked row without a person. When a turn holds a call that must wait, the loop runs none of the
+A node runs a write without a person only when the graph says `mode=auto`, which is visible on the graph and
+certified with it; a node that sets no mode holds its writes. In `auto`, a write is guarded by the fixed catalog, the
+validated input, the narrow loop, the call log in the envelope and on the span, and any decision the graph routes
+after the loop. A tool result can still carry instructions that steer a write, and that is the risk a node accepts
+by declaring `auto`.
+
+When a turn holds a call that must wait, the loop runs none of the
 turn's calls: it returns `status: approval` with every call of the turn and its arguments, `wait: true` for each call
 that needs a decision. A call that could never run (an unknown name, an invalid input) does not wait.
 
@@ -185,7 +194,7 @@ its log line.
 
 `LlmRunVectorsTest` runs the shared vector file `src/test/resources/vectors/llm-run-vectors.json` against the loop: a
 scripted `llm.chat` checks every request the loop sends and answers it, scripted tool routes answer the calls, and a
-clock the script advances drives the deadline. No token is spent. The file carries 76 loop cases and 29 schema cases,
+clock the script advances drives the deadline. No token is spent. The file carries 81 loop cases and 29 schema cases,
 and the Rust port catches up from it byte-identical. `LlmRunPlatformTest` runs `llm.run` through the platform:
 registered by the classpath scan, with real routes, a route that throws, and a route that times out.
 
