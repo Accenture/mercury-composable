@@ -26,7 +26,8 @@
   `llm.stream`; another `params.model` than the pinned one is a 400; an ended or expired conversation is a 404 and a
   closed one a 409; a result that is not text is compact JSON. **Step 2 built 2026-11-04: PR #605** (`llm.run` in Java,
   `extensions/agent-loop`; branch `feat/agent-loop-llm-run`, commits `e98ed202`, `d855501d` (the IDE's findings, no
-  behaviour change) and `4f0178ab` (the four modes); OPEN, the squash to trim to one trailer): the loop, the pre-flight
+  behaviour change), `4f0178ab` (the four modes) and `dd87cd2d`; **MERGED 2026-11-04 02:50Z, squash `b4e0f35d`**, the tree
+  identical to the branch head; step 2 COMPLETE): the loop, the pre-flight
   check, the modes with approval and resume, the settings (`llm.run.*`), the envelope; `llm-run-vectors.json` (81 loop
   cases, 29 schema cases) for the Rust catch-up and a platform test. **Round 7 (Eric, 2026-11-04):** the five defaults
   are accepted (a `timeout` input, since `graph.task` passes no time to live; the module's own JSON Schema subset;
