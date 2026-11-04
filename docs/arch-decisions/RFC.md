@@ -65,7 +65,9 @@ decision would commit the project to:
    tool-result message and appends it, refusing a stale turn count with 409. The transcript stays in the provider's format,
    append-only, which the 5.5 models' thinking blocks require. It never crosses an engine codec, its model is pinned at the
    first turn (no server-side fallback is sent on a loop turn), and any pack replica can serve any turn. Build plan step 1
-   built this in both packs on 2026-11-03; the spec's sections 3.2 and 3.3 carry the full contract.
+   built this in both packs on 2026-11-03; the spec's sections 3.2 and 3.3 carry the full contract. Compaction, if a loop
+   ever needs it, is the provider's server-side compaction in the pack's `llm.chat`, never the loop's; deferred (Eric,
+   2026-11-04).
 3. **A tool name maps to a route.** The catalog is a skill-less dataset node under the graph's island, certified on the
    graph. Each row holds an API-safe name, a description written on the graph, the input schema, the route, `strict`, and
    `write: true` for a tool that writes. The loop checks the catalog before the first turn: names, schemas, write
