@@ -25,12 +25,15 @@
   record); a loop turn without a configured store is a 503; the loop fields need `tools` on `llm.chat` and are a 400 on
   `llm.stream`; another `params.model` than the pinned one is a 400; an ended or expired conversation is a 404 and a
   closed one a 409; a result that is not text is compact JSON. **Step 2 built 2026-11-04: PR #605** (`llm.run` in Java,
-  `extensions/agent-loop`; branch `feat/agent-loop-llm-run`, commits `e98ed202` and `d855501d` - the IDE's findings, no
-  behaviour change; OPEN for Eric's review): the loop, the pre-flight check, the
-  three modes with approval and resume, the settings (`llm.run.*`), the envelope; `llm-run-vectors.json` (76 loop cases,
-  29 schema cases) for the Rust catch-up and a platform test; five defaults await Eric's ruling in the PR (a `timeout`
-  input, since `graph.task` passes no time to live; the module's own JSON Schema subset; unknown inputs and row fields
-  refused; `max_turns` over the conversation; `params`). Next after the merge: step 3 (async `graph.extension`, progress
+  `extensions/agent-loop`; branch `feat/agent-loop-llm-run`, commits `e98ed202`, `d855501d` (the IDE's findings, no
+  behaviour change) and `4f0178ab` (the four modes); OPEN, the squash to trim to one trailer): the loop, the pre-flight
+  check, the modes with approval and resume, the settings (`llm.run.*`), the envelope; `llm-run-vectors.json` (81 loop
+  cases, 29 schema cases) for the Rust catch-up and a platform test. **Round 7 (Eric, 2026-11-04):** the five defaults
+  are accepted (a `timeout` input, since `graph.task` passes no time to live; the module's own JSON Schema subset;
+  unknown inputs and row fields refused; `max_turns` over the conversation; `params`), and **the mode governs the use of
+  tools, four modes**: `write` (the default) holds a row marked `write: true` (renamed from `approval: required`) for a
+  person, `auto` runs every call, `manual` holds every call, `unattended` refuses a marked write - a write runs unasked
+  only under a declared `mode=auto` (supersedes ruling 21 and ruling 14's default). Next after the merge: step 3 (async `graph.extension`, progress
   events) and step 4 (the Python MCP binding).
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
   README, the certification reports) are fixed by #601 (squash `72d43d06`) and mercury #401 (merge `e66ae513`), the packs' by mercury-python #48 (`463e37c`), all
