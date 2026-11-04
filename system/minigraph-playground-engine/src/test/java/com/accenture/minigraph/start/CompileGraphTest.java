@@ -253,6 +253,27 @@ class CompileGraphTest {
     }
 
     @Test
+    void theProgressPropertyAndTheReturnPathAreValidated() {
+        // RFC-0011 section 8.4: 'progress' is the text of a node's progress event, and only the engine passes a
+        // function its x-return-path - err1 a blank 'progress', err2 an input mapping to header.x-return-path
+        for (var id : List.of("unit-test-progress-1", "unit-test-progress-2", "unit-test-progress-3")) {
+            assertTrue(CompiledGraphs.graphExists(id), id + " must compile");
+        }
+        var expected = Map.of(
+                "unit-test-progress-err1",
+                "node work - 'progress' is the text of the node's progress event, so it cannot be blank",
+                "unit-test-progress-err2",
+                "node work - input 'input.header.x-return-path -> header.X-Return-Path' sets x-return-path, " +
+                        "which only the engine passes");
+        for (var entry : expected.entrySet()) {
+            assertFalse(CompiledGraphs.graphExists(entry.getKey()), entry.getKey() + " must fail the gate");
+            var graph = importGraph(entry.getKey());
+            var ex = assertThrows(IllegalArgumentException.class, () -> GraphModelValidator.validate(graph));
+            assertEquals(entry.getValue(), ex.getMessage());
+        }
+    }
+
+    @Test
     void descriptorNodesMayCarryInputOutputWithoutASkill() {
         // Guards the narrowing: 'input'/'output' are NOT the signal. A Provider node uses 'input'
         // for its HTTP request shape and a Dictionary node uses 'output' for its projection, and

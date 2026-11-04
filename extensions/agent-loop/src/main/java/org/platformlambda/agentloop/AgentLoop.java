@@ -21,6 +21,9 @@ package org.platformlambda.agentloop;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -110,6 +113,24 @@ public class AgentLoop {
     private static final String LLM_CHAT_FAILED = "llm.chat failed - ";
     private static final String OUTSIDE_CONTRACT = "llm.chat answered outside the loop contract - ";
     private static final String NO_LONGER_MATCHES = "') no longer matches the tool catalog or the mode";
+    // progress events (RFC-0011 section 8.4): sent to the caller's return route, never content
+    static final String TYPE = "type";
+    static final String PROGRESS = "progress";
+    static final String EVENT = "event";
+    static final String SEQ = "seq";
+    static final String TIME = "time";
+    static final String RUN_START = "run.start";
+    static final String RUN_END = "run.end";
+    static final String TURN_START = "turn.start";
+    static final String TURN_END = "turn.end";
+    static final String TOOL_START = "tool.start";
+    static final String TOOL_END = "tool.end";
+    static final String APPROVAL_WAIT = "approval.wait";
+    private static final String STOP_REASON = "stop_reason";
+    private static final String TOOL_COUNT = "tools";
+    private static final String MS = "ms";
+    private static final DateTimeFormatter TIME_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
 
     private final LoopGateway gateway;
     private final LoopSettings.Defaults defaults;
@@ -147,13 +168,30 @@ public class AgentLoop {
         String model;
         final Map<String, Long> usage = new LinkedHashMap<>();
         final List<Map<String, Object>> calls = new ArrayList<>();
+        final LoopGateway gateway;
+        final LongSupplier clock;
+        int seq;
 
-        Run(LoopSettings settings, ToolCatalog catalog, Map<String, Object> input, long deadline) {
+        Run(LoopSettings settings, ToolCatalog catalog, Map<String, Object> input, long deadline,
+            LoopGateway gateway, LongSupplier clock) {
             this.settings = settings;
             this.catalog = catalog;
             this.input = input;
             this.deadline = deadline;
+            this.gateway = gateway;
+            this.clock = clock;
             USAGE_KEYS.forEach(key -> usage.put(key, 0L));
+        }
+
+        /** One progress event: names, routes, counts and statuses only, numbered from 1 for this call. */
+        void emit(String event, Map<String, Object> data) {
+            var progress = new LinkedHashMap<String, Object>();
+            progress.put(TYPE, PROGRESS);
+            progress.put(EVENT, event);
+            progress.put(SEQ, ++seq);
+            progress.put(TIME, TIME_FORMAT.format(Instant.ofEpochMilli(clock.getAsLong())));
+            progress.put(DATA, data);
+            gateway.progress(progress);
         }
     }
 
@@ -180,13 +218,31 @@ public class AgentLoop {
             throw new AppException(503, "llm.chat is not reachable - deploy a language pack's LLM helper and " +
                     "declare llm.chat in yaml.event.over.http");
         }
-        var run = new Run(settings, catalog, input, start + settings.timeoutMs());
+        var run = new Run(settings, catalog, input, start + settings.timeoutMs(), gateway, clock);
+        var begin = new LinkedHashMap<String, Object>();
+        if (input.get(MODEL) instanceof String model) {
+            begin.put(MODEL, model);
+        }
+        begin.put(TOOL_COUNT, catalog.advertised().size());
+        begin.put(LoopSettings.MAX_TURNS_INPUT, settings.maxTurns());
+        run.emit(RUN_START, begin);
+        try {
+            var envelope = loop(run, input);
+            run.emit(RUN_END, ended(run, String.valueOf(envelope.get(STATUS))));
+            return envelope;
+        } catch (AppException e) {
+            run.emit(RUN_END, ended(run, ERROR));
+            throw e;
+        }
+    }
+
+    private Map<String, Object> loop(Run run, Map<String, Object> input) throws AppException {
         List<Map<String, Object>> results = null;
         if (input.get(CONVERSATION) != null) {
             run.conversation = (String) input.get(CONVERSATION);
             run.turn = intOf(input.get(TURN));
             var planned = planResume(run);
-            if (run.turn >= settings.maxTurns()) {
+            if (run.turn >= run.settings.maxTurns()) {
                 return cap(run, CAP_TURNS);
             }
             if (timeLeft(run) < MIN_STEP_MS) {
@@ -195,6 +251,14 @@ public class AgentLoop {
             results = dispatch(run, planned);
         }
         return turns(run, results);
+    }
+
+    private static Map<String, Object> ended(Run run, String status) {
+        var data = new LinkedHashMap<String, Object>();
+        data.put(STATUS, status);
+        data.put(TURNS, run.turns);
+        data.put(USAGE, new LinkedHashMap<>(run.usage));
+        return data;
     }
 
     private Map<String, Object> turns(Run run, List<Map<String, Object>> answers) throws AppException {
@@ -232,6 +296,7 @@ public class AgentLoop {
     private Optional<Map<String, Object>> modelTurn(Run run, List<Map<String, Object>> results, long budget)
             throws AppException {
         var request = chatRequest(run, results, budget);
+        run.emit(TURN_START, Map.of(TURN, run.turn + 1));
         var response = await(() -> gateway.chat(request, budget + RESERVE_MS / 2));
         if (response.getStatus() == 408) {
             return Optional.empty();
@@ -244,6 +309,11 @@ public class AgentLoop {
         }
         var reply = (Map<String, Object>) response.getBody();
         noteTurn(run, reply);
+        var end = new LinkedHashMap<String, Object>();
+        end.put(TURN, run.turn);
+        end.put(STOP_REASON, reply.get(STOP_REASON) instanceof String reason? reason : reply.get(STATUS));
+        end.put(USAGE, turnUsage(reply));
+        run.emit(TURN_END, end);
         return Optional.of(reply);
     }
 
@@ -390,6 +460,16 @@ public class AgentLoop {
         return request;
     }
 
+    private static Map<String, Object> turnUsage(Map<String, Object> reply) {
+        var usage = new LinkedHashMap<String, Object>();
+        if (reply.get(USAGE) instanceof Map<?, ?> given) {
+            for (var key : USAGE_KEYS) {
+                usage.put(key, given.get(key) instanceof Number n? n.longValue() : 0L);
+            }
+        }
+        return usage;
+    }
+
     @SuppressWarnings("unchecked")
     private static void noteTurn(Run run, Map<String, Object> reply) throws AppException {
         if (!(reply.get(CONVERSATION) instanceof String reference) || reference.isEmpty()) {
@@ -499,6 +579,13 @@ public class AgentLoop {
             }
             calls.add(call);
         }
+        var waiting = new ArrayList<Map<String, Object>>();
+        for (var p : planned) {
+            if (p.outcome() == Outcome.WAIT) {
+                waiting.add(callNames(p));
+            }
+        }
+        run.emit(APPROVAL_WAIT, Map.of(CALLS, waiting));
         var block = new LinkedHashMap<String, Object>();
         block.put(CALLS, calls);
         return envelope(run, APPROVAL).with(APPROVAL, block).build();
@@ -635,9 +722,21 @@ public class AgentLoop {
      */
     private List<Map<String, Object>> dispatch(Run run, List<Planned> planned) throws AppException {
         var budget = timeLeft(run);
+        var started = clock.getAsLong();
+        var ended = new long[planned.size()];
         // every request is issued here, on the worker thread, before any is awaited
-        List<CompletableFuture<EventEnvelope>> futures = planned.stream().map(p -> p.outcome() == Outcome.RUN ?
-                safely(() -> gateway.call(p.row().route(), p.input(), budget)) : null).toList();
+        var futures = new ArrayList<CompletableFuture<EventEnvelope>>();
+        for (int i = 0; i < planned.size(); i++) {
+            var p = planned.get(i);
+            if (p.outcome() == Outcome.RUN) {
+                run.emit(TOOL_START, toolData(run, p));
+                var index = i;
+                futures.add(safely(() -> gateway.call(p.row().route(), p.input(), budget))
+                        .whenComplete((response, e) -> ended[index] = clock.getAsLong()));
+            } else {
+                futures.add(null);
+            }
+        }
         var results = new ArrayList<Map<String, Object>>();
         for (int i = 0; i < planned.size(); i++) {
             var p = planned.get(i);
@@ -669,8 +768,32 @@ public class AgentLoop {
             }
             entry.put(STATUS, label);
             run.calls.add(entry);
+            if (p.outcome() == Outcome.RUN) {
+                // in call order, so a watcher sees a turn's results the way the model gets them
+                var end = toolData(run, p);
+                end.put(STATUS, label);
+                end.put(MS, Math.max(0, ended[i] - started));
+                run.emit(TOOL_END, end);
+            }
         }
         return results;
+    }
+
+    private static Map<String, Object> callNames(Planned p) {
+        var names = new LinkedHashMap<String, Object>();
+        names.put(ID, p.id());
+        names.put(NAME, p.name());
+        if (p.row() != null && p.row().route() != null) {
+            names.put(ROUTE, p.row().route());
+        }
+        return names;
+    }
+
+    private static Map<String, Object> toolData(Run run, Planned p) {
+        var data = new LinkedHashMap<String, Object>();
+        data.put(TURN, run.turn);
+        data.putAll(callNames(p));
+        return data;
     }
 
     /**

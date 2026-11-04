@@ -20,6 +20,7 @@ package com.accenture.minigraph.skills;
 
 import com.accenture.minigraph.common.GraphLambdaFunction;
 import com.accenture.minigraph.models.GraphInstance;
+import com.accenture.minigraph.progress.ReturnChannel;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleNode;
@@ -86,7 +87,7 @@ public class GraphTask extends GraphLambdaFunction {
         var mapping = getEntries(node.getProperty(INPUT));
         var forEach = getEntries(node.getProperty(FOR_EACH));
         if (forEach.isEmpty()) {
-            var request = buildTaskRequest(nodeName, route, mapping, stateMachine);
+            var request = withReturnPath(buildTaskRequest(nodeName, route, mapping, stateMachine), graphInstance, node);
             return invokeTask(po, node, graphInstance, route, request, timeout);
         }
         Map<String, List<Object>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
@@ -97,6 +98,11 @@ public class GraphTask extends GraphLambdaFunction {
         }
         callTaskWithForkJoin(po, graphInstance, node, route, forEachMapping, mapping, timeout);
         return nextPath(stateMachine, node);
+    }
+
+    private EventEnvelope withReturnPath(EventEnvelope request, GraphInstance graphInstance, SimpleNode node) {
+        var returnPath = returnPathFor(graphInstance, node);
+        return returnPath == null? request : request.setHeader(ReturnChannel.X_RETURN_PATH, returnPath);
     }
 
     private EventEnvelope buildTaskRequest(String nodeName, String route,
@@ -207,7 +213,7 @@ public class GraphTask extends GraphLambdaFunction {
             for (var kv : paramSet.entrySet()) {
                 stateMachine.setElement(kv.getKey(), kv.getValue());
             }
-            stack.add(buildTaskRequest(nodeName, route, mapping, stateMachine));
+            stack.add(withReturnPath(buildTaskRequest(nodeName, route, mapping, stateMachine), graphInstance, node));
         }
         log.info("Call task {}, for each {}, parallel={}, ttl={}",
                 route, forEachMapping.keySet(), concurrency, timeout);

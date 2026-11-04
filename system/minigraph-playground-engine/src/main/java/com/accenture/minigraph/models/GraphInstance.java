@@ -18,12 +18,14 @@
 
 package com.accenture.minigraph.models;
 
+import com.accenture.minigraph.progress.ReturnChannel;
 import org.platformlambda.core.graph.MiniGraph;
 import org.platformlambda.core.util.MultiLevelMap;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class GraphInstance {
     private static final String FLOW_INSTANCE = "flow_instance";
@@ -48,9 +50,19 @@ public class GraphInstance {
      */
     public final AtomicBoolean pendingInputValidation = new AtomicBoolean(false);
     private final ConcurrentMap<String, Object> metadata = new ConcurrentHashMap<>();
+    // the way back to a caller that watches the run (RFC-0011 section 8.4); null for a caller that waits for the result
+    private final AtomicReference<ReturnChannel> returnChannel = new AtomicReference<>();
 
     public GraphInstance(String graphId) {
         this.graphId = graphId;
+    }
+
+    public ReturnChannel getReturnChannel() {
+        return returnChannel.get();
+    }
+
+    public void setReturnChannel(ReturnChannel channel) {
+        returnChannel.set(channel);
     }
 
     public String getCorrelationId() {

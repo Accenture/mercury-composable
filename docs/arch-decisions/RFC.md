@@ -109,7 +109,9 @@ decision would commit the project to:
      publishes to a Kafka topic. The engine sends and never waits; a receiver orders a sender's events by `seq`; and only
      routes the application declares (`return.path.routes`) are honoured (rules accepted in round 6). An entry ending
      with `*` declares a family by prefix (`order.status.*`), as `invocation.observer.include` does, and a bare `*` is
-     refused. A node opts in with `progress=<text>`, and only then does its function receive `x-return-path`.
+     refused. A node opts in with `progress=<text>`, and only then does its function receive `x-return-path`. Build plan
+     step 3 built it in Java on 2026-11-04, with the WebSocket entry; the spec's sections 8.2 and 8.4 mark what
+     building it settled.
 7. **MCP bindings live in the language packs** (Python, then Node.js). They use the official MCP SDK client, never a child
    process of an engine: a stdio server runs as a subprocess of the pack, which is why the MCP client lives there. Servers
    are named in the pack's configuration; there is one route per allowlisted remote tool, and

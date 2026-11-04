@@ -39,11 +39,13 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -57,6 +59,8 @@ class LlmRunPlatformTest {
     private static final String SLOW_LEDGER = "test.slow.ledger";
     private static final String FAILING_LEDGER = "test.failing.ledger";
     private static final String CONV = "0123456789abcdef0123456789abcdef";
+    private static final String WATCHER = "test.progress.watcher";
+    private static final BlockingQueue<EventEnvelope> WATCHED = new LinkedBlockingQueue<>();
     private static final ConcurrentLinkedQueue<Map<String, Object>> REPLIES = new ConcurrentLinkedQueue<>();
     private static final List<Map<String, Object>> REQUESTS = new CopyOnWriteArrayList<>();
 
@@ -86,6 +90,10 @@ class LlmRunPlatformTest {
                 (TypedLambdaFunction<Map<String, Object>, Object>) (headers, input, instance) -> {
                     throw new AppException(503, "ledger offline");
                 }, 1);
+        platform.registerPrivate(WATCHER, (TypedLambdaFunction<EventEnvelope, Void>) (headers, input, instance) -> {
+            WATCHED.add(input);
+            return null;
+        }, 1);
         platform.registerPrivate(SLOW_LEDGER,
                 (TypedLambdaFunction<Map<String, Object>, Object>) (headers, input, instance) ->
                         Mono.just(Map.of("balance", 1)).delayElement(Duration.ofMillis(2500)), 1);
@@ -95,6 +103,7 @@ class LlmRunPlatformTest {
     void reset() {
         REPLIES.clear();
         REQUESTS.clear();
+        WATCHED.clear();
     }
 
     private static Map<String, Object> row(String route) {
@@ -165,6 +174,42 @@ class LlmRunPlatformTest {
         assertEquals("c1", results.getFirst().get("id"));
         var output = (Map<String, Object>) results.getFirst().get("output");
         assertEquals(5000, ((Number) output.get("limit")).intValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void progressGoesToTheCallersReturnPath() throws Exception {
+        REPLIES.add(toolUse());
+        REPLIES.add(done());
+        var po = new PostOffice("unit.test", "trace-agent-loop", "TEST /agent-loop");
+        var request = new EventEnvelope().setTo("llm.run").setBody(input(CREDIT_LIMIT))
+                .setHeader("x-return-path", WATCHER);
+        var response = po.request(request, 15000).get();
+        assertEquals(200, response.getStatus(), String.valueOf(response.getError()));
+        var names = new ArrayList<String>();
+        EventEnvelope last = null;
+        while (names.size() < 8) {
+            var event = WATCHED.poll(5, TimeUnit.SECONDS);
+            assertNotNull(event, "events so far: " + names);
+            var body = (Map<String, Object>) event.getBody();
+            names.add(String.valueOf(body.get("event")));
+            assertEquals("progress", body.get("type"));
+            assertEquals(names.size(), ((Number) body.get("seq")).intValue());
+            assertNull(event.getTraceId(), "a progress event adds no span");
+            last = event;
+        }
+        assertEquals(List.of("run.start", "turn.start", "turn.end", "tool.start", "tool.end", "turn.start",
+                "turn.end", "run.end"), names);
+        var end = (Map<String, Object>) ((Map<String, Object>) last.getBody()).get("data");
+        assertEquals("done", end.get("status"));
+    }
+
+    @Test
+    void withoutAReturnPathNothingIsSent() throws Exception {
+        REPLIES.add(done());
+        var response = run(input(CREDIT_LIMIT));
+        assertEquals(200, response.getStatus());
+        assertNull(WATCHED.poll(500, TimeUnit.MILLISECONDS), "a caller that names no return route gets no events");
     }
 
     @Test

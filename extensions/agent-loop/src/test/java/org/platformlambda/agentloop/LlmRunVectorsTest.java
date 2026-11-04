@@ -112,6 +112,10 @@ class LlmRunVectorsTest {
                 fail("envelope\n expected " + Json.compact(expected) + "\n      got " + Json.compact(envelope));
             }
         }
+        if (expect.containsKey("events") && !ToolSchema.jsonEquals(expect.get("events"), gateway.events)) {
+            fail("events\n expected " + Json.compact(expect.get("events")) + "\n      got " +
+                    Json.compact(gateway.events));
+        }
         gateway.verifyUsed();
     }
 
@@ -154,6 +158,7 @@ class LlmRunVectorsTest {
         private final AtomicLong clock;
         private final Deque<Map<String, Object>> turns = new ArrayDeque<>();
         private List<Map<String, Object>> pending = new ArrayList<>();
+        private final List<Map<String, Object>> events = new ArrayList<>();
         private int turnNumber;
 
         @SuppressWarnings("unchecked")
@@ -206,6 +211,11 @@ class LlmRunVectorsTest {
                 }
             }
             throw new AssertionError("an unscripted call to " + route + " with " + Json.compact(body));
+        }
+
+        @Override
+        public void progress(Map<String, Object> event) {
+            events.add(event);
         }
 
         private static EventEnvelope answer(Map<String, Object> scripted) {

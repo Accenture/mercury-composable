@@ -19,6 +19,7 @@
 package com.accenture.minigraph.common;
 
 import com.accenture.minigraph.contract.GraphSchema;
+import com.accenture.minigraph.progress.ReturnChannel;
 import com.accenture.minigraph.skills.GraphApiFetcher;
 import com.accenture.minigraph.skills.GraphExtension;
 import com.accenture.minigraph.skills.GraphIsland;
@@ -73,6 +74,7 @@ public class GraphModelValidator {
     private static final String MODEL_PREFIX = "model";
     private static final String STATEMENT = "statement";
     private static final String MAP_TO = "->";
+    private static final String HEADER_PREFIX = "header.";
     private static final String SCHEMA = "schema";
     // the nodes whose 'schema' property is the graph contract: the root (request) and the end (response)
     private static final List<String> SCHEMA_NODES = List.of("root", "end");
@@ -111,6 +113,7 @@ public class GraphModelValidator {
         validateSuspendResume(graph);
         validateNodeTtl(graph);
         validateAsyncExtension(graph);
+        validateProgress(graph);
         validateModelMetadataImmutability(graph);
         validateJsonPaths(graph);
         validateSchemas(graph);
@@ -486,6 +489,31 @@ public class GraphModelValidator {
             if (GraphExtension.isAsync(node) && !textEntries(node.getProperty(OUTPUT)).isEmpty()) {
                 throw new IllegalArgumentException(NODE_NAME + node.getAlias()
                         + " - an asynchronous graph.extension returns nothing, so it takes no 'output'");
+            }
+        }
+    }
+
+    /**
+     * A node opts in to progress events with {@code progress=<text>} (RFC-0011 section 8.4): the text is the message
+     * of the engine's {@code node.start} event, so it is required. The engine alone gives a function its return path,
+     * and only on a node that opts in, so an input mapping to {@code header.x-return-path} is refused: it would pass
+     * a caller's route to a function the graph did not opt in, or a route the application never declared.
+     */
+    private static void validateProgress(MiniGraph graph) {
+        for (SimpleNode node : graph.getNodes()) {
+            var progress = node.getProperty(ReturnChannel.PROGRESS);
+            if (node.getProperty(SKILL) != null && progress != null
+                    && !(progress instanceof String text && !text.isBlank())) {
+                throw new IllegalArgumentException(NODE_NAME + node.getAlias()
+                        + " - 'progress' is the text of the node's progress event, so it cannot be blank");
+            }
+            for (String entry : textEntries(node.getProperty(INPUT))) {
+                var sep = entry.lastIndexOf(MAP_TO);
+                var target = sep < 0? "" : entry.substring(sep + MAP_TO.length()).trim();
+                if (target.equalsIgnoreCase(HEADER_PREFIX + ReturnChannel.X_RETURN_PATH)) {
+                    throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " - input '" + entry
+                            + "' sets " + ReturnChannel.X_RETURN_PATH + ", which only the engine passes");
+                }
             }
         }
     }

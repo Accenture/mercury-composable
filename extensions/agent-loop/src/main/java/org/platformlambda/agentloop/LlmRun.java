@@ -34,18 +34,25 @@ import java.util.Map;
  * Telemetry: the function's span parents every {@code llm.chat} turn and every tool call, and its annotations
  * carry the status, the turn counts, the model and the usage. They never carry a prompt, a completion, a tool's
  * input or a tool's result, and neither does the log line.
+ * <p>
+ * Progress: when the caller passes {@code x-return-path} (the graph engine does, for a node with {@code progress}),
+ * the loop sends its progress events there - {@code run.start}, {@code turn.start}, {@code turn.end},
+ * {@code tool.start}, {@code tool.end}, {@code approval.wait} and {@code run.end} - numbered from 1 for each call.
  */
 @PreLoad(route = "llm.run", instances = 50, envInstances = "worker.instances.llm.run")
 public class LlmRun implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
     private static final Logger log = LoggerFactory.getLogger(LlmRun.class);
+    // the business correlation id the platform gives every function
+    private static final String MY_CORRELATION_ID = "my_correlation_id";
 
     @Override
     @SuppressWarnings("unchecked")
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
             throws AppException {
         var po = new PostOffice(headers, instance);
-        var loop = new AgentLoop(new PlatformGateway(po), LoopSettings.Defaults.fromConfig(),
-                System::currentTimeMillis);
+        var gateway = new PlatformGateway(po, headers.get(PlatformGateway.X_RETURN_PATH),
+                headers.get(MY_CORRELATION_ID));
+        var loop = new AgentLoop(gateway, LoopSettings.Defaults.fromConfig(), System::currentTimeMillis);
         var envelope = loop.run(input);
         var status = String.valueOf(envelope.get(AgentLoop.STATUS));
         var reason = envelope.get(AgentLoop.CAP);

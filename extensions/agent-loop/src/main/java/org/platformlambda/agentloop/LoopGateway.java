@@ -55,4 +55,14 @@ public interface LoopGateway {
      * @return the response; a timeout is status 408
      */
     CompletableFuture<EventEnvelope> call(String route, Object body, long timeoutMs);
+
+    /**
+     * Send one progress event to the caller's return route (RFC-0011 section 8.4), without waiting: a return route
+     * that fails never fails the run. A caller that names no return route gets none.
+     *
+     * @param event the event: names, routes, counts and statuses only
+     */
+    default void progress(Map<String, Object> event) {
+        // nobody watches
+    }
 }

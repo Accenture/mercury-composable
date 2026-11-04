@@ -18,6 +18,7 @@
 
 package com.accenture.minigraph.start;
 
+import com.accenture.minigraph.progress.ReturnPaths;
 import com.accenture.minigraph.common.GraphModelGate;
 import com.accenture.minigraph.models.CompiledGraphs;
 import org.platformlambda.core.annotations.BeforeApplication;
@@ -89,6 +90,8 @@ public class CompileGraph implements EntryPoint {
 
     @Override
     public void start(String[] args) {
+        // the declared return paths are read once here, so a refused entry is logged at startup, by name
+        ReturnPaths.getInstance();
         GraphSetLoader.reset();
         AppConfigReader config = AppConfigReader.getInstance();
         if (!config.getProperty("location.graph.deployed", "").isBlank()) {

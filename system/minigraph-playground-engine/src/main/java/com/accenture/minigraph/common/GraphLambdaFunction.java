@@ -20,6 +20,7 @@ package com.accenture.minigraph.common;
 
 import com.accenture.minigraph.contract.GraphSchemaValidator;
 import com.accenture.minigraph.models.GraphInstance;
+import com.accenture.minigraph.progress.ReturnChannel;
 import com.accenture.minigraph.models.GraphSession;
 import com.accenture.util.DataMappingHelper;
 import com.accenture.util.JsonPathSource;
@@ -774,6 +775,23 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
             return com.accenture.minigraph.skills.GraphSuspend.getValidTtlSeconds(nodeTtl, node.getAlias()) * 1000L;
         }
         return getModelTtl(instance);
+    }
+
+    /**
+     * The return path a node passes to its function or synchronous subgraph: the relay route of a watched run, for
+     * a node that carries {@code progress} (RFC-0011 section 8.4). A node without the property never passes one, so
+     * a function that forwards its headers cannot leak a caller's return path.
+     *
+     * @param graphInstance the run
+     * @param node the node
+     * @return the relay route, or null
+     */
+    protected String returnPathFor(GraphInstance graphInstance, SimpleNode node) {
+        var channel = graphInstance.getReturnChannel();
+        if (channel == null || !(node.getProperty(ReturnChannel.PROGRESS) instanceof String text) || text.isBlank()) {
+            return null;
+        }
+        return channel.relayFor(node.getAlias());
     }
 
     protected void fillFetcherApiParameters(String nodeName,

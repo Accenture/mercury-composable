@@ -22,12 +22,15 @@ import com.accenture.minigraph.common.GraphLambdaFunction;
 import com.accenture.minigraph.models.CompiledGraphs;
 import com.accenture.minigraph.models.GraphInstance;
 import com.accenture.minigraph.models.Visits;
+import com.accenture.minigraph.progress.ReturnChannel;
+import com.accenture.minigraph.progress.ReturnPaths;
 import com.accenture.minigraph.skills.GraphJoin;
 import com.accenture.models.FlowInstance;
 import com.accenture.models.Flows;
 import org.platformlambda.core.annotations.EventInterceptor;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.annotations.ZeroTracing;
+import org.platformlambda.automation.http.AsyncHttpClient;
 import org.platformlambda.core.exception.AppException;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.SimpleNode;
@@ -81,8 +84,11 @@ public class GraphExecutor extends GraphLambdaFunction {
         // The span that triggered this graph (stamped by the event-script task executor) is the
         // parent span for the graph's first node, establishing OTel lineage into the graph.
         var parentSpanId = event.getSpanId();
+        ReturnChannel channel = null;
         try {
+            channel = openChannel(headers);
             var graphInstance = createInstance(headers, event.getReplyTo(), event.getCorrelationId());
+            graphInstance.setReturnChannel(channel);
             // the traversal log labels each line with the run's trace id (fallback:
             // flow instance id when tracing is off) - capture it once at the start
             graphInstance.setTraceId(event.getTraceId());
@@ -93,8 +99,89 @@ public class GraphExecutor extends GraphLambdaFunction {
             var rc = e instanceof AppException ex? ex.getStatus() : 400;
             var error = new EventEnvelope().setTo(event.getReplyTo()).setStatus(rc).setBody(e.getMessage())
                     .setCorrelationId(event.getCorrelationId()).setSpanId(parentSpanId);
+            if (channel != null) {
+                channel.finish(error);
+                channel.close();
+            }
             po.send(error);
         }
+    }
+
+    /**
+     * The way back to a caller that watches the run (RFC-0011 section 8.4), decided by the entry: a WebSocket session
+     * names itself; a REST request with {@code stream: true} replies through its own lane; a plain REST request takes
+     * the final result alone, so an inbound HTTP {@code x-return-path} has no effect; any other entry may name a
+     * return route in its {@code x-return-path} header, which the application must declare in
+     * {@code return.path.routes} (or which is the relay of a parent run, for a synchronous subgraph).
+     *
+     * @param headers the flow task's headers
+     * @return the channel, or null when nobody watches the run
+     */
+    @SuppressWarnings("unchecked")
+    private ReturnChannel openChannel(Map<String, String> headers) {
+        var flowInstance = Flows.getFlowInstance(headers.get(INSTANCE));
+        var graphId = headers.get(GRAPH);
+        if (flowInstance == null || graphId == null) {
+            return null;
+        }
+        var channel = channelFor(flowInstance, graphId,
+                flowInstance.dataset.get(INPUT) instanceof Map<?, ?> input? (Map<String, Object>) input : Map.of());
+        if (channel != null) {
+            channel.setCid(flowInstance.businessCorrelationId);
+        }
+        return channel;
+    }
+
+    private ReturnChannel channelFor(FlowInstance flowInstance, String graphId, Map<String, Object> input) {
+        var socket = ReturnChannel.takeSocket(flowInstance.internalCorrelationId);
+        if (socket != null) {
+            return ReturnChannel.socket(socket, flowInstance.id, graphId);
+        }
+        var replyTo = flowInstance.replyTo;
+        if (replyTo != null) {
+            var at = replyTo.indexOf('@');
+            var route = at > 0? replyTo.substring(0, at) : replyTo;
+            if (route.startsWith(AsyncHttpClient.ASYNC_HTTP_RESPONSE_STREAM_POOL + ".")) {
+                return ReturnChannel.stream(replyTo, flowInstance.internalCorrelationId, flowInstance.id, graphId);
+            }
+            if (route.equals(AsyncHttpClient.ASYNC_HTTP_RESPONSE)) {
+                return null;
+            }
+        }
+        var returnPath = returnPathHeader(input);
+        if (returnPath == null) {
+            return null;
+        }
+        if (ReturnChannel.isLiveRelay(returnPath) || ReturnPaths.getInstance().isDeclared(returnPath)) {
+            return ReturnChannel.event(returnPath, flowInstance.id, graphId);
+        }
+        log.warn("Graph {} ignores x-return-path '{}' - it is not declared in {}, so the run sends no progress",
+                graphId, returnPath, ReturnPaths.RETURN_PATH_ROUTES);
+        return null;
+    }
+
+    private static String returnPathHeader(Map<String, Object> input) {
+        if (input.get(HEADER) instanceof Map<?, ?> header) {
+            for (var kv : header.entrySet()) {
+                if (ReturnChannel.X_RETURN_PATH.equalsIgnoreCase(String.valueOf(kv.getKey()))
+                        && kv.getValue() != null && !String.valueOf(kv.getValue()).isBlank()) {
+                    return String.valueOf(kv.getValue()).trim();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Answer the run's caller: the terminal event to a watching caller first, then the response.
+     */
+    private void reply(PostOffice po, GraphInstance graphInstance, EventEnvelope response) {
+        var channel = graphInstance.getReturnChannel();
+        if (channel != null) {
+            channel.finish(response);
+        }
+        po.send(response);
+        graphInstance.complete.set(true);
     }
 
     private GraphInstance createInstance(Map<String, String> headers, String replyTo, String cid) {
@@ -223,8 +310,7 @@ public class GraphExecutor extends GraphLambdaFunction {
             var cid = graphInstance.getCorrelationId();
             var error = new EventEnvelope().setTo(replyTo).setCorrelationId(cid).setBody(errorMap)
                     .setStatus(rc).setSpanId(parentSpanId);
-            po.send(error);
-            graphInstance.complete.set(true);
+            reply(po, graphInstance, error);
         } else if (!graphInstance.complete.get()) {
             if (processStatus instanceof Integer && resultError != null) {
                 // the node failed and routed to its exception= handler ('next' is the
@@ -278,8 +364,20 @@ public class GraphExecutor extends GraphLambdaFunction {
                 if (traversalLog && log.isInfoEnabled()) {
                     log.info("{}", traversalRecord("Walk to " + nodeName, graphInstance));
                 }
+                announce(graphInstance, node);
                 walkTo(po, skill, graphInstance, node, from, parentSpanId);
             }
+        }
+    }
+
+    /**
+     * The engine's progress event for a node that carries a {@code progress} property: {@code node.start}, with the
+     * property's text as its message.
+     */
+    private void announce(GraphInstance graphInstance, SimpleNode node) {
+        var channel = graphInstance.getReturnChannel();
+        if (channel != null && node.getProperty(ReturnChannel.PROGRESS) instanceof String text && !text.isBlank()) {
+            channel.nodeStart(node.getAlias(), text.trim());
         }
     }
 
@@ -337,8 +435,7 @@ public class GraphExecutor extends GraphLambdaFunction {
             var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
                     .setCorrelationId(graphInstance.getCorrelationId()).setBody(errorMap)
                     .setStatus(failure.getStatus()).setSpanId(parentSpanId);
-            po.send(error);
-            graphInstance.complete.set(true);
+            reply(po, graphInstance, error);
             logAborted(graphInstance, String.valueOf(errorMap.get(MESSAGE)));
         } else {
             stageErrorContext(stateMachine, nodeName);
@@ -364,8 +461,7 @@ public class GraphExecutor extends GraphLambdaFunction {
         for (Map.Entry<String, Object> kv : headers.entrySet()) {
             response.setHeader(kv.getKey(), kv.getValue());
         }
-        po.send(response.setBody(body));
-        graphInstance.complete.set(true);
+        reply(po, graphInstance, response.setBody(body));
         if (traversalLog && log.isInfoEnabled()) {
             var elapsed = System.currentTimeMillis() - graphInstance.getStartTime();
             log.info("{}", traversalRecord("Graph traversal completed in " + elapsed + " ms", graphInstance));
@@ -488,8 +584,7 @@ public class GraphExecutor extends GraphLambdaFunction {
                                         .setCorrelationId(graphInstance.getCorrelationId())
                                         .setBody(response.getBody()).setStatus(response.getStatus())
                                         .setSpanId(parentSpanId);
-        po.send(error);
-        graphInstance.complete.set(true);
+        reply(po, graphInstance, error);
         logAborted(graphInstance, String.valueOf(response.getBody()));
     }
 
@@ -497,8 +592,7 @@ public class GraphExecutor extends GraphLambdaFunction {
         var error = new EventEnvelope().setTo(graphInstance.getReplyTo())
                             .setCorrelationId(graphInstance.getCorrelationId()).setBody(message).setStatus(400)
                             .setSpanId(parentSpanId);
-        po.send(error);
-        graphInstance.complete.set(true);
+        reply(po, graphInstance, error);
         logAborted(graphInstance, message);
     }
 
