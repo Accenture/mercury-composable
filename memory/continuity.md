@@ -405,6 +405,8 @@
   Ninth instance (2026-11-04): PR #605's squash `b4e0f35d` carries five trailers - one per commit of four, plus GitHub's -
   with the `---------` rule in the handoff, after Eric chose to keep the commits rather than have the branch squashed.
   The title held; the body's trim did not. The repository default (the PR title and description) remains the open fix.
+  Tenth instance (2026-11-04): PR #610's squash `89ffe5d9`, a two-commit PR that a side session opened, carries two
+  `Co-Authored-By` lines, one per commit; the title held. A side session's PR needs the same handoff rule.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-04 | uses: 118 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
