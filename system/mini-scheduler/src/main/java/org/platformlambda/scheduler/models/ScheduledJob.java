@@ -26,10 +26,11 @@ public class ScheduledJob {
     /** A parameter key that starts with "_" is reserved for the system: a job's own parameters never use one. */
     public static final String RESERVED_PREFIX = "_";
     /**
-     * The firing's id, added to the parameters the state resolver receives with "expires" and "start". It is the same
-     * for every request one firing makes, so a resolver can tell a retried question from a peer's.
+     * The scheduler instance's origin id, added to the parameters the state resolver receives with "expires" and
+     * "start". It is the same for every request the instance makes while it runs, so a resolver that claims the job
+     * can tell its own claim, asked again after a timeout, from a peer's, and the state record names its writer.
      */
-    public static final String FIRING = "_firing";
+    public static final String ORIGIN = "_origin";
 
     public final String name;
     public final String service;

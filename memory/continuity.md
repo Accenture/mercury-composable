@@ -21,7 +21,7 @@
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
 - **latest_release:** v4.12.28 (2026-11-03 21:20:37Z — **Java only: the mini-scheduler asks a slow state resolver or environment
   store again (`RetryRequest`: 3 s per attempt, up to 3 retries of a timeout, each logged) and carries the firing id `_firing` in
-  the resolver's parameters ([[scheduler-resolver-contract-in-parameters]]), an environment store that answers an error keeps the
+  the resolver's parameters ([[scheduler-resolver-conditional-claim]]), an environment store that answers an error keeps the
   active environment (#603), and the Playground's LLM relay names the helpers' new folder (#601)**: release PR #604 squash
   `d28077b8` = tag `v4.12.28` = the main head at the tag (the title clean, one trailer, the tree identical to the branch head);
   the root pom 4.12.28 and no build file on 4.12.27 at the tag; the GitHub release is published (not a draft), its notes the
@@ -347,7 +347,30 @@
   than given a longer timeout, so a cold start is recorded in the application log. **How to apply:** before changing what
   the scheduler sends the state resolver or the environment store, ask whether a field installation would have to change
   a schema to accept it; an additive key in `parameters` is the shape.
-  <!-- id: scheduler-resolver-contract-in-parameters | created: 2026-11-03 | last_used: 2026-11-03 | uses: 2 | tier: active | origin: 2026-11-03-190022 -->
+  <!-- id: scheduler-resolver-contract-in-parameters | created: 2026-11-03 | last_used: 2026-11-03 | uses: 2 | tier: superseded | superseded-by: scheduler-resolver-conditional-claim | origin: 2026-11-03-190022 -->
+
+- **The mini-scheduler's state resolver picks one instance with a conditional claim in `expires`, and its contract
+  changes only inside the existing `parameters`, where a key that starts with `_` is the system's (Eric, 2026-11-03 and
+  2026-11-04).** The field stores the resolver's requests in a database whose schema follows the contract, so a new
+  header would be a schema change in every field installation. The scheduler sends the asking instance's origin id
+  (`Platform.getInstance().getOrigin()`) as `_origin` in the parameters of `expires` and `start`, logged at startup;
+  it replaced 4.12.28's per-firing `_firing` (Eric's proposal). A slow resolver is retried (`RetryRequest`: 3 s, 3
+  retries, timeouts only, each logged) rather than given a longer timeout. **The claim:** `expires` claims the job in
+  ONE conditional write on a unique key on the job's name, succeeding only when the window has passed or `_origin`
+  already holds the claim, so the database picks one winner and the loser is answered at once. The README's worked
+  examples (PostgreSQL `INSERT ... ON CONFLICT ... DO UPDATE ... WHERE`, MongoDB `updateOne` upsert with the duplicate
+  key as the refusal) each won exactly once per round with 8 instances at the same instant. **What fails, measured
+  2026-11-04:** read-then-write ran a job twice in 10 of 11 simultaneous firings and in 12 of 240 with
+  `deferred.start` (the random delay picks the same second 1 time in 10); a write, a wait and a read-back (Fischer's
+  timed mutual exclusion, Eric's proposal) holds only while every write lands within the wait, and a 1.5 s pause ran
+  both in 20 of 20; an upsert without its condition, or a separate name field with a plain index, lets every instance
+  win, so ACID alone picks no winner; a record lock held while answering makes the loser wait into the scheduler's
+  timeout, the field's incident. **The window:** more than 18 s plus the database's latency (9 s of deferral, 9 s of
+  retries), less than the job's period minus 9 s. `deferred.start` only spreads the questions. **How to apply:**
+  before changing what the scheduler sends the state resolver or the environment store, ask whether a field
+  installation would have to change a schema to accept it; an additive key in `parameters` is the shape. A resolver
+  for more than one instance needs one conditional write, so a second read in it is the smell.
+  <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-04 | uses: 1 | tier: working | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
 
 ## Conventions
 
