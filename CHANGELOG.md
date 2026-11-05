@@ -20,8 +20,37 @@ Each change merged to `main` after v4.12.29 is listed here; it moves under its r
    Playground` as before; the browser tab's title and the JSON-Path playground keep theirs. The engine's home page
    function (`get.index.html`) writes the name, escaped for HTML, into a `playground-panel-name` meta tag of the page it
    serves in dev mode, and the web app shows it in place of its built-in title; the Playground bundle is rebuilt for it.
-   **Upgrade note:** none. A page served with the tag empty keeps the default name, which is what the Rust engine does
-   until it adopts the property.
+   **Upgrade note:** none. A page served with the tag empty keeps the default name; the Rust engine adopts the property
+   in the same release (mercury #407).
+2. **The AI companion broker can subscribe to a session a human opened first.** `POST /subscribe` with
+   `{"sessionId": "ws-..."}` makes the broker's own session a subscriber of that primary session, as `session subscribe`
+   typed in a browser would; the companion endpoint still refuses topology commands. The broker's session then holds a
+   copy of the shared draft, and when the human's session closes, the engine frees it as a primary that keeps the
+   work-in-progress, so the agent hands its id over and the human recovers the work by subscribing to it. `GET /session`
+   now also reports `subscribedTo` (the primary the broker's session mirrors) and `subscribers` (the sessions that mirror
+   it), read from the engine's own topology lines. **Upgrade note:** none; the other calls are unchanged.
+
+### Changed
+
+1. **The Playground session broker is the AI companion broker, and only the starter template carries it.**
+   `scripts/playground-session-broker.mjs` is now `scripts/ai-companion-broker.mjs`, named for what it is rather than
+   for a word that also means a Kafka or message broker. The `minigraph-playground` and `distributed-cache-example`
+   examples no longer carry copies: their `scripts/README.md` runs the template's
+   (`node ../../templates/starter-graph/scripts/ai-companion-broker.mjs --target ...`). **Upgrade note:** a command or a
+   note that names the old file names the new one; a project copied from the template earlier keeps its own copy, which
+   works as before.
+
+### Documentation
+
+1. **How to start a human–AI collaboration (the AI agent guide's new *Start a collaboration*).** The recommended way,
+   from demos with team members and field engineers: the human starts the application in a terminal to see its log, the
+   agent starts a persistent WebSocket connection with the AI companion broker and hands over `session subscribe {id}`,
+   and the two collaborate with the agent holding the primary session, which never times out. A browser tab that the
+   browser throttles in the background is closed at the idle timeout (`websocket.idle.timeout`, 60 seconds by default);
+   the human reloads, subscribes again and recovers the work-in-progress in full. A second path covers a session the
+   human opened first. The session grammar (`command-reference.md`, `minigraph-commands.json`) and *Playground and
+   companion* now state what the topology does to the draft: joining copies it, a closed primary leaves each subscriber
+   a primary that keeps it, and recovery is subscribing again.
 
 ---
 ## Version 4.12.29, 11/4/2026

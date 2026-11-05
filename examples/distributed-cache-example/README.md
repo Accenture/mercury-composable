@@ -66,7 +66,7 @@ Written here (five small functions + three config files); everything else is the
 | [`ProfileExceptionHandler`](src/main/java/com/accenture/cache/demo/functions/ProfileExceptionHandler.java) | renders a flow error as `{type, status, message}` (Layer 2) |
 | [`rest.yaml`](src/main/resources/rest.yaml) · [`flows/l2-profile.yml`](src/main/resources/flows/l2-profile.yml) · [`graph/profile-cache.json`](src/main/resources/graph/profile-cache.json) | the L1/L2/L3 wiring |
 | [`flows/graph-executor.yml`](src/main/resources/flows/graph-executor.yml) | the standard Layer 3 exposure flow — copied unchanged from `templates/starter-graph`, not written for this app |
-| [`scripts/playground-session-broker.mjs`](scripts/playground-session-broker.mjs) | lets an AI agent **host** a Playground session against this app — also copied from the template |
+| [`scripts/README.md`](scripts/README.md) | how to run the AI companion broker (`templates/starter-graph/scripts/ai-companion-broker.mjs`) against this app, so an AI agent **hosts** a Playground session |
 
 Reused from the platform: `v1.cache.redis` (the **distributed-cache** extension), `http.flow.adapter` +
 the Event Script engine, and `graph.executor` + `graph.math` + `graph.task` (the **minigraph** engine).
@@ -164,10 +164,10 @@ the whole surface** for production — the matching `rest.yaml` entries are then
 
 That is how the `profile-cache` graph itself is meant to be evolved: import the model into a Playground
 session, edit a node, dry-run it, and export it back — with an AI agent hosting the session through
-the bundled broker rather than borrowing your browser session:
+the AI companion broker (one copy, in the starter template) rather than borrowing your browser session:
 
 ```shell
-node scripts/playground-session-broker.mjs --target http://127.0.0.1:8305
+node ../../templates/starter-graph/scripts/ai-companion-broker.mjs --target http://127.0.0.1:8305
 # → prints the session id; join it in the browser with: session subscribe <id>
 # the agent then drives: POST /api/companion/<id>/sync   (one command per request, text/plain)
 ```
