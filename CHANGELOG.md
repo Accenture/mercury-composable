@@ -10,7 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Nothing yet. Each change merged to `main` after v4.12.29 is listed here; it moves under its release heading when the version is cut.
+Each change merged to `main` after v4.12.29 is listed here; it moves under its release heading when the version is cut.
+
+### Added
+
+1. **The Minigraph Playground panel takes its name from `playground.panel.name`.** A field installation asked to name
+   its panel: `-Dplayground.panel.name='My Awesome Dev Dashboard'`, or the same key in `application.properties`, renames
+   the heading in the Playground's top-left corner. Without it, or with a blank value, the panel reads `Minigraph
+   Playground` as before; the browser tab's title and the JSON-Path playground keep theirs. The engine's home page
+   function (`get.index.html`) writes the name, escaped for HTML, into a `playground-panel-name` meta tag of the page it
+   serves in dev mode, and the web app shows it in place of its built-in title; the Playground bundle is rebuilt for it.
+   **Upgrade note:** none. A page served with the tag empty keeps the default name, which is what the Rust engine does
+   until it adopts the property.
 
 ---
 ## Version 4.12.29, 11/4/2026

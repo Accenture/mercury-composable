@@ -25,4 +25,12 @@ describe('playground Help configuration', () => {
     expect(minigraph?.supportsGraphRun).toBe(true);
     expect(jsonPath?.supportsGraphRun).toBeUndefined();
   });
+
+  it('lets the server rename only the MiniGraph panel, whose default title stays', () => {
+    const jsonPath = PLAYGROUND_CONFIGS.find(config => config.path === '/json-path');
+    const minigraph = PLAYGROUND_CONFIGS.find(config => config.path === '/');
+
+    expect(minigraph).toMatchObject({ title: 'Minigraph Playground', titleFromServer: true });
+    expect(jsonPath?.titleFromServer).toBeUndefined();
+  });
 });

@@ -38,6 +38,7 @@ export interface PlaygroundConfig {
   path:                  string;     // URL route path, must start with "/"
   label:                 string;     // Short name shown in the navigation bar
   title:                 string;     // Full heading shown on the playground page
+  titleFromServer?:      boolean;    // true when the server may rename the heading (playground.panel.name)
   wsPath:                string;     // WebSocket endpoint path served by the backend
   storageKeyPayload:     string;     // localStorage key for the last payload
   storageKeyHistory:     string;     // localStorage key for command history
@@ -89,6 +90,8 @@ export const PLAYGROUND_CONFIGS: PlaygroundConfig[] = [
     path: '/',
     label: 'Minigraph',
     title: 'Minigraph Playground',
+    // a deployment renames the panel with playground.panel.name; this title is the default
+    titleFromServer: true,
     wsPath: '/ws/graph/playground',
     storageKeyPayload: 'minigraph-last-payload',
     storageKeyHistory: 'minigraph-command-history',

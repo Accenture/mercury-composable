@@ -48,6 +48,12 @@ Why the entry page lives outside the static folder: the engine's `get.index.html
 "MiniGraph Service" page in `public/index.html`, so a production deployment never shows the
 Playground. `public/index.html` is never touched by the scripts.
 
+The entry page carries one tag the server fills: `<meta name="playground-panel-name" content="">`. The Java
+engine's `get.index.html` writes the application property `playground.panel.name` into its `content`, escaped
+for HTML, and `src/utils/panelName.ts` shows that name in place of the Minigraph panel's built-in title. Keep the
+tag exactly as `index.html` has it: the engine finds it by its text, and `GetIndexHtmlTest` fails on a built page
+that lacks it. A page served with the tag empty, by the Rust engine for example, keeps the built-in title.
+
 The Rust repo is expected **beside** this one under the same parent folder
 (`…/sandbox/mercury-composable` and `…/sandbox/mercury`). Set `MERCURY_RUST_REPO` to point
 elsewhere, for example at a git worktree:
