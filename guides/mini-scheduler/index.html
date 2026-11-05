@@ -3508,7 +3508,10 @@ The application provides:</p>
    (<a href="#active-environment">Active-active sites</a>).</li>
 </ol>
 <p>The <a href="https://github.com/Accenture/mercury-composable/tree/main/examples/scheduler-example">scheduler example</a> is a
-complete application with file-backed samples of both functions and the admin endpoints that this guide refers to.</p>
+complete application with both functions on MongoDB and the admin endpoints that this guide refers to. For a test
+drive without Docker,
+<a href="https://github.com/Accenture/mercury-composable/tree/main/helpers/mongodb-standalone"><code>helpers/mongodb-standalone</code></a>
+runs a MongoDB-compatible server written in Java, for development and testing only.</p>
 <h2 id="how-a-job-runs">How a job runs<a class="headerlink" href="#how-a-job-runs" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>sequenceDiagram
     participant Q as Quartz trigger
@@ -3805,8 +3808,9 @@ startup:</p>
 <p>A resolver that stores the parameters stores <code>_origin</code> with them, so a state record names the instance that wrote it.
 A dashboard that shows the parameters filters out the keys that start with <code>_</code>, as the example's
 <code>GET /api/schedule/{name}</code> does.</p>
-<p>On a <strong>single instance</strong>, the resolver only records the runs and answers <code>true</code> while the previous run has expired,
-which the example's <code>StateResolver</code> does with a local file. On <strong>more than one instance</strong>, <code>expires</code> claims the job.</p>
+<p>On a <strong>single instance</strong>, the resolver only records the runs and answers <code>true</code> while the previous run has expired.
+On <strong>more than one instance</strong>, <code>expires</code> claims the job, which also serves one instance: the example's
+<code>StateResolver</code> claims the job on MongoDB.</p>
 <h3 id="conditional-claim">Claim the job in one conditional write<a class="headerlink" href="#conditional-claim" title="Permanent link">&para;</a></h3>
 <p><code>expires</code> claims the job for the instance that asks, in one conditional write to a database the instances share. The
 write succeeds when no instance has claimed the job within the resolver's window, or when the asking instance holds
@@ -4164,7 +4168,7 @@ which instance (<code>_origin</code>) ran it. The example reads them back as <co
 <ul>
 <li><a href="../configuration-reference/#scheduler">Configuration Reference: Scheduler</a> - every setting, with its default.</li>
 <li><a href="https://github.com/Accenture/mercury-composable/tree/main/examples/scheduler-example">The scheduler example</a> - a
-  runnable application with sample resolver, store and admin endpoints.</li>
+  runnable application with the state resolver, the environment store and the admin endpoints on MongoDB.</li>
 <li><a href="../event-script/">Event Script</a> - the flows a job can start with <code>flow://</code>.</li>
 <li><a href="../service-mesh/">Minimalist Service Mesh</a> - the mesh that <code>leader.election</code> relies on.</li>
 <li><a href="../../arch-decisions/ADR/">Architectural Decision Records</a> - ADR-0030, the active environment.</li>

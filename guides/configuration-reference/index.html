@@ -9558,7 +9558,7 @@ plain value is still read, with a deprecation warning; next to the store, the ap
 when the active environment moves, so one call moves every instance of every site and a pod restart does not reset the operations
 team's choice. The application implements it against its own data store (header <code>type=get</code> answers the persisted name as text,
 empty when none was set yet; <code>type=set</code> with <code>environment</code> and <code>operator</code> persists it and answers <code>true</code>); the scheduler example's
-<code>EnvironmentStore</code> is the file-backed template. When the route is not registered, the value lives in memory only and the scheduler
+<code>EnvironmentStore</code> keeps it in MongoDB. When the route is not registered, the value lives in memory only and the scheduler
 says so at startup.</p>
 <hr />
 <h2 id="api-playground">API Playground (<code>api-playground</code> extension)<a class="headerlink" href="#api-playground" title="Permanent link">&para;</a></h2>
