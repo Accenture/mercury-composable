@@ -10,7 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Each change merged to `main` after v4.12.29 is listed here; it moves under its release heading when the version is cut.
+Nothing yet. Each change merged to `main` after v4.12.30 is listed here; it moves under its release heading when the version is cut.
+
+---
+## Version 4.12.30, 11/5/2026
+
+Lock-step with the Rust port, which catches up from 4.12.27 to this release with every common feature since: the agent
+loop `llm.run`, the asynchronous `graph.extension`, progress events, the aborted-flow record, the panel name and the AI
+companion broker (the mini-scheduler excepted, which Rust does not have). The Minigraph Playground panel takes its name
+from `playground.panel.name`, a field installation's request (Added 1). The Playground session broker is now the AI
+companion broker, kept once, in the starter template, and it can subscribe to a session a human opened first (Added 2,
+Changed 1); the AI agent guide leads with the recommended way to start a human-AI collaboration (Documentation 1), and
+`websocket.idle.timeout` is documented in seconds, as the engine reads it (Documentation 2). **Upgrade notes:** a command
+or a note that names `scripts/playground-session-broker.mjs` names `scripts/ai-companion-broker.mjs`, run from
+`templates/starter-graph` (Changed 1); a `websocket.idle.timeout` written as minutes is multiplied by 60
+(Documentation 2).
 
 ### Added
 
