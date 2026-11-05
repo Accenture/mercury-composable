@@ -866,6 +866,9 @@
   **Paused 2026-10-28 (Eric) for the agent loop, RFC-0011 ([[agent-loop-llm-run]]):** `llm.run` in the engines maps tool names to
   routes; `llm.chat` and the MCP bindings live in the packs; agent graphs are asynchronous. The lab resumes once that design and
   its implementation are solid.
+  **Resuming 2026-11-05 (Eric), on another dev machine:** the agent loop and RFC-0011 step 3 shipped on both engines -
+  Java 4.12.29 (#605, #606, #609, #611) and Rust 4.12.30 (`mercury-agent-loop`, async `graph.extension`, progress events),
+  with the AI companion broker's recommended collaboration start in 4.12.30 (#618) - so the AI SDLC work picks up from there.
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
