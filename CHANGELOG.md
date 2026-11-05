@@ -10,7 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Each change merged to `main` after v4.12.28 is listed here; it moves under its release heading when the version is cut.
+Nothing yet. Each change merged to `main` after v4.12.29 is listed here; it moves under its release heading when the version is cut.
+
+---
+## Version 4.12.29, 11/4/2026
+
+Java only. The agent loop, `llm.run`, arrives in the new opt-in module `extensions/agent-loop`, with a question for a
+person in its tool catalog (Added 1 and 2), and a graph run gains an asynchronous `graph.extension` and progress events
+for the caller that watches it (Added 3 and 4, RFC-0011). The mini-scheduler's state resolver picks one instance with a
+conditional claim keyed on the asking instance's origin id, `_origin`, which replaces 4.12.28's `_firing` (Changed 2,
+Documentation 1). The scheduler has a user guide (Documentation 2), and its example keeps its records in MongoDB, with
+`helpers/mongodb-standalone` for a test drive without Docker (Added 5). An aborted flow whose caller cannot be told is
+now closed (Fixed 1), and a code-quality round from an IDE scan of the whole reactor makes `TargetRoute` a record
+(Changed 3). The Rust port stays at 4.12.27: it has no mini-scheduler, so this round has nothing for it to catch up, and
+the RFC-0011 work reaches it when the AI SDLC epic is complete. **Upgrade notes:** a state resolver that stores or
+compares `_firing` reads `_origin` instead (Changed 2). A resolver for more than one instance claims the job in one
+conditional write in `expires`: one that only reads its record runs a job twice when two instances ask within moments of
+each other, and one that holds a record lock while it answers makes the other instance wait into the scheduler's timeout
+(Documentation 1). An application that calls `getManager()` or `isCloud()` on a `TargetRoute` calls `manager()` or
+`cloud()` (Changed 3). CompileGraph refuses a blank `progress` and an input mapping to `header.x-return-path`, and
+`graph.progress.*`, `graph.run.socket.reply` and, once the module is added, `llm.run` are reserved route names (Added 1
+and 4).
 
 ### Added
 
