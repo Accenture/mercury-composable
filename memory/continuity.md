@@ -400,6 +400,19 @@
   the real database before it ships; a helper that emulates a product says so.
   <!-- id: scheduler-example-mongodb | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: working | origin: 2026-11-05-045407 -->
 
+- **The Playground entry page carries one server-filled tag: `playground.panel.name` renames the Minigraph panel
+  through `<meta name="playground-panel-name" content="">` (a field installation's request, 2026-11-05).** The bundle
+  ships the tag empty; the Java `get.index.html` fills it, escaped for HTML, in dev mode; `webapp/src/utils/panelName.ts`
+  shows it in place of the config title, for the Minigraph playground only (`titleFromServer`). The default stays
+  `Minigraph Playground` (Eric), and the browser tab and the JSON-Path playground keep their titles. A server-filled
+  tag rather than a REST read: the page is already served by a function, so every application's `rest.yaml` stays as
+  it is and the default title never flashes first. A page served with the tag empty keeps the default, which is the
+  Rust engine's behaviour until it adopts the property, so the bundle can be shared before the twin lands. **How to
+  apply:** a per-deployment setting the web app shows goes into the entry page as a server-filled tag, found by its
+  exact text and guarded by a test of the built page (`GetIndexHtmlTest`); any webapp source edit still needs the
+  release ([[help-edit-needs-bundle-release]]).
+  <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: working | origin: 2026-11-05-175904 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge

@@ -34,6 +34,11 @@ public class GetIndexHtml implements TypedLambdaFunction<AsyncHttpRequest, Event
     private static final Logger log = LoggerFactory.getLogger(GetIndexHtml.class);
     private static final String PLAYGROUND_PAGE = "/template/playground.html";
     private static final String PLAIN_PAGE = "/template/index.html";
+    /** the application property that renames the Minigraph panel */
+    public static final String PANEL_NAME = "playground.panel.name";
+    private static final String PANEL_NAME_META = "<meta name=\"playground-panel-name\" content=\"";
+    /** the tag the web app reads the panel name from, as the bundle ships it: empty keeps the built-in title */
+    static final String PANEL_NAME_TAG = PANEL_NAME_META + "\">";
     private final String content;
 
     public GetIndexHtml() {
@@ -43,10 +48,49 @@ public class GetIndexHtml implements TypedLambdaFunction<AsyncHttpRequest, Event
         // so a production deployment never shows the Playground UI. The static public/index.html is
         // that same plain page, so an application that does not route this function never serves
         // the Playground by accident either.
-        var resPath = "dev".equals(config.getProperty("app.env"))? PLAYGROUND_PAGE : PLAIN_PAGE;
+        var playground = "dev".equals(config.getProperty("app.env"));
+        var resPath = playground? PLAYGROUND_PAGE : PLAIN_PAGE;
         log.info("Home page - {}", resPath);
         var in = this.getClass().getResourceAsStream(resPath);
-        content = Utility.getInstance().stream2str(in);
+        var page = Utility.getInstance().stream2str(in);
+        content = playground? withPanelName(page, config.getProperty(PANEL_NAME)) : page;
+    }
+
+    /**
+     * The Playground page with its panel renamed: the name goes into the page's empty panel-name tag, escaped for
+     * an HTML attribute, and the web app shows it in place of its built-in title. No name, or a blank one, leaves
+     * the page as the bundle built it.
+     *
+     * @param page the Playground page
+     * @param name the value of playground.panel.name, or null
+     * @return the page to serve
+     */
+    static String withPanelName(String page, String name) {
+        if (name == null || name.isBlank()) {
+            return page;
+        }
+        if (!page.contains(PANEL_NAME_TAG)) {
+            log.warn("{} is ignored - the Playground page has no panel-name tag", PANEL_NAME);
+            return page;
+        }
+        var panelName = name.trim();
+        log.info("Playground panel name - {}", panelName);
+        return page.replace(PANEL_NAME_TAG, PANEL_NAME_META + escapeAttribute(panelName) + "\">");
+    }
+
+    private static String escapeAttribute(String text) {
+        var sb = new StringBuilder(text.length());
+        for (char c : text.toCharArray()) {
+            switch (c) {
+                case '&' -> sb.append("&amp;");
+                case '"' -> sb.append("&quot;");
+                case '\'' -> sb.append("&#39;");
+                case '<' -> sb.append("&lt;");
+                case '>' -> sb.append("&gt;");
+                default -> sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     @Override

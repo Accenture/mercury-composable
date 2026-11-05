@@ -180,6 +180,9 @@ The Playground is not a separate application — it rides along in any Mercury a
    production deployment never shows the Playground UI. The Playground page lives outside the
    static folder (`template/playground.html` in the engine jar); without this route, `/` falls
    through to the engine's static `index.html`, which is the same plain page in both modes.
+   `playground.panel.name` renames the panel's heading, for example
+   `-Dplayground.panel.name='My Awesome Dev Dashboard'`; without it the panel reads `Minigraph Playground`
+   ([Configuration Reference](../configuration-reference.md#playground-panel-name)).
 
 All three ship pre-wired in [`templates/starter-graph`](https://github.com/Accenture/mercury-composable/tree/main/templates/starter-graph)
 — copy that directory and the Playground is live on first run. The

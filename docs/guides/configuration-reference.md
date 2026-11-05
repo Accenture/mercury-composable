@@ -445,6 +445,18 @@ authentication: an application that turns it on puts it behind a gateway that au
 
 The TTL of a graph run started from the WebSocket entry.
 
+### `playground.panel.name` {#playground-panel-name}
+
+| Type | Default |
+|------|---------|
+| `String` | none - the panel shows `Minigraph Playground` |
+
+Renames the Minigraph Playground panel, the heading in its top-left corner. It applies in dev mode (`app.env=dev`),
+where the engine serves the Playground; the browser tab's title and the JSON-Path playground keep theirs. A blank value
+keeps the default. Set it in `application.properties` or on the command line,
+`-Dplayground.panel.name='My Awesome Dev Dashboard'`. The engine writes the name, escaped for HTML, into the page it
+serves, and the web app shows it in place of its built-in title.
+
 ## Component Scanning & Startup
 
 ### `modules.autostart`

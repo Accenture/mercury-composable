@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Group, Panel, Separator, type PanelImperativeHandle } from 'react-resizable-panels';
 import styles from './Playground.module.css';
 import { validatePayload, formatJSON } from '../utils/validators';
+import { resolvePanelTitle } from '../utils/panelName';
 import { useToast } from '../hooks/useToast';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -110,7 +111,12 @@ function asPercent(value: number): string {
 }
 
 export default function Playground({ config }: PlaygroundProps) {
-  const { title, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, helpContentProfile = 'minigraph', supportsAuthoring, supportsGraphRun, supportsSessionCollaboration, tabs } = config;
+  const { title: configTitle, titleFromServer, wsPath, storageKeyPayload, storageKeyHistory, storageKeyTab, storageKeySavedGraphs, supportsUpload, supportsClipboard, supportsHelp, helpContentProfile = 'minigraph', supportsAuthoring, supportsGraphRun, supportsSessionCollaboration, tabs } = config;
+  // the server may rename the panel (playground.panel.name); the config title is the default
+  const title = useMemo(
+    () => (titleFromServer ? resolvePanelTitle(configTitle) : configTitle),
+    [titleFromServer, configTitle],
+  );
 
   const navigate = useNavigate();
 
