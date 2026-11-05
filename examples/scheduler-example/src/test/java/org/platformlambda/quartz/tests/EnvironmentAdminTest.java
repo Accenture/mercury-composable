@@ -18,6 +18,7 @@
 
 package org.platformlambda.quartz.tests;
 
+import com.mongodb.client.model.Filters;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
@@ -26,9 +27,9 @@ import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.quartz.common.TestBase;
+import org.platformlambda.quartz.db.SchedulerDatabase;
 import org.platformlambda.scheduler.ActiveEnvironment;
 
-import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -36,18 +37,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Drives the v1.environment.admin function (the handler behind GET/POST /api/scheduler/environment)
- * as a service call, which is how REST automation invokes it, against the sample file-backed store.
+ * as a service call, which is how REST automation invokes it, against the MongoDB-backed store.
  */
 class EnvironmentAdminTest extends TestBase {
     private static final String ENVIRONMENT_ADMIN = "v1.environment.admin";
 
+    private static final String RECORD = "active-environment";
+
     @AfterAll
     static void cleanup() {
-        Utility.getInstance().cleanupDir(new File("/tmp/scheduler-environment"));
+        SchedulerDatabase.environment().deleteOne(Filters.eq("_id", RECORD));
     }
 
     private EventEnvelope adminRequest(String method, Object body) throws InterruptedException, ExecutionException {
-        PostOffice po = new PostOffice("unit.test", Utility.getInstance().getUuid(), method + " /api/scheduler/environment");
+        PostOffice po = new PostOffice("unit.test", Utility.getInstance().getUuid(),
+                method + " /api/scheduler/environment");
         AsyncHttpRequest req = new AsyncHttpRequest();
         req.setMethod(method);
         req.setUrl("/api/scheduler/environment");
@@ -78,7 +82,10 @@ class EnvironmentAdminTest extends TestBase {
             assertEquals("DR", moved.getElement("active"));
             assertEquals("standby", moved.getElement("mode"));
             assertEquals("Active environment set to DR", moved.getElement("message"));
-            assertTrue(new File("/tmp/scheduler-environment/active").exists());
+            var persisted = SchedulerDatabase.environment().find(Filters.eq("_id", RECORD)).first();
+            assertNotNull(persisted);
+            assertEquals("DR", persisted.getString("active"));
+            assertEquals("ops.team", persisted.getString("operator"));
             // a restart drops the memory; the store wins over the property at the next read
             env.reset();
             assertEquals("prod", env.getActive());

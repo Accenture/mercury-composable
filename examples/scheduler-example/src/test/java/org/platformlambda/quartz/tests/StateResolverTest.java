@@ -18,28 +18,49 @@
 
 package org.platformlambda.quartz.tests;
 
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
+import org.bson.Document;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.platformlambda.quartz.common.TestDatabase;
+import org.platformlambda.quartz.db.SchedulerDatabase;
 import org.platformlambda.quartz.services.AnotherTask;
 import org.platformlambda.quartz.services.HelloWorld;
 import org.platformlambda.quartz.services.MyDbTask;
 import org.platformlambda.quartz.services.StateResolver;
 
-import java.io.File;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The state resolver keeps one file per job under /tmp/scheduler-states - directly testable
- * without booting the platform. The placeholder tasks are exercised alongside.
+ * The state resolver on the test database, called directly without booting the platform: the claim in "expires",
+ * the records that "start" and "end" write, and the race the claim exists for - every instance asking at the same
+ * instant, with exactly one winner. The placeholder tasks are exercised alongside.
  */
 class StateResolverTest {
 
-    private static final String TEMP_FOLDER = "/tmp/scheduler-states";
     private static final String JOB = "unit-test-job";
+    private static final String ORIGIN = "_origin";
+    private static final int INSTANCES = 8;
+    private static final int ROUNDS = 50;
 
     private final StateResolver resolver = new StateResolver();
+
+    @BeforeAll
+    static void database() {
+        TestDatabase.start();
+    }
 
     private Map<String, String> headers(String type, String name) {
         Map<String, String> headers = new HashMap<>();
@@ -47,25 +68,106 @@ class StateResolverTest {
         if (name != null) {
             headers.put("name", name);
             headers.put("service", "hello.world");
-            headers.put("schedule", "0/15 0/1 * 1/1 * ? *");
+            headers.put("schedule", "0 0/1 * 1/1 * ? *");
         }
         return headers;
     }
 
+    private boolean expires(String name, String origin) {
+        return resolver.handleEvent(headers("expires", name), Map.of("hello", "world", ORIGIN, origin), 1);
+    }
+
+    private static Document record(String name) {
+        return SchedulerDatabase.jobStates().find(Filters.eq("_id", name)).first();
+    }
+
+    /** The previous run started a minute ago, so its claim has passed the window. */
+    private static void expire(String name) {
+        SchedulerDatabase.jobStates().updateOne(Filters.eq("_id", name),
+                Updates.set("start", new Date(System.currentTimeMillis() - 60_000)));
+    }
+
     @Test
-    void startEndAndExpiryLifecycle() {
-        File state = new File(TEMP_FOLDER, JOB);
-        assertTrue(!state.exists() || state.delete());
-        // a job with no state file is good to go
-        assertTrue(resolver.handleEvent(headers("expires", JOB), null, 1));
-        // start creates the state file
-        assertTrue(resolver.handleEvent(headers("start", JOB), Map.of("hello", "world"), 1));
-        assertTrue(state.exists());
-        // a fresh start is not expired (10s window)
-        assertFalse(resolver.handleEvent(headers("expires", JOB), null, 1));
-        // end stamps the end time and elapsed duration
+    void startEndAndClaimLifecycle() {
+        SchedulerDatabase.jobStates().deleteOne(Filters.eq("_id", JOB));
+        // a job with no record is claimed by the first instance that asks
+        assertTrue(expires(JOB, "instance-a"));
+        // the holder asks again (a retry after a timed-out attempt) and is answered true again
+        assertTrue(expires(JOB, "instance-a"));
+        // a peer within the window is refused
+        assertFalse(expires(JOB, "instance-b"));
+        // start records the run, with the origin among the parameters
+        assertTrue(resolver.handleEvent(headers("start", JOB), Map.of("hello", "world", ORIGIN, "instance-a"), 1));
+        var started = record(JOB);
+        assertNotNull(started);
+        assertEquals("hello.world", started.getString("service"));
+        assertEquals("0 0/1 * 1/1 * ? *", started.getString("schedule"));
+        assertEquals("instance-a", started.get("parameters", Document.class).getString(ORIGIN));
+        assertNotNull(started.getDate("start"));
+        assertNull(started.get("end"));
+        // end stamps the end time
         assertTrue(resolver.handleEvent(headers("end", JOB), null, 1));
-        assertTrue(state.delete());
+        var ended = record(JOB);
+        assertNotNull(ended);
+        assertNotNull(ended.getDate("end"));
+    }
+
+    @Test
+    void anExpiredClaimGoesToTheNextInstanceThatAsks() {
+        var job = "expired-job";
+        SchedulerDatabase.jobStates().deleteOne(Filters.eq("_id", job));
+        assertTrue(expires(job, "instance-a"));
+        expire(job);
+        assertTrue(expires(job, "instance-b"));
+        // the claim is instance-b's now, so the previous holder is refused
+        assertFalse(expires(job, "instance-a"));
+        var claimed = record(job);
+        assertNotNull(claimed);
+        assertEquals("instance-b", claimed.get("parameters", Document.class).getString(ORIGIN));
+    }
+
+    @Test
+    void instancesAskingAtTheSameInstantGetOneWinner() throws InterruptedException, ExecutionException {
+        try (var pool = Executors.newFixedThreadPool(INSTANCES)) {
+            for (int round = 0; round < ROUNDS; round++) {
+                var job = "race-" + round;
+                SchedulerDatabase.jobStates().deleteOne(Filters.eq("_id", job));
+                assertEquals(1, race(pool, job), "first run of " + job);
+                expire(job);
+                assertEquals(1, race(pool, job), "run of " + job + " after the previous claim expired");
+            }
+        }
+    }
+
+    /** Every instance asks "expires" at the same instant; the answer is how many were told to run the job. */
+    private int race(ExecutorService pool, String job)
+            throws InterruptedException, ExecutionException {
+        var gate = new CountDownLatch(1);
+        List<Future<Boolean>> answers = new ArrayList<>();
+        for (int i = 0; i < INSTANCES; i++) {
+            var origin = "instance-" + i;
+            answers.add(pool.submit(() -> {
+                gate.await();
+                return expires(job, origin);
+            }));
+        }
+        gate.countDown();
+        int winners = 0;
+        for (var answer : answers) {
+            if (Boolean.TRUE.equals(answer.get())) {
+                winners++;
+            }
+        }
+        return winners;
+    }
+
+    @Test
+    void expiresNeedsTheOrigin() {
+        Map<String, String> expiresHeaders = headers("expires", JOB);
+        Map<String, Object> withoutOrigin = Map.of("hello", "world");
+        var e = assertThrows(IllegalArgumentException.class,
+                () -> resolver.handleEvent(expiresHeaders, withoutOrigin, 1));
+        assertEquals("expires needs the _origin parameter", e.getMessage());
     }
 
     @Test

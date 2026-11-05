@@ -18,37 +18,37 @@
 
 package org.platformlambda.quartz.rest;
 
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
+import org.bson.Document;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.serializers.SimpleMapper;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
+import org.platformlambda.quartz.db.SchedulerDatabase;
 import org.platformlambda.scheduler.JobLoader;
 import org.platformlambda.scheduler.models.ScheduledJob;
 import org.platformlambda.scheduler.services.JobExecutor;
 
-import java.io.File;
 import java.util.*;
 
-// S5443 (publicly writable directory): /tmp/scheduler-states IS the sample resolver's state store by design -
-// throwaway local data; production resolvers persist to a database or distributed cache
-@SuppressWarnings("java:S5443")
 @PreLoad(route="v1.schedule.admin", instances=10)
 public class ScheduleAdmin implements TypedLambdaFunction<AsyncHttpRequest, EventEnvelope> {
-    private static final Utility util = Utility.getInstance();
     private static final String CONTENT_TYPE = "content-type";
     private static final String APPLICATION_JSON = "application/json";
-    private static final String TEMP = "/tmp/scheduler-states";
+    private static final String ID = "_id";
+    private static final String NAME = "name";
+    private static final String SERVICE = "service";
+    private static final String SCHEDULE = "schedule";
     private static final String START = "start";
     private static final String END = "end";
     private static final String PARAMETERS = "parameters";
-    private static final File TEMP_FOLDER = new File(TEMP);
 
     @Override
     public EventEnvelope handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
-        var name = input.getPathParameter("name");
+        var name = input.getPathParameter(NAME);
         if (name == null) {
             return getJobList();
         } else {
@@ -59,27 +59,24 @@ public class ScheduleAdmin implements TypedLambdaFunction<AsyncHttpRequest, Even
             if ("POST".equals(input.getMethod())) {
                 return runJob(new PostOffice(headers, instance), input);
             } else {
-                File f = new File(TEMP_FOLDER, name);
-                if (f.exists()) {
-                    var result = withoutSystemParameters(getJob(util.file2str(f)));
-                    return new EventEnvelope().setBody(result).setHeader(CONTENT_TYPE, APPLICATION_JSON);
-                } else {
+                var rec = SchedulerDatabase.jobStates().find(Filters.eq(ID, name)).first();
+                if (rec == null) {
                     throw new IllegalArgumentException("Job not found");
                 }
+                return new EventEnvelope().setBody(getJob(rec)).setHeader(CONTENT_TYPE, APPLICATION_JSON);
             }
         }
     }
 
     private EventEnvelope getJobList() {
         List<Map<String, Object>> jobs = new ArrayList<>();
-        // list all scheduled jobs
-        File[] files = TEMP_FOLDER.listFiles();
-        if (files != null) {
-            for (File f : files) {
-                var map = f.exists() ? getJobTime(util.file2str(f)) : new HashMap<String, Object>();
-                map.put("name", f.getName());
-                jobs.add(map);
-            }
+        // the time of each job's last run
+        for (var rec : SchedulerDatabase.jobStates().find().projection(Projections.include(START, END))) {
+            Map<String, Object> map = new HashMap<>();
+            map.put(NAME, rec.get(ID));
+            putIfPresent(map, START, rec.get(START));
+            putIfPresent(map, END, rec.get(END));
+            jobs.add(map);
         }
         Map<String, Object> result = new HashMap<>();
         result.put("jobs", jobs);
@@ -91,7 +88,7 @@ public class ScheduleAdmin implements TypedLambdaFunction<AsyncHttpRequest, Even
     @SuppressWarnings("unchecked")
     private EventEnvelope runJob(PostOffice po, AsyncHttpRequest input) {
         if (input.getBody() instanceof Map) {
-            var name = input.getPathParameter("name");
+            var name = input.getPathParameter(NAME);
             var data = (Map<String, Object>) input.getBody();
             var operator = data.get("operator");
             if (operator != null) {
@@ -107,44 +104,38 @@ public class ScheduleAdmin implements TypedLambdaFunction<AsyncHttpRequest, Even
         throw new IllegalArgumentException("Missing 'operator' parameter in request payload");
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> getJob(String json) {
-        return SimpleMapper.getInstance().getMapper().readValue(json, Map.class);
-    }
-
     /**
-     * A job's record as the dashboard shows it. A parameter key that starts with "_" belongs to the system - the
-     * scheduler adds "_origin" to the parameters the state resolver stores - so it is filtered out when read.
+     * A job's record as the dashboard shows it, with the elapsed time of a finished run. A parameter key that starts
+     * with "_" belongs to the system - the scheduler adds "_origin" to the parameters the state resolver stores - so
+     * it is filtered out when read.
      */
-    private static Map<String, Object> withoutSystemParameters(Map<String, Object> jobRecord) {
-        if (jobRecord != null && jobRecord.get(PARAMETERS) instanceof Map<?, ?> parameters) {
+    private static Map<String, Object> getJob(Document rec) {
+        Map<String, Object> result = new HashMap<>();
+        result.put(NAME, rec.get(ID));
+        putIfPresent(result, SERVICE, rec.get(SERVICE));
+        putIfPresent(result, SCHEDULE, rec.get(SCHEDULE));
+        if (rec.get(PARAMETERS) instanceof Map<?, ?> parameters) {
             var shown = new HashMap<String, Object>();
             parameters.forEach((key, value) -> {
                 if (!String.valueOf(key).startsWith(ScheduledJob.RESERVED_PREFIX)) {
                     shown.put(String.valueOf(key), value);
                 }
             });
-            jobRecord.put(PARAMETERS, shown);
+            result.put(PARAMETERS, shown);
         }
-        return jobRecord;
-    }
-
-    private Map<String, Object> getJobTime(String json) {
-        var map = getJob(json);
-        Map<String, Object> result = new HashMap<>();
-        // A scheduled job may be rewriting this state file at the instant we read it: the sample
-        // resolver's str2file truncates the file before writing (not atomic), so a concurrent read
-        // can see an empty file, which parses to a null map. Treat that as "timing not available
-        // yet" - the same tolerance the single-job GET path already has - instead of failing the
-        // whole list with a 500.
-        if (map != null) {
-            if (map.containsKey(START)) {
-                result.put(START, map.get(START));
-            }
-            if (map.containsKey(END)) {
-                result.put(END, map.get(END));
-            }
+        var start = rec.getDate(START);
+        var end = rec.getDate(END);
+        putIfPresent(result, START, start);
+        putIfPresent(result, END, end);
+        if (start != null && end != null) {
+            result.put("elapsed", Utility.getInstance().elapsedTime(end.getTime() - start.getTime()));
         }
         return result;
+    }
+
+    private static void putIfPresent(Map<String, Object> map, String key, Object value) {
+        if (value != null) {
+            map.put(key, value);
+        }
     }
 }

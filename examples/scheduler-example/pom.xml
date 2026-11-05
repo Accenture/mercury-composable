@@ -27,6 +27,7 @@
         <log4j2.version>2.26.1</log4j2.version>
         <kafka.version>4.4.0</kafka.version>
         <gson.version>2.15.0</gson.version>
+        <mongodb.version>5.14.0</mongodb.version>
         <java.version>21</java.version>
     </properties>
 
@@ -54,6 +55,24 @@
             <groupId>org.platformlambda</groupId>
             <artifactId>mini-scheduler</artifactId>
             <version>4.12.28</version>
+        </dependency>
+
+        <!-- the state resolver and the environment store keep their records in MongoDB; mongodb.version above also
+             sets the version of the driver's core and bson, which Spring Boot's dependency management would otherwise
+             hold back -->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>${mongodb.version}</version>
+        </dependency>
+
+        <!-- an embedded MongoDB-compatible server written in Java, so the tests need no MongoDB, Docker or download
+             (the helpers/mongodb-standalone server for a test drive is the same library) -->
+        <dependency>
+            <groupId>de.bwaldvogel</groupId>
+            <artifactId>mongo-java-server</artifactId>
+            <version>1.47.0</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

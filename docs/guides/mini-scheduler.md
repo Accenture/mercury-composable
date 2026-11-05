@@ -54,7 +54,10 @@ The application provides:
    ([Active-active sites](#active-environment)).
 
 The [scheduler example](https://github.com/Accenture/mercury-composable/tree/main/examples/scheduler-example) is a
-complete application with file-backed samples of both functions and the admin endpoints that this guide refers to.
+complete application with both functions on MongoDB and the admin endpoints that this guide refers to. For a test
+drive without Docker,
+[`helpers/mongodb-standalone`](https://github.com/Accenture/mercury-composable/tree/main/helpers/mongodb-standalone)
+runs a MongoDB-compatible server written in Java, for development and testing only.
 
 ## How a job runs {#how-a-job-runs}
 
@@ -274,8 +277,9 @@ A resolver that stores the parameters stores `_origin` with them, so a state rec
 A dashboard that shows the parameters filters out the keys that start with `_`, as the example's
 `GET /api/schedule/{name}` does.
 
-On a **single instance**, the resolver only records the runs and answers `true` while the previous run has expired,
-which the example's `StateResolver` does with a local file. On **more than one instance**, `expires` claims the job.
+On a **single instance**, the resolver only records the runs and answers `true` while the previous run has expired.
+On **more than one instance**, `expires` claims the job, which also serves one instance: the example's
+`StateResolver` claims the job on MongoDB.
 
 ### Claim the job in one conditional write {#conditional-claim}
 
@@ -563,7 +567,7 @@ Each is described in the [Configuration Reference](configuration-reference.md#sc
 
 - [Configuration Reference: Scheduler](configuration-reference.md#scheduler) - every setting, with its default.
 - [The scheduler example](https://github.com/Accenture/mercury-composable/tree/main/examples/scheduler-example) - a
-  runnable application with sample resolver, store and admin endpoints.
+  runnable application with the state resolver, the environment store and the admin endpoints on MongoDB.
 - [Event Script](event-script/index.md) - the flows a job can start with `flow://`.
 - [Minimalist Service Mesh](service-mesh.md) - the mesh that `leader.election` relies on.
 - [Architectural Decision Records](../arch-decisions/ADR.md) - ADR-0030, the active environment.

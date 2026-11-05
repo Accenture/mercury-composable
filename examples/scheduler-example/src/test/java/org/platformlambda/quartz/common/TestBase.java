@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.platformlambda.core.system.AutoStart;
 
 /**
- * Boots the scheduler example once for the whole test run: AutoStart discovers MainApp,
+ * Boots the scheduler example once for the whole test run, on the test database: AutoStart discovers MainApp,
  * loads the preloaded functions, the cron.yaml jobs and the demo flow.
  */
 public abstract class TestBase {
@@ -31,6 +31,7 @@ public abstract class TestBase {
 
     @BeforeAll
     static void setup() {
+        TestDatabase.start();
         AutoStart.main(new String[0]);
     }
 }

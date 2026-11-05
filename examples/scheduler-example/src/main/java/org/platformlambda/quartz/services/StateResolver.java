@@ -18,25 +18,30 @@
 
 package org.platformlambda.quartz.services;
 
+import com.mongodb.ErrorCategory;
+import com.mongodb.MongoWriteException;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.Updates;
+import org.bson.Document;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.serializers.SimpleMapper;
-import org.platformlambda.core.util.Utility;
+import org.platformlambda.quartz.db.SchedulerDatabase;
+import org.platformlambda.scheduler.models.ScheduledJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This is just a sample state resolver, for one instance: it keeps the state in a local file.
+ * The example's state resolver, on MongoDB, for one instance or many: "expires" claims the job in one conditional
+ * write, so exactly one instance runs each firing. It is the worked example in "Running more than one instance"
+ * in the mini-scheduler README, as an application runs it.
  * <p>
- * For production, you must implement your own resolver to persist the state of a scheduled job.
- * For example, persist the job status into a database or a distributed cache. When more than one
- * instance runs the scheduler, "expires" claims the job in one conditional write - see "Running more
- * than one instance" in the mini-scheduler README for worked examples on PostgreSQL and MongoDB.
+ * Each job is one document in the "job_state" collection, with the job's name as its _id, which MongoDB always
+ * indexes uniquely. The parameters, with "_origin" among them, are a sub-document.
  * <p>
  * API contract:
  * 1. start:
@@ -60,110 +65,85 @@ import java.util.Map;
  *       is asked again, up to 3 times, with the same "_origin", so the resolver answers true again to the
  *       instance that holds the claim)
  */
-// S5443 (publicly writable directory): /tmp/scheduler-states IS the sample resolver's state store by design -
-// throwaway local data; production resolvers persist to a database or distributed cache
-@SuppressWarnings("java:S5443")
 @PreLoad(route="v1.state.resolver")
 public class StateResolver implements TypedLambdaFunction<Map<String, Object>, Boolean> {
     private static final Logger log = LoggerFactory.getLogger(StateResolver.class);
-    private static final Utility util = Utility.getInstance();
-    private static final String TEMP_FOLDER = "/tmp/scheduler-states";
     private static final String TYPE = "type";
     private static final String EXPIRES = "expires";
     private static final String NAME = "name";
     private static final String SERVICE = "service";
-    private static final String PARAMS = "parameters";
     private static final String SCHEDULE = "schedule";
+    private static final String PARAMETERS = "parameters";
     private static final String START = "start";
     private static final String END = "end";
-    private static final String ELAPSED = "elapsed";
+    private static final String ID = "_id";
     private static final String NONE = "none";
-    private static final long TEN_SECONDS = 10L * 1000;
-
-    public StateResolver() {
-        File dir = new File(TEMP_FOLDER);
-        if (!dir.exists()) {
-            boolean created = dir.mkdirs();
-            if (created) {
-                log.info("{} created", dir);
-            }
-        }
-    }
+    // the window: more than 18 seconds plus the database's latency (9 s of deferred start, 9 s of retries), and
+    // less than the job's period minus 9 seconds, so a job runs at most every 39 seconds
+    private static final long WINDOW = 30_000;
 
     @Override
     public Boolean handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         var type = headers.get(TYPE);
-        var name = headers.getOrDefault(NAME, "none");
-        var service = headers.getOrDefault(SERVICE, "none");
-        var schedule = headers.get(SCHEDULE);
+        var name = headers.getOrDefault(NAME, NONE);
+        var service = headers.getOrDefault(SERVICE, NONE);
+        var parameters = input == null ? Map.<String, Object>of() : input;
         if (START.equals(type) && !name.equals(NONE) && !service.equals(NONE)) {
-            // startTask(String name, String service, String schedule, Map<String, Object> input
-            startTask(name, service, schedule, input);
+            start(name, service, headers.get(SCHEDULE), parameters);
             return true;
         }
         if (END.equals(type) && !name.equals(NONE)) {
-            endTask(name);
+            end(name);
             return true;
         }
         if (EXPIRES.equals(type) && !name.equals(NONE)) {
-            return checkExpiry(name);
+            if (!(parameters.get(ScheduledJob.ORIGIN) instanceof String)) {
+                throw new IllegalArgumentException("expires needs the " + ScheduledJob.ORIGIN + " parameter");
+            }
+            var claimed = claim(name, parameters);
+            if (claimed) {
+                log.info("Job {} claimed by this instance", name);
+            } else {
+                log.info("Job {} is claimed by another instance within the window", name);
+            }
+            return claimed;
         }
         throw new IllegalArgumentException("type must be start, end or expires");
     }
 
-    private void startTask(String name, String service, String schedule, Map<String, Object> input) {
-        var mapper = SimpleMapper.getInstance().getMapper();
-        // create status record with start time
-        Map<String, Object> map = new HashMap<>();
-        map.put(NAME, name);
-        map.put(SERVICE, service);
-        map.put(START, new Date());
-        if (input != null) {
-            map.put(PARAMS, input);
-        }
-        if (schedule != null) {
-            map.put(SCHEDULE, schedule);
-        }
-        var json = mapper.writeValueAsString(map);
-        File f = new File(TEMP_FOLDER, name);
-        util.str2file(f, json);
+    private static MongoCollection<Document> states() {
+        return SchedulerDatabase.jobStates();
     }
 
-    @SuppressWarnings("unchecked")
-    private void endTask(String name) {
-        var mapper = SimpleMapper.getInstance().getMapper();
-        File f = new File(TEMP_FOLDER, name);
-        if (f.exists()) {
-            // update status record with end time
-            var json = util.file2str(f);
-            var map = mapper.readValue(json, Map.class);
-            var now = System.currentTimeMillis();
-            var start = util.str2date(String.valueOf(map.get(START)));
-            var milliseconds = now - start.getTime();
-            map.put(END, new Date(now));
-            map.put(ELAPSED, util.elapsedTime(milliseconds));
-            util.str2file(f, mapper.writeValueAsString(map));
-        }
-    }
-
-    private Boolean checkExpiry(String name) {
-        var mapper = SimpleMapper.getInstance().getMapper();
-        File f = new File(TEMP_FOLDER, name);
-        if (f.exists()) {
-            var json = util.file2str(f);
-            var map = mapper.readValue(json, Map.class);
-            if (map.containsKey(NAME) && map.containsKey(SERVICE) && map.containsKey(START)) {
-                var now = System.currentTimeMillis();
-                var start = util.str2date(String.valueOf(map.get(START)));
-                boolean expired = now - start.getTime() > TEN_SECONDS;
-                if (expired) {
-                    log.info("{} is good to go because previous iteration has expired", name);
-                }
-                return expired;
+    /** "expires": claim the job for the instance that "_origin" names. */
+    private boolean claim(String name, Map<String, Object> parameters) {
+        var now = new Date();
+        var filter = Filters.and(Filters.eq(ID, name), Filters.or(
+                Filters.lt(START, new Date(now.getTime() - WINDOW)),
+                Filters.eq("parameters._origin", parameters.get(ScheduledJob.ORIGIN))));
+        var update = Updates.combine(Updates.set(PARAMETERS, new Document(parameters)),
+                Updates.set(START, now), Updates.unset(END));
+        try {
+            states().updateOne(filter, update, new UpdateOptions().upsert(true));
+            return true;
+        } catch (MongoWriteException e) {
+            if (e.getError().getCategory() == ErrorCategory.DUPLICATE_KEY) {
+                // the filter missed, so the upsert's insert met the peer's document for this job
+                return false;
             }
-        } else {
-            log.info("{} is good to go", name);
+            throw e;
         }
-        return true;
+    }
+
+    /** "start": the run that the claim allowed, or an operator's manual run, which skips the claim. */
+    private void start(String name, String service, String schedule, Map<String, Object> parameters) {
+        states().updateOne(Filters.eq(ID, name), Updates.combine(Updates.set(SERVICE, service),
+                Updates.set(SCHEDULE, schedule), Updates.set(PARAMETERS, new Document(parameters)),
+                Updates.set(START, new Date()), Updates.unset(END)), new UpdateOptions().upsert(true));
+    }
+
+    /** "end": the run has finished. */
+    private void end(String name) {
+        states().updateOne(Filters.eq(ID, name), Updates.set(END, new Date()));
     }
 }

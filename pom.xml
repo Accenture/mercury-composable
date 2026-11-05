@@ -46,6 +46,7 @@
         <!-- Convenient standalone dev servers (no Docker required)-->
         <module>helpers/kafka-standalone</module>
         <module>helpers/redis-standalone</module>
+        <module>helpers/mongodb-standalone</module>
         <module>helpers/schema-registry-standalone</module>
         <module>helpers/graph-packager</module>
 

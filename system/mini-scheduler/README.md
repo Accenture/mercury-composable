@@ -149,6 +149,11 @@ states.updateOne(Filters.eq("_id", name), Updates.combine(Updates.set("service",
 states.updateOne(Filters.eq("_id", name), Updates.set("end", new Date()));
 ```
 
+The [scheduler example](../../examples/scheduler-example) runs this code as an application, with an environment
+store and a dashboard on the same database, and tests it against an embedded MongoDB-compatible server:
+eight instances asking at the same instant get one winner. For a test drive without Docker,
+[`helpers/mongodb-standalone`](../../helpers/mongodb-standalone) runs that server on `127.0.0.1:27017`.
+
 ### Other ways to pick one instance
 
 For backward compatibility, the mini-scheduler can perform a "leader election" to select an application
@@ -204,8 +209,8 @@ unconfigured installation behaves as before.
 
 The active environment's **source of truth is a data store**, not a property: the function named by
 `scheduler.environment.store` (default `v1.environment.store`), which the application implements against
-its own database - the example's `EnvironmentStore` writes a file; replace it with PostgreSQL, MongoDB or a
-distributed cache - because Kubernetes restarts a pod without notice. The scheduler reads it **at every
+its own database - the example's `EnvironmentStore` keeps it in MongoDB; PostgreSQL or a distributed cache
+serve as well - because Kubernetes restarts a pod without notice. The scheduler reads it **at every
 scheduled point**, before a job runs, so one call moves every instance of every site. The operations team
 makes that call around a Production maintenance window - to `DR` before, back to `prod` after - through the
 application's REST endpoint (`GET`/`POST /api/scheduler/environment` in the example,
@@ -288,7 +293,8 @@ Keep the resolver's expiry window short. In a region that observes daylight savi
 long as the job's period - 24 hours for a daily job - would refuse the run after the spring changeover. The
 window only has to stop the instances from running the same fire time: more than 18 seconds plus the
 database's latency (see *Running more than one instance*), 30 seconds in the worked examples. The sample
-resolver serves one instance and 10-second demo jobs, and uses 10 seconds.
+resolver in the unit test serves one instance and 10-second demo jobs, and uses 10 seconds; the scheduler
+example's resolver, on MongoDB, uses 30 seconds with one-minute demo jobs.
 
 ## Using this library
 

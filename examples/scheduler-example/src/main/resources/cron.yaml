@@ -1,13 +1,14 @@
 #
 # IMPORTANT:
 # ---------
-# The cron interval must be set to more than 10 seconds
-# because deferred.start below sets a random delay of 0 to 9 seconds
+# A job's period must be more than the state resolver's window plus 9 seconds - 39 seconds with the
+# example's 30-second window - because deferred.start below sets a random delay of 0 to 9 seconds
+# and more than one instance may run the scheduler. The demo jobs run once a minute.
 #
 jobs:
   - name: "demo-task"
-    description: "execute demo service every 15 seconds"
-    cron: "0/15 0/1 * 1/1 * ? *"
+    description: "execute demo service every minute, at second 0"
+    cron: "0 0/1 * 1/1 * ? *"
     # optional time zone of the cron statement, e.g. "America/New_York" - the JVM's default when absent
     # timezone: "America/New_York"
     service: "hello.world"
@@ -17,8 +18,8 @@ jobs:
     resolver: "v1.state.resolver"
 
   - name: "demo-flow"
-    description: "execute demo service every 25 seconds"
-    cron: "0/25 0/1 * 1/1 * ? *"
+    description: "execute demo flow every minute, at second 30"
+    cron: "30 0/1 * 1/1 * ? *"
     service: "flow://hello-flow"
     # In the demo flow, it has 2 tasks. We use input data mapping to map "db" and "other" parameters accordingly.
     # See "hello-flow.yml for details.

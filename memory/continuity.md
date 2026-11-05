@@ -372,6 +372,26 @@
   for more than one instance needs one conditional write, so a second read in it is the smell.
   <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-04 | uses: 1 | tier: working | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
 
+- **The scheduler example is the claim's runnable worked example on MongoDB, and its embedded MongoDB is a pure-Java
+  emulator (Eric, 2026-11-05).** `StateResolver`, `EnvironmentStore` and `ScheduleAdmin` keep their records in MongoDB
+  (`job_state`, one document per job with the name as `_id`; `environment`), the resolver's claim the README's MongoDB
+  worked example word for word ([[scheduler-resolver-conditional-claim]]). The tests start `mongo-java-server` (test
+  scope) and `helpers/mongodb-standalone`, in the root reactor by Eric's choice, runs the same server for a test drive
+  without Docker. **Why pure Java:** the real `mongod` is a first-run download from fastdl.mongodb.org (80 MB on macOS
+  arm64, 104 MB on Linux, 791 MB on Windows) that a VDI without Docker, CI and the field's pipeline would each have to
+  reach; the emulator is a Maven dependency. Measured: with driver 5.8.1 and Netty 4.2.19 the claim race had one
+  winner in 600 of 600 rounds; it has no sessions, so no transactions, and no `hello` command. Eric: the example uses
+  a very small set of features, so the emulator is an excellent fit, and the helper's README says it is for dev and
+  testing without container support only, emulating a subset of MongoDB. The same tests run against a real MongoDB
+  with `-Dtest.mongodb.uri` (15 of 15 on 8.0.34). The 30-second window needs a period above 39 seconds, so the demo
+  jobs run once a minute. **The driver is pinned at 5.14.0 by `mongodb.version`** in both poms (Eric; the IDE's
+  dependency scan flagged Boot 4.1.2's 5.8.1, CVE-2026-88033 in sync and CVE-2026-18710 in core): a `<version>` on
+  `mongodb-driver-sync` alone left `bson`, `mongodb-driver-core` and `bson-record-codec` at Boot's 5.8.1, measured,
+  so the property is the pin, and a Boot bump compares it ([[conv-library-pins-are-direct-dependencies]]). **How to
+  apply:** an example that needs a database gets an embedded server that comes from Maven Central, run once against
+  the real database before it ships; a helper that emulates a product says so.
+  <!-- id: scheduler-example-mongodb | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: working | origin: 2026-11-05-045407 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
