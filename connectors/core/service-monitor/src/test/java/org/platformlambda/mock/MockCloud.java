@@ -42,7 +42,6 @@ public class MockCloud implements CloudSetup {
     private static final String CLOUD_CONNECTOR_HEALTH = "cloud.connector.health";
 
     private static final List<String> monitors = new ArrayList<>();
-    private static PersistentWsClient ws;
 
     @Override
     public void initialize() {
@@ -57,7 +56,7 @@ public class MockCloud implements CloudSetup {
         String url2 = "ws://localhost:"+port+"/ws/presence";
         monitors.add(url1);
         monitors.add(url2);
-        ws = new PersistentWsClient(PresenceConnector.getInstance(), monitors);
+        var ws = new PersistentWsClient(PresenceConnector.getInstance(), monitors);
         ws.start();
         platform.registerPrivate(EventEmitter.CLOUD_CONNECTOR, new EventProducer(), 1);
         platform.registerPrivate(ServiceDiscovery.SERVICE_QUERY, new ServiceQuery(), 10);

@@ -143,13 +143,5 @@ public class HouseKeeper implements LambdaFunction {
         }
     }
 
-    private static class MonitorInstance {
-        public final String instance;
-        public final long updated;
-
-        public MonitorInstance(String instance, long updated) {
-            this.instance = instance;
-            this.updated = updated;
-        }
-    }
+    private record MonitorInstance(String instance, long updated) { }
 }

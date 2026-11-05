@@ -1,8 +1,6 @@
 package com.accenture.minigraph.math;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 public final class Evaluator {
 
@@ -85,12 +83,8 @@ public final class Evaluator {
         if (!(fnObj instanceof MathFunction fn)) {
             throw new IllegalArgumentException("'" + name + "' is not a function");
         }
-        List<Double> argVals = new ArrayList<>(c.args().size());
-        for (Expr arg : c.args()) {
-            argVals.add(asNumber(eval(arg, ctx), "argument of " + name + "()"));
-        }
-        double[] arr = new double[argVals.size()];
-        for (int i = 0; i < arr.length; i++) arr[i] = argVals.get(i);
+        double[] arr = c.args().stream()
+                .mapToDouble(arg -> asNumber(eval(arg, ctx), "argument of " + name + "()")).toArray();
         return Value.number(finite(fn.apply(arr), name + "()"));
     }
 

@@ -579,12 +579,10 @@ public class AgentLoop {
             }
             calls.add(call);
         }
-        var waiting = new ArrayList<Map<String, Object>>();
-        for (var p : planned) {
-            if (p.outcome() == Outcome.WAIT) {
-                waiting.add(callNames(p));
-            }
-        }
+        var waiting = planned.stream()
+                .filter(p -> p.outcome() == Outcome.WAIT)
+                .map(AgentLoop::callNames)
+                .toList();
         run.emit(APPROVAL_WAIT, Map.of(CALLS, waiting));
         var block = new LinkedHashMap<String, Object>();
         block.put(CALLS, calls);
@@ -742,30 +740,9 @@ public class AgentLoop {
             var p = planned.get(i);
             var result = new LinkedHashMap<String, Object>();
             result.put(ID, p.id());
-            String label;
-            if (p.outcome() == Outcome.RUN) {
-                var response = join(futures.get(i));
-                if (response.hasError()) {
-                    label = ERROR;
-                    result.put(ERROR, "error " + response.getStatus() + ": " + errorText(response));
-                } else {
-                    label = OK;
-                    result.put(OUTPUT, capped(response.getBody(), run.settings.resultLimit()));
-                }
-            } else if (p.outcome() == Outcome.ANSWER) {
-                label = p.label();
-                result.put(OUTPUT, capped(p.value(), run.settings.resultLimit()));
-            } else {
-                label = p.label();
-                result.put(ERROR, p.value());
-            }
+            var label = callResult(run, p, futures.get(i), result);
             results.add(result);
-            var entry = new LinkedHashMap<String, Object>();
-            entry.put(ID, p.id());
-            entry.put(NAME, p.name());
-            if (p.row() != null && p.row().route() != null) {
-                entry.put(ROUTE, p.row().route());
-            }
+            var entry = callNames(p);
             entry.put(STATUS, label);
             run.calls.add(entry);
             if (p.outcome() == Outcome.RUN) {
@@ -777,6 +754,29 @@ public class AgentLoop {
             }
         }
         return results;
+    }
+
+    /**
+     * Put one call's output or error into its result: the response of a call that ran, a person's answer, or the
+     * error the call was planned with. The returned label is the call's status.
+     */
+    private static String callResult(Run run, Planned p, CompletableFuture<EventEnvelope> future,
+                                     Map<String, Object> result) throws AppException {
+        if (p.outcome() == Outcome.RUN) {
+            var response = join(future);
+            if (response.hasError()) {
+                result.put(ERROR, "error " + response.getStatus() + ": " + errorText(response));
+                return ERROR;
+            }
+            result.put(OUTPUT, capped(response.getBody(), run.settings.resultLimit()));
+            return OK;
+        }
+        if (p.outcome() == Outcome.ANSWER) {
+            result.put(OUTPUT, capped(p.value(), run.settings.resultLimit()));
+        } else {
+            result.put(ERROR, p.value());
+        }
+        return p.label();
     }
 
     private static Map<String, Object> callNames(Planned p) {

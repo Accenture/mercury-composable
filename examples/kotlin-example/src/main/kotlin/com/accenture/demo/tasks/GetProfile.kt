@@ -25,7 +25,7 @@ class GetProfile : TypedLambdaFunction<MutableMap<String, Any>, Profile> {
             throw AppException(404, "Profile $profileId not found")
         }
         val json = util.file2str(profileFile)
-        return SimpleMapper.getInstance().getMapper().readValue(json, Profile::class.java)
+        return SimpleMapper.getInstance().mapper.readValue(json, Profile::class.java)
     }
 
     companion object {

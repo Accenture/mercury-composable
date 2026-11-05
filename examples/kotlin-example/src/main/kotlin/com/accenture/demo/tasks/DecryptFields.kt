@@ -20,14 +20,13 @@ class DecryptFields : TypedLambdaFunction<Map<String, Any>, Map<String, Any>> {
         val keyBytes: Any? = input[KEY]
         require(keyBytes is ByteArray) { KEY + " - Expect bytes, Actual: " + keyBytes?.javaClass }
         if (input.containsKey(DATASET)) {
-            val key = keyBytes
             val dataset = input[DATASET] as Map<String, Any>
             val multiLevels = MultiLevelMap(dataset)
             val fields = util.split(input[PROTECTED_FIELDS] as String?, ", ")
             for (f in fields) {
                 if (multiLevels.exists(f)) {
                     val cipherText = util.base64ToBytes(multiLevels.getElement(f).toString())
-                    multiLevels.setElement(f, decryptField(cipherText, key))
+                    multiLevels.setElement(f, decryptField(cipherText, keyBytes))
                 }
             }
             return multiLevels.map

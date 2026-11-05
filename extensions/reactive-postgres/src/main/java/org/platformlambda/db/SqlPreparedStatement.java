@@ -68,7 +68,7 @@ public abstract class SqlPreparedStatement {
     protected String type;
     protected int indexBase = 1;
     // numberedIndex uses the "$n" syntax while regular index uses the "?" syntax.
-    // e.g. PostGreSQL R2DBC uses the "$n" syntax and DB2 JDBC uses the "?" syntax.
+    // e.g. PostgreSQL R2DBC uses the "$n" syntax and DB2 JDBC uses the "?" syntax.
     // This value is used when doing conversion from named to index parameters.
     protected boolean numberedIndex = false;
     protected boolean supportNamedParameters = false;
@@ -282,7 +282,7 @@ public abstract class SqlPreparedStatement {
 
     /**
      * Bind a variable number of parameter values from a given index
-     * 1. DB2 JDBC parameter index starts from 1 and PostGreSQL R2DBC parameter index starts from 0
+     * 1. DB2 JDBC parameter index starts from 1 and PostgreSQL R2DBC parameter index starts from 0
      * 2. This must be the last bind method if you have bound individual parameters using bindParameter(number, value)
      *    method earlier
      *
@@ -580,16 +580,8 @@ public abstract class SqlPreparedStatement {
         }
         namedParams.clear();
         namedNulls.clear();
-        var toBeRemoved = new ArrayList<String>();
         var util = Utility.getInstance();
-        for (var name: classMapping.keySet()) {
-            if (!util.isDigits(name)) {
-                toBeRemoved.add(name);
-            }
-        }
-        for (var name: toBeRemoved) {
-            classMapping.remove(name);
-        }
+        classMapping.keySet().removeIf(name -> !util.isDigits(name));
     }
 
     private void scanForWord(String text, int i, AtomicInteger start, AtomicInteger nIndex,

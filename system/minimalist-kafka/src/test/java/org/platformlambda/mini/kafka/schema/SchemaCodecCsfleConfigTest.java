@@ -70,19 +70,56 @@ class SchemaCodecCsfleConfigTest {
 
     private String savedAllowList;
 
-    /** Minimal, fully-controlled {@link ConfigBase} backed by a flat key-value map (no dotted-key flattening). */
-    private static final class MapConfig implements ConfigBase {
-        private final Map<String, Object> map;
-        MapConfig(Map<String, Object> map) { this.map = map; }
-        @Override public Object get(String key) { return map.get(key); }
-        @Override public Object get(String key, Object defaultValue, String... loop) { return map.getOrDefault(key, defaultValue); }
-        @Override public String getProperty(String key) { Object v = map.get(key); return v == null ? null : String.valueOf(v); }
-        @Override public String getProperty(String key, String defaultValue) { String v = getProperty(key); return v == null ? defaultValue : v; }
-        @Override public boolean exists(String key) { return map.containsKey(key); }
-        @Override public boolean isEmpty() { return map.isEmpty(); }
-        @Override public boolean isBaseConfig() { return false; }
-        @Override public Map<String, Object> getMap() { return map; }
-        @Override public Map<String, Object> getCompositeKeyValues() { return getMap(); }
+    /**
+     * Minimal, fully-controlled {@link ConfigBase} backed by a flat key-value map (no dotted-key flattening).
+     */
+    private record MapConfig(Map<String, Object> map) implements ConfigBase {
+        @Override
+        public Object get(String key) {
+            return map.get(key);
+        }
+
+        @Override
+        public Object get(String key, Object defaultValue, String... loop) {
+            return map.getOrDefault(key, defaultValue);
+        }
+
+        @Override
+        public String getProperty(String key) {
+            Object v = map.get(key);
+            return v == null ? null : String.valueOf(v);
+        }
+
+        @Override
+        public String getProperty(String key, String defaultValue) {
+            String v = getProperty(key);
+            return v == null ? defaultValue : v;
+        }
+
+        @Override
+        public boolean exists(String key) {
+            return map.containsKey(key);
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return map.isEmpty();
+        }
+
+        @Override
+        public boolean isBaseConfig() {
+            return false;
+        }
+
+        @Override
+        public Map<String, Object> getMap() {
+            return map;
+        }
+
+        @Override
+        public Map<String, Object> getCompositeKeyValues() {
+            return getMap();
+        }
     }
 
     @Test
@@ -218,7 +255,7 @@ class SchemaCodecCsfleConfigTest {
 
     @Test
     void serdeInheritsRegistryClientTemplate() {
-        // A serde's rule executors build their own registry clients from this config map alone -
+        // A serde's rule executors build their own registry clients from this config map alone.
         // Confluent's CSFLE EncryptionExecutor.configure() creates a DekRegistryClient from it - so a
         // map seeded empty leaves those clients unauthenticated and every DEK lookup 401s, even though
         // the codec's own client authenticates against the same registry. The credentials the template

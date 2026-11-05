@@ -94,45 +94,51 @@ class RedisCacheTest extends RedisTestBase {
     }
 
     @Test
-    void putReturnsTrueAndGetRoundTrips() throws Exception {
-        assertEquals(Boolean.TRUE, function.handleEvent(headers("action", "PUT", "key", "k1"), bytes("hi"), INSTANCE));
-        assertArrayEquals(bytes("hi"), (byte[]) function.handleEvent(headers("action", "GET", "key", "k1"), null, INSTANCE));
+    void putReturnsTrueAndGetRoundTrips() {
+        assertEquals(Boolean.TRUE,
+                function.handleEvent(headers("action", "PUT", "key", "k1"), bytes("hi"), INSTANCE));
+        assertArrayEquals(bytes("hi"),
+                (byte[]) function.handleEvent(headers("action", "GET", "key", "k1"), null, INSTANCE));
     }
 
     @Test
-    void actionIsCaseInsensitive() throws Exception {
+    void actionIsCaseInsensitive() {
         function.handleEvent(headers("action", "put", "key", "k1"), bytes("v"), INSTANCE);
-        assertArrayEquals(bytes("v"), (byte[]) function.handleEvent(headers("action", "get", "key", "k1"), null, INSTANCE));
+        assertArrayEquals(bytes("v"),
+                (byte[]) function.handleEvent(headers("action", "get", "key", "k1"), null, INSTANCE));
     }
 
     @Test
-    void getMissReturnsNull() throws Exception {
+    void getMissReturnsNull() {
         assertNull(function.handleEvent(headers("action", "GET", "key", "absent"), null, INSTANCE));
     }
 
     @Test
-    void aStringBodyIsStoredAsUtf8Bytes() throws Exception {
+    void aStringBodyIsStoredAsUtf8Bytes() {
         function.handleEvent(headers("action", "PUT", "key", "k1"), "text-value", INSTANCE);
-        assertArrayEquals(bytes("text-value"), (byte[]) function.handleEvent(headers("action", "GET", "key", "k1"), null, INSTANCE));
+        assertArrayEquals(bytes("text-value"),
+                (byte[]) function.handleEvent(headers("action", "GET", "key", "k1"), null, INSTANCE));
     }
 
     @Test
-    void ttlHeaderIsHonoured() throws Exception {
+    void ttlHeaderIsHonoured() {
         function.handleEvent(headers("action", "PUT", "key", "k1", "ttl", "30s"), bytes("v"), INSTANCE);
         long ttl = raw.ttl("k1");
         assertTrue(ttl > 0 && ttl <= 30, "the 30s ttl header must bound the key's TTL, got " + ttl);
     }
 
     @Test
-    void deleteReturnsCount() throws Exception {
+    void deleteReturnsCount() {
         function.handleEvent(headers("action", "PUT", "key", "k1"), bytes("v"), INSTANCE);
         assertEquals(1L, function.handleEvent(headers("action", "DELETE", "key", "k1"), null, INSTANCE));
     }
 
     @Test
-    void putIfNotPresentReturnsBoolean() throws Exception {
-        assertEquals(Boolean.TRUE, function.handleEvent(headers("action", "PUT_IF_NOT_PRESENT", "key", "k1"), bytes("a"), INSTANCE));
-        assertEquals(Boolean.FALSE, function.handleEvent(headers("action", "PUT_IF_NOT_PRESENT", "key", "k1"), bytes("b"), INSTANCE));
+    void putIfNotPresentReturnsBoolean() {
+        assertEquals(Boolean.TRUE,
+                function.handleEvent(headers("action", "PUT_IF_NOT_PRESENT", "key", "k1"), bytes("a"), INSTANCE));
+        assertEquals(Boolean.FALSE,
+                function.handleEvent(headers("action", "PUT_IF_NOT_PRESENT", "key", "k1"), bytes("b"), INSTANCE));
     }
 
     @Test
@@ -149,23 +155,26 @@ class RedisCacheTest extends RedisTestBase {
     }
 
     @Test
-    void mputWritesEveryEntryThenReadsBack() throws Exception {
+    void mputWritesEveryEntryThenReadsBack() {
         Map<String, byte[]> entries = Map.of("a", bytes("1"), "b", bytes("2"));
         assertEquals(Boolean.TRUE, function.handleEvent(headers("action", "MPUT"), entries, INSTANCE));
-        assertArrayEquals(bytes("1"), (byte[]) function.handleEvent(headers("action", "GET", "key", "a"), null, INSTANCE));
-        assertArrayEquals(bytes("2"), (byte[]) function.handleEvent(headers("action", "GET", "key", "b"), null, INSTANCE));
+        assertArrayEquals(bytes("1"),
+                (byte[]) function.handleEvent(headers("action", "GET", "key", "a"), null, INSTANCE));
+        assertArrayEquals(bytes("2"),
+                (byte[]) function.handleEvent(headers("action", "GET", "key", "b"), null, INSTANCE));
     }
 
     @Test
-    void listPushPopLen() throws Exception {
+    void listPushPopLen() {
         assertEquals(1L, function.handleEvent(headers("action", "LIST_PUSH", "key", "q"), bytes("first"), INSTANCE));
         assertEquals(2L, function.handleEvent(headers("action", "LIST_PUSH", "key", "q"), bytes("second"), INSTANCE));
         assertEquals(2L, function.handleEvent(headers("action", "LIST_LEN", "key", "q"), null, INSTANCE));
-        assertArrayEquals(bytes("first"), (byte[]) function.handleEvent(headers("action", "LIST_POP", "key", "q"), null, INSTANCE));
+        assertArrayEquals(bytes("first"),
+                (byte[]) function.handleEvent(headers("action", "LIST_POP", "key", "q"), null, INSTANCE));
     }
 
     @Test
-    void missingActionIsRejected() throws Exception {
+    void missingActionIsRejected() {
         Map<String, String> noAction = headers("key", "k1");
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> function.handleEvent(noAction, null, INSTANCE));
@@ -173,7 +182,7 @@ class RedisCacheTest extends RedisTestBase {
     }
 
     @Test
-    void unsupportedActionIsRejected() throws Exception {
+    void unsupportedActionIsRejected() {
         Map<String, String> unsupported = headers("action", "INCR", "key", "k1");
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> function.handleEvent(unsupported, null, INSTANCE));
@@ -181,14 +190,14 @@ class RedisCacheTest extends RedisTestBase {
     }
 
     @Test
-    void putWithoutAValueIsRejected() throws Exception {
+    void putWithoutAValueIsRejected() {
         Map<String, String> put = headers("action", "PUT", "key", "k1");
         assertThrows(IllegalArgumentException.class,
                 () -> function.handleEvent(put, null, INSTANCE));
     }
 
     @Test
-    void mgetWithoutAListBodyIsRejected() throws Exception {
+    void mgetWithoutAListBodyIsRejected() {
         Map<String, String> mget = headers("action", "MGET");
         assertThrows(IllegalArgumentException.class,
                 () -> function.handleEvent(mget, "not-a-list", INSTANCE));
@@ -200,16 +209,18 @@ class RedisCacheTest extends RedisTestBase {
      * genuine command error from the server stays unclassified (the platform's default mapping applies).
      */
     @Test
-    void aPipelineTimeoutIsA408AndIsReportedToTheBackend() throws Exception {
+    void aPipelineTimeoutIsA408AndIsReportedToTheBackend() {
         // MPUT awaits its pipelined futures itself, so the connection facade cannot see that timeout: the
         // store reports it (the connection-reset rule applies) and throws the same 408 as a blocking timeout
         java.util.concurrent.atomic.AtomicInteger reports = new java.util.concurrent.atomic.AtomicInteger();
-        RedisCache slowPipeline = new RedisCache(() -> new RedisCacheStore(pendingBackend(reports), "", DEFAULT_TTL, 50));
+        RedisCache slowPipeline =
+                new RedisCache(() -> new RedisCacheStore(pendingBackend(reports), "", DEFAULT_TTL, 50));
         Map<String, Object> entries = new HashMap<>();
         entries.put("a", "1".getBytes(StandardCharsets.UTF_8));
         entries.put("b", "2".getBytes(StandardCharsets.UTF_8));
+        Map<String, String> mput = Map.of("action", "MPUT");
         AppException timeout = assertThrows(AppException.class,
-                () -> slowPipeline.handleEvent(Map.of("action", "MPUT"), entries, INSTANCE));
+                () -> slowPipeline.handleEvent(mput, entries, INSTANCE));
         assertEquals(408, timeout.getStatus());
         assertEquals("MPUT timed out after 50ms for 2 entries", timeout.getMessage());
         assertEquals(1, reports.get(), "the store reported the pipeline timeout to the backend once");
@@ -220,22 +231,24 @@ class RedisCacheTest extends RedisTestBase {
         RedisCache down = new RedisCache(() -> {
             throw new RedisConnectionException("Unable to connect to 127.0.0.1:1");
         });
+        Map<String, String> getK1 = headers("action", "GET", "key", "k1");
         AppException unavailable = assertThrows(AppException.class,
-                () -> down.handleEvent(headers("action", "GET", "key", "k1"), null, INSTANCE));
+                () -> down.handleEvent(getK1, null, INSTANCE));
         assertEquals(503, unavailable.getStatus());
         assertEquals("Redis unavailable - Unable to connect to 127.0.0.1:1", unavailable.getMessage());
         RedisCache slow = new RedisCache(() -> new RedisCacheStore(
                 failingBackend(new RedisCommandTimeoutException("Command timed out after 1 second(s)")),
                 "", DEFAULT_TTL, TIMEOUT_MS));
         AppException timeout = assertThrows(AppException.class,
-                () -> slow.handleEvent(headers("action", "GET", "key", "k1"), null, INSTANCE));
+                () -> slow.handleEvent(getK1, null, INSTANCE));
         assertEquals(408, timeout.getStatus());
         assertEquals("Command timed out after 1 second(s)", timeout.getMessage());
         RedisCache wrongType = new RedisCache(() -> new RedisCacheStore(
-                failingBackend(new RedisCommandExecutionException("WRONGTYPE Operation against a key holding the wrong kind of value")),
+                failingBackend(new RedisCommandExecutionException(
+                        "WRONGTYPE Operation against a key holding the wrong kind of value")),
                 "", DEFAULT_TTL, TIMEOUT_MS));
         assertThrows(RedisCommandExecutionException.class,
-                () -> wrongType.handleEvent(headers("action", "GET", "key", "k1"), null, INSTANCE));
+                () -> wrongType.handleEvent(getK1, null, INSTANCE));
     }
 
     /**
@@ -247,20 +260,25 @@ class RedisCacheTest extends RedisTestBase {
         io.lettuce.core.RedisFuture<Object> never = (io.lettuce.core.RedisFuture<Object>) Proxy.newProxyInstance(
                 RedisCacheTest.class.getClassLoader(), new Class<?>[] {io.lettuce.core.RedisFuture.class},
                 (proxy, method, args) -> switch (method.getName()) {
-                    case "await" -> false;
+                    case "await", "isDone", "isCancelled", "isCompletedExceptionally" -> false;
                     // LettuceFutures.awaitAll calls get(timeout, unit) per future and reads a TimeoutException
                     // as "not completed in time"
                     case "get" -> throw new java.util.concurrent.TimeoutException("never completes");
-                    case "isDone", "isCancelled", "isCompletedExceptionally" -> false;
                     case "getError" -> null;
                     case "toString" -> "never-completing RedisFuture";
                     case "hashCode" -> System.identityHashCode(proxy);
                     case "equals" -> proxy == args[0];
                     default -> throw new UnsupportedOperationException(method.getName());
                 });
-        RedisClusterAsyncCommands<String, byte[]> async = (RedisClusterAsyncCommands<String, byte[]>) Proxy.newProxyInstance(
+        // every async command answers the never-completing future - the Object methods answer for the proxy itself
+        var async = (RedisClusterAsyncCommands<String, byte[]>) Proxy.newProxyInstance(
                 RedisCacheTest.class.getClassLoader(), new Class<?>[] {RedisClusterAsyncCommands.class},
-                (proxy, method, args) -> never);
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "toString" -> "never-answering RedisClusterAsyncCommands";
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    default -> never;
+                });
         // the store captures commands() at construction, so hand out a facade that fails only when used
         RedisClusterCommands<String, byte[]> unused = (RedisClusterCommands<String, byte[]>) Proxy.newProxyInstance(
                 RedisCacheTest.class.getClassLoader(), new Class<?>[] {RedisClusterCommands.class},

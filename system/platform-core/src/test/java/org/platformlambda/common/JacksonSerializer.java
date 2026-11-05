@@ -25,7 +25,7 @@ import tools.jackson.databind.json.JsonMapper;
 import java.util.Map;
 
 // Test-only CustomSerializer that plugs a Jackson mapper into platform-core's serializer extension point
-// (the default is Gson). Uses Jackson 3 (tools.jackson), which Spring Boot 4 already puts on the compile
+// (the default is Gson). Uses Jackson 3 (tools.jackson), which Spring Boot 4 already puts on the
 // classpath - so this needs no separate Jackson dependency and keeps Jackson 2 off platform-core entirely.
 public class JacksonSerializer implements CustomSerializer {
 

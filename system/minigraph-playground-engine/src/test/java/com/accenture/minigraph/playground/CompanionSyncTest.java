@@ -343,9 +343,9 @@ class CompanionSyncTest {
         // pre-run check, and neither assertion below depends on the identity
         syncCommand(po, sid, "create node root\nwith type Root\nwith properties\nname=unit-test-prerun-check");
         syncCommand(po, sid, "create node end\nwith type End");
-        syncCommand(po, sid,
-                "create node suspend\nwith type Suspend\nwith properties\nskill=graph.suspend\n" +
-                        "task=v1.file.state.store");
+        var text = "create node suspend\nwith type Suspend\nwith properties\n" +
+                "skill=graph.suspend\ntask=v1.file.state.store";
+        syncCommand(po, sid, text);
         syncCommand(po, sid, "connect root to suspend with then");
         syncCommand(po, sid, "connect suspend to end with then");
         var instantiated = syncCommand(po, sid, "instantiate graph");

@@ -72,6 +72,17 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
    peer may hold the claim. `ResolverRetryTest` asserts the origin on each retried question and on `start`.
    **Upgrade note:** a resolver that stores or compares `_firing` reads `_origin` instead; a dashboard that filters
    the `_` keys needs no change.
+3. **A code-quality round from a local IDE scan of the whole reactor, the old findings included, with one API change.**
+   The scan's findings in platform-core, event-script-engine, minigraph-playground-engine, the Kafka modules, the
+   connectors, the extensions and the examples are fixed: loops written as streams, a lambda in a test that made more
+   than one throwing call, a method above Sonar's cognitive-complexity limit (`AgentLoop.dispatch`), misplaced javadoc,
+   nested ternaries, log arguments computed when the level is off, and spellings. Behaviour is unchanged; a list that a
+   caller may change, sort or extend stays mutable. **`TargetRoute`, which `EventEmitter.discover(route)` and
+   `EventEmitter.getCloudRoute()` return, is now a record:** its accessors are `manager()` and `cloud()`, in place of
+   `getManager()` and `isCloud()`. The class was documented as reserved for system use, and nothing in the repository
+   called them. `FutureEvent`, used only inside `EventEmitter`, is a record too. **Upgrade note:** an application that
+   calls `getManager()` or `isCloud()` on the result of `discover` or `getCloudRoute` calls `manager()` or `cloud()`
+   instead.
 
 ### Fixed
 

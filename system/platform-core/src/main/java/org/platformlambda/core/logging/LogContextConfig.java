@@ -168,7 +168,7 @@ public class LogContextConfig {
      * correlation, which backends resolve on trace id <b>and</b> a time window - a shifted line can be
      * correctly correlated and still invisible on its trace.
      * <p>
-     * {@code $utc} was previously optional, so a hand-written {@code app-log-context.yaml} that
+     * {@code $utc} was previously optional, so a handwritten {@code app-log-context.yaml} that
      * omitted it left the context with no machine-parseable time at all. It is now inserted when the
      * template does not already resolve it. An application that maps {@code $utc} to its own key name
      * keeps that name - only absence is corrected, never the operator's choice.

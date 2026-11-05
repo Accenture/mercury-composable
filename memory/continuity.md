@@ -609,7 +609,18 @@
   such as `llm.chat` in javadoc reads to the grammar checker as a sentence end, so `{@code llm.chat}`. False positives: "class
   never used" on a `@PreLoad` function (the classpath scan registers it), "envelop" for the noun, "resume" read as "résumé". A
   refactor of an equality helper that the vector harness also compares with needs a fresh negative control, or a broken
-  helper passes every case. A pre-existing finding counts as new the next
+  helper passes every case. **Eleventh round (Eric's IDE scan of the whole reactor, 2026-11-05, 114 files):** the
+  IDE's GRAMMAR quick fixes changed what 16 comments say - "may be null" to "maybe null", "whether or not" cut to
+  "whether", an instruction turned into a false statement, a product term ("specs folder") replaced, articles dropped,
+  `{reference}` stripped of its braces, prose turned into `- ` lines that javadoc renders as one paragraph - so every
+  wording quick fix is read against the sentence it replaced. LOOP-TO-STREAM with `.toList()` yields an unmodifiable
+  list, wrong wherever the list is later sorted or extended (`Collections.sort`, `addAll`), handed to an application
+  (a multi-request's replies, query parameters) or changed in place by the data mapping (`KeyNormalizationUtils`);
+  there use `new ArrayList<>(...)`, `Collectors.toCollection(ArrayList::new)`, `.sorted()` or `Stream.concat`, and a
+  loop that reads the size of the list it fills stays a loop. A class turned into a record changes public API when a
+  public method returns it (`TargetRoute`: `manager()`/`cloud()` replaced `getManager()`/`isCloud()`, a CHANGELOG
+  upgrade note). False positives: S6916 asks for a guard on a constant case label, which Java 21 does not allow; the
+  IDE scans one module, so "never used" on a constant another module reads is wrong. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-04 | uses: 24 | tier: active | origin: 2026-10-13-001452 -->

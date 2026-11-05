@@ -214,9 +214,7 @@ public class Utility {
      * @return zero filled number in text
      */
     public String zeroFill(int seq, int max) {
-        int len = String.valueOf(max).length();
-        String value = String.valueOf(seq);
-        return value.length() < len? ZEROS.substring(0, len - value.length()) + value : value;
+        return zeroFill(seq, (long) max);
     }
 
     /**

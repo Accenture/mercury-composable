@@ -38,7 +38,7 @@ public final class EvalContext {
         ctx.define("exp",  a -> Math.exp(req1(a)));
         ctx.define("min",  EvalContext::min);
         ctx.define("max",  EvalContext::max);
-        ctx.define("pow",  a -> Math.pow(req2(a, "pow"), a[1]));
+        ctx.define("pow",  a -> Math.pow(req2(a), a[1]));
         ctx.define("random", a -> { reqN(a, 0, "random"); return RANDOM.nextDouble(); });
 
         return ctx;
@@ -102,8 +102,8 @@ public final class EvalContext {
         if (a.length != 1) throw new IllegalArgumentException("Expected 1 argument");
         return a[0];
     }
-    private static double req2(double[] a, String fn) {
-        reqN(a, 2, fn);
+    private static double req2(double[] a) {
+        reqN(a, 2, "pow");
         return a[0];
     }
     private static void reqN(double[] a, int n, String fn) {

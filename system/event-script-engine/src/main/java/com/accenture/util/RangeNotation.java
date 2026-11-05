@@ -198,7 +198,7 @@ public final class RangeNotation {
      *
      * @param a one text
      * @param b another
-     * @return negative, zero or positive as a is below, equal to or above b
+     * @return negative, zero or positive as {@code a} is below, equal to or above {@code b}
      */
     public static int compare(String a, String b) {
         int i = 0;

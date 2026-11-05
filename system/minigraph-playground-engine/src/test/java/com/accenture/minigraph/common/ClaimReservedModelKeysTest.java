@@ -54,7 +54,7 @@ class ClaimReservedModelKeysTest {
     void reservedModelMetadataIsExactlyTheDocumentedTenNames() {
         var documented = Set.of("cid", "instance", "flow", "ttl", "trace", "parent", "root", "none", "run",
                 // added for subgraph suspend/resume under for_each: engine-managed like the rest,
-                // so a data mapping may not write it and it is never persisted into a record
+                // so a data mapping may not write it, and it is never persisted into a record
                 "iteration_index");
         assertEquals(GraphLambdaFunction.RESERVED_MODEL_METADATA, documented,
                 "the reserved model-metadata key set must stay exactly the ten documented names - "

@@ -81,7 +81,7 @@ public class KeyNormalizationUtils {
             return normalized;
         }
         if (value instanceof List<?> list) {
-            var normalized = new ArrayList<Object>(list.size());
+            var normalized = new ArrayList<>(list.size());
             for (Object item : list) {
                 normalized.add(normalizeKeys(item, keyMapper));
             }

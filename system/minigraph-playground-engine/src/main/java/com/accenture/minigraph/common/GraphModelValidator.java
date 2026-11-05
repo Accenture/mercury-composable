@@ -148,8 +148,8 @@ public class GraphModelValidator {
         }
     }
 
-    // a MAPPING statement is a data mapping entry, and any other statement may carry a {reference}
     private static void validateStatements(SimpleNode node) {
+        // a MAPPING statement is a data mapping entry, and any other statement may carry {reference} segments
         for (String statement : textEntries(node.getProperty(STATEMENT))) {
             var text = statement.trim();
             if (text.toLowerCase().startsWith(GraphLambdaFunction.MAPPING_TAG)) {

@@ -19,9 +19,9 @@ class HelloExceptionHandler : TypedLambdaFunction<Map<String?, Any?>, Map<String
         }
         return if (input.containsKey(STATUS) && input.containsKey(MESSAGE)) {
             log.info("User defined exception handler - status={} error={}", input[STATUS], input[MESSAGE])
-            mutableMapOf<String?, Any?>(TYPE to ERROR, STATUS to input[STATUS], MESSAGE to input[MESSAGE])
+            mutableMapOf(TYPE to ERROR, STATUS to input[STATUS], MESSAGE to input[MESSAGE])
         } else {
-            mutableMapOf<String?, Any?>()
+            mutableMapOf()
         }
     }
 

@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PoJoHolder {
-    private List<PoJo> pojos = new ArrayList<>();
+    private final List<PoJo> pojos = new ArrayList<>();
 
     public PoJoHolder(PoJo source, int counter) {
         while (counter-- > 0) {

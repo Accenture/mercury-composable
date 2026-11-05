@@ -131,7 +131,7 @@ class GraphSetTest {
     }
 
     @Test
-    void readingRefusesWhatASetMustNotHold() throws IOException {
+    void readingRefusesWhatASetMustNotHold() {
         var bytes = CanonicalPackager.builder()
                 .manifest("graph_id", "absent")
                 .add("../escape.json", valid("escape"))

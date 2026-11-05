@@ -100,7 +100,7 @@ public class ExternalStateMachine implements TypedLambdaFunction<Map<String, Obj
                 return true;
             }
         }
-        // The GET, REMOVE and CLEAR methods are user application dependent and
+        // The GET, REMOVE and CLEAR methods are user application dependent, and
         // you may implement according to your application needs.
         if (GET.equals(type)) {
             Object v = store.get(traceId);

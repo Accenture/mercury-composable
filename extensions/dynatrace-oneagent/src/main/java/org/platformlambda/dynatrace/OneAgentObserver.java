@@ -195,11 +195,6 @@ public class OneAgentObserver implements InvocationObserver {
                 sdk.createMessagingSystemInfo(VENDOR, n, MessageDestinationType.TOPIC, ChannelType.IN_PROCESS, null));
     }
 
-    private String currentTraceId() {
-        TraceContextInfo trace = sdk.getTraceContextInfo();
-        return trace != null && trace.isValid()? trace.getTraceId() : null;
-    }
-
     private void writeLogContext() {
         LogContext context = LogContextManager.get(Thread.currentThread().threadId());
         if (context != null) {
@@ -234,6 +229,11 @@ public class OneAgentObserver implements InvocationObserver {
                 linked.start();
                 return new TracerScope(linked);
             };
+        }
+
+        private String currentTraceId() {
+            TraceContextInfo trace = sdk.getTraceContextInfo();
+            return trace != null && trace.isValid()? trace.getTraceId() : null;
         }
     }
 

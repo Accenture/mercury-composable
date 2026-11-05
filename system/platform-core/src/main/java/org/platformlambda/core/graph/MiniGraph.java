@@ -111,7 +111,7 @@ public class MiniGraph {
     /**
      * Print the graph as a JSON string
      *
-     * @return json text
+     * @return JSON text
      */
     public String toString() {
         var map = exportGraph();
@@ -141,9 +141,7 @@ public class MiniGraph {
         }
         var nl = new ArrayList<>(nodeMap.keySet());
         Collections.sort(nl);
-        for (var n : nl) {
-            nodeList.add(nodeMap.get(n));
-        }
+        nodeList.addAll(nl.stream().map(nodeMap::get).toList());
         Map<String, Map<String, Object>> connectionMap = new HashMap<>();
         for (var conn: allConnections) {
             Map<String, Object> cEntry = new HashMap<>();
@@ -160,16 +158,12 @@ public class MiniGraph {
             }
             var rl = new ArrayList<>(relationMap.keySet());
             Collections.sort(rl);
-            for (var r : rl) {
-                relationList.add(relationMap.get(r));
-            }
+            relationList.addAll(rl.stream().map(relationMap::get).toList());
             connectionMap.put(getRelationshipPair(conn.getSource().getAlias(), conn.getTarget().getAlias()), cEntry);
         }
         var cl = new ArrayList<>(connectionMap.keySet());
         Collections.sort(cl);
-        for (var c : cl) {
-            connectionList.add(connectionMap.get(c));
-        }
+        connectionList.addAll(cl.stream().map(connectionMap::get).toList());
         return result;
     }
 
@@ -816,12 +810,8 @@ public class MiniGraph {
         }
         var levels = new ArrayList<>(levelList.keySet());
         Collections.sort(levels);
-        for (var n: levels) {
-            // skip orphans
-            if (n != -1) {
-                result.add(levelList.get(n));
-            }
-        }
+        // skip orphans
+        result.addAll(levels.stream().filter(n -> n != -1).map(levelList::get).toList());
         return result;
     }
 }

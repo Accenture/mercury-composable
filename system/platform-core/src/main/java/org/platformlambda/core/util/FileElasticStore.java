@@ -318,7 +318,7 @@ class FileElasticStore implements ElasticStore {
     @Override
     public void destroy() {
         close();
-        // final clean-up: remove any stray segment files for this route (across generations)
+        // final cleanup: remove any stray segment files for this route (across generations)
         purgeLeftoverSegments(baseDir, safeId);
     }
 

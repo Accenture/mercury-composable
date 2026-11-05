@@ -234,7 +234,7 @@ class ProgressEventTest {
 
     @Test
     void aStreamingRestRequestGetsServerSentEvents() throws Exception {
-        var lines = stream(GRAPH_1, Map.of("item", "s"));
+        var lines = stream(Map.of("item", "s"));
         var names = lines.stream().filter(l -> l.startsWith("event:")).map(l -> l.substring(6).trim()).toList();
         assertEquals(List.of(PROGRESS, PROGRESS, PROGRESS, PROGRESS, RESULT, "done"), names, String.valueOf(lines));
         var data = new ArrayList<Map<String, Object>>();
@@ -329,8 +329,8 @@ class ProgressEventTest {
                 .header("Accept", "text/event-stream").POST(HttpRequest.BodyPublishers.ofString(text)).build();
     }
 
-    private static List<String> stream(String graphId, Map<String, Object> body) throws Exception {
-        var response = client.send(post(graphId, body), HttpResponse.BodyHandlers.ofLines());
+    private static List<String> stream(Map<String, Object> body) throws Exception {
+        var response = client.send(post(GRAPH_1, body), HttpResponse.BodyHandlers.ofLines());
         assertEquals(200, response.statusCode());
         assertEquals("text/event-stream", response.headers().firstValue("content-type").orElse(""));
         return response.body().filter(line -> !line.isBlank()).toList();

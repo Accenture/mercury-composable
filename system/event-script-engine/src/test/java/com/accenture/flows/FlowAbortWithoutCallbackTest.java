@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * An aborted flow is closed whether or not its caller can be told.
+ * An aborted flow is closed even when its caller cannot be told.
  * <p>
  * A flow launched with no callback has no reply-to address, and a callback route that is not
  * served cannot take the error. Either way, when the flow aborts the task executor must still

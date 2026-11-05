@@ -122,7 +122,7 @@ public class SimpleXmlWriter {
     }
 
     private void indentBlock(StringBuilder buffer, int indent) {
-        buffer.append(SPACES.repeat(Math.max(0, indent)));
+        buffer.repeat(SPACES, Math.max(0, indent));
     }
 
     private String escapeXml(String value, TagType type) {

@@ -88,7 +88,7 @@ public class ManagedCache {
      * Eviction under maxItems capacity pressure is approximate and non-deterministic.
      * The underlying Caffeine cache uses W-TinyLFU admission with randomized jitter,
      * so which entry survives when the cache is full is unpredictable and may vary
-     * between identical runs - do not rely on a specific entry being retained or
+     * between identical runs. Do not rely on a specific entry being retained or
      * evicted, and do not assert eviction victims in tests. Expiry (expiryMs) is
      * exact per entry; only size-based eviction is approximate. The Rust port's
      * ManagedCache deliberately differs here: it uses strict LRU eviction (moka),

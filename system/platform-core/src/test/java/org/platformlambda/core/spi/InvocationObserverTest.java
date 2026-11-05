@@ -205,7 +205,7 @@ class InvocationObserverTest extends TestBase {
     }
 
     @Test
-    void theNegativeControlsReplyKeepsTheCallersTags() throws Exception {
+    void theNegativeControlsReplyKeepsTheCallersTags() {
         Recorder recorder = register(new Recorder("a"));
         InvocationObservers.configure(null, null, ONLY);
 
@@ -228,7 +228,7 @@ class InvocationObserverTest extends TestBase {
     }
 
     @Test
-    void theNegativeControlsDeferredReplyKeepsTheCallersTags() throws Exception {
+    void theNegativeControlsDeferredReplyKeepsTheCallersTags() {
         Recorder recorder = register(new Recorder("a"));
         InvocationObservers.configure(null, null, DEFERRED);
 
@@ -373,17 +373,9 @@ class InvocationObserverTest extends TestBase {
     /**
      * Records what the engine calls, for the routes of this test only.
      */
-    private static class Recorder implements InvocationObserver {
-        private final String name;
-        private final ConcurrentLinkedQueue<Record> records;
-
+    private record Recorder(String name, ConcurrentLinkedQueue<Record> records) implements InvocationObserver {
         Recorder(String name) {
             this(name, new ConcurrentLinkedQueue<>());
-        }
-
-        Recorder(String name, ConcurrentLinkedQueue<Record> records) {
-            this.name = name;
-            this.records = records;
         }
 
         @Override

@@ -193,7 +193,7 @@ public class GraphMath extends GraphLambdaFunction {
     /**
      * DECIMAL: var -> expression - the high-precision COMPUTE (RFC-0001). The expression is evaluated with
      * exact decimal arithmetic and the result is stored at {node}.result.{var} as a canonical decimal string,
-     * which is what survives graph.suspend, graph.resume and every event hop (a BigDecimal would come back
+     * which is what survives 'graph.suspend', 'graph.resume' and every event hop (a BigDecimal would come back
      * a String). COMPUTE keeps its meaning, so a graph that never says DECIMAL is unchanged.
      * <p>
      * The statement computes a number, so its variables always render in the arithmetic (unquoted) form.

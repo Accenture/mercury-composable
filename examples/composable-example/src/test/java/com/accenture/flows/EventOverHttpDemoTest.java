@@ -37,8 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 /**
  * End-to-end coverage of the two Event-over-HTTP demo endpoints. The test
- * application.properties points peer.demo.host/port back at this test server,
- * so both patterns make a REAL HTTP hop through /api/event and land on the
+ * application.properties points peer.demo.host/port back at this test server.
+ * Therefore, both patterns make a REAL HTTP hop through /api/event and land on the
  * public echo functions registered below - the same wiring as the live demo
  * against the lambda-example, but self-contained in one JVM.
  */

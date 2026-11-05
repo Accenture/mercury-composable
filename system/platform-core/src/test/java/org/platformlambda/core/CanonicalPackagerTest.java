@@ -43,7 +43,7 @@ class CanonicalPackagerTest {
     private static final HexFormat HEX = HexFormat.of();
 
     @Test
-    void theSameContentGivesTheSameBytesWhateverTheInsertionOrder() throws IOException {
+    void theSameContentGivesTheSameBytesWhateverTheInsertionOrder() {
         var forward = new LinkedHashMap<String, Object>();
         forward.put("b", 1);
         forward.put("a", Map.of("y", 2, "x", 1));
@@ -58,7 +58,7 @@ class CanonicalPackagerTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void jsonTextsThatDifferOnlyInKeyOrderAndWhitespaceGiveTheSamePackage() throws IOException {
+    void jsonTextsThatDifferOnlyInKeyOrderAndWhitespaceGiveTheSamePackage() {
         // the motivating case: Gson keeps the key order of the text, so the packager does the ordering
         var mapper = org.platformlambda.core.serializers.SimpleMapper.getInstance().getMapper();
         var one = "{\"nodes\":[{\"alias\":\"root\",\"types\":[\"Root\"]}],\"name\":\"quote\",\"n\":7}";
@@ -114,7 +114,7 @@ class CanonicalPackagerTest {
     }
 
     @Test
-    void aNullValueIsKeptAsNil() throws IOException {
+    void aNullValueIsKeptAsNil() {
         var map = new LinkedHashMap<String, Object>();
         map.put("a", null);
         assertEquals("81a1" + "61c0", HEX.formatHex(CanonicalPackager.encode(map)));
@@ -132,7 +132,7 @@ class CanonicalPackagerTest {
     }
 
     @Test
-    void smallIntegerTypesAllUseTheSmallestEncoding() throws IOException {
+    void smallIntegerTypesAllUseTheSmallestEncoding() {
         for (Object n : new Object[]{(byte) 5, (short) 5, 5, 5L, new AtomicInteger(5), new AtomicLong(5)}) {
             assertEquals("05", HEX.formatHex(CanonicalPackager.encode(n)), n.getClass().getSimpleName());
         }
@@ -140,7 +140,7 @@ class CanonicalPackagerTest {
     }
 
     @Test
-    void floatsAreFloat64AndFiniteOnly() throws IOException {
+    void floatsAreFloat64AndFiniteOnly() {
         assertEquals("cb3ff8000000000000", HEX.formatHex(CanonicalPackager.encode(1.5d)));
         assertThrows(IllegalArgumentException.class, () -> CanonicalPackager.encode(Double.NaN));
         assertThrows(IllegalArgumentException.class, () -> CanonicalPackager.encode(Double.NEGATIVE_INFINITY));

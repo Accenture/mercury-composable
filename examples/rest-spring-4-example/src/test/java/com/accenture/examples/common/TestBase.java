@@ -25,7 +25,7 @@ import org.platformlambda.core.util.Utility;
 
 /**
  * Boots the example application once for the whole test run: AutoStart discovers MainApp
- * (@MainApplication), starts Spring Boot on server.port and loads the preloaded functions.
+ * (@MainApplication), starts Spring Boot on 'server.port' and loads the preloaded functions.
  */
 public abstract class TestBase {
 

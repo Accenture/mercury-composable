@@ -74,11 +74,7 @@ public class FutureMultiInbox extends InboxBase {
             if (timeoutException) {
                 future.completeExceptionally(new TimeoutException("Timeout for " + holder.timeout + " ms"));
             } else {
-                List<EventEnvelope> result = new ArrayList<>();
-                for (Map.Entry<String, EventEnvelope> kv: replies.entrySet()) {
-                    result.add(kv.getValue());
-                }
-                future.complete(result);
+                future.complete(new ArrayList<>(replies.values()));
             }
         }
     }
@@ -96,7 +92,7 @@ public class FutureMultiInbox extends InboxBase {
         String inboxId = sequencedCid.substring(0, sequencedCid.lastIndexOf('-'));
         if (inboxes.get(inboxId) instanceof FutureMultiInbox holder) {
             float diff = (float) (System.nanoTime() - holder.begin) / EventEmitter.ONE_MILLISECOND;
-            // remove some metadata that are not relevant for a RPC response
+            // remove some metadata that are not relevant for an RPC response
             reply.removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
             var annotations = new HashMap<>(reply.getAnnotations());
             reply.clearAnnotations().setRoundTrip(diff);
@@ -105,10 +101,7 @@ public class FutureMultiInbox extends InboxBase {
                 // restore original correlation ID
                 replies.put(reply.getId(), reply.setCorrelationId(correlation.cid()));
                 if (holder.total.decrementAndGet() == 0) {
-                    List<EventEnvelope> result = new ArrayList<>();
-                    for (Map.Entry<String, EventEnvelope> kv : replies.entrySet()) {
-                        result.add(kv.getValue());
-                    }
+                    List<EventEnvelope> result = new ArrayList<>(replies.values());
                     holder.close();
                     Platform.getInstance().getVertx().cancelTimer(timer);
                     future.complete(result);

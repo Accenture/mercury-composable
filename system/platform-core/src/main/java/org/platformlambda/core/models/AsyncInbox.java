@@ -101,7 +101,7 @@ public class AsyncInbox extends InboxBase {
             holder.close();
             Platform.getInstance().getVertx().cancelTimer(timer);
             float diff = (float) (System.nanoTime() - holder.begin) / EventEmitter.ONE_MILLISECOND;
-            // remove some metadata that are not relevant for a RPC response
+            // remove some metadata that are not relevant for an RPC response
             reply.removeTag(RPC).setTo(null).setReplyTo(null).setTrace(null, null);
             var annotations = new HashMap<>(reply.getAnnotations());
             reply.clearAnnotations().setRoundTrip(diff);

@@ -286,12 +286,9 @@ public class TopicController implements LambdaFunction {
             long now = System.currentTimeMillis();
             String me = Platform.getInstance().getOrigin();
             // remove expired bids
-            List<String> expired = new ArrayList<>();
-            for (PendingRsvp bidder: bids.values()) {
-                if (now - bidder.getLastSeen() > RSVP_TIMEOUT) {
-                    expired.add(bidder.origin);
-                }
-            }
+            List<String> expired = bids.values().stream()
+                    .filter(bidder -> now - bidder.getLastSeen() > RSVP_TIMEOUT)
+                    .map(bidder -> bidder.origin).toList();
             for (String bidder: expired) {
                 bids.remove(bidder);
                 log.warn("RSVP bid from {} expired", bidder);
@@ -302,11 +299,8 @@ public class TopicController implements LambdaFunction {
                     // provide a grace period to avoid racing condition
                     return now - rsvp.getLastSeen() > RSVP_GRACE_PERIOD;
                 } else {
-                    List<String> rsvpBidders = new ArrayList<>();
-                    for (PendingRsvp r: bids.values()) {
-                        rsvpBidders.add(util.getTimestamp(r.created) + "|" + r.origin);
-                    }
-                    Collections.sort(rsvpBidders);
+                    List<String> rsvpBidders = bids.values().stream()
+                            .map(r -> util.getTimestamp(r.created) + "|" + r.origin).sorted().toList();
                     if (!rsvpBidders.isEmpty()) {
                         String ticket = rsvpBidders.getFirst();
                         String winner = ticket.substring(ticket.indexOf('|')+1);

@@ -31,7 +31,6 @@ import java.security.cert.X509Certificate;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -75,11 +74,7 @@ public class CryptoApi {
                 return null;
             }
         } else {
-            List<Integer> allowed = new ArrayList<>();
-            for (int size: PUBLIC_KEY_SIZES) {
-                allowed.add(size);
-            }
-            throw new IllegalArgumentException("Key size must be one of "+ allowed);
+            throw new IllegalArgumentException("Key size must be one of " + Arrays.toString(PUBLIC_KEY_SIZES));
         }
     }
 

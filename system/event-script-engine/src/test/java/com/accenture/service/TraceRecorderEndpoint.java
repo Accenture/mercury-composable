@@ -38,7 +38,7 @@ public class TraceRecorderEndpoint implements TypedLambdaFunction<AsyncHttpReque
 
     @Override
     public Object handleEvent(Map<String, String> headers, AsyncHttpRequest input, int instance) {
-        RECEIVED_HEADERS.offer(input.getHeaders());
+        RECEIVED_HEADERS.add(input.getHeaders());
         return Map.of("status", "recorded");
     }
 }

@@ -13,7 +13,7 @@ import java.io.File
 class MainApp : EntryPoint {
     override fun start(args: Array<String>) {
         // Create a demo encryption key if not exists
-        val folder: File = File(TEMP_KEY_STORE)
+        val folder = File(TEMP_KEY_STORE)
         if (!folder.exists() && folder.mkdirs()) {
             log.info("Folder {} created", folder)
         }
@@ -21,7 +21,7 @@ class MainApp : EntryPoint {
         if (!f.exists()) {
             val b64Key: String? = util.bytesToBase64(crypto.generateAesKey(256))
             util.str2file(f, b64Key)
-            log.info("Demo encryption key {} created", f.getPath())
+            log.info("Demo encryption key {} created", f.path)
         }
         log.info("Started")
     }

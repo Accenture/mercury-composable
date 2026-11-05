@@ -30,7 +30,6 @@ import java.util.*;
 
 public class MockPubSub implements PubSubProvider {
     private static final Map<String, Integer> topicStore = new HashMap<>();
-    private static final Map<String, LambdaFunction> subscriptions = new HashMap<>();
 
     public MockPubSub() {
         ConfigReader reader = new ConfigReader("classpath:/topic-substitution.yaml");
@@ -104,7 +103,6 @@ public class MockPubSub implements PubSubProvider {
         if (topic.equals("exception")) {
             throw new IllegalArgumentException("demo");
         }
-        subscriptions.put(topic, listener);
     }
 
     @Override
@@ -112,7 +110,6 @@ public class MockPubSub implements PubSubProvider {
         String route = topic+"."+partition;
         Platform platform = Platform.getInstance();
         platform.registerPrivate(route, listener, 1);
-        subscriptions.put(topic, listener);
         if (parameters.length == 3 && parameters[2].equals("-100")) {
             final ServiceLifeCycle initialLoad = new ServiceLifeCycle(topic, partition, UUID.randomUUID().toString());
             initialLoad.start();
@@ -134,7 +131,6 @@ public class MockPubSub implements PubSubProvider {
         if (topic.equals("exception")) {
             throw new IllegalArgumentException("demo");
         }
-        subscriptions.remove(topic);
     }
 
     @Override
@@ -142,7 +138,6 @@ public class MockPubSub implements PubSubProvider {
         if (topic.equals("exception")) {
             throw new IllegalArgumentException("demo");
         }
-        subscriptions.remove(topic);
     }
 
     @Override

@@ -87,7 +87,7 @@ class EventHttpTest extends TestBase {
 
     @Test
     void eventOverHttpPropagatesTraceAndCorrelationId() throws InterruptedException {
-        // The whole EventEnvelope is serialized into the HTTP body over the "event over HTTP" hop, so the
+        // The whole EventEnvelope is serialized into the HTTP body over the "event over HTTP" hop. Therefore, the
         // peer's target function continues the same trace (traceId exposed as my_trace_id) and receives the
         // caller's business correlation-id (carried by the engine-managed envelope tag, injected as the
         // my_correlation_id read-only key at delivery).

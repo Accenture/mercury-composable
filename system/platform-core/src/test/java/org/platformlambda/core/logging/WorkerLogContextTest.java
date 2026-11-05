@@ -56,7 +56,6 @@ class WorkerLogContextTest extends TestBase {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void workerRegistersContextAndUpdateContextWorks() throws InterruptedException {
         Platform platform = Platform.getInstance();
         String route = "log.context.test.function";

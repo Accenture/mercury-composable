@@ -105,7 +105,7 @@ class PostOfficeTest extends TestBase {
         BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);
         TypedLambdaFunction<EventEnvelope, Object> f2 =
                 ((headers, input, instance) -> {
-                    bench.offer(input);
+                    bench.add(input);
                     platform.release(tempRoute2);
                     return input;
                 });

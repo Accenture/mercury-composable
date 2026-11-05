@@ -116,17 +116,17 @@ public class ScheduleAdmin implements TypedLambdaFunction<AsyncHttpRequest, Even
      * A job's record as the dashboard shows it. A parameter key that starts with "_" belongs to the system - the
      * scheduler adds "_origin" to the parameters the state resolver stores - so it is filtered out when read.
      */
-    private static Map<String, Object> withoutSystemParameters(Map<String, Object> record) {
-        if (record != null && record.get(PARAMETERS) instanceof Map<?, ?> parameters) {
+    private static Map<String, Object> withoutSystemParameters(Map<String, Object> jobRecord) {
+        if (jobRecord != null && jobRecord.get(PARAMETERS) instanceof Map<?, ?> parameters) {
             var shown = new HashMap<String, Object>();
             parameters.forEach((key, value) -> {
                 if (!String.valueOf(key).startsWith(ScheduledJob.RESERVED_PREFIX)) {
                     shown.put(String.valueOf(key), value);
                 }
             });
-            record.put(PARAMETERS, shown);
+            jobRecord.put(PARAMETERS, shown);
         }
-        return record;
+        return jobRecord;
     }
 
     private Map<String, Object> getJobTime(String json) {

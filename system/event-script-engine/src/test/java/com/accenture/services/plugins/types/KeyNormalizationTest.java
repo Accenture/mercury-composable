@@ -111,7 +111,7 @@ class KeyNormalizationTest {
 
     @Test
     void invalidInputIsRejectedWithThePluginName() {
-        var noInput = assertThrows(IllegalArgumentException.class, () -> camel.calculate());
+        var noInput = assertThrows(IllegalArgumentException.class, camel::calculate);
         assertEquals("One input is required for camelCase key normalization", noInput.getMessage());
         var nullInput = assertThrows(IllegalArgumentException.class, () -> snake.calculate((Object) null));
         assertEquals("Input cannot be null for snakeCase key normalization", nullInput.getMessage());

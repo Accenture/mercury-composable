@@ -39,8 +39,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * End-to-end tests of the generic exception context: when a failed node routes to its
- * exception= handler, the walker stages error.source, error.code, error.message and
- * error.stack - so ONE island-anchored handler can serve every node without naming any
+ * exception= handler, the walker stages 'error.source', 'error.code', 'error.message' and
+ * 'error.stack' - so ONE island-anchored handler can serve every node without naming any
  * failing node in its data mapping.
  */
 class GraphErrorContextTest {

@@ -24,21 +24,4 @@ import org.platformlambda.core.system.ServiceQueue;
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
  */
-public class TargetRoute {
-    private final ServiceQueue manager;
-    private final boolean cloud;
-
-    public TargetRoute(ServiceQueue manager, boolean cloud) {
-        this.manager = manager;
-        this.cloud = cloud;
-    }
-
-    public boolean isCloud() {
-        return cloud;
-    }
-
-    public ServiceQueue getManager() {
-        return manager;
-    }
-
-}
+public record TargetRoute(ServiceQueue manager, boolean cloud) { }

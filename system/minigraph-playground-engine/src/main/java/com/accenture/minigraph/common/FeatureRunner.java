@@ -29,7 +29,7 @@ public interface FeatureRunner {
      *
      * @return true if this feature needs to run before the HTTP request
      */
-    public boolean runBefore();
+    boolean runBefore();
 
     /**
      * Execute this feature. If the feature runs before an HTTP request, the response object is not provided.
@@ -55,5 +55,5 @@ public interface FeatureRunner {
      * @param stateMachine for a graph instance
      * @param nodeName for updating the state machine if needed
      */
-    public void execute(AsyncHttpRequest request, EventEnvelope response, MultiLevelMap stateMachine, String nodeName);
+    void execute(AsyncHttpRequest request, EventEnvelope response, MultiLevelMap stateMachine, String nodeName);
 }

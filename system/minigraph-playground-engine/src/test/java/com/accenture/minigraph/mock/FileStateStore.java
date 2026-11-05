@@ -39,7 +39,7 @@ import java.util.Map;
  * CONSUMES the record on read (delete-on-read - the file analog of Redis GETDEL, so a
  * duplicate resume cannot double-execute the continuation). Like the Redis reference
  * implementation, the record is scoped by graph + cid - plus the optional for_each iteration
- * index - so the same business transaction may suspend independently in a parent graph, in each
+ * index. Therefore, the same business transaction may suspend independently in a parent graph, in each
  * subgraph, and in each iteration of a subgraph fan-out.
  */
 @PreLoad(route = "v1.file.state.store", instances = 10)

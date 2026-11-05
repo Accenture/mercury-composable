@@ -98,14 +98,14 @@ class SimpleLookupTest {
         assertEquals("First argument must be a decision table as a map or JSON text", notATable.getMessage());
         var missingTable = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(null, "TX"));
         assertEquals("First argument must be a decision table as a map or JSON text", missingTable.getMessage());
-        var noKeys = assertThrows(IllegalArgumentException.class,
-                () -> plugin.calculate(Map.of("community-property", List.of("CA")), "CA"));
+        var noKeysTable = Map.of("community-property", List.of("CA"));
+        var noKeys = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(noKeysTable, "CA"));
         assertEquals("Missing keys in input", noKeys.getMessage());
-        var missingRule = assertThrows(IllegalArgumentException.class,
-                () -> plugin.calculate(Map.of("keys", List.of("community-property")), "CA"));
+        var noRuleTable = Map.of("keys", List.of("community-property"));
+        var missingRule = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(noRuleTable, "CA"));
         assertEquals("Missing key in input: community-property", missingRule.getMessage());
-        var notAList = assertThrows(IllegalArgumentException.class,
-                () -> plugin.calculate(Map.of("keys", "community-property", "community-property", "CA"), "CA"));
+        var notAListTable = Map.of("keys", "community-property", "community-property", "CA");
+        var notAList = assertThrows(IllegalArgumentException.class, () -> plugin.calculate(notAListTable, "CA"));
         assertEquals("Input is not a list of values", notAList.getMessage());
     }
 }

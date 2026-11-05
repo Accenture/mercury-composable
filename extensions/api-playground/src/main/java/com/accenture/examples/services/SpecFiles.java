@@ -33,7 +33,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 /**
- * The specs documents this application offers by name: the files of the specs folder named by
+ * The specification documents this application offers by name: the files of the specs folder named by
  * the {@code api.playground.specs} property and the sample document
  * {@code resources/sample/yaml/demo.yaml}. A folder file wins over the sample document of the same
  * name, so a deployed {@code demo.yaml} replaces it. Only YAML and JSON files are offered
