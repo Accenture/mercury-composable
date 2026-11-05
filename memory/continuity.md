@@ -406,8 +406,9 @@
   shows it in place of the config title, for the Minigraph playground only (`titleFromServer`). The default stays
   `Minigraph Playground` (Eric), and the browser tab and the JSON-Path playground keep their titles. A server-filled
   tag rather than a REST read: the page is already served by a function, so every application's `rest.yaml` stays as
-  it is and the default title never flashes first. A page served with the tag empty keeps the default, which is the
-  Rust engine's behaviour until it adopts the property, so the bundle can be shared before the twin lands. **How to
+  it is and the default title never flashes first. A page served with the tag empty keeps the default, so the bundle
+  could be shared before the twin landed; the Rust engine fills the tag too since mercury #407 (Increment 200,
+  `with_panel_name`, 2026-11-05), with the bundle and help deployed from here. **How to
   apply:** a per-deployment setting the web app shows goes into the entry page as a server-filled tag, found by its
   exact text and guarded by a test of the built page (`GetIndexHtmlTest`); any webapp source edit still needs the
   release ([[help-edit-needs-bundle-release]]).
@@ -777,8 +778,10 @@
   **No number without content (Eric, 2026-11-05):** the Rust port does catch up closely, and it takes a Java number only
   when it carries that release's content. 4.12.28 and 4.12.29 are Java only because their work is the mini-scheduler,
   which Rust does not have: there is nothing to catch up, so Rust stays at 4.12.27 rather than being raised
-  artificially. The AI SDLC epic's features (RFC-0011) reach Rust when the epic ([[bp-agent-orchestration]]) is
-  complete.
+  artificially. The AI SDLC epic's features (RFC-0011) were first to wait for the epic ([[bp-agent-orchestration]]);
+  the same day Eric brought every common feature since 4.12.27 across instead (the agent loop `llm.run`, the
+  asynchronous `graph.extension`, progress events, the abort record, `playground.panel.name`: mercury #403-#407,
+  Increments 196-200), so the epic does not gate a port's catch-up; only work the port has no counterpart for does.
   <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-03 | uses: 48 | tier: active | origin: 2026-09-16-003354 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
