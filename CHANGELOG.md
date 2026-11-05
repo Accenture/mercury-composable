@@ -62,6 +62,16 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
    warning** (`async.http.response`), so the stream's own terminal event ends it. It used to throw an
    `IllegalStateException` (`Response head already sent`) and log its stack trace, which a graph run whose flow timed
    out after it had streamed progress did on every such timeout. What the client receives is unchanged.
+2. **The state resolver's parameters name the asking instance as `_origin`, in place of `_firing`.** Every request
+   the mini-scheduler sends the state resolver with `expires` and `start` carries the instance's origin id
+   (`Platform.getInstance().getOrigin()`), the same for as long as the instance runs and logged at startup
+   (`Scheduler instance <origin> - the state resolver receives it as _origin`), so a state record names the instance
+   that wrote it. A resolver that claims the job in `expires` keys its claim on it: an instance whose question timed
+   out asks again with the same `_origin` and gets `true` again for its own claim (Documentation 1). The per-firing
+   `_firing` of 4.12.28 is retired. The warning logged when "not expired" follows a timed-out attempt now says that a
+   peer may hold the claim. `ResolverRetryTest` asserts the origin on each retried question and on `start`.
+   **Upgrade note:** a resolver that stores or compares `_firing` reads `_origin` instead; a dashboard that filters
+   the `_` keys needs no change.
 
 ### Fixed
 
@@ -78,6 +88,21 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
    `FlowAbortWithoutCallbackTest` fails without the fix on the timeout and the missing route, for both causes.
    **Upgrade note:** none; an aborted flow whose caller cannot be told logs one error, `Flow <id>:<instance> aborted
    with status <status> - <reason>`, followed by `. Unable to tell <route> - <cause>` when the callback route is gone.
+
+### Documentation
+
+1. **More than one scheduler instance: the state resolver claims the job in one conditional write, with worked
+   examples for PostgreSQL and MongoDB.** The mini-scheduler README's *Running more than one instance* replaces
+   *Simple clustering*: `expires` claims the job in one write that succeeds only when the window has passed or the
+   asking instance holds the claim, on a unique key on the job's name. A read-then-write, a write followed by a
+   read-back and a record lock held while the resolver answers each fail, and the README says how. It gives the
+   window's bounds - more than 18 seconds plus the database's latency, less than the job's period minus 9 seconds -
+   and says that `deferred.start` spreads the instances' questions but does not pick one. Each worked example was run
+   with eight instances claiming the same job at the same instant: one instance won every round, on PostgreSQL 18.4
+   and MongoDB 8.0. The configuration reference's `deferred.start`, the example's README, both cron files and both
+   sample `StateResolver` contracts follow. **Upgrade note:** a resolver for more than one instance whose `expires`
+   only reads its record runs a job twice when two instances ask within moments of each other - in a lab, 12 of 240
+   firings with `deferred.start` on; move its write into `expires` as the examples do.
 
 ---
 ## Version 4.12.28, 11/3/2026

@@ -43,9 +43,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * A state resolver that answers its first "expires" late, as at a cold start, is asked again with the same firing id,
- * and the job runs. The firing id rides the parameters the resolver receives as "_firing"; the job's own service
- * never sees it.
+ * A state resolver that answers its first "expires" late, as at a cold start, is asked again with the same origin id,
+ * and the job runs. The instance's origin id rides the parameters the resolver receives as "_origin"; the job's own
+ * service never sees it.
  */
 class ResolverRetryTest {
     private static final String RETRY_JOB = "retry-probe";
@@ -76,7 +76,7 @@ class ResolverRetryTest {
     }
 
     @Test
-    void aLateResolverIsAskedAgainWithTheSameFiring() throws InterruptedException {
+    void aLateResolverIsAskedAgainWithTheSameOrigin() throws InterruptedException {
         var po = new PostOffice("unit.test", Utility.getInstance().getUuid(), "JOB " + RETRY_JOB);
         // the Quartz trigger's event: no operator, so the resolver is asked whether the job may run
         po.send(new EventEnvelope().setTo(JobExecutor.JOB_EXECUTOR).setHeader("job", RETRY_JOB));
@@ -92,10 +92,10 @@ class ResolverRetryTest {
         }
         var expires = events.stream().filter(e -> "expires".equals(e.get("type"))).toList();
         assertEquals(2, expires.size(), "the late first question is asked again");
-        var firing = expires.getFirst().get(ScheduledJob.FIRING);
-        assertNotNull(firing);
-        assertEquals(firing, expires.get(1).get(ScheduledJob.FIRING), "a retry carries the same firing id");
-        assertEquals(firing, start.get(ScheduledJob.FIRING), "the run's start carries it too");
+        var origin = Platform.getInstance().getOrigin();
+        assertEquals(origin, expires.getFirst().get(ScheduledJob.ORIGIN), "the question names this instance");
+        assertEquals(origin, expires.get(1).get(ScheduledJob.ORIGIN), "a retry carries the same origin id");
+        assertEquals(origin, start.get(ScheduledJob.ORIGIN), "the run's start carries it too");
         assertEquals("yes", start.get("probe"));
         // the job's own service receives its parameters without the system's keys
         var body = serviceBodies.poll(10, TimeUnit.SECONDS);

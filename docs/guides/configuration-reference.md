@@ -1091,8 +1091,10 @@ application properties; `deferred.start`, `leader.election` and a job's `timezon
 |------|---------|
 | `boolean` | `false` |
 
-A key of the cron file. Delay each scheduled run by a random 0 to 9 seconds, so that the instances of a cluster reach the
-state resolver at slightly different times and it can tell that a peer has started the job.
+A key of the cron file. Delay each scheduled run by a random 0 to 9 seconds in each instance, which spreads the instances'
+questions to the state resolver over those seconds. It does not pick one instance: with more than one instance the state
+resolver's `expires` claims the job in one conditional write, which the mini-scheduler README's *Running more than one
+instance* shows for PostgreSQL and MongoDB. With the delay on, the resolver's window covers the 9 seconds as well.
 
 ### `leader.election`
 

@@ -2,7 +2,7 @@
 # IMPORTANT:
 # ---------
 # The cron interval must be set to more than 10 seconds
-# because the system will set a random delay of 0 to 9 seconds for racing condition avoidance
+# because deferred.start below sets a random delay of 0 to 9 seconds
 #
 jobs:
   - name: "demo-task"
@@ -32,7 +32,8 @@ jobs:
 
 #
 # deferred start adds a randomized delay of 0 to 9 seconds before a scheduled job runs.
-# This reduces the chance of racing condition to a state database.
+# It spreads the instances' questions to the state resolver; with more than one instance, the
+# resolver's "expires" claims the job in one conditional write (see the mini-scheduler README).
 #
 deferred.start: true
 

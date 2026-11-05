@@ -2,18 +2,20 @@
 
 Simple scheduler that uses YAML configuration for storing "cron" job schedules
 
-## Simple clustering
+## Running more than one instance
 
 To support multiple application instances for resilience, you can implement a "state resolver" function.
-An example is shown in the StateResolver class under the "services" folder.
+An example is shown in the StateResolver class under the "services" folder; it keeps the state in a local
+file, so it serves one instance.
 
-The state resolver function should persist the time when a task is executed by the scheduler and support
-a query API to test if the previous task has been expired so that it can schedule another one. You may use
-a simple key-value store or SQL database as the persistent store.
+With more than one instance, every instance fires every job, and the resolver's `expires` claims the job
+for the instance that asks, in one conditional write to a database the instances share, so exactly one
+instance runs it. The parameters the resolver receives carry the asking instance's origin id under
+`_origin`. See "Running more than one instance" in the mini-scheduler README for worked examples on
+PostgreSQL and MongoDB, the unique key on the job's name and the window.
 
-To reduce racing condition, you can set "deferred.start" to true in cron.yaml and the scheduler will defer
-a job from 0 to 9 seconds so that application instances will run a schedule at a slightly different time.
-This allows the state resolver to easily detect if a task has been scheduled.
+Setting "deferred.start" to true in cron.yaml defers a job from 0 to 9 seconds in each instance, which
+spreads the instances' questions to the resolver; the claim is what picks one instance.
 
 For backward compatibility, the mini-scheduler can perform a "leader election" to select an application
 instance using a minimalist service mesh (e.g. cloud.connector=kafka). To enable this feature,
@@ -22,9 +24,8 @@ set "leader.election" to true.
 (Alternatively, you may also turn on Quartz's cluster mode and configure the database accordingly.)
 
 The scheduler waits 3 seconds for the state resolver and the environment store, and asks a question that
-times out again, up to 3 times. The parameters the resolver receives carry the firing's id under
-`_firing`, and `GET /api/schedule/{name}` filters that key out of the stored record when it reads it; see
-"Slow answers: retries and the firing id" in the mini-scheduler README.
+times out again, up to 3 times, with the same `_origin`. `GET /api/schedule/{name}` filters the `_` keys out
+of the stored record when it reads it; see "Slow answers: retries" in the mini-scheduler README.
 
 ## Active-active sites: one environment runs the jobs
 

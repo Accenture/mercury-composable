@@ -88,6 +88,9 @@ public class JobLoader implements EntryPoint {
             }
         }
         announceEnvironment();
+        // the id that a state record names its writer by
+        log.info("Scheduler instance {} - the state resolver receives it as {}",
+                Platform.getInstance().getOrigin(), ScheduledJob.ORIGIN);
         startScheduler();
     }
 

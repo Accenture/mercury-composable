@@ -114,7 +114,7 @@ public class ScheduleAdmin implements TypedLambdaFunction<AsyncHttpRequest, Even
 
     /**
      * A job's record as the dashboard shows it. A parameter key that starts with "_" belongs to the system - the
-     * scheduler adds "_firing" to the parameters the state resolver stores - so it is filtered out when read.
+     * scheduler adds "_origin" to the parameters the state resolver stores - so it is filtered out when read.
      */
     private static Map<String, Object> withoutSystemParameters(Map<String, Object> record) {
         if (record != null && record.get(PARAMETERS) instanceof Map<?, ?> parameters) {
