@@ -1156,7 +1156,7 @@ The function that holds the active environment - its source of truth - read at e
 when the active environment moves, so one call moves every instance of every site and a pod restart does not reset the operations
 team's choice. The application implements it against its own data store (header `type=get` answers the persisted name as text,
 empty when none was set yet; `type=set` with `environment` and `operator` persists it and answers `true`); the scheduler example's
-`EnvironmentStore` is the file-backed template. When the route is not registered, the value lives in memory only and the scheduler
+`EnvironmentStore` keeps it in MongoDB. When the route is not registered, the value lives in memory only and the scheduler
 says so at startup.
 
 ---

@@ -55,6 +55,20 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
    `kafka.progress.publisher`, a return route that publishes each event to a Kafka topic, one run per partition.
    **Upgrade note:** CompileGraph refuses a blank `progress` and an input mapping to `header.x-return-path`;
    `graph.progress.*` and `graph.run.socket.reply` are reserved route names.
+5. **The scheduler example on MongoDB, and `helpers/mongodb-standalone` to test-drive it without Docker.** The
+   example's state resolver, environment store and job dashboard used local files under `/tmp`, so the example
+   served one instance. They now keep their records in MongoDB (`mongodb.uri`, default `mongodb://127.0.0.1:27017`,
+   overridable with `MONGODB_URI`; `mongodb.database`, default `scheduler`): one document per job in `job_state`,
+   with the job's name as its `_id`, and the active environment in `environment`. `expires` claims the job with the
+   MongoDB worked example of the mini-scheduler README (Documentation 1) as the application runs it, so the example
+   serves any number of instances. Its demo jobs run once a minute, at seconds 0 and 30, because the 30-second
+   window needs a period above 39 seconds. The tests start an embedded MongoDB-compatible server written in Java
+   (`mongo-java-server`, test scope), so the build needs no MongoDB, Docker or download, and `StateResolverTest` has
+   eight instances ask at the same instant, expecting one winner, 100 times; `-Dtest.mongodb.uri` runs the same
+   tests against a real MongoDB. The new helper runs that server on `127.0.0.1:27017` (`mongodb.port`), for
+   development and testing in an environment without container support only: it emulates a subset of MongoDB,
+   in memory. **Upgrade note:** the mini-scheduler module is unchanged. To run the example, start MongoDB or the
+   helper first.
 
 ### Changed
 

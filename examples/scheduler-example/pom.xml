@@ -56,6 +56,22 @@
             <version>4.12.28</version>
         </dependency>
 
+        <!-- the state resolver and the environment store keep their records in MongoDB;
+             the driver's version is managed by Spring Boot -->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+        </dependency>
+
+        <!-- an embedded MongoDB-compatible server written in Java, so the tests need no MongoDB, Docker or download
+             (the helpers/mongodb-standalone server for a test drive is the same library) -->
+        <dependency>
+            <groupId>de.bwaldvogel</groupId>
+            <artifactId>mongo-java-server</artifactId>
+            <version>1.47.0</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.junit</groupId>
             <artifactId>junit-bom</artifactId>

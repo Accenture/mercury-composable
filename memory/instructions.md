@@ -55,7 +55,7 @@ connectors/                ← Kafka pub/sub adapters + presence/service monitor
   core/{cloud-connector, service-monitor}
   adapters/kafka/{kafka-connector, kafka-presence}
 helpers/                   ← standalone dev servers, no Docker (kafka-standalone, redis-standalone,
-                             schema-registry-standalone) and the graph-packager tool
+                             mongodb-standalone, schema-registry-standalone) and the graph-packager tool
 examples/                  ← reference apps; composable-example is the primary demo
   (lambda, rest-spring-4, composable, kotlin, scheduler, minigraph, kafka-demo, sync-over-async-demo,
   distributed-cache-example, twin-kafka-demo)

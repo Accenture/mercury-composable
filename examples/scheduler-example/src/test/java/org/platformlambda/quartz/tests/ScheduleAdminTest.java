@@ -18,17 +18,19 @@
 
 package org.platformlambda.quartz.tests;
 
-import org.junit.jupiter.api.AfterAll;
+import com.mongodb.client.model.Filters;
+import org.bson.Document;
 import org.junit.jupiter.api.Test;
 import org.platformlambda.core.models.AsyncHttpRequest;
 import org.platformlambda.core.models.EventEnvelope;
+import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.platformlambda.quartz.common.TestBase;
+import org.platformlambda.quartz.db.SchedulerDatabase;
 
-import java.io.File;
-import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -42,11 +44,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class ScheduleAdminTest extends TestBase {
 
     private static final String SCHEDULE_ADMIN = "v1.schedule.admin";
-
-    @AfterAll
-    static void cleanup() {
-        Utility.getInstance().cleanupDir(new File("/tmp/scheduler-states"));
-    }
 
     private EventEnvelope adminRequest(String method, String jobName, Object body)
             throws InterruptedException, ExecutionException {
@@ -84,33 +81,79 @@ class ScheduleAdminTest extends TestBase {
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("Job started", map.getElement("message"));
         assertEquals("demo-task", map.getElement("job"));
-        // The job executor runs asynchronously and the sample state resolver's file write is
-        // truncate-then-write (not atomic). Therefore, the state file can EXIST while still empty - both
-        // when the start record is created and again when the end record rewrites it. File
-        // existence is therefore not readiness. Poll the admin endpoint itself until it returns
-        // a readable record (an empty/partial file surfaces as a 200 with no map content).
+        // The job executor runs asynchronously: poll the admin endpoint until the run has ended
         MultiLevelMap detail = null;
         long deadline = System.currentTimeMillis() + 15000;
         while (System.currentTimeMillis() < deadline) {
             EventEnvelope job = adminRequest("GET", "demo-task", null);
+            if (job.getStatus() == 200 && job.getBody() instanceof Map<?, ?> m && m.get("end") != null) {
+                detail = new MultiLevelMap((Map<String, Object>) m);
+                break;
+            }
+            Utility.getInstance().sleep(500);
+        }
+        assertNotNull(detail, "the job's record should show the end of the manual run");
+        assertEquals("demo-task", detail.getElement("name"));
+        assertEquals("hello.world", detail.getElement("service"));
+        assertNotNull(detail.getElement("start"));
+        assertNotNull(detail.getElement("elapsed"));
+        // the resolver stores the origin id with the parameters; the dashboard filters the system's keys out
+        assertEquals("world", detail.getElement("parameters.hello"));
+        assertNull(detail.getElement("parameters._origin"));
+        var stored = SchedulerDatabase.jobStates().find(Filters.eq("_id", "demo-task")).first();
+        assertNotNull(stored);
+        assertEquals(Platform.getInstance().getOrigin(),
+                stored.get("parameters", Document.class).getString("_origin"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void aFlowJobShowsItsNestedParameters() throws InterruptedException, ExecutionException {
+        adminRequest("POST", "demo-flow", Map.of("operator", "unit.test"));
+        MultiLevelMap detail = null;
+        long deadline = System.currentTimeMillis() + 15000;
+        while (System.currentTimeMillis() < deadline) {
+            EventEnvelope job = adminRequest("GET", "demo-flow", null);
             if (job.getStatus() == 200 && job.getBody() instanceof Map<?, ?> m && m.get("name") != null) {
                 detail = new MultiLevelMap((Map<String, Object>) m);
                 break;
             }
             Utility.getInstance().sleep(500);
         }
-        assertNotNull(detail, "job state record should become readable after the manual run");
-        assertEquals("demo-task", detail.getElement("name"));
-        assertEquals("hello.world", detail.getElement("service"));
-        // the resolver stores the origin id with the parameters; the dashboard filters the system's keys out
-        assertEquals("world", detail.getElement("parameters.hello"));
-        assertNull(detail.getElement("parameters._origin"));
+        assertNotNull(detail, "the flow job's record should become readable after the manual run");
+        assertEquals("flow://hello-flow", detail.getElement("service"));
+        assertEquals("db://demo", detail.getElement("parameters.db.host"));
+        assertEquals("some value", detail.getElement("parameters.other.demo"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void jobListShowsTheTimesOfEachRecordedJob() throws InterruptedException, ExecutionException {
+        var jobs = SchedulerDatabase.jobStates();
+        var start = new Date(System.currentTimeMillis() - 2000);
+        jobs.insertOne(new Document("_id", "listed-job").append("start", start)
+                .append("end", new Date()).append("parameters", new Document("hello", "world")));
+        try {
+            EventEnvelope response = adminRequest("GET", null, null);
+            assertEquals(200, response.getStatus());
+            var body = (Map<String, Object>) response.getBody();
+            var listed = ((List<Map<String, Object>>) body.get("jobs")).stream()
+                    .filter(j -> "listed-job".equals(j.get("name")))
+                    .findFirst().orElse(null);
+            assertNotNull(listed, "every record in the job_state collection is listed");
+            assertNotNull(listed.get("start"));
+            assertNotNull(listed.get("end"));
+            assertFalse(listed.containsKey("parameters"), "the list shows the times only");
+        } finally {
+            jobs.deleteOne(Filters.eq("_id", "listed-job"));
+        }
     }
 
     @Test
     void unknownJobNameIsRejected() throws InterruptedException, ExecutionException {
         EventEnvelope response = adminRequest("GET", "no-such-job", null);
         assertEquals(400, response.getStatus());
+        assertEquals("Job name is invalid", response.getError());
     }
 
     @Test
@@ -121,35 +164,10 @@ class ScheduleAdminTest extends TestBase {
 
     @Test
     void jobWithoutStateRecordIsNotFound() throws InterruptedException, ExecutionException {
-        File state = new File("/tmp/scheduler-states", "demo-flow");
-        assertTrue(!state.exists() || state.delete());
+        // a job that the cron file declares but that has not run yet has no record
+        SchedulerDatabase.jobStates().deleteOne(Filters.eq("_id", "demo-flow"));
         EventEnvelope response = adminRequest("GET", "demo-flow", null);
         assertEquals(400, response.getStatus());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    void jobListToleratesAStateFileCaughtMidWrite()
-            throws InterruptedException, ExecutionException, IOException {
-        // Reproduce the concurrent-write race deterministically. The sample resolver's str2file
-        // truncates the state file before writing (not atomic), so a scheduled job's file can be
-        // momentarily empty; an empty file parses to a null map. Before the fix, the list endpoint
-        // NPE'd on that null map and answered 500 (the field CI flake). A 0-byte file is exactly
-        // what that write window exposes.
-        File probe = new File("/tmp/scheduler-states", "race-probe");
-        assertTrue(probe.exists() || probe.createNewFile());
-        try {
-            EventEnvelope response = adminRequest("GET", null, null);
-            assertEquals(200, response.getStatus());
-            var body = (Map<String, Object>) response.getBody();
-            var jobs = (List<Map<String, Object>>) body.get("jobs");
-            var probeEntry = jobs.stream()
-                    .filter(j -> "race-probe".equals(j.get("name")))
-                    .findFirst().orElse(null);
-            assertNotNull(probeEntry, "an empty (mid-write) state file must still be listed, not 500");
-            assertFalse(probeEntry.containsKey("start"), "an unreadable record carries no timing");
-        } finally {
-            assertTrue(!probe.exists() || probe.delete());
-        }
+        assertEquals("Job not found", response.getError());
     }
 }

@@ -18,27 +18,27 @@
 
 package org.platformlambda.quartz.services;
 
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.Updates;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.serializers.SimpleMapper;
-import org.platformlambda.core.util.Utility;
+import org.platformlambda.quartz.db.SchedulerDatabase;
 import org.platformlambda.scheduler.ActiveEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This is just a sample store of the active environment (RFC-0008).
+ * The example's store of the active environment (RFC-0008), on MongoDB.
  * <p>
- * For production, you must implement your own store that persists the active environment name into
- * a data store shared by every instance of the site. For example, a database such as PostgreSQL or MongoDB,
- * or a distributed cache. It is because Kubernetes restarts a pod without notice and an in-memory value would
- * reset. The scheduler reads this store at every scheduled point. Keep the route name
- * {@code v1.environment.store}, or set {@code scheduler.environment.store} to yours.
+ * The active environment is persisted in a data store shared by every instance of every site, because Kubernetes
+ * restarts a pod without notice and an in-memory value would reset. The scheduler reads this store at every
+ * scheduled point. It is one document in the "environment" collection: the active environment's name, the
+ * operator who set it and when. Keep the route name {@code v1.environment.store}, or set
+ * {@code scheduler.environment.store} to yours.
  * <p>
  * API contract:
  * 1. get:
@@ -49,25 +49,14 @@ import java.util.Map;
  *      header (type = set, environment = name, operator = who)
  *      return true
  */
-// S5443 (publicly writable directory): /tmp/scheduler-environment IS the sample store by design -
-// throwaway local data; a production store persists to a database or distributed cache
-@SuppressWarnings("java:S5443")
 @PreLoad(route = ActiveEnvironment.DEFAULT_STORE)
 public class EnvironmentStore implements TypedLambdaFunction<Map<String, Object>, Object> {
     private static final Logger log = LoggerFactory.getLogger(EnvironmentStore.class);
-    private static final Utility util = Utility.getInstance();
-    private static final String TEMP_FOLDER = "/tmp/scheduler-environment";
+    private static final String ID = "_id";
+    private static final String RECORD = "active-environment";
     private static final String ACTIVE = "active";
     private static final String OPERATOR = "operator";
     private static final String TIME = "time";
-    private static final File RECORD = new File(TEMP_FOLDER, ACTIVE);
-
-    public EnvironmentStore() {
-        File dir = new File(TEMP_FOLDER);
-        if (!dir.exists() && dir.mkdirs()) {
-            log.info("{} created", dir);
-        }
-    }
 
     @Override
     public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
@@ -87,19 +76,13 @@ public class EnvironmentStore implements TypedLambdaFunction<Map<String, Object>
     }
 
     private String read() {
-        if (!RECORD.exists()) {
-            return null;
-        }
-        var map = SimpleMapper.getInstance().getMapper().readValue(util.file2str(RECORD), Map.class);
-        return map == null ? null : (String) map.get(ACTIVE);
+        var rec = SchedulerDatabase.environment().find(Filters.eq(ID, RECORD)).first();
+        return rec == null ? null : rec.getString(ACTIVE);
     }
 
     private void write(String name, String operator) {
-        Map<String, Object> rec = new HashMap<>();
-        rec.put(ACTIVE, name);
-        rec.put(OPERATOR, operator);
-        rec.put(TIME, new Date());
-        util.str2file(RECORD, SimpleMapper.getInstance().getMapper().writeValueAsString(rec));
+        SchedulerDatabase.environment().updateOne(Filters.eq(ID, RECORD), Updates.combine(Updates.set(ACTIVE, name),
+                Updates.set(OPERATOR, operator), Updates.set(TIME, new Date())), new UpdateOptions().upsert(true));
         log.info("Active environment {} persisted by {}", name, operator);
     }
 }

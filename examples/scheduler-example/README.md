@@ -3,19 +3,69 @@
 Simple scheduler that uses YAML configuration for storing "cron" job schedules
 
 This application is the example that the [Mini-Scheduler](https://accenture.github.io/mercury-composable/guides/mini-scheduler/)
-guide refers to: a sample state resolver, a sample environment store, and the admin endpoints below.
+guide refers to: a state resolver and an environment store on MongoDB, and the admin endpoints below.
+
+## MongoDB
+
+The state resolver and the environment store keep their records in MongoDB, which every instance of the
+application shares:
+
+```
+mongodb.uri=${MONGODB_URI:mongodb://127.0.0.1:27017}
+mongodb.database=scheduler
+```
+
+| Collection | Written by | One document per | Fields |
+| --- | --- | --- | --- |
+| `job_state` | `StateResolver` (`v1.state.resolver`) | job, with the job's name as its `_id` | `service`, `schedule`, `parameters` (with `_origin`), `start`, `end` |
+| `environment` | `EnvironmentStore` (`v1.environment.store`) | application (`_id` is `active-environment`) | `active`, `operator`, `time` |
+
+`SchedulerDatabase` creates the client at first use and closes it when the application stops. Both collections
+write with the `majority` write concern, so a failover of the primary cannot lose an acknowledged claim. The
+example waits at most 2 seconds to reach the database (`serverSelectionTimeoutMS`, unless the connection string
+sets it), because the scheduler waits 3 seconds for each answer.
+
+**A test drive without Docker.** Run [`helpers/mongodb-standalone`](../../helpers/mongodb-standalone), a
+MongoDB-compatible server written in Java that listens on `127.0.0.1:27017`, for development and testing in an
+environment without container support. Where Docker is available, `docker run -p 27017:27017 mongo:8.0` runs
+MongoDB itself.
+
+**The tests** start the same embedded server on a free port, so `mvn clean install` needs no MongoDB, Docker or
+download. To run them against a real MongoDB, pass its connection string; they use their own database,
+`scheduler_test`, which they drop when they start:
+
+```shell
+mvn test -Dtest.mongodb.uri=mongodb://127.0.0.1:27017
+```
 
 ## Running more than one instance
 
-To support multiple application instances for resilience, you can implement a "state resolver" function.
-An example is shown in the StateResolver class under the "services" folder; it keeps the state in a local
-file, so it serves one instance.
+Every instance fires every job, and the resolver's `expires` claims the job for the instance that asks, in one
+conditional write to the `job_state` collection, so exactly one instance runs it. The parameters the resolver
+receives carry the asking instance's origin id under `_origin`. The claim matches the job's document when the
+window has passed or the asking instance holds the claim already; when it does not match, the upsert inserts a
+second document with the same `_id`, which MongoDB refuses, and the refusal is the answer. This is the MongoDB
+worked example in "Running more than one instance" in the mini-scheduler README, which also has the PostgreSQL
+one. `StateResolverTest` has eight instances ask at the same instant, 50 times on a first run and 50 times after
+an expired run, and expects exactly one winner each time.
 
-With more than one instance, every instance fires every job, and the resolver's `expires` claims the job
-for the instance that asks, in one conditional write to a database the instances share, so exactly one
-instance runs it. The parameters the resolver receives carry the asking instance's origin id under
-`_origin`. See "Running more than one instance" in the mini-scheduler README for worked examples on
-PostgreSQL and MongoDB, the unique key on the job's name and the window.
+The window is 30 seconds: more than the 18 seconds a peer may still ask after a claim (9 seconds of
+`deferred.start` and 9 of retries) plus the database's latency, and less than the job's period minus 9 seconds.
+So a job runs at most every 39 seconds, and the demo jobs run once a minute.
+
+Each instance logs its answer:
+
+```text
+StateResolver - Job demo-task claimed by this instance
+StateResolver - Job demo-task is claimed by another instance within the window
+```
+
+To watch it, start [`helpers/mongodb-standalone`](../../helpers/mongodb-standalone) and two instances:
+
+```shell
+java -jar target/scheduler-example-x.y.z.jar
+java -Dserver.port=8084 -jar target/scheduler-example-x.y.z.jar
+```
 
 Setting "deferred.start" to true in cron.yaml defers a job from 0 to 9 seconds in each instance, which
 spreads the instances' questions to the resolver; the claim is what picks one instance.
@@ -49,8 +99,8 @@ unconfigured installation behaves as before.
 
 The active environment's **source of truth is a data store**, not a property: the function named by
 `scheduler.environment.store` (default `v1.environment.store`), which the application implements against
-its own database - the example's `EnvironmentStore` writes a file; replace it with PostgreSQL, MongoDB or a
-distributed cache - because Kubernetes restarts a pod without notice. The scheduler reads it **at every
+its own database - the example's `EnvironmentStore` keeps it in MongoDB; PostgreSQL or a distributed cache
+serve as well - because Kubernetes restarts a pod without notice. The scheduler reads it **at every
 scheduled point**, before a job runs, so one call moves every instance of every site. The operations team
 makes that call around a Production maintenance window - to `DR` before, back to `prod` after - through the
 application's REST endpoint (`GET`/`POST /api/scheduler/environment` in the example,
@@ -75,8 +125,8 @@ Note that the one in the classpath is just an example. Please update the YAML co
 ```
 jobs:
   - name: "demo-task"
-    description: "execute demo service every 15 seconds"
-    cron: "0/15 0/1 * 1/1 * ? *"
+    description: "execute demo service every minute, at second 0"
+    cron: "0 0/1 * 1/1 * ? *"
     service: "hello.world"
     # optional parameter to tell the service what to do
     parameters:
@@ -84,8 +134,8 @@ jobs:
     resolver: "v1.state.resolver"
 
   - name: "demo-flow"
-    description: "execute demo service every 25 seconds"
-    cron: "0/25 0/1 * 1/1 * ? *"
+    description: "execute demo flow every minute, at second 30"
+    cron: "30 0/1 * 1/1 * ? *"
     service: "flow://hello-flow"
     # In the demo flow, it has 2 tasks. We use input data mapping to map "db" and "other" parameters accordingly.
     # See "hello-flow.yml for details.
@@ -101,13 +151,15 @@ deferred.start: true
 leader.election: false    
 ```
 In this example, there are two scheduled jobs (demo-task and demo-flow). The scheduler executes
-the service "hello.world" every 15 seconds and the flow "hello-flow" every 25 seconds.
+the service "hello.world" every minute at second 0 and the flow "hello-flow" every minute at second 30.
 
 A cron statement is read in the JVM's default time zone. A job whose hour belongs to a region adds
 `timezone: "America/New_York"` (or another region id), so it keeps its local hour when daylight saving
 moves the UTC offset; see "Time zone" in the mini-scheduler README.
 
 ## Running this application
+
+Start MongoDB first (see [MongoDB](#mongodb) above), then:
 
 1. You can run the application class MainApp from the IDE
 2. You may also run the application by building it using `mvn clean package` and then run the application as follows:
@@ -149,7 +201,7 @@ A job status report may look like this:
 ```json
 {
   "elapsed": "11 ms",
-  "schedule": "0/25 0/1 * 1/1 * ? *",
+  "schedule": "30 0/1 * 1/1 * ? *",
   "service": "flow://hello-flow",
   "name": "demo-flow",
   "start": "2025-12-08T05:03:59.009Z",
