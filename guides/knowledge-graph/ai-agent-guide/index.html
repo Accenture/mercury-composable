@@ -1508,6 +1508,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start a collaboration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Start a collaboration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#human-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When the human's session came first
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#contract" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1522,7 +1550,7 @@
   <a href="#hosting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hosting the session yourself
+        The AI companion broker
       
     </span>
   </a>
@@ -3100,6 +3128,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start a collaboration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Start a collaboration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#human-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When the human's session came first
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#contract" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3114,7 +3170,7 @@
   <a href="#hosting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hosting the session yourself
+        The AI companion broker
       
     </span>
   </a>
@@ -3270,34 +3326,67 @@
 </table>
 <p>This guide is about the <strong>companion</strong> flow — co-authoring a graph with a human watching the
 Playground.</p>
+<h2 id="start">Start a collaboration<a class="headerlink" href="#start" title="Permanent link">&para;</a></h2>
+<p>The recommended way to start human–AI collaboration, settled over many demos with team members and
+field engineers, is that <strong>the agent hosts the session and the human subscribes to it</strong>:</p>
+<ol>
+<li><strong>The human starts the MiniGraph application in a terminal</strong>, so they can see the application log
+   as the work goes on.</li>
+<li><strong>The human asks the agent to start a persistent WebSocket connection with the AI companion
+   broker</strong> (<a href="#hosting">below</a>). The agent starts the broker, reads the session id from its
+   <code>GET /session</code> and hands the human one line to type in the Playground's console:
+   <code>session subscribe {session-id}</code>.</li>
+<li><strong>Once the human has subscribed</strong> (the broker's <code>GET /session</code> lists them under <code>subscribers</code>),
+   the two collaborate on the next step: the human explains the intent of the business use case, the
+   agent starts prototyping through <a href="#contract"><code>/sync</code></a> while the human watches the graph grow in the
+   Playground, then they dry-run it together, and so on.</li>
+</ol>
+<p><strong>Why the agent holds the primary session:</strong> the broker keeps its connection alive, so the session
+never times out. A browser tab is not so steady: when the browser throttles a background tab, the web
+UI's keep-alive pings stop, and the server closes that tab's session at its idle timeout
+(<code>websocket.idle.timeout</code>, 60 seconds by default). Nothing is lost when it happens: the human reloads
+the page, types <code>session subscribe {session-id}</code> again, and the work-in-progress graph syncs back in
+full, so the collaboration continues where it was.</p>
+<h3 id="human-first">When the human's session came first<a class="headerlink" href="#human-first" title="Permanent link">&para;</a></h3>
+<p>If the human opened the Playground first and handed their own session id to the agent, the agent
+still starts the broker, then calls its <code>POST /subscribe</code> with that id: the broker's session becomes a
+subscriber of the human's and holds a copy of the shared draft. Drive <code>/sync</code> through the <strong>broker's</strong>
+session id — a subscriber forwards each command to the primary, so everyone sees it, and the id keeps
+working if the human's session goes away. If the human closes the browser by accident, the engine
+frees every subscriber of the closed session as a primary of its own that keeps its copy of the draft:
+the broker logs it, and <code>GET /session</code> shows <code>subscribedTo: null</code>. The agent then hands its own session
+id to the human, who subscribes from a new tab and recovers the work-in-progress.</p>
+<p>Both paths work, but the first — the agent owning the primary session from the start — is easier for
+both the agent and the human.</p>
 <h2 id="contract">The companion contract<a class="headerlink" href="#contract" title="Permanent link">&para;</a></h2>
 <p>An <strong>AI agent should use the synchronous <code>/sync</code> endpoint</strong> so it sees every outcome in-band and
 can self-correct without a human relaying the console:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>1. A human opens the Playground (ws://{host}/ws/graph); the first WebSocket frame carries the
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>   session id (ws-&lt;6 digits&gt;-&lt;counter&gt;, e.g. ws-384729-17). Get this id from the human.
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>2. For each command:  POST /api/companion/{session-id}/sync   Content-Type: text/plain,
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>   exactly ONE command in the body.
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>3. The HTTP response returns the outcome IN-BAND as JSON:
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>     { "ok": bool, "id": "ws-...", "command": "...", "output": ["...console lines..."],
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>       "error": "...", "result": [ ... structured, e.g. a run's output.body ... ] }
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>   - NULL FIELDS ARE OMITTED from the wire (serializer null-omission): a success carries no
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>     "error" key and, unless the command yields data, no "result" key. Treat ABSENT as null —
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>     do not require the keys.
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>   - The "ok" flag is the engine's own verdict, never read from the wording of a line: every
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>     line the engine prints to refuse a command (it did nothing, or it failed) or to abort a
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>     run carries an error status, and ok is false when one appears. A help page or an
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>     informational line is never a failure, whatever its words: import's normal "Graph model
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>     not found in /tmp/... Found deployed graph model" fallback is ok:true. When ok is false,
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>     the error field carries the first refusal — still read the output for the full picture.
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>   - A malformed command answered with a "Syntax: ..." usage hint is a FAILURE: ok:false
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>     with the hint as the error (the command did nothing).
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>   - Repeating an identical command back-to-back is safe: /sync commands are never
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>     dedup-dropped (the engine's 1-second duplicate guard protects only the WS UI path).
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>   - If ok is false, read error/output, fix it, and re-issue — self-correct; no human relay needed.
-<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>   - Use result to verify a run/inspect (e.g. output.body).
-<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>4. The same output is ALSO teed to the human's WebSocket console, so a watcher — and any
-<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>   `session subscribe`d session (e.g. a product owner) — sees it live: real-time human+AI collaboration.
-<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>5. Read the model shape any time with  GET /api/graph/session/{session-id}.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>1. Get the session id (ws-&lt;6 digits&gt;-&lt;counter&gt;, e.g. ws-384729-17): from the AI companion broker's
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>   GET /session when you host the session (recommended, see "Start a collaboration"), or from a
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>   human whose Playground (ws://{host}/ws/graph) announced it in its first WebSocket frame.
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>2. For each command:  POST /api/companion/{session-id}/sync   Content-Type: text/plain,
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>   exactly ONE command in the body.
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>3. The HTTP response returns the outcome IN-BAND as JSON:
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>     { "ok": bool, "id": "ws-...", "command": "...", "output": ["...console lines..."],
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>       "error": "...", "result": [ ... structured, e.g. a run's output.body ... ] }
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>   - NULL FIELDS ARE OMITTED from the wire (serializer null-omission): a success carries no
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>     "error" key and, unless the command yields data, no "result" key. Treat ABSENT as null —
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>     do not require the keys.
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>   - The "ok" flag is the engine's own verdict, never read from the wording of a line: every
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>     line the engine prints to refuse a command (it did nothing, or it failed) or to abort a
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>     run carries an error status, and ok is false when one appears. A help page or an
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>     informational line is never a failure, whatever its words: import's normal "Graph model
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>     not found in /tmp/... Found deployed graph model" fallback is ok:true. When ok is false,
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>     the error field carries the first refusal — still read the output for the full picture.
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>   - A malformed command answered with a "Syntax: ..." usage hint is a FAILURE: ok:false
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>     with the hint as the error (the command did nothing).
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>   - Repeating an identical command back-to-back is safe: /sync commands are never
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>     dedup-dropped (the engine's 1-second duplicate guard protects only the WS UI path).
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>   - If ok is false, read error/output, fix it, and re-issue — self-correct; no human relay needed.
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>   - Use result to verify a run/inspect (e.g. output.body).
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>4. The same output is ALSO teed to the human's WebSocket console, so a watcher — and any
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>   `session subscribe`d session (e.g. a product owner) — sees it live: real-time human+AI collaboration.
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>5. Read the model shape any time with  GET /api/graph/session/{session-id}.
 </code></pre></div>
 <p>Status codes: <code>200</code> executed (read <code>ok</code>/<code>error</code> in the body); <code>400</code> missing/empty/non-text body;
 <code>404</code> no active session for that id.</p>
@@ -3312,34 +3401,65 @@ reported in the field. Express decisions with <code>graph.math</code> and everyt
 <code>graph.task</code> — see the <a href="../skills-reference/#js">skills reference</a>.</p>
 </blockquote>
 <p><strong>Rules of engagement:</strong> one command per POST (multi-line commands are fine — see the grammar);
-the session must already be open (over the companion endpoint you do not create it — but see
-<a href="#hosting">Hosting the session yourself</a>); take turns — co-editing with humans is the design
+the session must already be open (over the companion endpoint you do not create it — the AI
+companion broker does: <a href="#start">Start a collaboration</a>); take turns — co-editing with humans is the design
 intent, just don't POST in the same instant a human is mid-keystroke; never expose this beyond a
 trusted dev host.
 <strong>Session topology is off-limits over HTTP:</strong> a companion is an <em>assistant to</em> the session in the
 URL, not a WebSocket session of its own — the companion endpoint rejects <code>session subscribe</code> /
 <code>session unsubscribe</code> / <code>session reset</code> (the read-only <code>session</code> status query is allowed).
-Subscriptions are managed from WebSocket-connected sessions only.
+Subscriptions are managed from WebSocket-connected sessions only — a browser, or the AI companion
+broker, whose <code>POST /subscribe</code> sends the command over its own WebSocket.
 <strong>Session sync is symmetric:</strong> when sessions are joined by <code>session subscribe</code>, <strong>every command
 except the <code>session</code> topology commands propagates to the primary and all subscribers alike</strong> —
 AI and humans are equal co-authors of one shared model, and anyone's command (typos included) is
 seen by everyone. It is collaboration, not a one-way broadcast.</p>
-<h2 id="hosting">Hosting the session yourself<a class="headerlink" href="#hosting" title="Permanent link">&para;</a></h2>
-<p>The flow above borrows a human's browser session. The stronger topology is the inverse: <strong>the
-agent hosts the session and humans subscribe to it.</strong> If a human's tab drops (backgrounded past
-the idle timeout, laptop lid closed), they simply re-subscribe and the current work-in-progress
-graph syncs back to them — nothing lives in anyone's browser.</p>
-<p><strong>Use the shipped session broker — do not hand-roll a WebSocket client.</strong> The session contract
+<h2 id="hosting">The AI companion broker<a class="headerlink" href="#hosting" title="Permanent link">&para;</a></h2>
+<p><strong>Use the AI companion broker — do not hand-roll a WebSocket client.</strong> The session contract
 carries a keep-alive obligation, and a hand-rolled client that misses it appears to work, then
 dies silently at the server's idle timeout — typically mid-collaboration. The zero-dependency
-reference broker, <code>scripts/playground-session-broker.mjs</code> (Node ≥ 22), ships in the
-<code>starter-graph</code> template and in the <code>minigraph-playground</code> example. It holds the session, keeps
-it alive with the web UI's own ping cadence, auto-reconnects across app restarts, and exposes a
-localhost control API (<code>GET /session</code>, <code>GET /console</code>, <code>POST /start</code>, <code>POST /stop</code>) so the agent
-reads the session id over HTTP, hands it to the humans (<code>session subscribe {id}</code> in their
-browsers), and keeps driving commands through <code>/sync</code> as usual — the broker owns the session's
-lifecycle, never its commands. See <code>scripts/README.md</code> next to the script, and pass <code>--target</code>
-for your app's port (e.g. <code>--target http://127.0.0.1:8303</code> for the starter template's default).</p>
+broker, <code>scripts/ai-companion-broker.mjs</code> (Node ≥ 22), ships in the <code>starter-graph</code> template, the
+one copy the examples run too (<code>templates/starter-graph/scripts/</code>). It holds the session, keeps it
+alive with the web UI's own ping cadence, auto-reconnects across app restarts, and exposes a
+localhost control API:</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /session</code></td>
+<td><code>sessionId</code>, connection state, <code>previousSessionIds</code>, <code>subscribedTo</code> (the primary session this one mirrors, or <code>null</code>) and <code>subscribers</code> (the sessions that mirror this one)</td>
+</tr>
+<tr>
+<td><code>GET /console?lines=50</code></td>
+<td>Recent console lines teed to the session (ping/pong filtered)</td>
+</tr>
+<tr>
+<td><code>POST /subscribe</code></td>
+<td>Body <code>{"sessionId": "ws-..."}</code>: the broker's session subscribes to that primary session; answers <code>{sessionId, subscribedTo}</code>, or the engine's refusal (<code>409</code>)</td>
+</tr>
+<tr>
+<td><code>POST /start</code></td>
+<td>Close any current session, open a fresh one, return its id</td>
+</tr>
+<tr>
+<td><code>POST /stop</code></td>
+<td>Close the session; auto-reconnect stays off until <code>/start</code></td>
+</tr>
+<tr>
+<td><code>POST /shutdown</code></td>
+<td>Stop the broker</td>
+</tr>
+</tbody>
+</table>
+<p>The broker owns the session's lifecycle and its place in a shared session, never its commands: the
+agent keeps driving commands through <code>/sync</code>. See <code>scripts/README.md</code> next to the script, and pass
+<code>--target</code> for your app's port (e.g. <code>--target http://127.0.0.1:8303</code> for the starter template's
+default).</p>
 <p>For reference, the WebSocket contract the broker implements (identical in the Java and Rust
 engines):</p>
 <ol>
@@ -3351,7 +3471,7 @@ engines):</p>
    any console you render. <strong>Skipping this step is the classic hand-rolled-client failure — the
    session dies at the idle timeout.</strong></li>
 <li>A restart of the app destroys the session (and any unexported graph — export first);
-   reconnect and parse the <strong>new</strong> id. The shipped broker does this for you: after a restart,
+   reconnect and parse the <strong>new</strong> id. The AI companion broker does this for you: after a restart,
    <code>GET /session</code> returns the new <code>sessionId</code> with the old one under <code>previousSessionIds</code>.
    Re-import the exported graph into the new session (<code>import graph from {name}</code>) <strong>before</strong>
    handing the id to the humans, so the model syncs back to them on <code>session subscribe</code>.</li>
@@ -3501,7 +3621,7 @@ project changes — the same gate compiles the same JSON.</p>
   takes the bundled graphs down.</li>
 <li><strong>A deployment is still a restart.</strong> <code>CompileGraph</code> runs once at startup (<code>@BeforeApplication</code>);
   there is no runtime reload. Export before the restart, and follow the broker choreography in
-  <a href="#hosting">Hosting the session yourself</a>: the broker reconnects and reports a new session id;
+  <a href="#hosting">The AI companion broker</a>: the broker reconnects and reports a new session id;
   <code>import graph from {name}</code> into it, then re-invite the humans.</li>
 </ul>
 <p>The same two manifests are how to <strong>iterate on a graph that is already deployed</strong> without a rebuild:
@@ -3621,7 +3741,7 @@ watcher (and any <code>session subscribe</code>d session) follows along live.</p
 <h2 id="scaffolding">Scaffolding a project from the template<a class="headerlink" href="#scaffolding" title="Permanent link">&para;</a></h2>
 <p><strong>Start from <code>templates/starter-graph</code>.</strong> It is the copy-out starter for Layer 3 and it already
 ships the whole <code>playground-enabled</code> surface below — the dev-mode endpoints, <code>app.env=dev</code>, the
-standard <code>graph-executor</code> flow, and the session broker script — so a fresh project can be
+standard <code>graph-executor</code> flow, and the AI companion broker — so a fresh project can be
 co-authored with an AI agent from the first run. Copy the directory, rename the ids, replace the
 graph model, and you are done; the manifest and route list here are then a <strong>checklist for what
 you must not delete</strong>, not a trimming exercise.</p>

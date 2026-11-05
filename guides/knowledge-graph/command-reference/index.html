@@ -3974,9 +3974,21 @@ derivation as JSON) — see <a href="../graph-contract/#discovery">the graph con
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>session reset
 </code></pre></div>
 <p>The topology subcommands (<code>subscribe</code>/<code>unsubscribe</code>/<code>reset</code>) work only from a
-<strong>WebSocket-connected session</strong>. The companion REST endpoints reject them (a companion is an
-assistant to a session, not a session of its own) — only the read-only <code>session</code> status query is
-available there.</p>
+<strong>WebSocket-connected session</strong>: a browser, or the AI companion broker, whose <code>POST /subscribe</code> sends
+<code>session subscribe {id}</code> over its own WebSocket. The companion REST endpoints reject them (a
+companion is an assistant to a session, not a session of its own) — only the read-only <code>session</code>
+status query is available there.</p>
+<p>What the topology does to the draft:</p>
+<ul>
+<li><strong>Joining copies it.</strong> Subscribing to a primary that holds a graph replaces yours with it;
+  subscribing to an empty primary hands it yours.</li>
+<li><strong>Leaving keeps it.</strong> When a primary session closes (its tab closed, or timed out at the server's
+  idle timeout, <code>websocket.idle.timeout</code>, 60 seconds by default), each subscriber becomes a primary
+  of its own and keeps its graph (<code>Session {id} has closed</code>). <code>session unsubscribe</code> keeps yours too.</li>
+<li><strong>Recovery is subscribing again.</strong> A member who dropped opens a new session and subscribes to a
+  session that still holds the work-in-progress: the agent's, when it hosts the session (the
+  recommended way — <a href="../ai-agent-guide/#start">Start a collaboration</a>).</li>
+</ul>
 <h3 id="help">help<a class="headerlink" href="#help" title="Permanent link">&para;</a></h3>
 <p>One-line. Prints the engine's shipped help page for a command, a concept, or a skill — the same
 content <code>describe skill {route}</code> returns for a skill. Useful for in-band self-service when a
