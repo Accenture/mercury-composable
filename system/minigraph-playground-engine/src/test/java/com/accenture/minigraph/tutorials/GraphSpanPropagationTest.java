@@ -175,7 +175,7 @@ class GraphSpanPropagationTest {
 
     @Test
     void suspendResumeStoreCallsChainToTheirSkillSpans() throws TimeoutException {
-        // the suspend/resume skills issue their store request on the worker thread, so the
+        // the suspend/resume skills issue their store request on the worker thread. Therefore, the
         // pluggable store function's span chains onto the skill span instead of floating
         // parentless in the trace (the trace context is thread-keyed - an eRequest inside
         // the Mono callback would miss the stamp)

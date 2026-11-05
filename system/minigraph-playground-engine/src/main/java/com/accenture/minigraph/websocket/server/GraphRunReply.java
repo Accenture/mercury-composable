@@ -29,8 +29,8 @@ import java.util.Map;
 
 /**
  * Where the flow of a run started from a WebSocket session replies. The run's channel has already sent the result to
- * the session and closed it, so the reply matters only for a run whose graph never started - a flow that failed
- * before the graph executor ran - which still ends its session with the error.
+ * the session and closed it. Therefore, the reply matters only for a run whose graph never started - a flow that
+ * failed before the graph executor ran - which still ends its session with the error.
  */
 @ZeroTracing
 @OptionalService(GraphRunSocket.ENABLED)

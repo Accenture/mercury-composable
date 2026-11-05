@@ -29,7 +29,7 @@ class SaveProfile : TypedLambdaFunction<Map<String, Any>, Unit?> {
         for (f in fields) {
             filtered.setElement(f, dataset.getElement(f))
         }
-        val mapper = SimpleMapper.getInstance().getMapper()
+        val mapper = SimpleMapper.getInstance().mapper
         val json = mapper.writeValueAsString(filtered.getMap())
         val folder = File(TEMP_DATA_STORE)
         if (!folder.exists() && folder.mkdirs()) {

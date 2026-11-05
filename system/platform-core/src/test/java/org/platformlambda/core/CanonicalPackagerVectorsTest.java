@@ -129,7 +129,7 @@ class CanonicalPackagerVectorsTest {
     }
 
     /** Packs the vector, so a rejection from the builder calls or from the build surfaces from one invocation. */
-    private static void pack(JsonObject v) throws IOException {
+    private static void pack(JsonObject v) {
         builder(v).build();
     }
 

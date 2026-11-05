@@ -29,7 +29,6 @@ import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
 import org.platformlambda.redis.RedisBackend;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * The cache operations over a {@link RedisBackend} whose values are opaque {@code byte[]} — the caller owns
- * serialisation, which maximises cross-layer and cross-language interop (design spec §4.4, Q3). Keys are
+ * serialization, which maximizes cross-layer and cross-language interop (design spec §4.4, Q3). Keys are
  * {@code String}, each transparently namespaced by an optional application key-prefix (Q6) so several apps
  * can share one Redis without colliding; the prefix is stripped again on the way out of {@code MGET}.
  *
@@ -125,12 +124,10 @@ public class RedisCacheStore {
             return;
         }
         RedisClusterAsyncCommands<String, byte[]> async = backend.async();
-        List<RedisFuture<String>> futures = new ArrayList<>(entries.size());
-        for (Map.Entry<String, byte[]> entry : entries.entrySet()) {
-            futures.add(async.setex(prefixed(entry.getKey()), ttlSeconds, entry.getValue()));
-        }
-        boolean completed = LettuceFutures.awaitAll(timeoutMs, TimeUnit.MILLISECONDS,
-                futures.toArray(new RedisFuture[0]));
+        RedisFuture<?>[] futures = entries.entrySet().stream()
+                .map(entry -> async.setex(prefixed(entry.getKey()), ttlSeconds, entry.getValue()))
+                .toArray(RedisFuture[]::new);
+        boolean completed = LettuceFutures.awaitAll(timeoutMs, TimeUnit.MILLISECONDS, futures);
         if (!completed) {
             // the same 408 as a blocking command timeout, and the same connection-reset rule: the facade
             // cannot see a timeout that surfaces while the caller awaits the futures, so report it

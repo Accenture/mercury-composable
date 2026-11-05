@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Where this instance's environment name comes from, read through the real configuration reader: a key holds
- * a value or child keys, never both, so the name is a child of scheduler.environment like the store.
+ * a value or child keys, never both, so the name is a child of 'scheduler.environment' like the store.
  */
 class ConfiguredEnvironmentTest {
 

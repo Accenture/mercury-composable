@@ -59,7 +59,7 @@ class SetConfigParameterTest {
         assertEquals(false, plugin.calculate(null, "value"));
         assertEquals(false, plugin.calculate("", "empty-key"));
         assertEquals(false, plugin.calculate("   ", "blank-key"));
-        assertEquals(false, plugin.calculate("set.config.plugin.null.value", (Object) null));
+        assertEquals(false, plugin.calculate("set.config.plugin.null.value", null));
         assertNull(System.getProperty("set.config.plugin.null.value"));
     }
 }

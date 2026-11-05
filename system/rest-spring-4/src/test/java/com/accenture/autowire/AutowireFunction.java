@@ -38,7 +38,7 @@ public class AutowireFunction implements LambdaFunction {
     String injectedValue;
 
     @Override
-    public Object handleEvent(Map<String, String> headers, Object input, int instance) throws Exception {
+    public Object handleEvent(Map<String, String> headers, Object input, int instance) {
         return Map.of("success", testBean != null && "someValue".equals(injectedValue));
     }
 }

@@ -3,7 +3,6 @@ package com.accenture.minigraph.math;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -374,10 +373,7 @@ public final class DecimalEvaluator {
         if (args.isEmpty()) {
             throw new IllegalArgumentException("Function " + name + " needs at least one argument");
         }
-        var values = new ArrayList<BigDecimal>(args.size());
-        for (var arg : args) {
-            values.add(argument(name, arg));
-        }
+        var values = args.stream().map(arg -> argument(name, arg)).toList();
         var best = values.getFirst();
         for (var value : values) {
             // the first of equal values wins, so the result is the same in every engine

@@ -32,13 +32,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * A caller's return route (declared by {@code return.path.routes=test.progress.*}): it records each event it
  * receives, in order, per business correlation id. One instance, so the record keeps the arrival order.
  */
-@PreLoad(route = ProgressCollector.ROUTE, instances = 1)
+@PreLoad(route = ProgressCollector.ROUTE)
 public class ProgressCollector implements TypedLambdaFunction<Map<String, Object>, Void> {
     public static final String ROUTE = "test.progress.collector";
     private static final ConcurrentMap<String, List<Map<String, Object>>> EVENTS = new ConcurrentHashMap<>();
     private static final Object MONITOR = new Object();
 
-    public static void record(Map<String, Object> event) {
+    public static void collect(Map<String, Object> event) {
         EVENTS.computeIfAbsent(String.valueOf(event.get("cid")), k -> new CopyOnWriteArrayList<>()).add(event);
         synchronized (MONITOR) {
             MONITOR.notifyAll();
@@ -57,7 +57,7 @@ public class ProgressCollector implements TypedLambdaFunction<Map<String, Object
     public static List<Map<String, Object>> awaitTerminal(String cid, long timeoutMs) throws InterruptedException {
         var deadline = System.currentTimeMillis() + timeoutMs;
         synchronized (MONITOR) {
-            while (events(cid).stream().noneMatch(e -> !"progress".equals(e.get("type")))) {
+            while (events(cid).stream().allMatch(e -> "progress".equals(e.get("type")))) {
                 var left = deadline - System.currentTimeMillis();
                 if (left <= 0) {
                     break;
@@ -70,7 +70,7 @@ public class ProgressCollector implements TypedLambdaFunction<Map<String, Object
 
     @Override
     public Void handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
-        record(input);
+        collect(input);
         return null;
     }
 }

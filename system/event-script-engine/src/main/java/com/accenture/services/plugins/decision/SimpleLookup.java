@@ -37,8 +37,8 @@ import java.util.Map;
  * </pre>
  * The 'keys' field lists the rule names in priority order and each rule field lists the values
  * that select the rule; a value can be a number or a string. The 'keys' field and each rule field
- * may be given as a list or as a JSON list written as text (the shape of a node property authored as
- * keys=[ "a", "b" ]), and the table itself may be given as JSON text - SimplePluginUtils converts them
+ * may be given as a list or as a JSON list written as text, the shape of a node property authored as
+ * keys=[ "a", "b" ]. The table itself may be given as JSON text. SimplePluginUtils converts them
  * (a plugin class must stay inside the loader's allowlist, so the serializer is reached only there).
  * <p>
  * Values are compared as text, case-insensitively. The result is the matching rule name; when no

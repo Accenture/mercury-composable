@@ -165,12 +165,7 @@ public class EventProducer implements LambdaFunction {
     }
 
     private String getNextAvailable(List<String> targetList) {
-        List<String> available = new ArrayList<>();
-        for (String target: targetList) {
-            if (ServiceRegistry.destinationExists(target)) {
-                available.add(target);
-            }
-        }
+        List<String> available = targetList.stream().filter(ServiceRegistry::destinationExists).toList();
         if (available.isEmpty()) {
             return null;
         }

@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A composable function for graph.task unit tests.
+ * A composable function for 'graph.task' unit tests.
  * It echoes the request body and the "hello" request header, doubles the "amount" field
  * and returns a response header. When the request body contains "exception", it throws
  * an AppException to exercise the error path.

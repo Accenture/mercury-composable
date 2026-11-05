@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * The routes an application declares as return paths ({@code return.path.routes}, RFC-0011 section 8.4). A caller
  * names its return route in an event's {@code x-return-path}, and the graph engine sends progress events and the
  * final result there only when the application declares the route: otherwise a caller could make the engine send
- * events to any route it can name, a store or a write included.
+ * events to any route it can name, a store or a write operation included.
  * <p>
  * An entry that ends with {@code *} matches a route prefix, and any other entry matches one route exactly - the rule
  * {@code invocation.observer.include} applies to route names. A bare {@code *}, a {@code *} anywhere but at the end,

@@ -112,7 +112,7 @@ public class SimpleMapper {
     private Gson preconfigureGson(boolean snake) {
         // configure Gson engine
         GsonBuilder builder = new GsonBuilder();
-        // avoid equal sign to become 003d unicode
+        // avoid equal sign to become 003d Unicode
         builder.disableHtmlEscaping();
         // UTC date
         builder.registerTypeAdapter(Date.class, new UtcSerializer());

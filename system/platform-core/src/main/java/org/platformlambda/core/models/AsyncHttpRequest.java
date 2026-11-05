@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AsyncHttpRequest {
     private static final Logger log = LoggerFactory.getLogger(AsyncHttpRequest.class);
@@ -306,8 +307,7 @@ public class AsyncHttpRequest {
     }
 
     public AsyncHttpRequest setStreamRoutes(List<String> streamRoutes) {
-        return streamRoutes.size() == 1?
-                setStreamRoute(streamRoutes.getFirst()) : setStreamRoute(String.valueOf(streamRoutes));
+        return setStreamRoute(streamRoutes.size() == 1? streamRoutes.getFirst() : String.valueOf(streamRoutes));
     }
 
     public boolean isStream() {
@@ -626,18 +626,14 @@ public class AsyncHttpRequest {
         return this;
     }
 
-    @SuppressWarnings({"rawtypes"})
     public AsyncHttpRequest setQueryParameter(String key, Object value) {
         if (key != null) {
             switch (value) {
                 case String ignoredString -> this.queryParams.put(key, value);
-                case List vList -> {
-                    final var params = new ArrayList<String>();
-                    for (Object o : vList) {
-                        if (o != null) {
-                            params.add(String.valueOf(o));
-                        }
-                    }
+                case List<?> vList -> {
+                    // a mutable list, because getQueryParameters(key) hands it to the application
+                    final var params = vList.stream().filter(Objects::nonNull).map(String::valueOf)
+                            .collect(Collectors.toCollection(ArrayList::new));
                     this.queryParams.put(key, params);
                 }
                 case null -> this.queryParams.put(key, "");

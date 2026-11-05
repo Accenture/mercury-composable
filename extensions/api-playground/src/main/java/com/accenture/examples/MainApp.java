@@ -33,7 +33,7 @@ public class MainApp implements EntryPoint {
     }
 
     @Override
-    public void start(String[] args) throws Exception {
+    public void start(String[] args) {
         log.info("Application started");
     }
 

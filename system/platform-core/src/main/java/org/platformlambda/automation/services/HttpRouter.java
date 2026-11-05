@@ -245,17 +245,6 @@ public class HttpRouter {
     }
 
     /**
-     * Emit the round-trip trace record of a traced request. Its service name is the edge
-     * itself - "http.request", the same marker the first function carries as "from" - so a
-     * trace's root span covers the whole request rather than the first function's own
-     * execution, and OpenTelemetry forwarders map this record (and only this record) to a
-     * SERVER span. An in-band stream failure keeps the committed HTTP status on the wire but
-     * reports its own status here.
-     *
-     * @param holder the closed request context
-     * @param status the caller-supplied status, or 0
-     */
-    /**
      * The status a round-trip record reports: a failure marked on the context wins (an in-band
      * stream failure, an edge error), then the status the caller is about to write, else the
      * status the response already carries.
@@ -271,6 +260,17 @@ public class HttpRouter {
         return status > 0 ? status : holder.request.response().getStatusCode();
     }
 
+    /**
+     * Emit the round-trip trace record of a traced request. Its service name is the edge
+     * itself, "http.request", which is the same marker the first function carries as "from".
+     * So a trace's root span covers the whole request rather than the first function's own
+     * execution, and OpenTelemetry forwarders map this record (and only this record) to a
+     * SERVER span. An in-band stream failure keeps the committed HTTP status on the wire but
+     * reports its own status here.
+     *
+     * @param holder the closed request context
+     * @param status the caller-supplied status, or 0
+     */
     private static void recordRoundTrip(AsyncContextHolder holder, int status) {
         if (holder.traceId == null || holder.spanId == null) {
             return;
@@ -751,7 +751,7 @@ public class HttpRouter {
             traceParent = W3cTrace.parse(InvocationObservers.traceparent());
         }
         String traceId = traceParent.length > 0? traceParent[0] :
-                headerTraceId != null? headerTraceId : util.getUuid();
+                Objects.requireNonNullElseGet(headerTraceId, util::getUuid);
         String parentSpanId = traceParent.length > 0? traceParent[1] : null;
         String traceHeaderName = route.info.traceIdHeader != null ? route.info.traceIdHeader : traceIdHeader;
         if (generatedCid && traceHeaderName.equalsIgnoreCase(cidHeaderName)) {

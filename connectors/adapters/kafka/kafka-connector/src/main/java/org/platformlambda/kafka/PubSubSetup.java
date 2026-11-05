@@ -34,11 +34,11 @@ import java.util.Properties;
  * This cloud service provides streaming pub/sub service only.
  * This allows the user application to run as a standalone executable and
  * communicate with each other purely using streaming pub/sub.
- *
+ * <p>
  * For real-time and pub/sub use cases, please use the "kafka" connector.
  * It offers native pub/sub service and also uses Kafka as a service mesh
  * to support topic virtualization and closed user groups.
- *
+ * <p>
  * This user pub/sub system can be used alone or to be deployed
  * with the system pub/sub where the latter is used as a service mesh.
  */

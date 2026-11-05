@@ -26,6 +26,7 @@ import org.platformlambda.core.util.Utility;
 import org.platformlambda.ws.MonitorService;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 public class AdditionalInfo implements LambdaFunction {
 
@@ -102,7 +103,6 @@ public class AdditionalInfo implements LambdaFunction {
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> getConnectionList(Map<String, Object> connections) {
         Map<String, Map<String, Object>> normalized = new HashMap<>();
-        List<Map<String, Object>> result = new ArrayList<>();
         List<String> labels = new ArrayList<>();
         for (var conn: connections.entrySet()) {
             String origin = conn.getKey();
@@ -115,19 +115,12 @@ public class AdditionalInfo implements LambdaFunction {
         if (labels.size() > 1) {
             Collections.sort(labels);
         }
-        for (String item: labels) {
-            result.add(normalized.get(item));
-        }
-        return result;
+        return labels.stream().map(normalized::get).toList();
     }
 
     private List<String> getMonitorList() {
-        List<String> result = new ArrayList<>();
         Map<String, String> monitors = HouseKeeper.getMonitors();
-        for (var entry: monitors.entrySet()) {
-            result.add(entry.getKey()+" - "+entry.getValue());
-        }
-        return result;
+        return monitors.entrySet().stream().map(entry -> entry.getKey()+" - "+entry.getValue()).toList();
     }
 
     private List<String> getVirtualTopics(Map<String, Object> connections) {
@@ -222,16 +215,9 @@ public class AdditionalInfo implements LambdaFunction {
         if (compositeTopics.isEmpty()) {
             return result;
         }
-        List<String> consolidated = new ArrayList<>();
-        List<String> topicList = new ArrayList<>(compositeTopics.keySet());
-        if (topicList.size() > 1) {
-            Collections.sort(topicList);
-        }
-        for (String t: topicList) {
-            consolidated.add(t+" ("+compositeTopics.get(t)+")");
-        }
-        consolidated.addAll(regularTopics);
-        return consolidated;
+        Stream<String> composite = compositeTopics.keySet().stream().sorted()
+                .map(t -> t+" ("+compositeTopics.get(t)+")");
+        return Stream.concat(composite, regularTopics.stream()).toList();
     }
 
     // classify a topic under simulated (non-streaming) partitioning into the regular or composite bucket

@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 
 /**
  * Exact decimal arithmetic for the {@code decimal*} simple plugins (RFC-0001, ADR-0025): the same rules as the
- * DECIMAL statement of graph.math, so a flow and a graph compute the same answer, and the shared conformance
+ * DECIMAL statement of 'graph.math', so a flow and a graph compute the same answer, and the shared conformance
  * vectors hold in both.
  * <p>
  * A result is a canonical string - plain notation, never scientific, the computed scale kept, and a zero of any

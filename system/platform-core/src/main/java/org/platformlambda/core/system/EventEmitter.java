@@ -97,8 +97,8 @@ public class EventEmitter {
     private static final ConcurrentMap<String, String> eventHttpTargets = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Map<String, String>> eventHttpHeaders = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, TraceInfo> traces = new ConcurrentHashMap<>();
-    // the same live TraceInfo, keyed by worker thread, for an engine helper that a function
-    // constructs on its worker thread and that has neither the route nor the instance to look
+    // The same live TraceInfo, keyed by worker thread, for an engine helper that a function
+    // constructs on its worker thread. Such a helper has neither the route nor the instance to look
     // the trace up by - the stream writer is one. Removed together with the ref-keyed entry
     // when the worker returns, in stopTracing.
     private static final ConcurrentMap<Long, TraceInfo> currentTraces = new ConcurrentHashMap<>();
@@ -614,9 +614,9 @@ public class EventEmitter {
         FutureEvent event = futureEvents.get(id);
         if (event != null) {
             Vertx vertx = Platform.getInstance().getVertx();
-            vertx.cancelTimer(event.taskId);
+            vertx.cancelTimer(event.taskId());
             futureEvents.remove(id);
-            log.debug("Cancel future event {}, {}", event.to, event.getTime());
+            log.debug("Cancel future event {}, {}", event.to(), event.getTime());
         }
     }
 
@@ -628,7 +628,7 @@ public class EventEmitter {
     public List<String> getAllFutureEvents() {
         List<String> result = new ArrayList<>();
         for (var entry: futureEvents.entrySet()) {
-            String to = entry.getValue().to;
+            String to = entry.getValue().to();
             if (!result.contains(to)) {
                 result.add(to);
             }
@@ -649,7 +649,7 @@ public class EventEmitter {
         List<String> result = new ArrayList<>();
         for (var entry: futureEvents.entrySet()) {
             FutureEvent event = entry.getValue();
-            if (event.to.equals(to)) {
+            if (event.to().equals(to)) {
                 result.add(entry.getKey());
             }
         }
@@ -664,7 +664,7 @@ public class EventEmitter {
      */
     public Date getFutureEventTime(String id) {
         FutureEvent event = futureEvents.get(id);
-        return event != null? event.time : null;
+        return event != null? event.time() : null;
     }
 
     /**
@@ -757,12 +757,12 @@ public class EventEmitter {
             return;
         }
         TargetRoute target = discover(event.getTo());
-        if (target.isCloud()) {
+        if (target.cloud()) {
             /*
              * If broadcast, set broadcast level to 3 because the event will be sent
              * to the target by the cloud connector directly
              */
-            MultipartPayload.getInstance().outgoing(target.getManager(),
+            MultipartPayload.getInstance().outgoing(target.manager(),
                     event.getBroadcastLevel() > 0? event.setBroadcastLevel(3) : event);
         } else {
             routeEventSameMemorySpace(event, target);
@@ -775,11 +775,11 @@ public class EventEmitter {
         if (platform.isCloudSelected() && event.getBroadcastLevel() == 1 && !CLOUD_CONNECTOR.equals(event.getTo())) {
             TargetRoute cloud = getCloudRoute();
             if (cloud != null) {
-                if (cloud.isCloud()) {
-                    MultipartPayload.getInstance().outgoing(cloud.getManager(), event.setBroadcastLevel(3));
+                if (cloud.cloud()) {
+                    MultipartPayload.getInstance().outgoing(cloud.manager(), event.setBroadcastLevel(3));
                 }
             } else {
-                system.send(target.getManager().getRoute(), event.setBroadcastLevel(3).toBytes());
+                system.send(target.manager().getRoute(), event.setBroadcastLevel(3).toBytes());
             }
         } else {
             sendWithEventBus(event, target);
@@ -790,7 +790,7 @@ public class EventEmitter {
         EventBus system = Platform.getInstance().getEventSystem();
         // also set broadcast-level to 3 to propagate broadcast in event-over-http use case
         EventEnvelope out = event.getBroadcastLevel() > 0? event.setBroadcastLevel(3) : event;
-        String route = target.getManager().getRoute();
+        String route = target.manager().getRoute();
         /*
          * The "event.script.manager" and "task.executor" are reserved function route names
          * for Event Script. The system will run them directly using virtual threads for
@@ -800,7 +800,7 @@ public class EventEmitter {
          * serialization and I/O immutability are guaranteed.
          */
         if (TASK_EXECUTOR.equals(route) || EVENT_MANAGER.equals(route)) {
-            runTaskExecutor(out, route, target.getManager().getService().getFunction());
+            runTaskExecutor(out, route, target.manager().getService().getFunction());
         } else {
             system.send(route, out.toBytes());
         }
@@ -1290,10 +1290,10 @@ public class EventEmitter {
         event.setReplyTo(TemporaryInbox.TEMPORARY_INBOX + "@" + platform.getOrigin());
         event.addTag(RPC, timeout);
         event.setBroadcastLevel(0);
-        if (target.isCloud()) {
-            MultipartPayload.getInstance().outgoing(target.getManager(), event);
+        if (target.cloud()) {
+            MultipartPayload.getInstance().outgoing(target.manager(), event);
         } else {
-            platform.getEventSystem().send(target.getManager().getRoute(), event.toBytes());
+            platform.getEventSystem().send(target.manager().getRoute(), event.toBytes());
         }
         return inbox.getFuture();
     }
@@ -1376,10 +1376,10 @@ public class EventEmitter {
         event.setReplyTo(TemporaryInbox.TEMPORARY_INBOX + "@" + platform.getOrigin());
         event.addTag(RPC, timeout);
         event.setBroadcastLevel(0);
-        if (target.isCloud()) {
-            MultipartPayload.getInstance().outgoing(target.getManager(), event);
+        if (target.cloud()) {
+            MultipartPayload.getInstance().outgoing(target.manager(), event);
         } else {
-            platform.getEventSystem().send(target.getManager().getRoute(), event.toBytes());
+            platform.getEventSystem().send(target.manager().getRoute(), event.toBytes());
         }
         return inbox.getFuture();
     }
@@ -1452,10 +1452,10 @@ public class EventEmitter {
             event.setCorrelationId(sequencedCid);
             inbox.setCorrelation(sequencedCid, new InboxCorrelation(to, originalCid));
             TargetRoute target = discover(to);
-            if (target.isCloud()) {
-                MultipartPayload.getInstance().outgoing(target.getManager(), event);
+            if (target.cloud()) {
+                MultipartPayload.getInstance().outgoing(target.manager(), event);
             } else {
-                system.send(target.getManager().getRoute(), event.toBytes());
+                system.send(target.manager().getRoute(), event.toBytes());
             }
         }
         return inbox.getFuture();
@@ -1553,10 +1553,10 @@ public class EventEmitter {
             event.setCorrelationId(sequencedCid);
             inbox.setCorrelation(sequencedCid, new InboxCorrelation(to, originalCid));
             TargetRoute target = discover(to);
-            if (target.isCloud()) {
-                MultipartPayload.getInstance().outgoing(target.getManager(), event);
+            if (target.cloud()) {
+                MultipartPayload.getInstance().outgoing(target.manager(), event);
             } else {
-                system.send(target.getManager().getRoute(), event.toBytes());
+                system.send(target.manager().getRoute(), event.toBytes());
             }
         }
         return inbox.getFuture();

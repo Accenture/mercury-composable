@@ -24,7 +24,7 @@ import org.platformlambda.core.models.TypedLambdaFunction;
 import java.util.Map;
 
 /**
- * A composable function with a PoJo input class for graph.task unit tests,
+ * A composable function with a PoJo input class for 'graph.task' unit tests,
  * demonstrating that the request body map is converted to the PoJo at the function boundary.
  */
 @PreLoad(route = "v1.pojo.task", instances = 10)

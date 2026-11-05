@@ -160,7 +160,7 @@ class SimpleMapperTest {
         // verify PoJo class conversion behavior - this will return the original object because the class is the same
         SimpleNumber numberOne = mapper.getMapper().readValue(one, SimpleNumber.class);
         assertEquals(numberOne.number, one.number);
-        // this will pass thru the serializer
+        // this will pass through the serializer
         String zeroValue = mapper.getMapper().writeValueAsString(zero);
         SimpleNumber numberZero = mapper.getMapper().readValue(zeroValue, SimpleNumber.class);
         // the original number has the zero number with many zeros after the decimal

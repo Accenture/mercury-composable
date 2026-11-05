@@ -60,8 +60,9 @@ class PlatformShutdownTest {
 
     @Test
     void nullCallbackIsRejected() {
+        Platform platform = Platform.getInstance();
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> Platform.getInstance().onShutdown(null));
+                () -> platform.onShutdown(null));
         assertEquals("Shutdown callback cannot be null", error.getMessage());
     }
 }

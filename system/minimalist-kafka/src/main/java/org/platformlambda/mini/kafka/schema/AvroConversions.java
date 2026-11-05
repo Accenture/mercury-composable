@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Converts between the plain Java the Event Script flows use ({@code Map}/{@code List}/primitives) and the
@@ -105,11 +106,8 @@ final class AvroConversions {
         if (!(value instanceof Collection<?> items)) {
             throw new IllegalArgumentException("expected a Collection for Avro array");
         }
-        GenericData.Array<Object> array = new GenericData.Array<>(items.size(), schema);
-        for (Object item : items) {
-            array.add(toAvro(item, schema.getElementType()));
-        }
-        return array;
+        return items.stream().map(item -> toAvro(item, schema.getElementType()))
+                .collect(Collectors.toCollection(() -> new GenericData.Array<>(items.size(), schema)));
     }
 
     private static Map<String, Object> toMap(Object value, Schema schema) {

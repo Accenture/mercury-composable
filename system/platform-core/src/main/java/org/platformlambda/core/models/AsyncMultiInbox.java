@@ -83,11 +83,7 @@ public class AsyncMultiInbox extends InboxBase {
                     if (timeoutException) {
                         holder.promise.fail(new TimeoutException("Timeout for " + holder.timeout + " ms"));
                     } else {
-                        List<EventEnvelope> result = new ArrayList<>();
-                        for (Map.Entry<String, EventEnvelope> kv: replies.entrySet()) {
-                            result.add(kv.getValue());
-                        }
-                        holder.promise.complete(result);
+                        holder.promise.complete(new ArrayList<>(replies.values()));
                     }
             });
         }
@@ -114,10 +110,7 @@ public class AsyncMultiInbox extends InboxBase {
                 // restore original correlation ID
                 replies.put(reply.getId(), reply.setCorrelationId(correlation.cid()));
                 if (holder.total.decrementAndGet() == 0) {
-                    List<EventEnvelope> result = new ArrayList<>();
-                    for (Map.Entry<String, EventEnvelope> kv : replies.entrySet()) {
-                        result.add(kv.getValue());
-                    }
+                    List<EventEnvelope> result = new ArrayList<>(replies.values());
                     holder.close();
                     Platform.getInstance().getVertx().cancelTimer(timer);
                     executor.submit(() -> holder.promise.complete(result));

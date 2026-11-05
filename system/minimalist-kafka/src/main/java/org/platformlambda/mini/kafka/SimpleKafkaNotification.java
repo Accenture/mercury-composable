@@ -206,8 +206,8 @@ public class SimpleKafkaNotification implements TypedLambdaFunction<Object, Mono
                 kafkaHeaders.put(traceHeader, traceId.getBytes(StandardCharsets.UTF_8));
             }
         }
-        // a live invocation observer (an APM agent's SDK) tags this outgoing message as it tags an event;
-        // the flow adapter on the consuming side restores the tags, so the agent's trace crosses Kafka
+        // A live invocation observer (an APM agent's SDK) tags this outgoing message as it tags an event.
+        // The flow adapter on the consuming side restores the tags, so the agent's trace crosses Kafka
         InvocationObservers.export(topic, po.getTraceId(), po.getTracePath()).forEach((key, value) ->
                 kafkaHeaders.put(KafkaHeaders.OBSERVER_TAG_PREFIX + key, value.getBytes(StandardCharsets.UTF_8)));
         byte[] payload = encode(topic, headers, body, instance);

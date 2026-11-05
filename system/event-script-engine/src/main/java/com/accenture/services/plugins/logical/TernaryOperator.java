@@ -35,9 +35,10 @@ public class TernaryOperator implements PluginFunction {
     @Override
     public Object calculate(Object... input) {
         if (input.length != 3) {
-            throw new IllegalArgumentException("Three parts are required for Ternary Operation - got: " + Arrays.toString(input));
+            throw new IllegalArgumentException("Three parts are required for Ternary Operation - got: " +
+                    Arrays.toString(input));
         }
         boolean condition = TypeConversionUtils.convertBoolean(input[0]);
-        return condition? input[1] : input[2];
+        return input[condition ? 1 : 2];
     }
 }

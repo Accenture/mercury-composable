@@ -74,10 +74,12 @@ public class GraphRunSocket implements LambdaFunction {
     public Object handleEvent(Map<String, String> headers, Object body, int instance) {
         var route = headers.get(WsEnvelope.ROUTE);
         var txPath = headers.get(WsEnvelope.TX_PATH);
-        switch (String.valueOf(headers.get(WsEnvelope.TYPE))) {
+        var eventType = headers.get(WsEnvelope.TYPE);
+        switch (String.valueOf(eventType)) {
             case WsEnvelope.OPEN -> {
-                SESSIONS.put(route, new Session(txPath, headers.get(WsEnvelope.TOKEN), new AtomicBoolean()));
-                log.info("Session {} opened for graph {}", route, headers.get(WsEnvelope.TOKEN));
+                var graphId = headers.get(WsEnvelope.TOKEN);
+                SESSIONS.put(route, new Session(txPath, graphId, new AtomicBoolean()));
+                log.info("Session {} opened for graph {}", route, graphId);
             }
             case WsEnvelope.STRING -> {
                 var session = SESSIONS.get(route);
@@ -89,7 +91,7 @@ public class GraphRunSocket implements LambdaFunction {
             }
             case WsEnvelope.BYTES -> refuse(SESSIONS.get(route), 400, "The run's input is a JSON text frame");
             case WsEnvelope.CLOSE -> SESSIONS.remove(route);
-            default -> log.warn("Session {} ignores an event of type {}", route, headers.get(WsEnvelope.TYPE));
+            default -> log.warn("Session {} ignores an event of type {}", route, eventType);
         }
         return null;
     }

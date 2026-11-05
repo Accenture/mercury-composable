@@ -349,12 +349,8 @@ public class RoutingEntry {
         if (!valid) {
             log.error("'rest' section must be a list of endpoint entries (url, service, methods, timeout...)");
         }
-        List<String> exact = new ArrayList<>();
-        for (String r: exactRoutes.keySet()) {
-            if (!exact.contains(r)) {
-                exact.add(r);
-            }
-        }
+        // the keys of a map are unique, and printRestEntryStats sorts this list in place
+        List<String> exact = new ArrayList<>(exactRoutes.keySet());
         printRestEntryStats(exact);
     }
 
@@ -439,12 +435,7 @@ public class RoutingEntry {
             }
         }
         // find out if there are missing default entries in the configured list
-        List<String> missing = new ArrayList<>();
-        for (String entry: essentials.keySet()) {
-            if (!configured.contains(entry)) {
-                missing.add(entry);
-            }
-        }
+        List<String> missing = essentials.keySet().stream().filter(entry -> !configured.contains(entry)).toList();
         if (!missing.isEmpty()) {
             MultiLevelMap map = new MultiLevelMap(config.getMap());
             for (String entry : missing) {

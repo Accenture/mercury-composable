@@ -26,17 +26,7 @@ import java.util.Date;
  * This is reserved for system use.
  * DO NOT use this directly in your application code.
  */
-public class FutureEvent {
-
-    public final String to;
-    public final long taskId;
-    public final Date time;
-
-    public FutureEvent(String to, long taskId, Date time) {
-        this.to = to;
-        this.taskId = taskId;
-        this.time = time;
-    }
+public record FutureEvent(String to, long taskId, Date time) {
 
     public String getTime() {
         return Utility.getInstance().date2str(time, true);

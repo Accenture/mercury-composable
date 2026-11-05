@@ -85,7 +85,7 @@ class ScheduleAdminTest extends TestBase {
         assertEquals("Job started", map.getElement("message"));
         assertEquals("demo-task", map.getElement("job"));
         // The job executor runs asynchronously and the sample state resolver's file write is
-        // truncate-then-write (not atomic), so the state file can EXIST while still empty - both
+        // truncate-then-write (not atomic). Therefore, the state file can EXIST while still empty - both
         // when the start record is created and again when the end record rewrites it. File
         // existence is therefore not readiness. Poll the admin endpoint itself until it returns
         // a readable record (an empty/partial file surfaces as a 200 with no map content).

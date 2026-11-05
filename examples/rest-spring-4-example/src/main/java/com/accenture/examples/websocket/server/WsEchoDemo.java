@@ -33,7 +33,7 @@ public class WsEchoDemo implements LambdaFunction {
 
     /**
      * This is an example for a websocket lambda function
-     *
+     * <p>
      * If you want to close the websocket connection for whatever reason, you may issue:
      * Utility.getInstance().closeConnection(txPath, reasonCode, message);
      *

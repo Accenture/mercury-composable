@@ -31,6 +31,7 @@ import org.platformlambda.core.util.AppConfigReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Locale;
 import java.util.function.BinaryOperator;
 
 /**
@@ -95,8 +96,9 @@ public class OneAgentSetup implements EntryPoint {
         }
         boolean logContext = TRUE.equalsIgnoreCase(property.apply(LOG_CONTEXT, FALSE));
         String application = Platform.getInstance().getName();
+        String destinationName = destination.name().toLowerCase(Locale.ROOT).replace('_', '-');
         log.info("Dynatrace OneAgent invocation observer - SDK state {}, destination {}, log context {}",
-                state, destination.name().toLowerCase().replace('_', '-'), logContext);
+                state, destinationName, logContext);
         if (TRUE.equalsIgnoreCase(property.apply(OTEL_FORWARDING, FALSE))) {
             log.warn("{}=true as well - do not export the OTLP spans to the same Dynatrace tenant: " +
                     "the forwarder's trace and the PurePath are two unconnected traces of one request",

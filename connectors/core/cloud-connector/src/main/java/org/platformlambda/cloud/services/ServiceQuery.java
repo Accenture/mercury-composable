@@ -109,28 +109,16 @@ public class ServiceQuery implements LambdaFunction {
         Map<String, Map<String, String>> routes = ServiceRegistry.getAllRoutes();
         for (var entry: routes.entrySet()) {
             Map<String, String> providers = entry.getValue();
-            List<String> list = new ArrayList<>();
-            for (var kv: providers.entrySet()) {
-                list.add(kv.getValue().toLowerCase()+", "+kv.getKey());
-            }
-            if (list.size() > 1) {
-                Collections.sort(list);
-            }
+            List<String> list = providers.entrySet().stream()
+                    .map(kv -> kv.getValue().toLowerCase()+", "+kv.getKey()).sorted().toList();
             result.put(entry.getKey(), list);
         }
         return result;
     }
 
     private List<String> getOriginList() {
-        List<String> result = new ArrayList<>();
         Map<String, String> origins = ServiceRegistry.getAllOrigins();
-        for (Map.Entry<String, String> kv: origins.entrySet()) {
-            result.add(kv.getValue()+", "+kv.getKey());
-        }
-        if (result.size() > 1) {
-            Collections.sort(result);
-        }
-        return result;
+        return origins.entrySet().stream().map(kv -> kv.getValue()+", "+kv.getKey()).sorted().toList();
     }
 
     private boolean exists(List<String> routes) {

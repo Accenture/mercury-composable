@@ -26,7 +26,6 @@ import java.util.Map;
 public class MockPubSub implements PubSubProvider {
 
     private static final Map<String, Integer> topicStore = new HashMap<>();
-    private static final Map<String, LambdaFunction> subscriptions = new HashMap<>();
 
     @Override
     public boolean createTopic(String topic) {
@@ -83,7 +82,6 @@ public class MockPubSub implements PubSubProvider {
         if (topic.equals("exception")) {
             throw new IllegalArgumentException("demo");
         }
-        subscriptions.put(topic, listener);
     }
 
     @Override
@@ -91,7 +89,6 @@ public class MockPubSub implements PubSubProvider {
         if (topic.equals("exception")) {
             throw new IllegalArgumentException("demo");
         }
-        subscriptions.put(topic, listener);
     }
 
     @Override
@@ -109,7 +106,6 @@ public class MockPubSub implements PubSubProvider {
         if (topic.equals("exception")) {
             throw new IllegalArgumentException("demo");
         }
-        subscriptions.remove(topic);
     }
 
     @Override
@@ -117,7 +113,6 @@ public class MockPubSub implements PubSubProvider {
         if (topic.equals("exception")) {
             throw new IllegalArgumentException("demo");
         }
-        subscriptions.remove(topic);
     }
 
     @Override

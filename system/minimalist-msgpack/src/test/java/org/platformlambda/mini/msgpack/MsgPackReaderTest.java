@@ -90,7 +90,7 @@ class MsgPackReaderTest {
         assertEquals(1.5d, reader("ca3fc00000").readDouble());
         assertEquals(1.5f, reader("ca3fc00000").readFloat());
         assertEquals(0.1d, reader("ca3dcccccd").readDouble(), 1e-8, "0.1f widened keeps the float32 value");
-        assertEquals((double) 0.1f, reader("ca3dcccccd").readDouble(), "exactly the float32 value, not 0.1d");
+        assertEquals(0.1f, reader("ca3dcccccd").readDouble(), "exactly the float32 value, not 0.1d");
     }
 
     @Test
@@ -134,7 +134,7 @@ class MsgPackReaderTest {
     }
 
     @Test
-    void aTypeMismatchNamesWhatWasFound() {
+    void aTypeMismatchNamesWhatWasFound() throws MsgPackException {
         assertEquals("Expected an integer but found FIXSTR at offset 0",
                 assertThrows(MsgPackException.class, () -> reader("a161").readLong()).getMessage());
         assertEquals("Expected nil but found POSITIVE_FIXINT at offset 0",
@@ -154,12 +154,11 @@ class MsgPackReaderTest {
         assertEquals("Expected an integer but found FIXEXT1 at offset 0",
                 assertThrows(MsgPackException.class, () -> reader("d40100").readBigInteger()).getMessage());
         // the offset is where the value starts, inside a container too
-        assertEquals("Expected an integer but found FIXSTR at offset 2", assertThrows(MsgPackException.class, () -> {
-            var reader = reader("9201a161");
-            reader.readArrayHeader();
-            reader.readLong();
-            reader.readLong();
-        }).getMessage());
+        var nested = reader("9201a161");
+        nested.readArrayHeader();
+        nested.readLong();
+        assertEquals("Expected an integer but found FIXSTR at offset 2",
+                assertThrows(MsgPackException.class, nested::readLong).getMessage());
     }
 
     @Test
@@ -288,14 +287,12 @@ class MsgPackReaderTest {
     }
 
     @Test
-    void aFailedReadLeavesThePositionUnchanged() {
+    void aFailedReadLeavesThePositionUnchanged() throws MsgPackException {
         String[] cases = {"a161", "cd01", "c1", "ddffffffff", "cf8000000000000000"};
         for (var hex : cases) {
             var reader = reader("c0" + hex);
-            assertThrows(MsgPackException.class, () -> {
-                reader.readNil();
-                reader.readLong();
-            }, hex);
+            reader.readNil();
+            assertThrows(MsgPackException.class, reader::readLong, hex);
             assertEquals(1, reader.position(), hex);
         }
     }

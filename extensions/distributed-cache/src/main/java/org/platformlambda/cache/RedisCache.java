@@ -26,10 +26,10 @@ import org.platformlambda.core.util.Utility;
 import org.platformlambda.redis.RedisFailure;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -46,15 +46,18 @@ import java.util.function.Supplier;
  *   <tr><td>{@code GET}</td><td>{@code key}</td><td>—</td><td>value {@code byte[]}, or null (miss)</td></tr>
  *   <tr><td>{@code PUT}</td><td>{@code key}, {@code ttl}?</td><td>value {@code byte[]}</td><td>{@code true}</td></tr>
  *   <tr><td>{@code DELETE}</td><td>{@code key}</td><td>—</td><td>count removed ({@code long})</td></tr>
- *   <tr><td>{@code PUT_IF_NOT_PRESENT}</td><td>{@code key}, {@code ttl}?</td><td>value {@code byte[]}</td><td>{@code boolean} (stored?)</td></tr>
- *   <tr><td>{@code MGET}</td><td>—</td><td>keys {@code List<String>}</td><td>{@code Map<String,byte[]>} (misses omitted)</td></tr>
+ *   <tr><td>{@code PUT_IF_NOT_PRESENT}</td><td>{@code key}, {@code ttl}?</td><td>value {@code byte[]}</td>
+ *       <td>{@code boolean} (stored?)</td></tr>
+ *   <tr><td>{@code MGET}</td><td>—</td><td>keys {@code List<String>}</td>
+ *       <td>{@code Map<String,byte[]>} (misses omitted)</td></tr>
  *   <tr><td>{@code MPUT}</td><td>{@code ttl}?</td><td>entries {@code Map<String,byte[]>}</td><td>{@code true}</td></tr>
- *   <tr><td>{@code LIST_PUSH}</td><td>{@code key}, {@code ttl}?</td><td>value {@code byte[]}</td><td>new length ({@code long})</td></tr>
+ *   <tr><td>{@code LIST_PUSH}</td><td>{@code key}, {@code ttl}?</td><td>value {@code byte[]}</td>
+ *       <td>new length ({@code long})</td></tr>
  *   <tr><td>{@code LIST_POP}</td><td>{@code key}</td><td>—</td><td>value {@code byte[]}, or null (empty)</td></tr>
  *   <tr><td>{@code LIST_LEN}</td><td>{@code key}</td><td>—</td><td>length ({@code long})</td></tr>
  * </table>
  *
- * <p>Values are opaque {@code byte[]} — the caller owns serialisation (a {@code String} body is accepted as a
+ * <p>Values are opaque {@code byte[]} — the caller owns serialization (a {@code String} body is accepted as a
  * UTF-8 convenience). {@code ttl} is a duration string ({@code 30s}/{@code 5m}/{@code 1h}); when omitted a
  * write uses {@code redis.cache.default.ttl}. Every worker instance ({@code redis.cache.instances}) shares
  * the one connection held by {@link CacheRuntime}.
@@ -135,13 +138,7 @@ public class RedisCache implements LambdaFunction {
     /** The MGET key list: any {@code List} whose elements are read as their string form. */
     private static List<String> asKeyList(Object input) {
         if (input instanceof List<?> list) {
-            List<String> keys = new ArrayList<>(list.size());
-            for (Object element : list) {
-                if (element != null) {
-                    keys.add(element.toString());
-                }
-            }
-            return keys;
+            return list.stream().filter(Objects::nonNull).map(Object::toString).toList();
         }
         throw new IllegalArgumentException("MGET requires a List of keys in the body");
     }

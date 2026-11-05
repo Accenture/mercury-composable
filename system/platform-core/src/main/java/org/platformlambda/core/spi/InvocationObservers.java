@@ -146,7 +146,7 @@ public final class InvocationObservers {
 
     /**
      * Engine call at an entry point that would start a new trace: the trace context of an agent already
-     * tracing this thread, to continue as if the caller had sent it, so Mercury's trace and the agent's are
+     * tracing this thread, to continue as if the caller had sent it, so Mercury's and the agent's traces are
      * one. The first observer that answers a valid W3C {@code traceparent} wins.
      *
      * @return a W3C traceparent value, or null when no observer has one
@@ -228,7 +228,7 @@ public final class InvocationObservers {
     }
 
     /**
-     * Integration call, on the thread that hands a message to a transport outside the event bus (a Kafka
+     * Integration call, on the thread that hands a message to a transport mechanism outside the event bus (a Kafka
      * producer, for example): the observers' tags for that outgoing message, as {@link #send} would write
      * them on an event. The transport carries them in its own headers, and its consumer puts them back on
      * the event it dispatches and opens the receiving side with {@link #begin}, so the linkage crosses the

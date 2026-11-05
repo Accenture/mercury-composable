@@ -91,8 +91,7 @@ public class AsyncRecorder implements TypedLambdaFunction<Map<String, Object>, O
     @Override
     public Object handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         var runs = runs(String.valueOf(headers.get("my_correlation_id")));
-        var record = new HashMap<String, Object>(input);
-        runs.started.add(record);
+        runs.started.add(new HashMap<>(input));
         runs.changed();
         var now = runs.active.incrementAndGet();
         runs.maxActive.accumulateAndGet(now, Math::max);

@@ -52,7 +52,7 @@ public class MdmProfile implements TypedLambdaFunction<AsyncHttpRequest, Object>
         }
         try {
             var data = new ConfigReader("classpath:/mock/profile-" + personId + ".json");
-            var result = new HashMap<String, Object>(data.getMap());
+            var result = new HashMap<>(data.getMap());
             // echo the wire-observed request deadline so a caller (and the unit tests)
             // can verify that the api.fetcher aligned x-ttl with its graph-side deadline
             if (input.getHeader("x-ttl") != null) {

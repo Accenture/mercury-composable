@@ -23,14 +23,12 @@ import org.platformlambda.core.models.EntryPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
 @MainApplication
 public class MainApp implements EntryPoint {
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
 
     @Override
-    public void start(String[] args) throws IOException {
+    public void start(String[] args) {
         // just a placeholder because the system requires at least one MainApplication
         log.info("Started");
     }

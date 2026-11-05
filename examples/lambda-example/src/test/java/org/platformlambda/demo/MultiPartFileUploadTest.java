@@ -43,7 +43,7 @@ class MultiPartFileUploadTest extends TestBase {
     private static String port;
 
     @BeforeAll
-    static void setup() {
+    static void additionalSetup() {
         AppConfigReader config = AppConfigReader.getInstance();
         port = config.getProperty("rest.server.port");
     }

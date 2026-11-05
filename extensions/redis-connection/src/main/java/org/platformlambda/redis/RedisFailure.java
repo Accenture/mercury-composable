@@ -29,9 +29,9 @@ import java.nio.channels.ClosedChannelException;
 import java.util.Locale;
 
 /**
- * Classify a Redis client failure into the status a composable function should reply with, so a caller -
- * or a flow's / graph's exception handler, which passes the status through faithfully - sees the failure
- * for what it is instead of a generic 500:
+ * Classify a Redis client failure into the status a composable function should reply with. A caller, or a
+ * flow's or graph's exception handler that passes the status through faithfully, then sees the failure for
+ * what it is instead of a generic 500:
  * <ul>
  *   <li><b>408</b> - the command timed out ({@link RedisCommandTimeoutException}); the message is Lettuce's
  *       ({@code Command timed out after N second(s)}), the same 408 the platform uses for an RPC timeout.</li>

@@ -26,6 +26,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 
 /**
  * The graph contract's schema vocabulary (RFC-0007, WP2): a closed subset of OpenAPI 3.0 keywords, compiled
@@ -137,8 +138,8 @@ public final class GraphSchema {
         /**
          * Validate a run's input against the declaration.
          *
-         * @param body the state machine's input.body (null when absent)
-         * @param header the state machine's input.header (null when absent)
+         * @param body the state machine's 'input.body' (null when absent)
+         * @param header the state machine's 'input.header' (null when absent)
          * @return every violation, in order; empty when the input passes
          */
         public List<String> check(Object body, Object header) {
@@ -407,11 +408,7 @@ public final class GraphSchema {
         if (!(value instanceof List<?> entries) || entries.isEmpty()) {
             throw new IllegalArgumentException(where + "." + ENUM + ": must be a non-empty list");
         }
-        List<Object> result = new ArrayList<>();
-        for (var entry : entries) {
-            result.add(enumEntry(where, entry, type));
-        }
-        return result;
+        return entries.stream().map(entry -> enumEntry(where, entry, type)).toList();
     }
 
     /** An enum entry read as the declared type; an untyped schema keeps the entry as written. */
@@ -725,11 +722,9 @@ public final class GraphSchema {
     }
 
     private String renderEnum() {
-        List<String> names = new ArrayList<>();
-        for (var entry : enumValues) {
-            names.add(entry instanceof BigDecimal n ? renderNumber(n) : String.valueOf(entry));
-        }
-        return String.join(", ", names);
+        return enumValues.stream()
+                .map(entry -> entry instanceof BigDecimal n ? renderNumber(n) : String.valueOf(entry))
+                .collect(Collectors.joining(", "));
     }
 
     /** A number rendered as both engines render it: plain notation, no trailing zeros. */

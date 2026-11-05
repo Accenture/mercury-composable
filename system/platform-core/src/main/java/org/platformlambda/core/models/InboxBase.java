@@ -143,7 +143,7 @@ public abstract class InboxBase {
     }
 
     /**
-     * Resolve the span id for a RPC round-trip trace record.
+     * Resolve the span id for an RPC round-trip trace record.
      * <p>
      * The reply's span id is adopted only when the reply was produced by the requested
      * route itself (a direct RPC - the responder suppresses its own trace record, so the

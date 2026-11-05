@@ -45,7 +45,7 @@ class EqualityOperatorsTest {
         assertEquals(false, eq.calculate(5, 5L));
         assertEquals(true, eq.calculate(null, null));
         assertEquals(false, eq.calculate(null, "x"));
-        // ne is the exact complement
+        // 'ne' is the exact complement
         assertEquals(false, ne.calculate(5, 5));
         assertEquals(true, ne.calculate("Hello", "HELLO"));
         assertEquals(true, ne.calculate("123", 123));

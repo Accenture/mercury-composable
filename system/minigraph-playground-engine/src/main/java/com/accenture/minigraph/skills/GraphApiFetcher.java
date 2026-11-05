@@ -247,10 +247,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             batch.add(stack.pop());
             if (stack.isEmpty() || n == 0) {
                 n = concurrency;
-                var events = new ArrayList<EventEnvelope>();
-                for (var each : batch) {
-                    events.add(each.event);
-                }
+                var events = batch.stream().map(each -> each.event).toList();
                 var parameterNames = batch.getFirst().parameterNames;
                 var firstReq = batch.getFirst().request;
                 var finalUri = firstReq.getFinalizedUrl();

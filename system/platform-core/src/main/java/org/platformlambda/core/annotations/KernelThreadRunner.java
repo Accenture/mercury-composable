@@ -24,12 +24,12 @@ import java.lang.annotation.*;
  * The default execution mode for a function is virtual thread.
  * To execute your function using kernel thread, add this annotation to your function class.
  * <p>
- * (Kernel threads are limited resources, and they should be used only when absolutely necessary.
+ * Kernel threads are limited resources, and they should be used only when absolutely necessary.
  * For example, you can use kernel threads for computational intensive tasks.
  * <p>
  * Note that when your function running in a kernel thread blocks while waiting for I/O, database,
  * or response from an external resource, it is consuming CPU cycle. As a result, overall
- * application performance may be reduced.)
+ * application performance may be reduced.
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

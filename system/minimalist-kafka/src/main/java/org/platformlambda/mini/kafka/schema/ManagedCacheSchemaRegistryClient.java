@@ -42,7 +42,7 @@ import java.util.Map;
  * that resolution is the one this class caches. Nothing is written to disk.</p>
  *
  * <p><b>Positive results only.</b> A failed lookup is never cached here (it throws before the cache write), and
- * {@link SchemaCodec} pins Confluent's "missing" caches off, so a schema registered while the app is running
+ * {@link SchemaCodec} pins Confluent's "missing" caches off. Therefore, a schema registered while the app is running
  * becomes visible on the very next lookup - no stale "not found" lingers until a TTL elapses or the pod
  * restarts.</p>
  *

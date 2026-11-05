@@ -486,7 +486,7 @@ class SessionManagementTest {
             return;
         }
         try (fx) {
-            // B subscribes to A; A builds root -> end and instantiates. The instantiate is replayed
+            // B subscribes to A; A builds root -> end and instantiates. 'instantiate' is replayed
             // into B's session, so both members hold a graph instance.
             po.send(fx.txPathB(), "session subscribe " + fx.sessionA());
             assertNotNull(waitForMessage(fx.messagesB(), "Subscribed to " + fx.sessionA(), 5));
@@ -859,7 +859,7 @@ class SessionManagementTest {
 
     /**
      * The header namespace of the mock upload (POST /api/mock/{id}?namespace=header): a JSON object
-     * of text values becomes every member's input.header as a request delivers it - the names in lower
+     * of text values becomes every member's 'input.header' as a request delivers it - the names in lower
      * case, and the correlation-id header carrying the member's model.cid when the upload has none -
      * the body untouched; the invitation names the three endpoints.
      */
@@ -1022,9 +1022,12 @@ class SessionManagementTest {
     }
 
     /**
-     * The REST edge refuses two mock header names that differ only by case, a model payload that is
-     * not a JSON object, a model variable with an empty path segment, a bad index or no value, and -
-     * after the shape check - an unknown session.
+     * The REST edge refuses:
+     * - two mock header names that differ only by case
+     * - a model payload that is not a JSON object
+     * - a model variable with an empty path segment
+     * - a bad index or no value, and
+     * - after the shape check - an unknown session
      */
     @Test
     void mockModelUploadRestEdgeRefusesBadInputTest() {
@@ -1063,7 +1066,7 @@ class SessionManagementTest {
 
     /**
      * Input validation in a dry run (RFC-0007, WP2): a root 'schema' turns the assumed step on, the
-     * traveler validates whatever the instance holds as input.body and input.header before anything
+     * traveler validates whatever the instance holds as 'input.body' and 'input.header' before anything
      * runs, names every violation on the console, reports the step when the input passes, and the
      * pre-run gate refuses a schema outside the vocabulary before the traveler starts.
      */

@@ -43,9 +43,9 @@ public class InfoServlet extends ServletBase {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) {
         final String type;
         List<String> paths = Utility.getInstance().split(request.getPathInfo(), "/");
-        if (paths.size() == 1 && LIB.equals(paths.get(0))) {
+        if (paths.size() == 1 && LIB.equals(paths.getFirst())) {
             type = LIB;
-        } else if (paths.size() == 1 && ROUTES.equals(paths.get(0))) {
+        } else if (paths.size() == 1 && ROUTES.equals(paths.getFirst())) {
             type = ROUTES;
         } else {
             type = INFO;

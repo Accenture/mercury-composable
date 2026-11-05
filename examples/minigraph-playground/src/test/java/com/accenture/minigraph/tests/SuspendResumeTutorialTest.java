@@ -48,7 +48,6 @@ class SuspendResumeTutorialTest {
     private static final Logger log = LoggerFactory.getLogger(SuspendResumeTutorialTest.class);
     private static final int REDIS_PORT = 16381;
     private static final long TIMEOUT = 8000;
-    private static RedisServer redisServer;
     private static String target;
 
     @BeforeAll
@@ -62,7 +61,7 @@ class SuspendResumeTutorialTest {
         if (!dir.exists() && !dir.mkdirs()) {
             throw new IllegalStateException("Unable to create " + dir);
         }
-        redisServer = RedisServer.newRedisServer()
+        RedisServer redisServer = RedisServer.newRedisServer()
                 .port(REDIS_PORT)
                 .setting("dir " + dir.getAbsolutePath())
                 .setting("save \"\"")
@@ -74,7 +73,6 @@ class SuspendResumeTutorialTest {
         target = "http://127.0.0.1:" + config.getProperty("rest.server.port");
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void purchaseWorkflowWithThreeCheckpoints() throws TimeoutException {
         var cid = Utility.getInstance().getUuid();
@@ -111,7 +109,6 @@ class SuspendResumeTutorialTest {
         return body;
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void managerRejectionEndsTheWorkflow() throws TimeoutException {
         var cid = Utility.getInstance().getUuid();
@@ -130,7 +127,6 @@ class SuspendResumeTutorialTest {
         assertEquals(404, after.getStatus(), "a rejected workflow cannot be continued");
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void invalidDecisionKeepsTheWorkflowWaiting() throws TimeoutException {
         var cid = Utility.getInstance().getUuid();

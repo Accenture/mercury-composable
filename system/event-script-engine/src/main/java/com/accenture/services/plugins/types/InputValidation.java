@@ -22,7 +22,6 @@ import com.accenture.models.PluginFunction;
 import com.accenture.models.SimplePlugin;
 import com.accenture.util.TypeConversionUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -104,13 +103,9 @@ public class InputValidation implements PluginFunction {
     }
 
     private List<String> filterRules(List<String> rules) {
-        var result = new ArrayList<String>();
-        for (String rule : rules) {
-            if (!REQUIRED.equalsIgnoreCase(rule) && !EVALUATE.equalsIgnoreCase(rule)) {
-                result.add(rule);
-            }
-        }
-        return result;
+        return rules.stream()
+                .filter(rule -> !REQUIRED.equalsIgnoreCase(rule) && !EVALUATE.equalsIgnoreCase(rule))
+                .toList();
     }
 
     private Object evaluateOrException(String fieldName, Object value, Class<?> clazz, List<String> rules,

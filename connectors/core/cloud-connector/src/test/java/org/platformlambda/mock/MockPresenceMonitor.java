@@ -76,7 +76,7 @@ public class MockPresenceMonitor implements LambdaFunction {
     // topic+partition -> origin | AVAILABLE(*)
     private static final ConcurrentMap<String, String> topicStore = new ConcurrentHashMap<>();
     private static List<String> allTopics;
-    private final int partitionCount, maxVirtualTopics;
+    private final int partitionCount;
     private final boolean topicSubstitution;
     private final Map<String, String> preAllocatedTopics;
 
@@ -97,6 +97,7 @@ public class MockPresenceMonitor implements LambdaFunction {
         String topicPrefix = prefix.endsWith(".")? prefix : prefix + ".";
         partitionCount = Math.max(1, util.str2int(config.getProperty("app.partitions.per.topic", "32")));
         int tc = Math.max(1, util.str2int(config.getProperty("max.virtual.topics", "288")));
+        int maxVirtualTopics;
         if (tc % partitionCount > 0) {
             maxVirtualTopics = (tc / partitionCount) * partitionCount;
             log.warn("max.virtual.topics {} should be a multiple of partitions {} - reset to {}",
