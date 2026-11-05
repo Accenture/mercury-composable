@@ -55,11 +55,11 @@ AI companion endpoint `POST /api/companion/{session-id}/sync`. Open the URL and 
 workbench; there is nothing else to install.
 
 To have an AI agent **host** the session — so you and the agent co-author one live model as equals,
-and a dropped browser tab loses nothing — start the bundled broker and subscribe to the id it
-prints:
+and a dropped browser tab loses nothing — start the bundled AI companion broker and subscribe to the
+id it prints:
 
 ```bash
-node scripts/playground-session-broker.mjs --target http://127.0.0.1:8303
+node scripts/ai-companion-broker.mjs --target http://127.0.0.1:8303
 # → session id: ws-NNNNNN-N   ·  in the Playground console, type: session subscribe ws-NNNNNN-N
 ```
 
@@ -80,7 +80,7 @@ a production deployment never shows the Playground UI.
 | `src/test/java/com/accenture/starter/QuoteGraphTest.java` | End-to-end graph tests, including the 404 gate behavior |
 | `src/main/resources/rest.yaml` | The one graph endpoint, the home page, plus the dev-mode Playground / companion routes |
 | `src/main/resources/application.properties` | App config — including the `app.env=dev` switch that opens the Playground |
-| `scripts/playground-session-broker.mjs` | Lets an AI agent **host** a Playground session for you (keep-alive, auto-reconnect, localhost control API) — see `scripts/README.md` |
+| `scripts/ai-companion-broker.mjs` | The AI companion broker: lets an AI agent **host** a Playground session for you (keep-alive, auto-reconnect, localhost control API) — see `scripts/README.md` |
 
 ## Next steps
 

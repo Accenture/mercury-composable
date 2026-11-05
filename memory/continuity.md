@@ -748,6 +748,18 @@
   Before adding any module to the root reactor, ask whether it ships to the field's artifact repository.
   <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-11-04 | uses: 9 | tier: active | origin: 2026-10-23-215957 -->
 
+- **A tool that runs from the checkout lives once, in the starter template, and the examples point to it (Eric,
+  2026-11-05: do not repeat ourselves).** The Playground session broker had three identical copies (the
+  `starter-graph` template, the `minigraph-playground` and `distributed-cache-example` examples); now only
+  `templates/starter-graph/scripts/ai-companion-broker.mjs` exists, and each example's `scripts/README.md` runs it as
+  `node ../../templates/starter-graph/scripts/ai-companion-broker.mjs --target <its port>`. The template keeps it
+  because a project copied from the template must carry its own. The same day Eric renamed it the **AI companion
+  broker** (`playground-session-broker.mjs` before), since "broker" alone also reads as a Kafka or message broker. **How
+  to apply:** before adding a script or tool to an example, look for it in the template and point to that copy; a
+  resource an application packages and loads (a flow such as `graph-executor.yml`) is copied, because the app's
+  build needs it on its own classpath.
+  <!-- id: conv-one-copy-of-shared-tooling | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: working | origin: 2026-11-05-201925 -->
+
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
   deleting a module freezes its findings on the last resolved dependency tree, failing

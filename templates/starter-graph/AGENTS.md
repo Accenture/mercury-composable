@@ -16,14 +16,16 @@ template (Layer 3 — Active Knowledge Graph as the application).
    deployment is governed — only graphs listed in `graphs.yaml` that pass the
    CompileGraph gate at startup are executable (anything else answers 404). Custom
    logic goes into skill functions (`@PreLoad`), never into ad-hoc endpoints.
-3. **Hosting a Playground session** (the agent hosts, humans subscribe): run the shipped
-   broker — `node scripts/playground-session-broker.mjs --target http://127.0.0.1:8303` —
-   read the session id from `GET http://127.0.0.1:8765/session`, hand it to the humans
-   (`session subscribe <id>` in their browsers), and drive commands through the companion
-   endpoint as usual. **Never hand-roll the WebSocket client**: the session contract's
+3. **Starting a collaboration** (the agent hosts, humans subscribe — the recommended way): the
+   human starts the app in a terminal; run the AI companion broker —
+   `node scripts/ai-companion-broker.mjs --target http://127.0.0.1:8303` — read the session id
+   from `GET http://127.0.0.1:8765/session`, hand the human `session subscribe <id>` for their
+   Playground console, and drive commands through the companion endpoint as usual. If the
+   human's session came first, `POST /subscribe {"sessionId": "<their id>"}` makes the broker's
+   session mirror it. **Never hand-roll the WebSocket client**: the session contract's
    keep-alive (ping every ~20 s) is easy to miss, and a client without it dies silently at
    the idle timeout. See
-   [Hosting the session yourself](https://accenture.github.io/mercury-composable/guides/knowledge-graph/ai-agent-guide/#hosting).
+   [Start a collaboration](https://accenture.github.io/mercury-composable/guides/knowledge-graph/ai-agent-guide/#start).
 4. **Build and test** (both work; the project keeps one):
    `mvn clean package` / `mvn test` — or — `gradle build` / `gradle test`.
 5. **Version:** the Mercury dependency version in the build file is the source of
