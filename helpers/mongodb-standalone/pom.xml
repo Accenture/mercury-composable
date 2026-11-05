@@ -9,7 +9,7 @@
     <groupId>org.platformlambda</groupId>
     <artifactId>mongodb-standalone</artifactId>
     <packaging>jar</packaging>
-    <version>4.12.29</version>
+    <version>4.12.30</version>
     <name>Standalone MongoDB-compatible server for dev</name>
 
     <parent>
@@ -56,7 +56,7 @@
         <dependency>
             <groupId>org.platformlambda</groupId>
             <artifactId>platform-core</artifactId>
-            <version>4.12.29</version>
+            <version>4.12.30</version>
         </dependency>
 
         <!-- A MongoDB-compatible server written in Java, on Netty, with an in-memory backend: it speaks the
