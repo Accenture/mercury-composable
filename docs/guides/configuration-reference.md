@@ -155,7 +155,9 @@ Maximum WebSocket binary message size in bytes.
 |------|---------|
 | `int` | `60` |
 
-WebSocket idle connection timeout in minutes.
+WebSocket idle connection timeout in seconds (floor 10): a connection with no traffic for this long is closed with
+code 1003 ("Idle for N seconds"). The Playground web UI pings every 20 seconds to stay inside it, and the AI companion
+broker does the same; a browser that throttles a background tab stops the pings, so that tab's session closes here.
 
 ### `websocket.server.port`
 
