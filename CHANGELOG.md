@@ -103,6 +103,14 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
    sample `StateResolver` contracts follow. **Upgrade note:** a resolver for more than one instance whose `expires`
    only reads its record runs a job twice when two instances ask within moments of each other - in a lab, 12 of 240
    firings with `deferred.start` on; move its write into `expires` as the examples do.
+2. **A user guide for the mini-scheduler under Operate & integrate.** The scheduler, live in field installations, was
+   described only by its module README and the configuration reference's Scheduler section. The new
+   [Mini-Scheduler](docs/guides/mini-scheduler.md) guide covers adding the module; how a job runs at each scheduled
+   point; the cron file's keys, the rules that reject an entry and the Quartz statement; what a job's function or flow
+   receives; time zones; the state resolver's contract, the conditional claim and both worked examples; retries;
+   leader election; the active environment and its store; manual runs; the log lines an operator sees; and a
+   troubleshooting table. The guide is listed in `llms.txt` and packaged in the AI contract; the configuration
+   reference and both READMEs link to it. **Upgrade note:** none.
 
 ---
 ## Version 4.12.28, 11/3/2026

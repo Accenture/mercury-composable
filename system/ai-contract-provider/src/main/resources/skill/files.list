@@ -41,6 +41,7 @@ references/guides/knowledge-graph/property-graph.md
 references/guides/knowledge-graph/skills-reference.md
 references/guides/knowledge-graph/workflow-suspension.md
 references/guides/methodology.md
+references/guides/mini-scheduler.md
 references/guides/minimalist-kafka.md
 references/guides/observability.md
 references/guides/polyglot-functions.md

@@ -2,6 +2,10 @@
 
 Simple scheduler that uses YAML configuration for storing "cron" job schedules
 
+The user guide is [Mini-Scheduler](https://accenture.github.io/mercury-composable/guides/mini-scheduler/) in the
+Mercury documentation (`docs/guides/mini-scheduler.md`): the cron file, the state resolver's contract and claim,
+the active environment, manual runs, the log lines and troubleshooting. This README summarizes the module.
+
 ## Running more than one instance
 
 To run the scheduler in more than one application instance for resilience, implement a "state resolver"
