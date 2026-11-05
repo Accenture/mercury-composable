@@ -2,6 +2,9 @@
 
 Simple scheduler that uses YAML configuration for storing "cron" job schedules
 
+This application is the example that the [Mini-Scheduler](https://accenture.github.io/mercury-composable/guides/mini-scheduler/)
+guide refers to: a sample state resolver, a sample environment store, and the admin endpoints below.
+
 ## Running more than one instance
 
 To support multiple application instances for resilience, you can implement a "state resolver" function.

@@ -1083,7 +1083,8 @@ YAML file(s) defining topic substitution mappings.
 ## Scheduler
 
 These settings are used by the optional `mini-scheduler` module. `yaml.cron` and the `scheduler.environment.*` keys are
-application properties; `deferred.start`, `leader.election` and a job's `timezone` are keys of the cron file itself.
+application properties; `deferred.start`, `leader.election` and a job's `timezone` are keys of the cron file itself. The
+[Mini-Scheduler guide](mini-scheduler.md) describes the cron file, the state resolver and the active environment.
 
 ### `deferred.start`
 
