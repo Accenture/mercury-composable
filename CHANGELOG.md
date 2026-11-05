@@ -67,8 +67,11 @@ Each change merged to `main` after v4.12.28 is listed here; it moves under its r
    eight instances ask at the same instant, expecting one winner, 100 times; `-Dtest.mongodb.uri` runs the same
    tests against a real MongoDB. The new helper runs that server on `127.0.0.1:27017` (`mongodb.port`), for
    development and testing in an environment without container support only: it emulates a subset of MongoDB,
-   in memory. **Upgrade note:** the mini-scheduler module is unchanged. To run the example, start MongoDB or the
-   helper first.
+   in memory. The MongoDB driver is 5.14.0, set by the `mongodb.version` property ahead of the 5.8.1 that Spring
+   Boot 4.1.2 manages, which a dependency scan flags (CVE-2026-88033 in `mongodb-driver-sync`, CVE-2026-18710 in
+   `mongodb-driver-core`); the property moves the driver's core and `bson` with it, which a version on the
+   dependency alone does not. **Upgrade note:** the mini-scheduler module is unchanged. To run the example, start
+   MongoDB or the helper first.
 
 ### Changed
 

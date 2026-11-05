@@ -384,8 +384,12 @@
   a very small set of features, so the emulator is an excellent fit, and the helper's README says it is for dev and
   testing without container support only, emulating a subset of MongoDB. The same tests run against a real MongoDB
   with `-Dtest.mongodb.uri` (15 of 15 on 8.0.34). The 30-second window needs a period above 39 seconds, so the demo
-  jobs run once a minute. **How to apply:** an example that needs a database gets an embedded server that comes from
-  Maven Central, run once against the real database before it ships; a helper that emulates a product says so.
+  jobs run once a minute. **The driver is pinned at 5.14.0 by `mongodb.version`** in both poms (Eric; the IDE's
+  dependency scan flagged Boot 4.1.2's 5.8.1, CVE-2026-88033 in sync and CVE-2026-18710 in core): a `<version>` on
+  `mongodb-driver-sync` alone left `bson`, `mongodb-driver-core` and `bson-record-codec` at Boot's 5.8.1, measured,
+  so the property is the pin, and a Boot bump compares it ([[conv-library-pins-are-direct-dependencies]]). **How to
+  apply:** an example that needs a database gets an embedded server that comes from Maven Central, run once against
+  the real database before it ships; a helper that emulates a product says so.
   <!-- id: scheduler-example-mongodb | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: working | origin: 2026-11-05-045407 -->
 
 ## Conventions

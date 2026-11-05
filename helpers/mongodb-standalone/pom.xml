@@ -29,6 +29,7 @@
         <jackson-bom.version>3.2.4</jackson-bom.version>
         <log4j2.version>2.26.1</log4j2.version>
         <gson.version>2.15.0</gson.version>
+        <mongodb.version>5.14.0</mongodb.version>
         <java.version>21</java.version>
     </properties>
 
@@ -66,10 +67,13 @@
             <version>1.47.0</version>
         </dependency>
 
-        <!-- the official driver, version managed by Spring Boot, to test the server as an application uses it -->
+        <!-- the official driver, to test the server as an application uses it; mongodb.version above also sets
+             the version of the driver's core and bson, which Spring Boot's dependency management would otherwise
+             hold back -->
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
+            <version>${mongodb.version}</version>
             <scope>test</scope>
         </dependency>
 
