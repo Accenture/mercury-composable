@@ -9424,8 +9424,10 @@ application properties; <code>deferred.start</code>, <code>leader.election</code
 </tr>
 </tbody>
 </table>
-<p>A key of the cron file. Delay each scheduled run by a random 0 to 9 seconds, so that the instances of a cluster reach the
-state resolver at slightly different times and it can tell that a peer has started the job.</p>
+<p>A key of the cron file. Delay each scheduled run by a random 0 to 9 seconds in each instance, which spreads the instances'
+questions to the state resolver over those seconds. It does not pick one instance: with more than one instance the state
+resolver's <code>expires</code> claims the job in one conditional write, which the mini-scheduler README's <em>Running more than one
+instance</em> shows for PostgreSQL and MongoDB. With the delay on, the resolver's window covers the 9 seconds as well.</p>
 <h3 id="leaderelection"><code>leader.election</code><a class="headerlink" href="#leaderelection" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
