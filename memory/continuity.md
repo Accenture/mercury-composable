@@ -751,6 +751,11 @@
   Java is the reference implementation. The language packs catch up when functionality crosses from the engine to the
   packs (telemetry, AI SDLC and the like), so their number may trail Java further than Rust's does. Both packs' Visions
   were amended to say so the same day, settling the versioning threads the 2026-11-03 reviews raised there.
+  **No number without content (Eric, 2026-11-05):** the Rust port does catch up closely, and it takes a Java number only
+  when it carries that release's content. 4.12.28 and 4.12.29 are Java only because their work is the mini-scheduler,
+  which Rust does not have: there is nothing to catch up, so Rust stays at 4.12.27 rather than being raised
+  artificially. The AI SDLC epic's features (RFC-0011) reach Rust when the epic ([[bp-agent-orchestration]]) is
+  complete.
   <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-03 | uses: 48 | tier: active | origin: 2026-09-16-003354 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
