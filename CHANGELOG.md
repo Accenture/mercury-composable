@@ -51,6 +51,10 @@ Each change merged to `main` after v4.12.29 is listed here; it moves under its r
    human opened first. The session grammar (`command-reference.md`, `minigraph-commands.json`) and *Playground and
    companion* now state what the topology does to the draft: joining copies it, a closed primary leaves each subscriber
    a primary that keeps it, and recovery is subscribing again.
+2. **`websocket.idle.timeout` is in seconds, as the engine has always read it.** The configuration reference said
+   minutes; `WsRequestHandler` expires a connection after that many seconds (floor 10) and closes it with "Idle for N
+   seconds". **Upgrade note:** none; the engine's behaviour is unchanged, and a value written as minutes should be
+   multiplied by 60.
 
 ---
 ## Version 4.12.29, 11/4/2026
