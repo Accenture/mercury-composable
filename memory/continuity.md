@@ -23,19 +23,19 @@
   with a conditional claim keyed on `_origin`, which replaces 4.12.28's `_firing` (#612,
   [[scheduler-resolver-conditional-claim]]), with the scheduler's user guide (#613) and its example on MongoDB plus
   `helpers/mongodb-standalone` (#615, [[scheduler-example-mongodb]]); the agent loop `llm.run` and RFC-0011 step 3 (#605,
-  #606, #609, #611); an aborted flow closed when its caller cannot be told (#610); the IDE-scan round with `TargetRoute` as
-  a record (#614)**: release PR #616 squash `39c90da8` (the title clean, one trailer, the tree identical to the branch
-  head); tag `v4.12.29` → `3cf79ae8`, the main head at the tag, the squash plus one memory commit, so every build file is
-  the squash's; the root pom 4.12.29 and no build file on 4.12.28 at the tag; the GitHub release published (not a draft),
-  its notes the CHANGELOG section under its version heading, identical to the prepared file. **READ:** a resolver reads
-  `_origin` in place of `_firing` and claims the job in one conditional write in `expires` - never a read-then-write or a
-  record lock held while it answers (Changed 2, Documentation 1); `TargetRoute`'s accessors are `manager()` and `cloud()`
-  (Changed 3); CompileGraph refuses a blank `progress` and an input mapping to `header.x-return-path`, and
-  `graph.progress.*`, `graph.run.socket.reply` and, once the module is added, `llm.run` are reserved routes. Sweep 52
-  build files / 118 plus the lab's three literals. Readiness: `mvn -o clean install` BUILD SUCCESS 7:16, 276 suites, 3002
-  tests, 0 failures, 3 skipped. **Rust stays at 4.12.27:** no mini-scheduler, so nothing to catch up, and no number
-  without content (Eric, [[conv-ports-adopt-java-release-number]]). The packs stay at 4.12.21. Agent-memory green on the
-  tag commit; CI in progress at the close read. Origin 2026-11-05-065411.md.
+  #606, #609, #611); an aborted flow closed when its caller cannot be told (#610); the IDE-scan round with `TargetRoute` as a
+  record (#614)**: release PR #616 squash `39c90da8` (the title clean, one trailer, the tree identical to the branch head);
+  tag `v4.12.29` → `3cf79ae8`, the main head at the tag, the squash plus one memory commit, so every build file is the
+  squash's; the root pom 4.12.29 and no build file on 4.12.28 at the tag; the GitHub release published (not a draft), its
+  notes the CHANGELOG section under its version heading, identical to the prepared file. **READ:** a resolver reads `_origin`
+  in place of `_firing` and claims the job in one conditional write in `expires` - never a read-then-write or a record lock
+  held while it answers (Changed 2, Documentation 1); the CHANGELOG's `TargetRoute` note (Changed 3) concerns an
+  engine-internal type no application touches (Eric); CompileGraph refuses a blank `progress` and an input mapping to
+  `header.x-return-path`, and `graph.progress.*`, `graph.run.socket.reply` and, once the module is added, `llm.run` are
+  reserved routes. Sweep 52 build files / 118 plus the lab's three literals. Readiness: `mvn -o clean install` BUILD SUCCESS
+  7:16, 276 suites, 3002 tests, 0 failures, 3 skipped. **Rust stays at 4.12.27:** no mini-scheduler, so nothing to catch up,
+  and no number without content (Eric, [[conv-ports-adopt-java-release-number]]). The packs stay at 4.12.21. Agent-memory
+  green on the tag commit; CI in progress at the close read. Origin 2026-11-05-065411.md.
   Prior: v4.12.28 (2026-11-03 21:20:37Z — Java only: the scheduler's `RetryRequest` (3 s, 3 retries, each logged) and
   `_firing` (#603), an environment store's error keeps the active environment, the LLM relay's folder (#601); #604 squash
   `d28077b8` = tag; 267 suites / 2809 tests; no field result recorded - 4.12.29 followed two days later. Origin
@@ -645,9 +645,11 @@
   list, wrong wherever the list is later sorted or extended (`Collections.sort`, `addAll`), handed to an application
   (a multi-request's replies, query parameters) or changed in place by the data mapping (`KeyNormalizationUtils`);
   there use `new ArrayList<>(...)`, `Collectors.toCollection(ArrayList::new)`, `.sorted()` or `Stream.concat`, and a
-  loop that reads the size of the list it fills stays a loop. A class turned into a record changes public API when a
-  public method returns it (`TargetRoute`: `manager()`/`cloud()` replaced `getManager()`/`isCloud()`, a CHANGELOG
-  upgrade note). False positives: S6916 asks for a guard on a constant case label, which Java 21 does not allow; the
+  loop that reads the size of the list it fills stays a loop. A class turned into a record renames its accessors, so
+  ask who calls the type before writing an upgrade note: `TargetRoute` (`manager()`/`cloud()` for
+  `getManager()`/`isCloud()`) is returned by public `EventEmitter` methods, but it is engine-internal, encapsulated
+  by the in-memory event routing, and no application touches it, so its 4.12.29 upgrade note was not needed (Eric,
+  2026-11-05). False positives: S6916 asks for a guard on a constant case label, which Java 21 does not allow; the
   IDE scans one module, so "never used" on a constant another module reads is wrong. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
