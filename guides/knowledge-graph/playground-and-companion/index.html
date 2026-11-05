@@ -3315,7 +3315,10 @@ re-imports the export before the humans re-subscribe.</p>
    <code>app.env=dev</code> and a plain service page for any other value (or no <code>app.env</code> at all), so a
    production deployment never shows the Playground UI. The Playground page lives outside the
    static folder (<code>template/playground.html</code> in the engine jar); without this route, <code>/</code> falls
-   through to the engine's static <code>index.html</code>, which is the same plain page in both modes.</li>
+   through to the engine's static <code>index.html</code>, which is the same plain page in both modes.
+   <code>playground.panel.name</code> renames the panel's heading, for example
+   <code>-Dplayground.panel.name='My Awesome Dev Dashboard'</code>; without it the panel reads <code>Minigraph Playground</code>
+   (<a href="../../configuration-reference/#playground-panel-name">Configuration Reference</a>).</li>
 </ol>
 <p>All three ship pre-wired in <a href="https://github.com/Accenture/mercury-composable/tree/main/templates/starter-graph"><code>templates/starter-graph</code></a>
 — copy that directory and the Playground is live on first run. The

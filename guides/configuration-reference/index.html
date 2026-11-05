@@ -2790,6 +2790,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#playground-panel-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        playground.panel.name
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5736,6 +5747,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#playground-panel-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        playground.panel.name
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -8274,6 +8296,26 @@ authentication: an application that turns it on puts it behind a gateway that au
 </tbody>
 </table>
 <p>The TTL of a graph run started from the WebSocket entry.</p>
+<h3 id="playground-panel-name"><code>playground.panel.name</code><a class="headerlink" href="#playground-panel-name" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code></td>
+<td>none - the panel shows <code>Minigraph Playground</code></td>
+</tr>
+</tbody>
+</table>
+<p>Renames the Minigraph Playground panel, the heading in its top-left corner. It applies in dev mode (<code>app.env=dev</code>),
+where the engine serves the Playground; the browser tab's title and the JSON-Path playground keep theirs. A blank value
+keeps the default. Set it in <code>application.properties</code> or on the command line,
+<code>-Dplayground.panel.name='My Awesome Dev Dashboard'</code>. The engine writes the name, escaped for HTML, into the page it
+serves, and the web app shows it in place of its built-in title.</p>
 <h2 id="component-scanning-startup">Component Scanning &amp; Startup<a class="headerlink" href="#component-scanning-startup" title="Permanent link">&para;</a></h2>
 <h3 id="modulesautostart"><code>modules.autostart</code><a class="headerlink" href="#modulesautostart" title="Permanent link">&para;</a></h3>
 <table>
