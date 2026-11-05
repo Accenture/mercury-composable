@@ -19,19 +19,27 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.28 (2026-11-03 21:20:37Z — **Java only: the mini-scheduler asks a slow state resolver or environment
-  store again (`RetryRequest`: 3 s per attempt, up to 3 retries of a timeout, each logged) and carries the firing id `_firing` in
-  the resolver's parameters ([[scheduler-resolver-conditional-claim]]), an environment store that answers an error keeps the
-  active environment (#603), and the Playground's LLM relay names the helpers' new folder (#601)**: release PR #604 squash
-  `d28077b8` = tag `v4.12.28` = the main head at the tag (the title clean, one trailer, the tree identical to the branch head);
-  the root pom 4.12.28 and no build file on 4.12.27 at the tag; the GitHub release is published (not a draft), its notes the
-  CHANGELOG section under its version heading; agent-memory and CI green on the tag commit (CI finished 21:29Z). **READ:** Added 1
-  (a resolver that claims the job in `expires` stores `_firing` with its claim and answers `true` again for the same `_firing`,
-  or a retry after a cold start skips the job, with a warning; a dashboard that shows the stored parameters filters the `_`
-  keys; a job's own `_` parameter is dropped) and Changed 2 (a question can take up to 12 seconds before the job is skipped).
-  Sweep 50 build files / 114 plus the lab's three literals. Readiness: `mvn -o clean install` BUILD SUCCESS 6:55, 267 suites,
-  2809 tests, 0 failures, 3 skipped. **Rust stays at 4.12.27:** it has no scheduler and catches up in its next round (Eric).
-  The packs stay at 4.12.21 and release when their work is ready. Origin 2026-11-03-212127.md.
+- **latest_release:** v4.12.29 (2026-11-05 06:53:21Z — **Java only: the mini-scheduler's state resolver picks one instance
+  with a conditional claim keyed on `_origin`, which replaces 4.12.28's `_firing` (#612,
+  [[scheduler-resolver-conditional-claim]]), with the scheduler's user guide (#613) and its example on MongoDB plus
+  `helpers/mongodb-standalone` (#615, [[scheduler-example-mongodb]]); the agent loop `llm.run` and RFC-0011 step 3 (#605,
+  #606, #609, #611); an aborted flow closed when its caller cannot be told (#610); the IDE-scan round with `TargetRoute` as
+  a record (#614)**: release PR #616 squash `39c90da8` (the title clean, one trailer, the tree identical to the branch
+  head); tag `v4.12.29` → `3cf79ae8`, the main head at the tag, the squash plus one memory commit, so every build file is
+  the squash's; the root pom 4.12.29 and no build file on 4.12.28 at the tag; the GitHub release published (not a draft),
+  its notes the CHANGELOG section under its version heading, identical to the prepared file. **READ:** a resolver reads
+  `_origin` in place of `_firing` and claims the job in one conditional write in `expires` - never a read-then-write or a
+  record lock held while it answers (Changed 2, Documentation 1); `TargetRoute`'s accessors are `manager()` and `cloud()`
+  (Changed 3); CompileGraph refuses a blank `progress` and an input mapping to `header.x-return-path`, and
+  `graph.progress.*`, `graph.run.socket.reply` and, once the module is added, `llm.run` are reserved routes. Sweep 52
+  build files / 118 plus the lab's three literals. Readiness: `mvn -o clean install` BUILD SUCCESS 7:16, 276 suites, 3002
+  tests, 0 failures, 3 skipped. **Rust stays at 4.12.27:** no mini-scheduler, so nothing to catch up, and no number
+  without content (Eric, [[conv-ports-adopt-java-release-number]]). The packs stay at 4.12.21. Agent-memory green on the
+  tag commit; CI in progress at the close read. Origin 2026-11-05-065411.md.
+  Prior: v4.12.28 (2026-11-03 21:20:37Z — Java only: the scheduler's `RetryRequest` (3 s, 3 retries, each logged) and
+  `_firing` (#603), an environment store's error keeps the active environment, the LLM relay's folder (#601); #604 squash
+  `d28077b8` = tag; 267 suites / 2809 tests; no field result recorded - 4.12.29 followed two days later. Origin
+  2026-11-03-212127.md.)
   Prior: v4.12.27 (2026-10-30 23:18:11Z — the field's Snyk fix for 4.12.26 (Tomcat 11.0.27 with Spring Boot 4.1.2, #594), a
   scheduled job's time zone (#599) and the `minimalist-kafka` round (#597, #598); lock-step with Rust 4.12.27; #600 squash
   `2929ea31` = tag; 265 suites / 2802 tests; READ Added 1 (the resolver's schedule column needs 34 more characters); Rust #400
