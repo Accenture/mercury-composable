@@ -7846,7 +7846,9 @@ For example, <code>rest.server.port=8100</code> becomes:
 </tr>
 </tbody>
 </table>
-<p>WebSocket idle connection timeout in minutes.</p>
+<p>WebSocket idle connection timeout in seconds (floor 10): a connection with no traffic for this long is closed with
+code 1003 ("Idle for N seconds"). The Playground web UI pings every 20 seconds to stay inside it, and the AI companion
+broker does the same; a browser that throttles a background tab stops the pings, so that tab's session closes here.</p>
 <h3 id="websocketserverport"><code>websocket.server.port</code><a class="headerlink" href="#websocketserverport" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
