@@ -86,8 +86,9 @@ public final class SchedulerDatabase {
                 settings.applyToClusterSettings(cluster ->
                         cluster.serverSelectionTimeout(SERVER_SELECTION_SECONDS, TimeUnit.SECONDS));
             }
+            var name = databaseName();
             // the hosts only: a connection string can carry a password
-            log.info("MongoDB database {} at {}", databaseName(), uri.getHosts());
+            log.info("MongoDB database {} at {}", name, uri.getHosts());
             return MongoClients.create(settings.build());
         }
 

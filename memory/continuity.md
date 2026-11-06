@@ -675,7 +675,9 @@
   enum constant, the fix is to move the `if` into a method the case calls (`case STREAM -> endStream(terminal)`). The
   IDE added S2095 on the example's `MongoClients.create(...)` local: a client that lives as long as the application
   (closed by `onShutdown`) is held in a FIELD, created by a method that returns it, since S2095 does not raise on a
-  resource in a field and a try-with-resources would close it at once. A pre-existing finding counts as new the next
+  resource in a field and a try-with-resources would close it at once; and S2629 on the log line that moved with it - a
+  method call passed as a log argument runs even when the level is off, so it goes into a local first (a getter such
+  as `uri.getHosts()` is not flagged). A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-04 | uses: 24 | tier: active | origin: 2026-10-13-001452 -->
