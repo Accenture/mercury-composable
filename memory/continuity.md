@@ -30,8 +30,9 @@
   multiplied by 60. Sweep 52 build files / 118 plus the lab's three literals. Readiness: `mvn -o clean install` BUILD SUCCESS
   7:11, 277 suites, 3007 tests, 0 failures, 3 skipped. **Rust 4.12.30 the same day**, catching up from 4.12.27 with every
   common feature since (mercury #401–#408): #409 merge `852c2977` = tag, THIRTEEN crates on crates.io (`mercury-agent-loop`
-  first published). The packs stay at 4.12.21. agent-memory green on the tag; CI in progress at the close read. Origin
-  2026-11-05-234314.md.
+  first published). The packs stay at 4.12.21. agent-memory green on the tag; CI green after. **Field result 2026-11-06: the
+  field's Sonar scan reported five new-code smells, one a Blocker (S1845 in the scheduler example), closed on
+  `fix/field-sonar-4-12-30` ([[conv-sonar-gate-heuristics]], twelfth round).** Origin 2026-11-05-234314.md.
   Prior: v4.12.29 (2026-11-05 06:53:21Z — Java only: the scheduler's conditional claim keyed on `_origin` (#612), its guide
   (#613) and its example on MongoDB with `helpers/mongodb-standalone` (#615); the agent loop and RFC-0011 step 3 (#605, #606,
   #609, #611); the aborted flow closed (#610); `TargetRoute` a record (#614, engine-internal); #616 squash `39c90da8`, tag →
@@ -664,7 +665,14 @@
   `getManager()`/`isCloud()`) is returned by public `EventEmitter` methods, but it is engine-internal, encapsulated
   by the in-memory event routing, and no application touches it, so its 4.12.29 upgrade note was not needed (Eric,
   2026-11-05). False positives: S6916 asks for a guard on a constant case label, which Java 21 does not allow; the
-  IDE scans one module, so "never used" on a constant another module reads is wrong. A pre-existing finding counts as new the next
+  IDE scans one module, so "never used" on a constant another module reads is wrong. **Twelfth round (the field's Sonar
+  scan of 4.12.30, 2026-11-06), five findings:** S1845 again, a collection-name constant (`ENVIRONMENT`) beside its
+  accessor (`environment()`), the Blocker - name such a constant `*_COLLECTION`; S6213 again, a TEST helper named `record`
+  (the third `record` instance, so grep new code for ` record(` before a PR); S125 again, a prose comment ending in `;`;
+  S6126 - a string built from `\n`-joined literals over several lines is a text block (no trailing newline when the
+  closing `"""` ends the last line); and **S6916 is NOT a false positive to leave**, as the eleventh round had it: the field
+  reports a case body that is a lone `if`, and since Java 21 allows a `when` guard only on a pattern label, never on an
+  enum constant, the fix is to move the `if` into a method the case calls (`case STREAM -> endStream(terminal)`). A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-04 | uses: 24 | tier: active | origin: 2026-10-13-001452 -->

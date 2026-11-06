@@ -352,9 +352,9 @@ public class KafkaFlowConsumer implements AutoCloseable {
         String headerTraceId = trace.length > 0 || traceIdHeader == null ? null : headers.get(traceIdHeader);
         String traceId = trace.length > 0 ? trace[0] : headerTraceId;
         String tracePath = "KAFKA /" + consumerRecord.topic();
-        // the message is one incoming hop for a live invocation observer, linked to the publisher by its tags;
-        // the hop opens under a provisional id when the message carries none, because only an open hop gives
-        // the agent a trace to continue
+        // the message is one incoming hop for a live invocation observer, linked to the publisher by its tags. The
+        // hop opens under a provisional id when the message carries none, because only an open hop gives the agent
+        // a trace to continue
         EventEnvelope hop = new EventEnvelope().setTo(ADAPTER_ROUTE).setTracePath(tracePath)
                 .setTraceId(traceId != null ? traceId : Utility.getInstance().getUuid());
         observerTags.forEach(hop::addTag);

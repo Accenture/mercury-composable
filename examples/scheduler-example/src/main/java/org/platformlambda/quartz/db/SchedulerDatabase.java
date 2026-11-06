@@ -45,9 +45,9 @@ import java.util.concurrent.TimeUnit;
 public final class SchedulerDatabase {
     private static final Logger log = LoggerFactory.getLogger(SchedulerDatabase.class);
     /** the state resolver's records, one per job, with the job's name as the document's _id */
-    public static final String JOB_STATE = "job_state";
+    public static final String JOB_STATE_COLLECTION = "job_state";
     /** the active environment, one document */
-    public static final String ENVIRONMENT = "environment";
+    public static final String ENVIRONMENT_COLLECTION = "environment";
     // the scheduler waits 3 seconds for each answer, so an unreachable database fails the question within that
     // time, as an error the scheduler logs, rather than after the driver's default of 30 seconds
     private static final int SERVER_SELECTION_SECONDS = 2;
@@ -57,11 +57,11 @@ public final class SchedulerDatabase {
     }
 
     public static MongoCollection<Document> jobStates() {
-        return Holder.DATABASE.getCollection(JOB_STATE).withWriteConcern(WriteConcern.MAJORITY);
+        return Holder.DATABASE.getCollection(JOB_STATE_COLLECTION).withWriteConcern(WriteConcern.MAJORITY);
     }
 
     public static MongoCollection<Document> environment() {
-        return Holder.DATABASE.getCollection(ENVIRONMENT).withWriteConcern(WriteConcern.MAJORITY);
+        return Holder.DATABASE.getCollection(ENVIRONMENT_COLLECTION).withWriteConcern(WriteConcern.MAJORITY);
     }
 
     /** Creates the client at first use; the JVM runs this once, however many threads ask at the same time. */
