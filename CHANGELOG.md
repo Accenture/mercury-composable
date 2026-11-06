@@ -20,7 +20,9 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    `storedState` (S6213); `ReturnChannel` moves the stream's terminal write into `endStream`, because Java 21 allows a
    `when` guard only on a pattern label, never on the enum constant the case names (S6916); `CompanionSyncTest` writes
    a multi-line command as a text block (S6126); and a comment in `KafkaFlowConsumer` ends its sentence with a period
-   rather than a semicolon, which read as commented-out code (S125). **Upgrade note:** none - an application that read
+   rather than a semicolon, which read as commented-out code (S125). The IDE's S2095 on the same class is closed too:
+   the long-lived MongoDB client is a field of its holder rather than a local variable, so it reads as the
+   application's resource that `onShutdown` closes, not one a try-with-resources should. **Upgrade note:** none - an application that read
    `SchedulerDatabase.JOB_STATE` or `ENVIRONMENT` from the example reads the `_COLLECTION` names.
 
 ### Documentation

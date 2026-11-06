@@ -672,7 +672,10 @@
   S6126 - a string built from `\n`-joined literals over several lines is a text block (no trailing newline when the
   closing `"""` ends the last line); and **S6916 is NOT a false positive to leave**, as the eleventh round had it: the field
   reports a case body that is a lone `if`, and since Java 21 allows a `when` guard only on a pattern label, never on an
-  enum constant, the fix is to move the `if` into a method the case calls (`case STREAM -> endStream(terminal)`). A pre-existing finding counts as new the next
+  enum constant, the fix is to move the `if` into a method the case calls (`case STREAM -> endStream(terminal)`). The
+  IDE added S2095 on the example's `MongoClients.create(...)` local: a client that lives as long as the application
+  (closed by `onShutdown`) is held in a FIELD, created by a method that returns it, since S2095 does not raise on a
+  resource in a field and a try-with-resources would close it at once. A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-04 | uses: 24 | tier: active | origin: 2026-10-13-001452 -->
