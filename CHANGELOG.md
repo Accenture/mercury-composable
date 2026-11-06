@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Each change merged to `main` after v4.12.30 is listed here; it moves under its release heading when the version is cut.
 
+### Fixed
+
+1. **The field's Sonar scan of 4.12.30: five code smells closed; no behaviour change.** `SchedulerDatabase`'s
+   collection-name constants are `JOB_STATE_COLLECTION` and `ENVIRONMENT_COLLECTION`, so the constant no longer differs
+   from the `environment()` accessor only by case (S1845, the Blocker); `StateResolverTest`'s `record` helper is
+   `storedState` (S6213); `ReturnChannel` moves the stream's terminal write into `endStream`, because Java 21 allows a
+   `when` guard only on a pattern label, never on the enum constant the case names (S6916); `CompanionSyncTest` writes
+   a multi-line command as a text block (S6126); and a comment in `KafkaFlowConsumer` ends its sentence with a period
+   rather than a semicolon, which read as commented-out code (S125). The IDE's S2095 on the same class is closed too:
+   the long-lived MongoDB client is a field of its holder rather than a local variable, so it reads as the
+   application's resource that `onShutdown` closes, not one a try-with-resources should. **Upgrade note:** none - an application that read
+   `SchedulerDatabase.JOB_STATE` or `ENVIRONMENT` from the example reads the `_COLLECTION` names.
+
 ### Documentation
 
 1. **The mini-scheduler's MongoDB worked example says where the job's `_id` comes from.** An upsert builds the

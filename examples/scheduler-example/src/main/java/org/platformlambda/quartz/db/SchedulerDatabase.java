@@ -21,6 +21,7 @@ package org.platformlambda.quartz.db;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.WriteConcern;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -45,9 +46,9 @@ import java.util.concurrent.TimeUnit;
 public final class SchedulerDatabase {
     private static final Logger log = LoggerFactory.getLogger(SchedulerDatabase.class);
     /** the state resolver's records, one per job, with the job's name as the document's _id */
-    public static final String JOB_STATE = "job_state";
+    public static final String JOB_STATE_COLLECTION = "job_state";
     /** the active environment, one document */
-    public static final String ENVIRONMENT = "environment";
+    public static final String ENVIRONMENT_COLLECTION = "environment";
     // the scheduler waits 3 seconds for each answer, so an unreachable database fails the question within that
     // time, as an error the scheduler logs, rather than after the driver's default of 30 seconds
     private static final int SERVER_SELECTION_SECONDS = 2;
@@ -57,31 +58,42 @@ public final class SchedulerDatabase {
     }
 
     public static MongoCollection<Document> jobStates() {
-        return Holder.DATABASE.getCollection(JOB_STATE).withWriteConcern(WriteConcern.MAJORITY);
+        return Holder.DATABASE.getCollection(JOB_STATE_COLLECTION).withWriteConcern(WriteConcern.MAJORITY);
     }
 
     public static MongoCollection<Document> environment() {
-        return Holder.DATABASE.getCollection(ENVIRONMENT).withWriteConcern(WriteConcern.MAJORITY);
+        return Holder.DATABASE.getCollection(ENVIRONMENT_COLLECTION).withWriteConcern(WriteConcern.MAJORITY);
     }
 
-    /** Creates the client at first use; the JVM runs this once, however many threads ask at the same time. */
+    /**
+     * Creates the client at first use; the JVM runs this once, however many threads ask at the same time. The client
+     * is a field, not a local variable, because it lives as long as the application, which closes it when it stops: a
+     * try-with-resources would close it before the first collection is used.
+     */
     private static final class Holder {
-        private static final MongoDatabase DATABASE = connect();
+        private static final MongoClient CLIENT = newClient();
+        private static final MongoDatabase DATABASE = CLIENT.getDatabase(databaseName());
 
-        private static MongoDatabase connect() {
-            var config = AppConfigReader.getInstance();
-            var uri = new ConnectionString(config.getProperty("mongodb.uri", "mongodb://127.0.0.1:27017"));
-            var name = config.getProperty("mongodb.database", "scheduler");
+        static {
+            Platform.getInstance().onShutdown(CLIENT::close);
+        }
+
+        private static MongoClient newClient() {
+            var uri = new ConnectionString(AppConfigReader.getInstance()
+                    .getProperty("mongodb.uri", "mongodb://127.0.0.1:27017"));
             var settings = MongoClientSettings.builder().applyConnectionString(uri);
             if (uri.getServerSelectionTimeout() == null) {
                 settings.applyToClusterSettings(cluster ->
                         cluster.serverSelectionTimeout(SERVER_SELECTION_SECONDS, TimeUnit.SECONDS));
             }
-            var client = MongoClients.create(settings.build());
-            Platform.getInstance().onShutdown(client::close);
+            var name = databaseName();
             // the hosts only: a connection string can carry a password
             log.info("MongoDB database {} at {}", name, uri.getHosts());
-            return client.getDatabase(name);
+            return MongoClients.create(settings.build());
+        }
+
+        private static String databaseName() {
+            return AppConfigReader.getInstance().getProperty("mongodb.database", "scheduler");
         }
     }
 }

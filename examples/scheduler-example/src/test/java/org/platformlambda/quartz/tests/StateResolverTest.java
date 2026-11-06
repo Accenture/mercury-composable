@@ -77,7 +77,7 @@ class StateResolverTest {
         return resolver.handleEvent(headers("expires", name), Map.of("hello", "world", ORIGIN, origin), 1);
     }
 
-    private static Document record(String name) {
+    private static Document storedState(String name) {
         return SchedulerDatabase.jobStates().find(Filters.eq("_id", name)).first();
     }
 
@@ -98,7 +98,7 @@ class StateResolverTest {
         assertFalse(expires(JOB, "instance-b"));
         // start records the run, with the origin among the parameters
         assertTrue(resolver.handleEvent(headers("start", JOB), Map.of("hello", "world", ORIGIN, "instance-a"), 1));
-        var started = record(JOB);
+        var started = storedState(JOB);
         assertNotNull(started);
         assertEquals("hello.world", started.getString("service"));
         assertEquals("0 0/1 * 1/1 * ? *", started.getString("schedule"));
@@ -107,7 +107,7 @@ class StateResolverTest {
         assertNull(started.get("end"));
         // end stamps the end time
         assertTrue(resolver.handleEvent(headers("end", JOB), null, 1));
-        var ended = record(JOB);
+        var ended = storedState(JOB);
         assertNotNull(ended);
         assertNotNull(ended.getDate("end"));
     }
@@ -121,7 +121,7 @@ class StateResolverTest {
         assertTrue(expires(job, "instance-b"));
         // the claim is instance-b's now, so the previous holder is refused
         assertFalse(expires(job, "instance-a"));
-        var claimed = record(job);
+        var claimed = storedState(job);
         assertNotNull(claimed);
         assertEquals("instance-b", claimed.get("parameters", Document.class).getString(ORIGIN));
     }

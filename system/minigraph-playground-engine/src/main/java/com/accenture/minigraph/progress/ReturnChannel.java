@@ -255,17 +255,26 @@ public final class ReturnChannel {
             terminal.put(BODY, response.getBody());
         }
         switch (kind) {
-            case STREAM -> {
-                if (streaming) {
-                    writer.write(String.valueOf(terminal.get(TYPE)), terminal);
-                    writer.close();
-                }
-            }
+            case STREAM -> endStream(terminal);
             case EVENT -> send(terminal);
             case SOCKET -> {
                 send(terminal);
                 Utility.getInstance().closeConnection(target, 1000, "done");
             }
+        }
+    }
+
+    /**
+     * A stream the run opened ends with the terminal event. A stream it never opened sends nothing, so the single-shot
+     * response answers the request. (Java 21 allows a guard only on a pattern label, never on the enum constant of
+     * this switch, so the condition lives here rather than in the case.)
+     *
+     * @param terminal the run's terminal event
+     */
+    private void endStream(Map<String, Object> terminal) {
+        if (streaming) {
+            writer.write(String.valueOf(terminal.get(TYPE)), terminal);
+            writer.close();
         }
     }
 
@@ -286,7 +295,8 @@ public final class ReturnChannel {
         var pending = new ArrayList<CompletableFuture<EventEnvelope>>();
         for (var route : routes) {
             try {
-                pending.add(emitter.eRequest(new EventEnvelope().setTo(route).setHeader(DRAIN, "true"), DRAIN_MS, false));
+                var request = new EventEnvelope().setTo(route).setHeader(DRAIN, "true");
+                pending.add(emitter.eRequest(request, DRAIN_MS, false));
             } catch (RuntimeException e) {
                 log.debug("Relay {} not drained - {}", route, e.getMessage());
             }
