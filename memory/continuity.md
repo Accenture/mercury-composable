@@ -31,8 +31,10 @@
   7:11, 277 suites, 3007 tests, 0 failures, 3 skipped. **Rust 4.12.30 the same day**, catching up from 4.12.27 with every
   common feature since (mercury #401–#408): #409 merge `852c2977` = tag, THIRTEEN crates on crates.io (`mercury-agent-loop`
   first published). The packs stay at 4.12.21. agent-memory green on the tag; CI green after. **Field result 2026-11-06: the
-  field's Sonar scan reported five new-code smells, one a Blocker (S1845 in the scheduler example), closed on
-  `fix/field-sonar-4-12-30` ([[conv-sonar-gate-heuristics]], twelfth round).** Origin 2026-11-05-234314.md.
+  field's Sonar scan reported five new-code smells, one a Blocker (S1845 in the scheduler example), and the field's
+  pipeline rejected the build; closed with the IDE's S2095 and S2629 by #622 (squash `4b92dd2b`,
+  [[conv-sonar-gate-heuristics]], twelfth round), which Eric patches into the field's pipeline - no new release (Eric).**
+  Origin 2026-11-05-234314.md.
   Prior: v4.12.29 (2026-11-05 06:53:21Z — Java only: the scheduler's conditional claim keyed on `_origin` (#612), its guide
   (#613) and its example on MongoDB with `helpers/mongodb-standalone` (#615); the agent loop and RFC-0011 step 3 (#605, #606,
   #609, #611); the aborted flow closed (#610); `TargetRoute` a record (#614, engine-internal); #616 squash `39c90da8`, tag →
