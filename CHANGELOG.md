@@ -10,7 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 ## Unreleased
 
-Nothing yet. Each change merged to `main` after v4.12.30 is listed here; it moves under its release heading when the version is cut.
+Each change merged to `main` after v4.12.30 is listed here; it moves under its release heading when the version is cut.
+
+### Documentation
+
+1. **The mini-scheduler's MongoDB worked example says where the job's `_id` comes from.** An upsert builds the
+   document it inserts from the filter's equality conditions, so `Filters.eq("_id", name)` names a new record after
+   the job, which is how the first firing creates it and why a peer's second insert is refused; a filter without that
+   equality would insert under a new `ObjectId` every time and let every instance win. In the mini-scheduler README
+   and the user guide.
 
 ---
 ## Version 4.12.30, 11/5/2026

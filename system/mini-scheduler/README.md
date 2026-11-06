@@ -135,10 +135,14 @@ private boolean claim(String name, Map<String, Object> parameters) {
 }
 ```
 
-The filter matches when the window has passed or the asking instance holds the claim. When it does not, the
-upsert inserts a document with the job's name as its `_id`, which the peer's document already has, and MongoDB
-refuses it. The answer to the write is the decision, so nothing is read back. The window is measured on the
-instance's clock, which differs from its peers' by far less than 30 seconds. `start` and `end` record the run:
+The filter matches when the window has passed or the asking instance holds the claim. When it does not, the upsert
+inserts a document with the job's name as its `_id`, which the peer's document already has, and MongoDB refuses it.
+The `_id` comes from the filter: an upsert builds the document it inserts from the filter's equality conditions, so
+`Filters.eq("_id", name)` names it after the job (the `or` clause adds nothing) and the update's fields complete it,
+which is also how a job's first firing creates its record. A filter without that equality would insert under a new
+`ObjectId` every time, so no insert would be refused and every instance would win. The answer to the write is the
+decision, so nothing is read back. The window is measured on the instance's clock, which differs from its peers' by
+far less than 30 seconds. `start` and `end` record the run:
 
 ```java
 // start: the run that the claim allowed, or an operator's manual run
