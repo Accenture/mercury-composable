@@ -3917,7 +3917,11 @@ among them, are a sub-document:</p>
 </code></pre></div>
 <p>The filter matches when the window has passed or the asking instance holds the claim. When it does not, the upsert
 inserts a document with the job's name as its <code>_id</code>, which the peer's document already has, and MongoDB refuses it.
-The answer to the write is the decision, so nothing is read back. The window is measured on the instance's clock,
+The <code>_id</code> comes from the filter: an upsert builds the document it inserts from the filter's equality conditions, so
+<code>Filters.eq("_id", name)</code> names it after the job (the <code>or</code> clause adds nothing) and the update's fields complete it,
+which is also how a job's first firing creates its record. A filter without that equality would insert under a new
+<code>ObjectId</code> every time, so no insert would be refused and every instance would win. The answer to the write is the
+decision, so nothing is read back. The window is measured on the instance's clock,
 which differs from its peers' by far less than 30 seconds. <code>start</code> and <code>end</code> record the run:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1">// start: the run that the claim allowed, or an operator's manual run</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">states</span><span class="p">.</span><span class="na">updateOne</span><span class="p">(</span><span class="n">Filters</span><span class="p">.</span><span class="na">eq</span><span class="p">(</span><span class="s">"_id"</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">),</span><span class="w"> </span><span class="n">Updates</span><span class="p">.</span><span class="na">combine</span><span class="p">(</span><span class="n">Updates</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"service"</span><span class="p">,</span><span class="w"> </span><span class="n">service</span><span class="p">),</span>
