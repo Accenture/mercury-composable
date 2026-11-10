@@ -53,12 +53,13 @@
   `/ws/graph-run/{graph_id}` (off by default), or a declared `x-return-path` (`return.path.routes`, prefix `*`);
   `progress=<text>` on a node; a node's function and a synchronous subgraph get the node's private relay
   (`graph.progress.*`), drained before the terminal event; `llm.run`'s seven events (105 loop vectors); the HTTP edge
-  drops a late single-shot reply to a started stream; `kafka.progress.publisher` in kafka-demo. Next: step 4 (the
-  Python MCP binding, then Node), then step 5, the Rust catch-up from `llm-run-vectors.json` and the graph features
-  (#609, #611) - including the Playground help pages they changed, released to the Java target only, so the Rust
-  catch-up runs `npm run release:rust` ([[playground-webapp-single-source]]) - then the end-to-end test and the ADR
-  promotion.
+  drops a late single-shot reply to a started stream; `kafka.progress.publisher` in kafka-demo. **Step 5 SHIPPED
+  ahead of step 4 (Eric, 2026-11-05):** the Rust catch-up merged as mercury #403-#407 (`llm.run` as the crate
+  `mercury-agent-loop`, all 105 loop and 29 schema vectors; the async `graph.extension`; progress events and
+  `/ws/graph-run`; the Playground bundle and help by `npm run release:rust`) and released in Rust 4.12.30. Next: step
+  4 (the Python MCP binding, then Node; not started in either pack as of 2026-11-10), then the end-to-end test and
+  the ADR promotion.
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
   README, the certification reports) are fixed by #601 (squash `72d43d06`) and mercury #401 (merge `e66ae513`), the packs' by mercury-python #48 (`463e37c`), all
   merged 2026-11-03: no live mention of the old folder is left in the family.
-  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-04 | uses: 16 | tier: working | origin: 2026-10-28-233011 -->
+  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-10 | uses: 17 | tier: working | origin: 2026-10-28-233011 -->

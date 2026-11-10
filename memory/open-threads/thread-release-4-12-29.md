@@ -6,4 +6,4 @@
   harmless when only `memory/` differs, and checked by diffing the tag against the squash outside `memory/`.
   origin: 2026-11-05-061842; close 2026-11-05-065411.
   → serves: vision-mercury-composable
-  <!-- id: release-4-12-29 | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: working | origin: 2026-11-05-061842 -->
+  <!-- id: release-4-12-29 | created: 2026-11-05 | last_used: 2026-11-05 | uses: 2 | tier: archive-candidate | origin: 2026-11-05-061842 -->

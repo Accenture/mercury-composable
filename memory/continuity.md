@@ -41,13 +41,13 @@
   `3cf79ae8`; 276 suites / 3002 tests; no field result recorded - 4.12.30 followed the same day. Origin 2026-11-05-065411.md.)
   Prior: v4.12.28 (2026-11-03 21:20:37Z — Java only: the scheduler's `RetryRequest` (3 s, 3 retries, each logged) and
   `_firing` (#603), an environment store's error keeps the active environment, the LLM relay's folder (#601); #604 squash
-  `d28077b8` = tag; 267 suites / 2809 tests; no field result recorded - 4.12.29 followed two days later. Origin
+  `d28077b8` = tag; 267 suites / 2809 tests; **FIELD-DEPLOYED** (Eric, reported 2026-11-10). Origin
   2026-11-03-212127.md.)
   Prior: v4.12.27 (2026-10-30 23:18:11Z — the field's Snyk fix for 4.12.26 (Tomcat 11.0.27 with Spring Boot 4.1.2, #594), a
   scheduled job's time zone (#599) and the `minimalist-kafka` round (#597, #598); lock-step with Rust 4.12.27; #600 squash
   `2929ea31` = tag; 265 suites / 2802 tests; READ Added 1 (the resolver's schedule column needs 34 more characters); Rust #400
-  merge `03952aee` = tag, crates 12/12; **Field result 2026-10-30: the field's CI pipeline PASSED, Snyk and Sonar included.**
-  Origin 2026-10-30-231959.md.)
+  merge `03952aee` = tag, crates 12/12; **Field result 2026-10-30: the field's CI pipeline PASSED, Snyk and Sonar included;
+  FIELD-DEPLOYED** (Eric, reported 2026-11-10). Origin 2026-10-30-231959.md.)
   Prior: v4.12.26 (2026-10-26 17:05:51Z — JSONPath to RFC 9535 through `minimalist-jsonpath` (ADR-0031), live invocation observers for
   an APM agent (ADR-0032), the date plugins, `reactive-postgres` batches and transactions, the Playground round, the ASM, Vert.x and
   Netty advisories closed; lock-step with Rust 4.12.26; #593 squash `50964467` = tag; 263 suites / 2793 tests; **Field result
@@ -111,12 +111,15 @@
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-11-04 | through 2026-11-04-050444.md (CADENCE — 13 sessions since 2026-11-03-010235, run after #611
-  merged as Eric chose: `refresh-metadata` refreshed 11 footers, tier changes 5 (all archive-candidate → active); archived 1
-  faded fact (`minimalist-jsonpath-rfc-9535`, ADR-0031 keeps the decision) and KEPT `playground-webapp-single-source` and
-  `conv-library-pins-are-direct-dependencies` as declaration gaps (#609/#611's Java-only help release; #605's new pom with
-  the pins); swept 5 completed threads; archive-verify pass; invariants DUE (47 of 40) → [[reverify-invariants-20261104]]
-  raised; stalled threads none; contradictions none; live facts 46 → 41. Smoke test not run.)
+- **last_review:** 2026-11-10 | through 2026-11-10-015436.md (ON COMMAND + CADENCE — 14 sessions since 2026-11-04-050444:
+  `refresh-metadata` refreshed 23 footers, tier changes 10; archived 1 superseded fact
+  (`scheduler-resolver-contract-in-parameters` → `scheduler-resolver-conditional-claim`) and 0 faded; swept 2 completed
+  threads (`release-4-12-27`, `release-4-12-28`, both field-deployed per Eric); archive-verify pass; invariants not due
+  ([[reverify-invariants-20261104]] still awaits Eric's walk); stalled threads none; one stale thread item struck
+  ([[agent-loop-llm-run]]: step 5 shipped ahead of step 4); live facts 48 → 45. Smoke test not run.)
+  Prior: 2026-11-04 | through 2026-11-04-050444.md (CADENCE — refreshed 11 footers, tier changes 5; archived 1 faded fact and
+  KEPT `playground-webapp-single-source` and `conv-library-pins-are-direct-dependencies` as declaration gaps; swept 5
+  threads; invariants DUE → [[reverify-invariants-20261104]] raised; live facts 46 → 41)
   Prior: 2026-11-03 | through 2026-11-03-010235.md (CADENCE — refreshed 26 footers, tier changes 14; archived 1 faded fact and
   KEPT `snyk-retired-manifest-placeholders` as a declaration gap; swept 2 threads; live facts 46 → 43, lines 798 → 783)
   Prior: 2026-10-29 | through 2026-10-29-012834.md (ON COMMAND + CADENCE — refreshed 26 footers, tier changes 14; reactivated
@@ -253,7 +256,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-04 | uses: 36 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-04 | uses: 37 | tier: archive-candidate | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -283,7 +286,7 @@
   fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
   DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
   ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-11-04 | uses: 36 | tier: active | origin: 2026-09-18-174943 -->
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-11-04 | uses: 36 | tier: archive-candidate | origin: 2026-09-18-174943 -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
@@ -347,18 +350,7 @@
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-11-04 | uses: 25 | tier: active | origin: 2026-10-02-175751 -->
-
-- **The mini-scheduler's state-resolver contract is live in the field, so a change rides inside the existing `parameters`,
-  never a new header or field, and a parameter key that starts with `_` is the system's (Eric, 2026-11-03).** The field
-  stores the resolver's requests in a database whose schema follows the contract, so a new header would be a schema change
-  in every field installation. The firing id that makes a retried `expires` recognisable therefore travels as `_firing` in
-  the parameters the resolver already stores, and a dashboard filters the `_` keys out when it reads them. The same ruling:
-  a slow function the scheduler waits on is retried (`RetryRequest`: 3 s, 3 retries, timeouts only, each logged) rather
-  than given a longer timeout, so a cold start is recorded in the application log. **How to apply:** before changing what
-  the scheduler sends the state resolver or the environment store, ask whether a field installation would have to change
-  a schema to accept it; an additive key in `parameters` is the shape.
-  <!-- id: scheduler-resolver-contract-in-parameters | created: 2026-11-03 | last_used: 2026-11-03 | uses: 2 | tier: superseded | superseded-by: scheduler-resolver-conditional-claim | origin: 2026-11-03-190022 -->
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-11-05 | uses: 27 | tier: active | origin: 2026-10-02-175751 -->
 
 - **The mini-scheduler's state resolver picks one instance with a conditional claim in `expires`, and its contract
   changes only inside the existing `parameters`, where a key that starts with `_` is the system's (Eric, 2026-11-03 and
@@ -381,7 +373,7 @@
   before changing what the scheduler sends the state resolver or the environment store, ask whether a field
   installation would have to change a schema to accept it; an additive key in `parameters` is the shape. A resolver
   for more than one instance needs one conditional write, so a second read in it is the smell.
-  <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-04 | uses: 1 | tier: working | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
+  <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-05 | uses: 4 | tier: archive-candidate | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
 
 - **The scheduler example is the claim's runnable worked example on MongoDB, and its embedded MongoDB is a pure-Java
   emulator (Eric, 2026-11-05).** `StateResolver`, `EnvironmentStore` and `ScheduleAdmin` keep their records in MongoDB
@@ -415,7 +407,7 @@
   apply:** a per-deployment setting the web app shows goes into the entry page as a server-filled tag, found by its
   exact text and guarded by a test of the built page (`GetIndexHtmlTest`); any webapp source edit still needs the
   release ([[help-edit-needs-bundle-release]]).
-  <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: working | origin: 2026-11-05-175904 -->
+  <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-05 | uses: 2 | tier: active | origin: 2026-11-05-175904 -->
 
 ## Conventions
 
@@ -465,7 +457,7 @@
   Tenth instance (2026-11-04): PR #610's squash `89ffe5d9`, a two-commit PR that a side session opened, carries two
   `Co-Authored-By` lines, one per commit; the title held. A side session's PR needs the same handoff rule.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-04 | uses: 122 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-05 | uses: 129 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -492,7 +484,7 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-04 | uses: 61 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-05 | uses: 69 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -506,7 +498,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-11-03 | uses: 37 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-11-05 | uses: 40 | tier: active | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast — the in-house codec writes the smallest integer width, so it holds since
   ADR-0028; use `util.str2int/str2long`). (Wording refreshed 2026-10-09 at invariant re-verify — substance unchanged.)
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -606,7 +598,7 @@
   `httpcore5.version`, equal to Boot 4.1.2's managed 5.4.4, was retired from its eight poms.
   Relates
   [[conv-template-version-sweep]] (the other reactor-wide sweep).
-  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-11-04 | uses: 10 | tier: active | origin: 2026-10-12-221919 -->
+  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-11-05 | uses: 11 | tier: archive-candidate | origin: 2026-10-12-221919 -->
 
 - **The field's Sonar gate judges NEW code, and five of its heuristics catch prose and framework idioms - write for them (the fifth
   Sonar round, 2026-10-12; the earlier rounds are the archived `thread-sonar-quality-gate-4.6.2`, `thread-sonar-4-9-1-field-rejection`,
@@ -682,7 +674,7 @@
   as `uri.getHosts()` is not flagged). A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
   [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-04 | uses: 24 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-06 | uses: 29 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
@@ -707,7 +699,7 @@
   the ignored `dist/`, which compares with the committed bundle (`public/assets`, `template/playground.html`) and with the Rust
   copy, maps excluded, without touching a tracked file; both were byte-identical. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
   only the entry page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-04 | uses: 34 | tier: active | origin: 2026-10-02-015208 -->
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-05 | uses: 37 | tier: active | origin: 2026-10-02-015208 -->
 
 - **A reactor build rewrites every example's `target/*.jar` in place, so an app running from one fails at the next class it loads
   for the first time (2026-10-22).** `mvn verify` repackages `examples/*/target/<name>-<version>.jar`. A JVM running from that jar
@@ -720,7 +712,7 @@
   (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
   sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
-  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-04 | uses: 17 | tier: active | origin: 2026-10-22-232342 -->
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-05 | uses: 22 | tier: active | origin: 2026-10-22-232342 -->
 
 - **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
   properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
@@ -735,7 +727,7 @@
   or its child. To audit the tree, collect the keys of every `.properties` file, every `getProperty` and `@OptionalService`
   literal and every configuration-reference heading, then list each key that prefixes another. The 2026-10-23 log has the
   scan; `cloud.connector.health` is a route, not a key. YAML cannot express the collision.
-  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-11-04 | uses: 5 | tier: active | origin: 2026-10-23-215957 -->
+  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-11-05 | uses: 6 | tier: active | origin: 2026-10-23-215957 -->
 
 - **A test server's fixed port stays below 32768, and a wait on its listen covers failure too (2026-11-04, PR #607).**
   `EventOverHttpStreamTest`'s mock peer listened on 58586 and waited on `onSuccess` alone. CI failed three times with
@@ -750,7 +742,7 @@
   runner whose neighbouring classes ran at normal speed, more likely saw a callback that never fired than a slow one.
   A macOS negative control must hold the port on `::` with `IPV6_V6ONLY=0`: a listener on `127.0.0.1` or on IPv4
   `0.0.0.0` alone lets Vert.x bind anyway.
-  <!-- id: conv-test-fixed-port-outside-ephemeral | created: 2026-11-04 | last_used: 2026-11-04 | uses: 1 | tier: working | origin: 2026-11-04-031520 -->
+  <!-- id: conv-test-fixed-port-outside-ephemeral | created: 2026-11-04 | last_used: 2026-11-05 | uses: 2 | tier: archive-candidate | origin: 2026-11-04-031520 -->
 
 - **A lab or dev-machine tool stays out of the root reactor (Eric, 2026-10-23).** The field's static code analysis scans
   the modules the root `pom.xml` declares, registers each one, and keeps scanning it for good. A module listed there
@@ -761,7 +753,7 @@
   relative path the Mercury modules the lab uses, so Maven builds them from source instead of resolving the released
   version of the same number from `~/.m2`, and installs nothing. Its literal version joins the release version sweep.
   Before adding any module to the root reactor, ask whether it ships to the field's artifact repository.
-  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-11-04 | uses: 9 | tier: active | origin: 2026-10-23-215957 -->
+  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-11-05 | uses: 13 | tier: active | origin: 2026-10-23-215957 -->
 
 - **A tool that runs from the checkout lives once, in the starter template, and the examples point to it (Eric,
   2026-11-05: do not repeat ourselves).** The Playground session broker had three identical copies (the
@@ -784,7 +776,7 @@
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]]. **Reactivated 2026-10-23:** a lab stays out of the root reactor, so it never
   needs a placeholder ([[conv-lab-outside-root-reactor]]).
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-11-03 | uses: 33 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-11-05 | uses: 35 | tier: active | origin: 2026-09-01-022524 -->
 
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
@@ -809,7 +801,7 @@
   the same day Eric brought every common feature since 4.12.27 across instead (the agent loop `llm.run`, the
   asynchronous `graph.extension`, progress events, the abort record, `playground.panel.name`: mercury #403-#407,
   Increments 196-200), so the epic does not gate a port's catch-up; only work the port has no counterpart for does.
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-03 | uses: 48 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-05 | uses: 53 | tier: active | origin: 2026-09-16-003354 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -896,7 +888,7 @@
   stays LLM/vendor-free with adapters as functions ON the wrappers: the gateway/MCP edge is where
   vendor specifics live, never in the engine.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-02 | uses: 30 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-05 | uses: 31 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;
