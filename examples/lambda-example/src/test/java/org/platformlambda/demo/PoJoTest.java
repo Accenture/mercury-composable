@@ -30,6 +30,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class PoJoTest extends TestBase {
 
@@ -43,7 +44,7 @@ class PoJoTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo("hello.pojo").setHeader("id", "1");
         po.asyncRequest(request, 8000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals(HashMap.class, response.getBody().getClass());
         assertEquals("org.platformlambda.models.SamplePoJo", response.getType());
         SamplePoJo pojo = response.getBody(SamplePoJo.class);

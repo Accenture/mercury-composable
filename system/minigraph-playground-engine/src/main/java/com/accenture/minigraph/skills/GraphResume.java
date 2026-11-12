@@ -69,7 +69,7 @@ public class GraphResume extends GraphStateSkill {
     /**
      * The record this run is entitled to. A for_each iteration adds its index, so it sees only the
      * record its own iteration wrote; a changed index (an item inserted or removed ahead of it)
-     * simply misses and the run starts fresh, which is the declared behaviour.
+     * simply misses and the run starts fresh, which is the declared behavior.
      */
     private Map<String, Object> lookupKey(String cid, GraphInstance graphInstance) {
         var index = getIterationIndex(graphInstance);

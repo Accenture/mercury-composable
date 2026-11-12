@@ -36,7 +36,7 @@ import java.util.function.Function;
  * Production and DR, must fire its jobs in ONE of them: {@code scheduler.environment.name} names this
  * instance's environment (default {@code prod}), the <b>active environment</b> names the one whose
  * scheduler runs the jobs, and this instance is <b>active</b> when the two match and on <b>standby</b>
- * otherwise - a scheduled job is skipped with one log line, an operator's manual run is still honoured.
+ * otherwise - a scheduled job is skipped with one log line, an operator's manual run is still honored.
  * <p>
  * The source of truth for the active environment is a data store, not a property: the function named by
  * {@code scheduler.environment.store} (default {@code v1.environment.store}), which the application

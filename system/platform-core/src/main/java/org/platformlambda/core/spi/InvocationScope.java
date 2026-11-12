@@ -46,7 +46,7 @@ public interface InvocationScope {
      * The function returned a reactive result (a Mono) that completes later, usually on another thread.
      * Called on the scope's own thread while it is still open, before {@link #end}. The engine resumes
      * the continuation exactly once on the completion thread: when the result arrives, fails, or is
-     * cancelled on timeout.
+     * canceled on timeout.
      *
      * @return a continuation, or null when the observer has nothing to resume
      */

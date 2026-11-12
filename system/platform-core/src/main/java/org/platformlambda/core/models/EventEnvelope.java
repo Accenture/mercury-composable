@@ -677,7 +677,7 @@ public class EventEnvelope {
      * DO NOT use this method directly in your user application code.
      * <p>
      * This is reserved for unit test to simulate getting stack trace
-     * from an external node.js composable application.
+     * from an external Node.js composable application.
      *
      * @param stackTrace as a text message with linefeed
      * @return event envelope
@@ -688,7 +688,7 @@ public class EventEnvelope {
     }
 
     /**
-     * Retrieve stack trace returned from an external node.js composable application
+     * Retrieve stack trace returned from an external Node.js composable application
      * (For efficiency, stack trace will be limited to maximum of 10 lines)
      *
      * @return stackTrace if any

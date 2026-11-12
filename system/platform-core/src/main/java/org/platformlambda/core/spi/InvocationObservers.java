@@ -323,7 +323,7 @@ public final class InvocationObservers {
     }
 
     /**
-     * Engine call when a deferred result will never be delivered (cancelled on timeout): resume the
+     * Engine call when a deferred result will never be delivered (canceled on timeout): resume the
      * continuation if no delivery did, and close it as failed.
      *
      * @param continuation the continuation from {@link #detach}, or null

@@ -30,9 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class HelloWorldTest extends TestBase {
 
@@ -47,7 +45,7 @@ class HelloWorldTest extends TestBase {
         PostOffice po = new PostOffice("unit.test", "12345", "POST /api/hello/world");
         EventEnvelope request = new EventEnvelope().setTo("hello.world").setBody(pojo.toMap());
         EventEnvelope response = po.request(request, 8000).get();
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals(name, map.getElement("body.name"));

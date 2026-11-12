@@ -34,7 +34,7 @@ import org.platformlambda.scheduler.models.ScheduledJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -88,7 +88,7 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     }
 
     /**
-     * The scheduled point (RFC-0008): an operator's run is explicit and honoured on a standby instance too.
+     * The scheduled point (RFC-0008): an operator's run is explicit and honored on a standby instance too.
      * A Quartz trigger runs the job's normal path on an active instance and is skipped with one line otherwise.
      */
     private void jobTriggered(PostOffice po, ScheduledJob job, String operator)
@@ -120,7 +120,7 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
                     .onSuccess(peers -> {
                         final String selected;
                         if (peers.size() > 1) {
-                            Collections.sort(peers);
+                            peers.sort(Comparator.naturalOrder());
                             selected = peers.getFirst();
                         } else  {
                             selected = String.valueOf(me);

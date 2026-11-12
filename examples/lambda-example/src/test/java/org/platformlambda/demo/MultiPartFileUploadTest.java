@@ -70,7 +70,7 @@ class MultiPartFileUploadTest extends TestBase {
         // send the HTTP request using AsyncHttpClient's route "async.http.request"
         EventEnvelope request = new EventEnvelope().setTo("async.http.request").setBody(req);
         EventEnvelope response = po.request(request, 8000).get();
-        assert response != null;
+        assertNotNull(response);
         assertEquals(HashMap.class, response.getBody().getClass());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals(bytes.size(), map.getElement("total.length"));
@@ -117,7 +117,7 @@ class MultiPartFileUploadTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo("async.http.request")
                 .setBody(req).setTrace("102", "UPLOAD /multipart/2").setFrom("unit.test");
         EventEnvelope response = po.request(request, 8000).get();
-        assert response != null;
+        assertNotNull(response);
         assertEquals(HashMap.class, response.getBody().getClass());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals(bytes1.size() + bytes2.size(), map.getElement("total.length"));

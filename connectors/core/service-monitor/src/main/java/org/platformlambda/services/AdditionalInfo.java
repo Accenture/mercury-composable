@@ -113,7 +113,7 @@ public class AdditionalInfo implements LambdaFunction {
             labels.add(composite);
         }
         if (labels.size() > 1) {
-            Collections.sort(labels);
+            labels.sort(Comparator.naturalOrder());
         }
         return labels.stream().map(normalized::get).toList();
     }
@@ -147,7 +147,7 @@ public class AdditionalInfo implements LambdaFunction {
             vTopics.add(topicList+" -> "+memberSignature(m, connections));
         }
         if (vTopics.size() > 1) {
-            Collections.sort(vTopics);
+            vTopics.sort(Comparator.naturalOrder());
         }
         return vTopics;
     }
@@ -175,7 +175,7 @@ public class AdditionalInfo implements LambdaFunction {
         if (list.size() == 1) {
             return list.getFirst();
         }
-        Collections.sort(list);
+        list.sort(Comparator.naturalOrder());
         StringBuilder sb = new StringBuilder();
         for (String item: list) {
             sb.append(item);
@@ -199,7 +199,7 @@ public class AdditionalInfo implements LambdaFunction {
         PubSub ps = PubSub.getInstance();
         List<String> topics = ps.list();
         if (topics.size() > 1) {
-            Collections.sort(topics);
+            topics.sort(Comparator.naturalOrder());
         }
         List<String> regularTopics = new ArrayList<>();
         Map<String, Integer> compositeTopics = new HashMap<>();

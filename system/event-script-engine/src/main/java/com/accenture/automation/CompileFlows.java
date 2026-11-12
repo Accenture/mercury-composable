@@ -146,7 +146,7 @@ public class CompileFlows implements EntryPoint {
             }
         }
         List<String> flows = Flows.getAllFlows();
-        Collections.sort(flows);
+        flows.sort(Comparator.naturalOrder());
         for (String f : flows) {
             log.info("Loaded {}", f);
         }
@@ -164,7 +164,7 @@ public class CompileFlows implements EntryPoint {
             }
         }
         var result = new ArrayList<>(uniqueFlows);
-        Collections.sort(result);
+        result.sort(Comparator.naturalOrder());
         return result;
     }
 

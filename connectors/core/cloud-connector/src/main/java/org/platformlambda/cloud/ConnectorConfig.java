@@ -125,7 +125,7 @@ public class ConnectorConfig {
                 normalizedTopics.add(vt + "|" + t);
             }
         }
-        Collections.sort(normalizedTopics);
+        normalizedTopics.sort(Comparator.naturalOrder());
         for (String nt : normalizedTopics) {
             int sep = nt.lastIndexOf('|');
             String vt = nt.substring(0, sep);

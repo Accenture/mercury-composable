@@ -32,7 +32,7 @@ import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
  *
  * <p>Keys are always {@code String}; the <b>value type {@code V}</b> is chosen by the codec the backend was
  * built with — {@code String} for sync-over-async (text payloads), opaque {@code byte[]} for the cache
- * (caller-owned serialisation, cross-language interop). A single {@link RedisBackendFactory#create(RedisConfig, io.lettuce.core.codec.RedisCodec)}
+ * (caller-owned serialization, cross-language interop). A single {@link RedisBackendFactory#create(RedisConfig, io.lettuce.core.codec.RedisCodec)}
  * builds either topology for either value type; {@link RedisBackendFactory#create(RedisConfig)} is the
  * String-valued convenience.
  *

@@ -551,7 +551,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             }
         }
         if (!unexpected.isEmpty()) {
-            Collections.sort(unexpected);
+            unexpected.sort(Comparator.naturalOrder());
             return "Unexpected top-level section(s): " + String.join(", ", unexpected) +
                     " - a graph model has only 'nodes' and 'connections'";
         }
@@ -750,7 +750,7 @@ public class GraphCommandService extends GraphLambdaFunction {
                     nodes.add(k);
                 }
             });
-            Collections.sort(nodes);
+            nodes.sort(Comparator.naturalOrder());
             var result = new ArrayList<String>();
             if (root.get()) result.add(ROOT);
             result.addAll(nodes);
@@ -1043,7 +1043,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             sb.append("No flows deployed");
             return;
         }
-        Collections.sort(ids);
+        ids.sort(Comparator.naturalOrder());
         sb.append("Event Script flows - extension=flow://{flow-id} targets:\n");
         for (var id : ids) {
             var flow = Flows.getFlow(id);
@@ -1118,7 +1118,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             sb.append(root == null ? "root (does not exist)" : "root "+root.getTypes()).append("\n");
             var listing = getNodeListing(nodes, root, end);
             if (!listing.isEmpty()) {
-                Collections.sort(listing);
+                listing.sort(Comparator.naturalOrder());
                 for (var name : listing) {
                     sb.append(name).append("\n");
                 }
@@ -1150,9 +1150,9 @@ public class GraphCommandService extends GraphLambdaFunction {
             for (var connection : connections) {
                 sortConnections(connection, rootList, regularList, endList);
             }
-            Collections.sort(rootList);
-            Collections.sort(regularList);
-            Collections.sort(endList);
+            rootList.sort(Comparator.naturalOrder());
+            regularList.sort(Comparator.naturalOrder());
+            endList.sort(Comparator.naturalOrder());
             for (var connection : rootList) {
                 sb.append(connection).append("\n");
             }
@@ -1221,7 +1221,7 @@ public class GraphCommandService extends GraphLambdaFunction {
         var sb = new StringBuilder();
         var map = util.getFlatMap(properties);
         var items = new ArrayList<>(map.keySet());
-        Collections.sort(items);
+        items.sort(Comparator.naturalOrder());
         // zero fill index keys to 3 digits to guarantee correct sorting order, thus [1] = [001]
         var nMap = new HashMap<String, Object>();
         for (var key : items) {
@@ -1229,7 +1229,7 @@ public class GraphCommandService extends GraphLambdaFunction {
             nMap.put(fixedSizeIndexKey, map.get(key));
         }
         var nItems = new ArrayList<>(nMap.keySet());
-        Collections.sort(nItems);
+        nItems.sort(Comparator.naturalOrder());
         for (var key : nItems) {
             var value = nMap.get(key);
             var lines = util.split(String.valueOf(value), "\n");

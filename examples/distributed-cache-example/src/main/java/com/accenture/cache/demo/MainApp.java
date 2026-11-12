@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  *       {@code /api/graph/{graph_id}} serves every graph deployed in the app.</li>
  * </ul>
  *
- * A profile POSTed through one layer is readable through the other two - the cache key is the profile id and
+ * A profile POSTed through one layer is readable through the other two. The cache key is the profile id and
  * the value is the profile Map packed as plain MsgPack (one wire format across all layers, and across the
  * Rust port). Run a standalone Redis first (helpers/redis-standalone); see README.md.
  */

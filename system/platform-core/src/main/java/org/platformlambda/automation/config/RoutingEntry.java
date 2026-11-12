@@ -355,7 +355,7 @@ public class RoutingEntry {
     }
 
     private void printRestEntryStats(List<String> exact) {
-        Collections.sort(exact);
+        exact.sort(Comparator.naturalOrder());
         if (!exact.isEmpty()) {
             var message = new HashMap<String, Object>();
             message.put("match", "exact");
@@ -375,7 +375,7 @@ public class RoutingEntry {
                 }
             }
         }
-        Collections.sort(urlPaths);
+        urlPaths.sort(Comparator.naturalOrder());
         if (!urlPaths.isEmpty()) {
             var message = new HashMap<String, Object>();
             message.put("match", "parameters");
@@ -464,7 +464,7 @@ public class RoutingEntry {
         int n = 0;
         MultiLevelMap map = new MultiLevelMap(config.getMap());
         List<String> keys = new ArrayList<>(endpoints.keySet());
-        Collections.sort(keys);
+        keys.sort(Comparator.naturalOrder());
         for (String k : keys) {
             map.setElement(REST + "[" + n + "]", endpoints.get(k));
             n++;
@@ -562,7 +562,7 @@ public class RoutingEntry {
     private void validateMethods(String url, List<String> methods, ConfigReader config, RouteInfo info, int i, boolean exact) {
         if (validMethods(methods)) {
             List<String> allMethods = new ArrayList<>(new HashSet<>(methods));
-            Collections.sort(allMethods);
+            allMethods.sort(Comparator.naturalOrder());
             info.methods = allMethods;
             if (exact) {
                 exactRoutes.put(url, true);

@@ -24,6 +24,15 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    the long-lived MongoDB client is a field of its holder rather than a local variable, so it reads as the
    application's resource that `onShutdown` closes, not one a try-with-resources should. **Upgrade note:** none - an application that read
    `SchedulerDatabase.JOB_STATE` or `ENVIRONMENT` from the example reads the `_COLLECTION` names.
+2. **A local IDE scan of the reactor: code smells closed; no behaviour change apart from one log line.** Each
+   `Collections.sort(list)` is `list.sort(Comparator.naturalOrder())`, the same order. The tests use `assertNotNull`
+   instead of the `assert` statement, which runs only when the JVM enables assertions, so `WorkerHandlerTest` no longer
+   depends on `-ea`. `AgentLoop` takes its two refusals first and then builds one waiting-or-running result, and says
+   why a waiting call always has its catalog row. `RedisBackendFactoryTest` no longer leaves a `try` block empty. The
+   distributed-cache example drops `throws IOException` clauses its code cannot reach, and comments and javadoc are
+   reworded, with American spellings. `PubSub.resumeSubscription` now logs "Unable to resume topic" where it said
+   "suspend". The Playground example and the starter-graph template document `playground.panel.name` as a commented-out
+   line. **Upgrade note:** none.
 
 ### Documentation
 

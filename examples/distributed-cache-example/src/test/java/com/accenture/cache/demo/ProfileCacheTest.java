@@ -139,7 +139,7 @@ class ProfileCacheTest extends TestBase {
         save.put("id", "frank");
         save.put("profile", profile("Frank", "frank@example.com"));
         assertEquals(200, http("POST", "/api/graph/profile-cache", save).getStatus());
-        // an unrecognised action is rejected, and the profile must survive it
+        // an unrecognized action is rejected, and the profile must survive it
         Map<String, Object> bogus = new HashMap<>();
         bogus.put("action", "purge");
         bogus.put("id", "frank");

@@ -51,7 +51,7 @@ public class EventBlocks {
 
     public byte[] toBytes() {
         List<Integer> indexes = new ArrayList<>(buffer.keySet());
-        Collections.sort(indexes);
+        indexes.sort(Comparator.naturalOrder());
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             for (Integer i : indexes) {

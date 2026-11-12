@@ -81,7 +81,7 @@ class VirtualThreadPinningTest extends RedisTestBase {
 
             // Warm-up: trigger one-time JVM linkage (invokedynamic string-concat call sites, class
             // loading) and Lettuce channel setup BEFORE measuring, so the recorded run reflects
-            // steady-state behaviour rather than cold-start VM-frame pins.
+            // steady-state behavior rather than cold-start VM-frame pins.
             runBlockingRedisWorkloadOnVirtualThreads(store);
 
             List<String> lettucePins = new CopyOnWriteArrayList<>();

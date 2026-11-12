@@ -246,7 +246,7 @@ class EventHttpTest extends TestBase {
                 "http://127.0.0.1:"+port+"/api/event", true);
         response.onSuccess(bench::add);
         EventEnvelope result = bench.poll(timeout, TimeUnit.MILLISECONDS);
-        assert result != null;
+        assertNotNull(result);
         assertEquals(404, result.getStatus());
         assertEquals("Route some.dummy.route not found", result.getError());
     }
@@ -268,7 +268,7 @@ class EventHttpTest extends TestBase {
                 "http://127.0.0.1:"+port+"/api/event", true);
         response.onSuccess(bench::add);
         EventEnvelope result = bench.poll(5, TimeUnit.SECONDS);
-        assert result != null;
+        assertNotNull(result);
         assertEquals(403, result.getStatus());
         assertEquals(demoFunction+" is private", result.getError());
     }
@@ -288,7 +288,7 @@ class EventHttpTest extends TestBase {
         CompletableFuture<EventEnvelope> future = po.eRequest(event, timeout, securityHeaders,
                 "http://127.0.0.1:"+port+"/api/event", true);
         EventEnvelope result = future.get();
-        assert result != null;
+        assertNotNull(result);
         assertEquals(403, result.getStatus());
         assertEquals(demoFunction+" is private", result.getError());
     }
@@ -354,7 +354,7 @@ class EventHttpTest extends TestBase {
         // Regression: the HTTP client's wire-level read timeout must outlive the
         // request TTL. A peer that spends its whole TTL and replies with its own
         // in-band 408 AT the deadline (~ttl + a few ms) was previously killed by a
-        // ReadTimeoutException at floor(ttl/1000) seconds - a misplaced parenthesis
+        // ReadTimeoutException at floor(ttl/1000) seconds. A misplaced parenthesis
         // in AsyncHttpRequest.getTimeoutSeconds() (max(1, ms)/1000 instead of
         // max(1, ms/1000) with ceiling), surfacing as status=500 with a null body.
         final BlockingQueue<EventEnvelope> bench = new ArrayBlockingQueue<>(1);

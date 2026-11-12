@@ -33,10 +33,13 @@ import com.accenture.util.RangeNotation;
  * data mapping leaves the target unset. A null range answers null, never the default: the band a lookup did not
  * choose, read back through a dynamic key, has no bounds, while the default belongs to an open end.
  * <p>
- * A malformed range (a quoted bound not closed, followed by text, or holding its own quote character), a band
- * given as a list, a range mixing kinds (a number and text, or quoted and unquoted text), and an empty range
- * (its lower bound not below its upper bound) are refused by name. This is exactly how 'rangeLookup' refuses
- * such a band in a table.
+ * Each of these is refused by name, exactly as 'rangeLookup' refuses such a band in a table:
+ * <ul>
+ *   <li>a malformed range: a quoted bound not closed, followed by text, or holding its own quote character</li>
+ *   <li>a band given as a list</li>
+ *   <li>a range mixing kinds: a number and text, or quoted and unquoted text</li>
+ *   <li>an empty range: its lower bound not below its upper bound</li>
+ * </ul>
  */
 @SimplePlugin
 public class SimpleMinRange implements PluginFunction {

@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutionException;
  * This is what the PgRequest helper does underneath: a PgQueryStatement answers a list of rows (each a map
  * of column name to value), a PgUpdateStatement answers {"row_updated": n}, and a PgTransactionStatement
  * answers {"updated": [n1, n2, ...]} after running its statements in one transaction. Use this form when
- * a function wants the asynchronous flavours of the PostOffice (asyncRequest, a future, parallel requests
+ * a function wants the asynchronous flavors of the PostOffice (asyncRequest, a future, parallel requests
  * to several routes) instead of the helper's blocking convenience.
  * <ul>
  *     <li>GET /api/demo/orders/{profile_id}/summary - a PgQueryStatement with aggregates</li>

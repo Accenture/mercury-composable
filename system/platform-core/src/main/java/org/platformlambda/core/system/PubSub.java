@@ -166,7 +166,7 @@ public class PubSub {
                         subscribe(topic, partition, details.listener, details.parameters);
                     }
                 } catch (Exception e) {
-                    log.error("Unable to suspend topic {} - {}", subscriber, e.getMessage());
+                    log.error("Unable to resume topic {} - {}", subscriber, e.getMessage());
                 }
             }
         }

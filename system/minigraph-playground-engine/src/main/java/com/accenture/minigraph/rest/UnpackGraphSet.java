@@ -40,9 +40,14 @@ import java.util.concurrent.TimeoutException;
  * application/octet-stream, and the answer is {"manifest": {...}, "graphs": {"<graph-id>": <model>, ...}} -
  * the manifest as the package holds it, the packager's 'format' and 'format_version' included, and each
  * graph as a file holds it. The Playground's "Graph set packaging" panel inspects a dropped package with it and
- * imports one of its graphs as the draft through POST /api/graph/import/{id}. Bytes that are not a canonical
- * package, and a set that breaks a rule - an entry not named <graph-id>.json, a root name that differs from
- * its graph id, a 'graph_id' that names no graph - are refused with the reason.
+ * imports one of its graphs as the draft through POST /api/graph/import/{id}.
+ * <p>
+ * It refuses each of these with the reason:
+ * <ul>
+ *   <li>bytes that are not a canonical package</li>
+ *   <li>a set that breaks a rule: an entry not named {@code <graph-id>.json}, a root name that differs from its
+ *   graph id, or a 'graph_id' that names no graph</li>
+ * </ul>
  */
 @OptionalService("app.env=dev")
 @PreLoad(route = "unpack.graph.set", instances = 10)

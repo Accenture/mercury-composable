@@ -97,7 +97,7 @@ class RestEndpointTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals(200, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> probe = (Map<String, Object>) response.getBody();
@@ -188,7 +188,7 @@ class RestEndpointTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals(200, response.getStatus());
         Map<String, Object> probe = (Map<String, Object>) response.getBody();
         assertInstanceOf(String.class, probe.get("traceId"));
@@ -210,7 +210,7 @@ class RestEndpointTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         Map<String, Object> probe = (Map<String, Object>) response.getBody();
         assertEquals("shared-0001", probe.get("traceId"));
         assertEquals("shared-0001", probe.get("cid"));
@@ -231,7 +231,7 @@ class RestEndpointTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         Map<String, Object> probe = (Map<String, Object>) response.getBody();
         assertEquals(w3cTraceId, probe.get("traceId"));
         assertEquals(w3cTraceId, probe.get("cid"));
@@ -252,7 +252,7 @@ class RestEndpointTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals(200, response.getStatus());
         Map<String, Object> probe = (Map<String, Object>) response.getBody();
         assertEquals(w3cTraceId, probe.get("traceId"),
@@ -276,7 +276,7 @@ class RestEndpointTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         Map<String, Object> probe = (Map<String, Object>) response.getBody();
         assertEquals(standardTraceId, probe.get("traceId"),
                 "the standard W3C traceparent wins; the custom name is a fallback only");
@@ -297,7 +297,7 @@ class RestEndpointTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         Map<String, Object> probe = (Map<String, Object>) response.getBody();
         assertEquals(w3cTraceId, probe.get("traceId"));
     }
@@ -320,7 +320,7 @@ class RestEndpointTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         Map<String, Object> probe = (Map<String, Object>) response.getBody();
         assertEquals(endpointTraceId, probe.get("traceId"),
                 "the per-endpoint traceparent.header override takes precedence over the global name");
@@ -341,7 +341,7 @@ class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:" + port);
         EventEnvelope response = po.asyncRequest(new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST)
                 .setBody(req), RPC_TIMEOUT).toCompletionStage().toCompletableFuture().get();
-        assert response != null;
+        assertNotNull(response);
         assertEquals(200, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
@@ -369,7 +369,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals(204, response.getStatus());
         // response body is null
         assertNull(response.getBody());
@@ -388,7 +388,7 @@ class RestEndpointTest extends TestBase {
         req.setHeader("X-Correlation-Id", "cid-echo-0101");
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
-        assert response != null;
+        assertNotNull(response);
         assertEquals(200, response.getStatus());
         assertEquals("cid-echo-0101", response.getHeader("x-correlation-id"));
     }
@@ -403,7 +403,7 @@ class RestEndpointTest extends TestBase {
         req.setHeader("accept", "application/json");
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
-        assert response != null;
+        assertNotNull(response);
         assertEquals(200, response.getStatus());
         String cid = response.getHeader("x-correlation-id");
         assertNotNull(cid, "the generated correlation-id must be echoed on the response");
@@ -431,7 +431,7 @@ class RestEndpointTest extends TestBase {
             req.setTimeoutSeconds(TTL_SECONDS);
             EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
             EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
-            assert response != null;
+            assertNotNull(response);
             assertInstanceOf(Map.class, response.getBody());
             // validate custom content type
             assertEquals("application/vnd.my.org-v2.1+json; charset=utf-8", response.getHeader("content-type"));
@@ -465,7 +465,7 @@ class RestEndpointTest extends TestBase {
         req.setUrl("/api/hello/world").setTargetHost("http://127.0.0.1:" + port);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         // AsyncHttpClient forwarded the business correlation-id downstream; the service echoes it back
@@ -494,7 +494,7 @@ class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:" + port);
         EventEnvelope response = po.asyncRequest(new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST)
                 .setBody(req), RPC_TIMEOUT).toCompletionStage().toCompletableFuture().get();
-        assert response != null;
+        assertNotNull(response);
         assertEquals(200, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
@@ -522,7 +522,7 @@ class RestEndpointTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         po.asyncRequest(request, RPC_TIMEOUT).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         // the downstream service received the developer-supplied traceparent unchanged
@@ -605,7 +605,7 @@ class RestEndpointTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+port);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         EventEnvelope response = po.eRequest(request, RPC_TIMEOUT).get();
-        assert response != null;
+        assertNotNull(response);
         assertEquals(404, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> map = (Map<String, Object>) response.getBody();
@@ -630,7 +630,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals(503, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> map = (Map<String, Object>) response.getBody();
@@ -652,7 +652,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals(401, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> map = (Map<String, Object>) response.getBody();
@@ -681,7 +681,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(byte[].class, response.getBody());
         assertArrayEquals(b, (byte[]) response.getBody());
     }
@@ -703,7 +703,7 @@ class RestEndpointTest extends TestBase {
         AsyncHttpRequest req = getHttpPutRequest(publisher, ttl);
         EventEnvelope request = new EventEnvelope().setTo(AsyncHttpClient.ASYNC_HTTP_REQUEST).setBody(req);
         EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(byte[].class, response.getBody());
         assertArrayEquals(b, (byte[]) response.getBody());
         // the client buffers the stream in a temporary file, deleted once the exchange has ended
@@ -756,7 +756,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(byte[].class, response.getBody());
         assertArrayEquals(b, (byte[]) response.getBody());
     }
@@ -788,7 +788,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertNotNull(response.getHeader("x-stream-id"));
         String streamId = response.getHeader("x-stream-id");
         long ttl = util.str2long(response.getHeader("x-ttl"));
@@ -826,7 +826,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertNotNull(response.getHeader("x-stream-id"));
         String streamId = response.getHeader("x-stream-id");
         ByteArrayOutputStream result = new ByteArrayOutputStream();
@@ -871,7 +871,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench1::add);
         EventEnvelope response = bench1.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertNotNull(response.getHeader("x-stream-id"));
         String streams = response.getHeader("x-stream-id");
         assertTrue(streams.startsWith("["));
@@ -943,7 +943,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.content-type"));
@@ -979,7 +979,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/xml", map.getElement("headers.content-type"));
@@ -1011,7 +1011,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         // when x-raw-xml header is true, the response is rendered as a string
         assertInstanceOf(String.class, response.getBody());
         Map<String, Object> payload = xml.parse((String) response.getBody());
@@ -1048,7 +1048,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.content-type"));
@@ -1083,7 +1083,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(List.class, response.getBody());
         List<Map<String, Object>> list = (List<Map<String, Object>>) response.getBody();
         assertEquals(1, list.size());
@@ -1121,7 +1121,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/xml", map.getElement("result.headers.content-type"));
@@ -1152,7 +1152,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.accept"));
@@ -1175,7 +1175,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         // HTTP head response may include custom headers and content-length
         assertEquals("HEAD request received", response.getHeader("X-Response"));
         assertEquals("100", response.getHeader("Content-Length"));
@@ -1224,7 +1224,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         Map<String, String> headers = response.getHeaders();
         // HTTP head response may include custom headers and content-length
         assertEquals("HEAD request received", headers.get("X-Response"));
@@ -1253,7 +1253,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/xml", map.getElement("headers.content-type"));
@@ -1288,7 +1288,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("application/json", map.getElement("headers.content-type"));
@@ -1317,7 +1317,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("text/html", response.getHeader("Content-Type"));
         assertInstanceOf(String.class, response.getBody());
         String html = (String) response.getBody();
@@ -1345,7 +1345,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("text/html", response.getHeader("Content-Type"));
         assertInstanceOf(String.class, response.getBody());
         String html = (String) response.getBody();
@@ -1373,7 +1373,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("application/json", response.getHeader("Content-Type"));
         assertEquals(404, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
@@ -1391,7 +1391,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("application/json", response.getHeader("Content-Type"));
         assertEquals(404, response.getStatus());
         assertInstanceOf(Map.class, response.getBody());
@@ -1411,7 +1411,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("text/css", response.getHeader("Content-Type"));
         assertInstanceOf(String.class, response.getBody());
         String html = (String) response.getBody();
@@ -1437,7 +1437,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("text/javascript", response.getHeader("Content-Type"));
         assertInstanceOf(String.class, response.getBody());
         String html = (String) response.getBody();
@@ -1461,7 +1461,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("application/xml", response.getHeader("Content-Type"));
         assertInstanceOf(String.class, response.getBody());
         String html = (String) response.getBody();
@@ -1483,7 +1483,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("text/plain", response.getHeader("Content-Type"));
         assertInstanceOf(String.class, response.getBody());
         String text = (String) response.getBody();
@@ -1508,7 +1508,7 @@ class RestEndpointTest extends TestBase {
         Future<EventEnvelope> res = po.asyncRequest(request, RPC_TIMEOUT);
         res.onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("application/json", response.getHeader("Content-Type"));
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> data = (Map<String, Object>) response.getBody();

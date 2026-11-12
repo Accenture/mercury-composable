@@ -39,7 +39,7 @@ class ExceptionTransportTest extends TestBase {
         EventEnvelope request = new EventEnvelope().setTo(ROUTE).setBody("demo");
         po.asyncRequest(request, 5000).onSuccess(bench::add);
         EventEnvelope response = bench.poll(10, TimeUnit.SECONDS);
-        assert response != null;
+        assertNotNull(response);
         assertEquals(400, response.getStatus());
         assertEquals(DEMO, response.getError());
 

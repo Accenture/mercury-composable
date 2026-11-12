@@ -119,7 +119,7 @@ final class GroupProtocolResolver {
      * {@code KafkaFlowAdapter} (an ordinary application thread) and safe from {@code kafka.health}
      * only because the health probe pins the module's loader around the whole probe, template
      * resolution included. Keep it that way: see {@code KafkaHealthCheck.withModuleClassLoader} for
-     * what a pooled kernel thread's loader does here, and why it cannot be undone afterwards.</p>
+     * what a pooled kernel thread's loader does here, and why it cannot be undone afterward.</p>
      */
     private static String probe(Properties template, String bootstrap) {
         Properties adminProps = new Properties();

@@ -127,8 +127,7 @@ class WorkerHandlerTest extends TestBase {
         long timeout = 5000;
         String demoFunction = "test.v1.error";
         TypedLambdaFunction<Object, Object> f = (headers, input, instance) -> {
-            assert false;
-            return true;
+            throw new AssertionError();
         };
         Platform platform = Platform.getInstance();
         platform.registerPrivate(demoFunction, f, 1);

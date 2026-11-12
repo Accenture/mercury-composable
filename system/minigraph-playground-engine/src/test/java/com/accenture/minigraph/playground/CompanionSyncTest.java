@@ -745,7 +745,7 @@ class CompanionSyncTest {
      * The dry-run twin of the field regression that surfaced on tutorial-14: a suspended dry-run
      * workflow must RESUME when the graph is re-instantiated with the same business correlation
      * ID. The store contract scopes records by graph + cid, so the dry-run instance must present
-     * an identity that is STABLE across instantiations - here the root node's name - because a
+     * an identity that is STABLE across instantiation - the root node's name. It is because a
      * per-instantiation handle writes the suspension under a key no later instantiation can ever
      * read, and every attempt to resume silently restarts fresh. The nameless twin is
      * {@link #unnamedDraftResumesAcrossInstantiations()}.

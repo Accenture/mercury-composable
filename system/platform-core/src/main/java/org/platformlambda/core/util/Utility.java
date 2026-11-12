@@ -183,7 +183,7 @@ public class Utility {
                 } else {
                     list.addAll(jars);
                 }
-                Collections.sort(list);
+                list.sort(Comparator.naturalOrder());
                 libs.addAll(list);
                 if (libs.isEmpty()) {
                     libs.add("Are you running the app from classpath?");

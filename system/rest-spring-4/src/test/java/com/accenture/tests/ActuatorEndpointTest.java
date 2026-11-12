@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * Drives the actuator servlets (/info, /health, /env, /livenessprobe), the Spring error handler
  * (content-negotiated 404), and the XML/HTML/Text message converters via content negotiation on
- * {@code /greeting} - covering the servlets, spring.system and serializers packages end to end.
+ * {@code /greeting} - covering the servlets, {@code spring.system} and serializers packages end to end.
  */
 class ActuatorEndpointTest extends TestBase {
 

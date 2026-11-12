@@ -43,7 +43,7 @@ class GreetingTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+springPort);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("Hello, World", map.getElement("content.greeting"));
@@ -61,7 +61,7 @@ class GreetingTest extends TestBase {
         req.setTargetHost("http://127.0.0.1:"+springPort);
         EventEnvelope request = new EventEnvelope().setTo(HTTP_REQUEST).setBody(req);
         EventEnvelope response = po.request(request, RPC_TIMEOUT).get();
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         MultiLevelMap map = new MultiLevelMap((Map<String, Object>) response.getBody());
         assertEquals("Hello, user", map.getElement("content.greeting"));

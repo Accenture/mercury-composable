@@ -120,10 +120,10 @@ class RedisStateStoreTest extends RedisStateTestBase {
         laptop.put("node", "await-laptop-approval");
         assertEquals(200, request(PERSIST, "put", phone).getStatus());
         assertEquals(200, request(PERSIST, "put", laptop).getStatus());
-        // two records, not one - the pre-fix behaviour left exactly one
+        // two records, not one - the pre-fix behavior left exactly one
         assertNotNull(testConnection.sync().get("graph:" + GRAPH_ID + ":" + cid + ":0"));
         assertNotNull(testConnection.sync().get("graph:" + GRAPH_ID + ":" + cid + ":1"));
-        // and each iteration resumes its OWN workflow, not its neighbour's
+        // and each iteration resumes its OWN workflow, not its neighbor's
         var restoredPhone = request(RETRIEVE, "get", Map.of("cid", cid, "graph", GRAPH_ID, "index", "0"));
         assertEquals("await-phone-approval",
                 new MultiLevelMap((Map<String, Object>) restoredPhone.getBody()).getElement("node"));
@@ -160,7 +160,7 @@ class RedisStateStoreTest extends RedisStateTestBase {
     void aChangedIterationCountMissesRatherThanRestoringTheWrongItem() throws TimeoutException {
         // the declared constraint's failure mode, pinned: an item inserted or removed shifts
         // positions, and the shifted iteration simply finds nothing and starts fresh. A miss is
-        // already defined behaviour (model.run=fresh) - what must never happen is a silent hit
+        // already defined behavior (model.run=fresh) - what must never happen is a silent hit
         // on another item's record.
         var cid = Utility.getInstance().getUuid();
         var suspended = sampleEnvelope(cid, 30);
