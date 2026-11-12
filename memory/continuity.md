@@ -782,7 +782,20 @@
   at 4.2.24 before the bump to 4.2.25, the rule its neighbours' tips (4.2.23, 4.2.26, 4.2.28) follow; its message
   says so. No workflow runs on a tag push. **How to apply:** a branch cleanup leaves every `release/v*` branch
   alone, tags or not; other branches whose PR merged, or whose work an earlier PR carried, may go once Eric agrees.
-  <!-- id: release-branches-historical-record | created: 2026-11-12 | last_used: 2026-11-12 | uses: 1 | tier: working | origin: 2026-11-12-131639 -->
+  <!-- id: release-branches-historical-record | created: 2026-11-12 | last_used: 2026-11-12 | uses: 1 | tier: superseded | superseded-by: historical-releases-tags-and-pages | origin: 2026-11-12-131639 -->
+
+- **Releases v4.0.0 to v4.5.0 live as tags and GitHub releases; their `release/v*` branches are gone (Eric,
+  2026-11-12).** Tags began at `v4.6.0`; before it, each release was cut as a `release/v*` branch (149). Each now has
+  an annotated tag `vX.Y.Z` at its branch tip (the tagger date the release commit's) and a GitHub release titled with
+  the tag, its notes the version's CHANGELOG section after a line saying it was published retroactively, not marked
+  latest. GitHub dates a release by its tagged commit, so these sort into history and `v4.12.30` kept the Latest
+  badge; 216 releases and 216 tags. Then Eric had the 149 branches deleted, every tip held by a tag
+  (`release/v4.2.24` pointed at the 4.2.43 release; `v4.2.24` marks `679ce398`, the last commit on `main` at 4.2.24,
+  its message saying so); GitHub keeps only `main` and `gh-pages`. `main`'s CHANGELOG heads 4.2.41's section
+  `4.2.42, 5/17/2025`, so its notes came from the CHANGELOG at its own tag. **How to apply:** find an old release by
+  its tag or release page, never a branch. A release's notes come from its CHANGELOG section, read at its tag when
+  `main`'s heading disagrees; a release published after the fact passes `--latest=false`.
+  <!-- id: historical-releases-tags-and-pages | created: 2026-11-12 | last_used: 2026-11-12 | uses: 1 | tier: working | supersedes: release-branches-historical-record | origin: 2026-11-12-134344 -->
 
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
