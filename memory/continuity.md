@@ -673,7 +673,7 @@
   method call passed as a log argument runs even when the level is off, so it goes into a local first (a getter such
   as `uri.getHosts()` is not flagged). A pre-existing finding counts as new the next
   time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. **Thirteenth round (Eric's
-  IntelliJ scan, 2026-11-12, 75 files):** a long sentence rewritten as `1.` `2.` lines merged two list items, left a
+  IntelliJ scan, 2026-11-12, 77 files, #623 squash `319baf7c`):** a long sentence rewritten as `1.` `2.` lines merged two list items, left a
   stray predicate on the last one and flattened sub-rules into siblings; such a list is a `<ul>`, read item by item
   against the sentence it replaced. The grammar fix also split a package name (`spring.system`), so a package in
   prose is `{@code}`. IntelliJ reports a `try` holding only a comment as empty (Sonar's S108 accepts the comment): a
