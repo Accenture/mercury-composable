@@ -27,8 +27,9 @@ public class ScheduledJob {
     public static final String RESERVED_PREFIX = "_";
     /**
      * The scheduler instance's origin id, added to the parameters the state resolver receives with "expires" and
-     * "start". It is the same for every request the instance makes while it runs, so a resolver that claims the job
-     * can tell its own claim, asked again after a timeout, from a peer's, and the state record names its writer.
+     * "start". It is the same for every request the instance makes while it runs. Therefore, a resolver that claims
+     * the job can tell its own claim, asked again after a timeout, from a peer's, and the state record names its
+     * writer.
      */
     public static final String ORIGIN = "_origin";
 

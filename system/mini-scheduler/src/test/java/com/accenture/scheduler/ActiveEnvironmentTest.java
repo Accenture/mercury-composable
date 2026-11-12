@@ -83,7 +83,7 @@ class ActiveEnvironmentTest {
 
     /**
      * The job executor's two paths: the Quartz trigger's event (no operator) is skipped on a standby
-     * instance and run on an active one; an operator's run is honoured on a standby instance.
+     * instance and run on an active one; an operator's run is honored on a standby instance.
      */
     @Test
     void standbySkipsAScheduledJobAndHonoursAnOperatorRun() throws InterruptedException {

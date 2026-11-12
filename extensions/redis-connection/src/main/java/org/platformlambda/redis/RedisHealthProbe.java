@@ -35,7 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 /**
- * Reusable Redis health-check logic for the platform's {@code /health} endpoint — the shared PING probe
+ * Reusable Redis health check logic for the platform's {@code /health} endpoint — the shared PING probe
  * behind each module's own health route. It is <b>not</b> a {@code @PreLoad} function itself (a foundation
  * function would auto-register in every consumer under {@code web.component.scan=org.platformlambda}); each
  * module supplies a thin {@code @PreLoad} subclass fixing its route and config prefix — {@code soa.redis.health}

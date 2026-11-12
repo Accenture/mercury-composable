@@ -26,8 +26,7 @@ import org.platformlambda.core.system.PostOffice;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AutowireTest extends TestBase {
 
@@ -36,7 +35,7 @@ class AutowireTest extends TestBase {
         var po = new PostOffice("unit.test", "12345", "TEST v1.autowire.test");
         var request = new EventEnvelope().setTo("v1.autowire.test").setBody(Map.of());
         var response = po.request(request, RPC_TIMEOUT).get();
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         assertEquals(Map.of("success", true), response.getBody());
     }

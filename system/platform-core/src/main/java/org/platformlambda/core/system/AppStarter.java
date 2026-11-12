@@ -257,7 +257,7 @@ public class AppStarter {
     private void executeOrderly(Map<String, Class<?>> steps, String[] args, boolean isMain) {
         List<String> list = new ArrayList<>(steps.keySet());
         if (list.size() > 1) {
-            Collections.sort(list);
+            list.sort(Comparator.naturalOrder());
         }
         int n = 0;
         int error = 0;
@@ -426,7 +426,7 @@ public class AppStarter {
 
     private static void overridePreloadInfo(PreLoad svc, PreLoadInfo preLoadInfo, PreLoadMetadata md) {
         md.routes = new ArrayList<>(preLoadInfo.routes);
-        Collections.sort(md.routes);
+        md.routes.sort(Comparator.naturalOrder());
         int updatedInstances = preLoadInfo.instances;
         if (updatedInstances > 0) {
             log.info("Preload [{}] as {}, instances {} to {}",
@@ -692,11 +692,11 @@ public class AppStarter {
         }
         // merge configuration files
         List<String> rList = new ArrayList<>(allRestEntries.keySet());
-        Collections.sort(rList);
+        rList.sort(Comparator.naturalOrder());
         List<String> cList = new ArrayList<>(allCorsEntries.keySet());
-        Collections.sort(cList);
+        cList.sort(Comparator.naturalOrder());
         List<String> hList = new ArrayList<>(allHeaderEntries.keySet());
-        Collections.sort(hList);
+        hList.sort(Comparator.naturalOrder());
         MultiLevelMap mm = new MultiLevelMap();
         for (int i=0; i < rList.size(); i++) {
             mm.setElement(REST_PREFIX+i+"]", allRestEntries.get(rList.get(i)));

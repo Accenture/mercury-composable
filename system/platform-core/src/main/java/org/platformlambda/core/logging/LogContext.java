@@ -37,7 +37,7 @@ import java.util.stream.Stream;
  * key-values. It is created and destroyed in lockstep with the worker's trace bracket and
  * is registered in {@link LogContextManager} keyed by the worker thread id.
  * <p>
- * This deliberately avoids the ThreadLocal / Log4j MDC pattern, which is an anti-pattern for
+ * This deliberately avoids the ThreadLocal / Log4j MDC pattern, which is an antipattern for
  * a virtual-thread runtime.
  */
 public class LogContext {

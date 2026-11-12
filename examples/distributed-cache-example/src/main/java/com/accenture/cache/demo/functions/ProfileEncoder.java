@@ -22,11 +22,10 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.TypedLambdaFunction;
 import org.platformlambda.core.serializers.MsgPack;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
- * Serialise a profile Map into the opaque {@code byte[]} value the cache stores.
+ * Serialize a profile Map into the opaque {@code byte[]} value the cache stores.
  *
  * <p>The profile (a Map of key-values) is packed with {@link MsgPack#packMapOrList(Object)} - the general
  * purpose codec, which adds neither an {@code EventEnvelope} id/header wrapper nor the {@code _T}/{@code _D}
@@ -42,7 +41,7 @@ public class ProfileEncoder implements TypedLambdaFunction<Map<String, Object>, 
     private static final MsgPack msgPack = new MsgPack();
 
     @Override
-    public byte[] handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) throws IOException {
+    public byte[] handleEvent(Map<String, String> headers, Map<String, Object> input, int instance) {
         return msgPack.packMapOrList(input);
     }
 }

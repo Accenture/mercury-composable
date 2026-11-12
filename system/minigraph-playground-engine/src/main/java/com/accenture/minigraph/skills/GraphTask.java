@@ -73,7 +73,7 @@ public class GraphTask extends GraphLambdaFunction {
         }
         // a task route is reachable when registered locally or in the cloud (po.exists),
         // or when declared as a declarative Event-over-HTTP target - the way python/
-        // node.js polyglot functions and remote engine instances join a graph
+        // Node.js polyglot functions and remote engine instances join a graph
         if (!po.exists(route) && po.getEventHttpTarget(route) == null) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " - task '" + route + "' does not exist");
         }

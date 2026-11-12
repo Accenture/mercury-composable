@@ -117,10 +117,10 @@ public class HouseKeeper implements LambdaFunction {
             return false;
         }
         if (a.size() > 1) {
-            Collections.sort(a);
+            a.sort(Comparator.naturalOrder());
         }
         if (b.size() > 1) {
-            Collections.sort(b);
+            b.sort(Comparator.naturalOrder());
         }
         return a.toString().equals(b.toString());
     }

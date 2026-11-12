@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Controller skeleton demo code borrowed from https://github.com/spring-guides/gs-rest-service
+ * Controller skeleton demo code borrowed from github.com/spring-guides/gs-rest-service
  */
 @RestController
 public class GreetingController {

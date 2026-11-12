@@ -101,7 +101,7 @@ public class ProfileCacheL1 implements TypedLambdaFunction<AsyncHttpRequest, Obj
     }
 
     private Object post(PostOffice po, String id, Object profile)
-            throws ExecutionException, InterruptedException, IOException, AppException {
+            throws ExecutionException, InterruptedException, AppException {
         // packMapOrList accepts only a Map or List, so reject anything else as a bad request
         if (!(profile instanceof Map)) {
             throw new AppException(400, "Profile must be a JSON object");

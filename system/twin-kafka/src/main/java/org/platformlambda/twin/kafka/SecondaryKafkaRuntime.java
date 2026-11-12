@@ -78,7 +78,7 @@ public final class SecondaryKafkaRuntime {
      * once. Without it the broker only notices the dead member when its session expires - 45 seconds by default
      * under the KIP-848 consumer protocol - and every partition it held sits unread for that long (observed live
      * 2026-09-22: the Rust port's rdkafka consumers left cleanly while this engine's were fenced by session
-     * expiry). Closing the producer afterwards flushes any buffered records. The twin of
+     * expiry). Closing the producer afterward flushes any buffered records. The twin of
      * {@code KafkaRuntime.shutdown()} on the primary cluster.
      * <p>
      * Idempotent and safe to call when nothing was started; each close is isolated so one failing client

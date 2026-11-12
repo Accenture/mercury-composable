@@ -38,7 +38,7 @@ class AdminEndpointTest extends TestBase {
     @Test
     void infoEndpointTest() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/info", null);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
@@ -54,7 +54,7 @@ class AdminEndpointTest extends TestBase {
         Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/xml");
         EventEnvelope response = httpGet(localHost, "/info", headers);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
@@ -68,7 +68,7 @@ class AdminEndpointTest extends TestBase {
     @Test
     void libEndpointTest() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/info/lib", null);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap multi = new MultiLevelMap(result);
@@ -80,7 +80,7 @@ class AdminEndpointTest extends TestBase {
     @Test
     void routeEndpointTest() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/info/routes", null);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertInstanceOf(Map.class, result.get("routing"));
@@ -102,7 +102,7 @@ class AdminEndpointTest extends TestBase {
     @Test
     void healthEndpointTest() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/health", null);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         MultiLevelMap map = new MultiLevelMap(result);
@@ -112,7 +112,7 @@ class AdminEndpointTest extends TestBase {
         assertEquals("mock.connector", map.getElement("dependency[0].service"));
         // livenessProbe is linked to health check
         response = httpGet(localHost, "/livenessprobe", null);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("OK", response.getBody());
     }
 
@@ -121,7 +121,7 @@ class AdminEndpointTest extends TestBase {
     void simulateHealthCheckFailureTest() throws InterruptedException {
         MockCloud.setSimulateException(true);
         EventEnvelope response = httpGet(localHost, "/health", null);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         // failed health check is returned as HTTP-400
@@ -134,14 +134,14 @@ class AdminEndpointTest extends TestBase {
         assertEquals("mock.connector", map.getElement("dependency[0].service"));
         // livenessProbe is linked to health check
         response = httpGet(localHost, "/livenessprobe", null);
-        assert response != null;
+        assertNotNull(response);
         assertEquals(400, response.getStatus());
         assertEquals("Unhealthy. Please check '/health' endpoint.", response.getBody());
         MockCloud.setSimulateException(false);
         // try it again
         httpGet(localHost, "/health", null);
         response = httpGet(localHost, "/livenessprobe", null);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("OK", response.getBody());
     }
 
@@ -150,7 +150,7 @@ class AdminEndpointTest extends TestBase {
     void envEndpointTest() throws InterruptedException {
         Utility util = Utility.getInstance();
         EventEnvelope response = httpGet(localHost, "/env", null);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         // normalize the map for easy retrieval using MultiLevelMap
         Map<String, Object> result = util.getFlatMap((Map<String, Object>) response.getBody());
@@ -168,7 +168,7 @@ class AdminEndpointTest extends TestBase {
     @Test
     void getIndexPage() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/index.html", null);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("text/html", response.getHeader("content-type"));
         assertNull(response.getHeader("ETag"));
         assertInstanceOf(String.class, response.getBody());
@@ -182,7 +182,7 @@ class AdminEndpointTest extends TestBase {
     void getCssPage() throws InterruptedException {
         // test path traversal protection that "../" and "..\" will be removed
         EventEnvelope response = httpGet(localHost, "/../..\\sample.css", null);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("text/css", response.getHeader("content-type"));
         assertNotNull(response.getHeader("ETag"));
         assertInstanceOf(String.class, response.getBody());
@@ -195,7 +195,7 @@ class AdminEndpointTest extends TestBase {
     @Test
     void getTextPage() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/sample.txt", null);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("text/plain", response.getHeader("content-type"));
         assertInstanceOf(String.class, response.getBody());
         String text = (String) response.getBody();
@@ -207,7 +207,7 @@ class AdminEndpointTest extends TestBase {
     @Test
     void getJsPage() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/sample.js", null);
-        assert response != null;
+        assertNotNull(response);
         assertEquals("text/javascript", response.getHeader("content-type"));
         assertInstanceOf(String.class, response.getBody());
         String text = (String) response.getBody();
@@ -220,7 +220,7 @@ class AdminEndpointTest extends TestBase {
     @Test
     void pageNotExists() throws InterruptedException {
         EventEnvelope response = httpGet(localHost, "/no_such_page", null);
-        assert response != null;
+        assertNotNull(response);
         assertInstanceOf(Map.class, response.getBody());
         Map<String, Object> result = (Map<String, Object>) response.getBody();
         assertEquals(404, response.getStatus());

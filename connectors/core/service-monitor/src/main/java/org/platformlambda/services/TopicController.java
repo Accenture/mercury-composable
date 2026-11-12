@@ -114,7 +114,7 @@ public class TopicController implements LambdaFunction {
     private static void indexAllTopics() {
         if (allTopics == null) {
             allTopics = new ArrayList<>(topicStore.keySet());
-            Collections.sort(allTopics);
+            allTopics.sort(Comparator.naturalOrder());
         }
     }
 

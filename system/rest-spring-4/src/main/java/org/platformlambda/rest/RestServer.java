@@ -26,7 +26,7 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.springframework.context.annotation.ComponentScan;
 
 /**
- * If you create your own spring boot start up application, please keep the ComponentScan configuration unchanged
+ * If you create your own Spring Boot start up application, please keep the ComponentScan configuration unchanged
  * because the AppLoader is packaged under the org.platformlambda package path.
  * <p>
  * The AppLoader will invoke user written MainApplication classes accordingly.

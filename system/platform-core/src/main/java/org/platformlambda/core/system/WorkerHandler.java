@@ -444,7 +444,7 @@ public class WorkerHandler {
                     if (t1 > 0) {
                         platform.getVertx().cancelTimer(t1);
                     }
-                    // a cancelled Mono (timeout) delivers nothing; any other signal has resumed already
+                    // a canceled Mono (timeout) delivers nothing; any other signal has resumed already
                     InvocationObservers.abandon(continuation, "Async response " + done);
                     // finally, send service acknowledgement
                     platform.getEventSystem().send(def.getRoute(), READY + route);

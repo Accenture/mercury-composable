@@ -49,7 +49,7 @@ final class NumericStrings {
     /**
      * Compare two operands numerically when the rule applies: at least one is a string, and both are
      * numbers or canonical numbers. Number against number is left to the evaluator's own paths, and a string
-     * that is not a canonical number, or a boolean, keeps today's behaviour.
+     * that is not a canonical number, or a boolean, keeps today's behavior.
      *
      * @param left the left operand
      * @param right the right operand

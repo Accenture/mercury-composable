@@ -140,7 +140,7 @@ public class MiniGraph {
             nodeMap.put(node.getAlias(), nEntry);
         }
         var nl = new ArrayList<>(nodeMap.keySet());
-        Collections.sort(nl);
+        nl.sort(Comparator.naturalOrder());
         nodeList.addAll(nl.stream().map(nodeMap::get).toList());
         Map<String, Map<String, Object>> connectionMap = new HashMap<>();
         for (var conn: allConnections) {
@@ -157,12 +157,12 @@ public class MiniGraph {
                 relationMap.put(relation.getType(), inner);
             }
             var rl = new ArrayList<>(relationMap.keySet());
-            Collections.sort(rl);
+            rl.sort(Comparator.naturalOrder());
             relationList.addAll(rl.stream().map(relationMap::get).toList());
             connectionMap.put(getRelationshipPair(conn.getSource().getAlias(), conn.getTarget().getAlias()), cEntry);
         }
         var cl = new ArrayList<>(connectionMap.keySet());
-        Collections.sort(cl);
+        cl.sort(Comparator.naturalOrder());
         connectionList.addAll(cl.stream().map(connectionMap::get).toList());
         return result;
     }
@@ -318,8 +318,8 @@ public class MiniGraph {
         }
         var k1 = new ArrayList<>(m1.keySet());
         var k2 = new ArrayList<>(m2.keySet());
-        Collections.sort(k1);
-        Collections.sort(k2);
+        k1.sort(Comparator.naturalOrder());
+        k2.sort(Comparator.naturalOrder());
         if (!k1.equals(k2)) {
             return true;
         }
@@ -781,7 +781,6 @@ public class MiniGraph {
         if (node == null) {
             throw new IllegalArgumentException("node does not exist");
         }
-        List<List<String>> result = new ArrayList<>();
         Map<Integer, List<String>> levelList = new HashMap<>();
         Map<String, Integer> distances = new HashMap<>();
         Deque<String> queue = new ArrayDeque<>();
@@ -809,9 +808,8 @@ public class MiniGraph {
             levelList.put(level, list);
         }
         var levels = new ArrayList<>(levelList.keySet());
-        Collections.sort(levels);
+        levels.sort(Comparator.naturalOrder());
         // skip orphans
-        result.addAll(levels.stream().filter(n -> n != -1).map(levelList::get).toList());
-        return result;
+        return new ArrayList<>(levels.stream().filter(n -> n != -1).map(levelList::get).toList());
     }
 }

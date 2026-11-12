@@ -57,7 +57,7 @@ class ResolverRetryTest {
     static void setup() {
         AppStarter.main(new String[0]);
         TypedLambdaFunction<Map<String, Object>, Boolean> resolver = (headers, input, instance) -> {
-            var event = new HashMap<>(input == null ? Map.of() : input);
+            var event = new HashMap<String, Object>(input == null ? Map.of() : input);
             event.put("type", headers.get("type"));
             resolverEvents.add(event);
             if ("expires".equals(headers.get("type")) && expiresCalls.incrementAndGet() == 1) {

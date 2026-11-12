@@ -223,7 +223,7 @@ public final class ReturnChannel {
                 writer.first(200, TEXT_EVENT_STREAM);
                 streaming = true;
             }
-            writer.write(String.valueOf(event.get(TYPE)), event);
+            writer.write((String) event.get(TYPE), event);
         } else {
             send(event);
         }
@@ -273,7 +273,7 @@ public final class ReturnChannel {
      */
     private void endStream(Map<String, Object> terminal) {
         if (streaming) {
-            writer.write(String.valueOf(terminal.get(TYPE)), terminal);
+            writer.write((String) terminal.get(TYPE), terminal);
             writer.close();
         }
     }

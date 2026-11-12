@@ -69,7 +69,7 @@ public class SimpleXmlWriter {
         List<String> keys = new ArrayList<>(map.keySet());
         // Arrange the map element in ascending order
         if (keys.size() > 1) {
-            Collections.sort(keys);
+            keys.sort(Comparator.naturalOrder());
         }
         for (String k: keys) {
             Object o = map.get(k);

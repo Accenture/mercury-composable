@@ -338,7 +338,7 @@ public class ConfigReader implements ConfigBase {
                 Map<String, Object> map = new HashMap<>();
                 p.forEach((k, v) -> map.put(String.valueOf(k), v));
                 List<String> keys = new ArrayList<>(map.keySet());
-                Collections.sort(keys);
+                keys.sort(Comparator.naturalOrder());
                 keys.forEach(k -> config.setElement(k, map.get(k)));
             }
         } catch (IOException e) {
@@ -419,7 +419,7 @@ public class ConfigReader implements ConfigBase {
             Map<String, Object> flat = Utility.getInstance().getFlatMap(config.getMap());
             MultiLevelMap dataset = new MultiLevelMap();
             List<String> keys = new ArrayList<>(flat.keySet());
-            Collections.sort(keys);
+            keys.sort(Comparator.naturalOrder());
             keys.forEach(k -> dataset.setElement(k, flat.get(k)));
             config.reload(dataset.getMap());
             // check if there are references

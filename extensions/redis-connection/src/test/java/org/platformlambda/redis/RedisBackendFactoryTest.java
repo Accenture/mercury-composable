@@ -96,10 +96,19 @@ class RedisBackendFactoryTest extends RedisTestBase {
         // boolean routes to cluster. (A real cluster's success path is validated in the field; no embedded
         // cluster fixture exists.)
         RedisConfig clusterConfig = config(false, true);
-        assertThrows(RuntimeException.class, () -> {
-            try (RedisBackend<String> ignored = RedisBackendFactory.create(clusterConfig)) {
-                // create() throws before returning; a returned backend would be closed by try-with-resources
-            }
-        });
+        assertThrows(RuntimeException.class, () -> connect(clusterConfig));
+    }
+
+    /**
+     * Build a backend, read its topology and close it. The cluster branch throws before create() returns;
+     * a backend that is returned is closed by try-with-resources.
+     *
+     * @param config the Redis configuration
+     * @return true when the backend is a cluster
+     */
+    private static boolean connect(RedisConfig config) {
+        try (RedisBackend<String> backend = RedisBackendFactory.create(config)) {
+            return backend.cluster();
+        }
     }
 }

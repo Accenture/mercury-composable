@@ -46,7 +46,7 @@ import java.util.Map;
  * production use.<p>
  *
  * A real deployment verifies the bearer token against an OAuth 2.0 security
- * authority - an I/O-bound call - hence the higher instance count. The
+ * authority - an I/O bound call - hence the higher instance count. The
  * default is a rule of thumb; the envInstances key lets an operations team
  * tune it in QA and Perf environments before promoting to Production.
  */

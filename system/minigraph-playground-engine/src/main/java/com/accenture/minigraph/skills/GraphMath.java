@@ -250,7 +250,7 @@ public class GraphMath extends GraphLambdaFunction {
     /**
      * CONDITION: var -> expression - the explicit boolean statement. The expression is evaluated as a
      * boolean whatever operators it carries (a bare {model.flag} included) and the result is stored as a
-     * Boolean at {node}.result.{var}, so a decision value is declared as one instead of being inferred
+     * Boolean at {node}.result.{var}. Therefore, a decision value is declared as one instead of being inferred
      * from the operators of a COMPUTE.
      *
      * @param command the statement after the tag

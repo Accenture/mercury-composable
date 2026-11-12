@@ -33,9 +33,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>This began life as a PARITY gate running every assertion against both the Berkeley DB store and the
  * then-new file store, to prove the replacement behaved identically. The Berkeley DB store was retired in
  * v4.12.10 once the file store had run clean in the field, so there is no second implementation to compare
- * against - but the assertions are exactly the behaviour the retired store had proven, so they are kept as
+ * against - but the assertions are exactly the behavior the retired store had proven, so they are kept as
  * the standing contract. {@link FileElasticStoreTest} covers file-specific internals (segment rolling,
- * reclamation, stale directories); this covers the behaviour any store must have.
+ * reclamation, stale directories); this covers the behavior any store must have.
  * (In-package so it can reach the package-private store directly, independent of config.)</p>
  */
 class ElasticStoreContractTest {

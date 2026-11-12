@@ -248,7 +248,7 @@ public class ActuatorServices implements TypedLambdaFunction<EventEnvelope, Obje
         result.put(ROUTING, getLocalRouting());
         var journaledRoutes = po.getJournaledRoutes();
         if (journaledRoutes.size() > 1) {
-            Collections.sort(journaledRoutes);
+            journaledRoutes.sort(Comparator.naturalOrder());
         }
         if (!journaledRoutes.isEmpty()) {
             result.put(JOURNAL, journaledRoutes);

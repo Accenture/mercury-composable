@@ -138,7 +138,7 @@ class ConnectorTest extends TestBase {
                 .setHeader("origin", origin).setHeader("route", "hello.world");
         po.asyncRequest(req, 5000).onSuccess(bench::add);
         EventEnvelope queryResult = bench.poll(10, TimeUnit.SECONDS);
-        assert queryResult != null;
+        assertNotNull(queryResult);
         assertInstanceOf(List.class, queryResult.getBody());
         List<String> list = (List<String>) queryResult.getBody();
         assertFalse(list.isEmpty());
@@ -159,7 +159,7 @@ class ConnectorTest extends TestBase {
                 .setHeader("route", "*");
         po.asyncRequest(req, 5000).onSuccess(bench::add);
         queryResult = bench.poll(10, TimeUnit.SECONDS);
-        assert queryResult != null;
+        assertNotNull(queryResult);
         assertEquals(true, queryResult.getBody());
         po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv("type", "leave"), new Kv("origin", origin));
     }

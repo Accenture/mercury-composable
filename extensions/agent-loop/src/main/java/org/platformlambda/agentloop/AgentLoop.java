@@ -546,21 +546,19 @@ public class AgentLoop {
                     "invalid input for '" + name + "': " + ToolSchema.report(violations));
         }
         var mode = run.settings.mode();
-        if (row.ask()) {
-            // a question for a person waits in every mode that has a person to ask
-            return LoopSettings.UNATTENDED.equals(mode) ?
-                    new Planned(id, name, row, input, Outcome.ERROR, REFUSED,
-                            "'" + name + "' asks a person, and this run has nobody to ask") :
-                    new Planned(id, name, row, input, Outcome.WAIT, null, null);
+        boolean unattended = LoopSettings.UNATTENDED.equals(mode);
+        if (row.ask() && unattended) {
+            return new Planned(id, name, row, input, Outcome.ERROR, REFUSED,
+                    "'" + name + "' asks a person, and this run has nobody to ask");
         }
-        if (row.write() && LoopSettings.UNATTENDED.equals(mode)) {
+        if (row.write() && unattended) {
             return new Planned(id, name, row, input, Outcome.ERROR, REFUSED,
                     "'" + name + "' is a write, and this run is unattended");
         }
-        if (LoopSettings.MANUAL.equals(mode) || (row.write() && LoopSettings.WRITE.equals(mode))) {
-            return new Planned(id, name, row, input, Outcome.WAIT, null, null);
-        }
-        return new Planned(id, name, row, input, Outcome.RUN, null, null);
+        // a question for a person waits in every mode that has a person to ask
+        boolean waits = row.ask() || LoopSettings.MANUAL.equals(mode) ||
+                (row.write() && LoopSettings.WRITE.equals(mode));
+        return new Planned(id, name, row, input, waits ? Outcome.WAIT : Outcome.RUN, null, null);
     }
 
     private static Map<String, Object> approval(Run run, List<Planned> planned) {
@@ -651,7 +649,8 @@ public class AgentLoop {
         if (!sameRow || wait != (fresh.outcome() == Outcome.WAIT)) {
             throw mismatch(i, id);
         }
-        if (!wait) {
+        // an unknown tool is answered with an error and never waits, so a waiting call has its row
+        if (!wait || row == null) {
             return fresh;
         }
         var decision = decisions.get(id);

@@ -242,7 +242,7 @@ public class SimpleXmlParser {
     }
 
     private boolean cannotIgnore(String attributeName) {
-        return !drop.isEmpty() ? !drop.contains(attributeName) : !SimpleXmlParser.defaultDrop.contains(attributeName);
+        return drop.isEmpty() ? !SimpleXmlParser.defaultDrop.contains(attributeName) : !drop.contains(attributeName);
     }
 
     private void setFeature(DocumentBuilderFactory dbf, String feature, boolean enable) {

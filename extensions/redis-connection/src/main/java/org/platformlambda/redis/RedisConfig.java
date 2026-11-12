@@ -39,7 +39,7 @@ import java.util.List;
  *   <li>{@code from(config, RedisConfig.SOA_PREFIX)} — sync-over-async's {@code soa.redis.*} namespace;</li>
  *   <li>{@code from(config, RedisConfig.BASE_PREFIX)} — the distributed cache's plain {@code redis.*} namespace.</li>
  * </ul>
- * {@link #from(ConfigBase)} defaults to {@link #SOA_PREFIX} (unchanged behaviour for existing callers).
+ * {@link #from(ConfigBase)} defaults to {@link #SOA_PREFIX} (unchanged behavior for existing callers).
  * <b>Each key falls back to the un-prefixed base {@code redis.*} form</b> when the prefixed one is absent
  * (the config reader's nested-default, {@code get(prefixKey, get(redisKey, default))}), so a pre-existing
  * {@code redis.*} deployment keeps working with no migration, and a deployment can run one Redis for both

@@ -44,7 +44,7 @@ import java.util.Map;
  *    which catches missing/duplicate alias, invalid types, and dangling connections early.
  * 2. Syntax conversion - the deprecated "simple type matching" syntax (model.someKey:type) found in
  *    "mapping", "input", "output" and "for_each" node properties is converted to the equivalent
- *    "simple plugin" syntax (f:type(model.someKey)) once, instead of being resolved on every node
+ *    "simple plugin" syntax (f:type(model.someKey)) once. They are not resolved on every node
  *    execution of every request. A mapping/output/for_each entry without "-&gt;" rejects the
  *    graph (it is guaranteed to fail at runtime); an "input" entry without "-&gt;" is skill
  *    vocabulary (e.g. the fetcher's dictionary parameter names) and passes through.

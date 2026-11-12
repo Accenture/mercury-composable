@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * A string that is a canonical number compares as a number in COMPUTE, IF and CONDITION (RFC-0001), so
  * '200' == '200', 200 == 200 and 200 == '200' are the same comparison. A string that is not a canonical
- * number keeps today's behaviour.
+ * number keeps today's behavior.
  */
 class NumericStringComparisonTest {
     private final ExpressionEngine engine = new ExpressionEngine();

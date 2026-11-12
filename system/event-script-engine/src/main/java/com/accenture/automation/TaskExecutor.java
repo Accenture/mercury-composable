@@ -785,7 +785,7 @@ public class TaskExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private List<String> getDecision(String text) {
         if (text.contains("|")) {
             var nextList = util.split(text, "| ");
-            Collections.sort(nextList);
+            nextList.sort(Comparator.naturalOrder());
             return nextList;
         } else {
             return List.of(text);
