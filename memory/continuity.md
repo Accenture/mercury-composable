@@ -672,8 +672,14 @@
   resource in a field and a try-with-resources would close it at once; and S2629 on the log line that moved with it - a
   method call passed as a log argument runs even when the level is off, so it goes into a local first (a getter such
   as `uri.getHosts()` is not flagged). A pre-existing finding counts as new the next
-  time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. Relates
-  [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
+  time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. **Thirteenth round (Eric's
+  IntelliJ scan, 2026-11-12, 75 files):** a long sentence rewritten as `1.` `2.` lines merged two list items, left a
+  stray predicate on the last one and flattened sub-rules into siblings; such a list is a `<ul>`, read item by item
+  against the sentence it replaced. The grammar fix also split a package name (`spring.system`), so a package in
+  prose is `{@code}`. IntelliJ reports a `try` holding only a comment as empty (Sonar's S108 accepts the comment): a
+  helper that uses the resource keeps S2095 and S5778 satisfied. It cannot see a non-null proved inside another method
+  (`evaluate()`), so a local guard states it. `assert x != null` to `assertNotNull(x)` adds to S5961's count (25).
+  Relates [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-06 | uses: 29 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
@@ -766,6 +772,17 @@
   resource an application packages and loads (a flow such as `graph-executor.yml`) is copied, because the app's
   build needs it on its own classpath.
   <!-- id: conv-one-copy-of-shared-tooling | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: working | origin: 2026-11-05-201925 -->
+
+- **The `release/v*` branches on GitHub are the historical record of releases v4.0.0 to v4.5.0 and are never
+  deleted (Eric, 2026-11-12).** Tags began at `v4.6.0` (2026-07-05); the 149 branches (`release/v4-0-0` ...
+  `release/v4.5.0`, the first 19 named with dashes) marked where each earlier release was cut. On 2026-11-12 (Eric's
+  go-ahead) each got a retroactive annotated tag `vX.Y.Z` at its branch tip, the tagger date set to the release
+  commit's date and the message naming the branch; 216 tags on GitHub, each peeled to its planned commit. The
+  exception: `release/v4.2.24` points at the 4.2.43 release, so `v4.2.24` marks `679ce398`, the last commit on `main`
+  at 4.2.24 before the bump to 4.2.25, the rule its neighbours' tips (4.2.23, 4.2.26, 4.2.28) follow; its message
+  says so. No workflow runs on a tag push. **How to apply:** a branch cleanup leaves every `release/v*` branch
+  alone, tags or not; other branches whose PR merged, or whose work an earlier PR carried, may go once Eric agrees.
+  <!-- id: release-branches-historical-record | created: 2026-11-12 | last_used: 2026-11-12 | uses: 1 | tier: working | origin: 2026-11-12-131639 -->
 
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
