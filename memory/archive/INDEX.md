@@ -286,5 +286,4 @@
 - scheduler-resolver-contract-in-parameters — The mini-scheduler's state-resolver contract is live in the field, so a change rides insid… — superseded by scheduler-resolver-conditional-claim — 2026-Q4.md
 - release-4-12-27 — Release v4.12.27 — SHIPPED 2026-10-30 on both engines: the Snyk fix for 4.12.26 (Tomcat 11… — swept (completed thread; field-deployed, Eric 2026-11-10) — 2026-Q4.md
 - release-4-12-28 — Release v4.12.28 — SHIPPED 2026-11-03, Java only: the mini-scheduler's retry and `_firing`… — swept (completed thread; field-deployed, Eric 2026-11-10) — 2026-Q4.md
-- clean-knowledge-design-over-engine-coverage — Every edge case has edge cases — clean knowledge design beats engine coverage, and avoidin… — faded — 2026-Q4.md
 - release-branches-historical-record — The `release/v*` branches on GitHub are the historical record of releases v4.0.0 to v4.5.0… — superseded by historical-releases-tags-and-pages — 2026-Q4.md

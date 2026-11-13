@@ -119,7 +119,8 @@
   (`clean-knowledge-design-over-engine-coverage`, 21 sessions; step 6: the window's four commits on
   `extensions/redis-connection` were two release sweeps and two IDE rounds, and no window log exercises the posture);
   swept 0; archive-verify pass; invariants not due ([[reverify-invariants-20261104]] still awaits Eric's walk, 19
-  sessions on); stalled threads none; contradictions none; live facts 47 → 45. Smoke test not run.)
+  sessions on); stalled threads none; contradictions none; live facts 47 → 45. Smoke test not run. Then Eric promoted
+  `clean-knowledge-design-over-engine-coverage` to `core`, so it moved back from the archive: live facts 46.)
   Prior: 2026-11-10 | through 2026-11-10-015436.md (ON COMMAND + CADENCE — refreshed 23 footers, tier changes 10; archived
   1 superseded fact; swept 2 threads; one stale thread item struck; live facts 48 → 45)
   Prior: 2026-11-04 | through 2026-11-04-050444.md (CADENCE — refreshed 11 footers, tier changes 5; archived 1 faded fact and
@@ -262,6 +263,36 @@
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
   <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-04 | uses: 37 | tier: archive-candidate | origin: 2026-09-16-193203 -->
+
+- **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
+  over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
+  produces a hard case, the first question is whether the engine should absorb it at all. Chasing
+  edge cases into the engine has no natural stopping point, and every guard added becomes a shape the
+  engine must keep working forever. The answer is a model kept simple enough that the question does
+  not arise — exercised in the **design phase** and at the **certification gate**, not at runtime.
+  This is a standing design posture, not a MiniGraph fact: it decided four rulings in one sitting
+  (defer the parent→for_each→flow→suspending-graph case; reject an author-nominated iteration
+  discriminator; reject an index+size store key; decline CompileGraph detection of the risky shape).
+  **Corollary for documentation — constraints are DECLARED, not enforced.** A partial gate is worse
+  than none: it teaches that *unflagged means safe*, which is learned once and applied everywhere,
+  and no gate can see every shape (CompileGraph cannot see through `flow://`). So limits belong in
+  the guide's Design-rules voice, covering the whole surface. The field "designs graphs with a lot of
+  imagination", so an undeclared limit is discovered by losing a suspension.
+  **Method note from the same sitting, worth more than the outcome:** the rejected index+size key
+  *failed safe* — a changed array size missed rather than restoring wrong state — and was still
+  wrong, because the operation it made fail (appending a product to a warranty list) is the ordinary
+  thing a user does, while the hazard it never caught (reordering) is the one that corrupts. **A
+  guard that fails safe is still wrong if the thing it makes fail is the common legitimate case**;
+  reason from what the user does, not from what the engine can detect. Serves
+  [[vision-mercury-composable]] (the certification half of the governance lifecycle); applied by
+  [[ot-subgraph-for-each-suspend]].
+  **Applied 2026-09-23 to the toolchain (Eric):** embedded-redis's bundled macOS-arm64 `redis-server` is linked against Homebrew
+  OpenSSL 3 (Linux x86-64 needs `libssl.so.3` + glibc 2.34, both on `ubuntu-latest`; the rest are self-contained), so a Mac
+  without it fails `mvn clean install` in `extensions/redis-connection`. Eric REJECTED the
+  fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
+  DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
+  ignores `EMBEDDED_REDIS_EXECUTABLE`.
+  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-11-13 | uses: 37 | tier: core | origin: 2026-09-18-174943 | note: promoted to core 2026-11-13 (Eric): a standing design posture that does not decay in relevance -->
 
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
