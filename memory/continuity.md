@@ -158,9 +158,13 @@
   in the nature of the work and where execution goes; AI gains a **run-time participant** role. **The north star MOVED: the
   next invariant re-verify must check the 2026-09-17 text, not the 2026-06-20 one.** [[bp-agent-orchestration]] is Track 2's
   Blueprint gap; Track 1 and the collaboration foundation are delivered.
-- **last_invariant_check:** 2026-11-04 | 2026-11-04-050444.md (PROMPTED — the 2026-11-04 review raised
-  [[reverify-invariants-20261104]] for Eric's walk of the 19 `core` facts and the Vision; the stamp reads COMPLETE once he
-  confirms or supersedes each.)
+- **last_invariant_check:** 2026-11-13 | 2026-11-13-031614.md (COMPLETE — Eric walked the 20 `core` facts and the Vision (the
+  2026-09-17 two-track text) against live-tree evidence at `aaac2370`, the gate [[reverify-invariants-20261104]]; ALL
+  CONFIRMED. Java 21 stays the toolchain until most field installations run Java 25; `trace-thread-keyed-mono-gotcha`
+  gains its second instance (#609, async fan-out); the Vision's Track 2 status refreshed (the agent loop shipped in both
+  engines); core 19 → 20 with `clean-knowledge-design-over-engine-coverage`, promoted the same day. Cadence 40; the
+  next re-verify is due 40 sessions after this log.)
+  Prior: 2026-11-04 | 2026-11-04-050444.md (PROMPTED — the gate raised; walked 2026-11-13.)
   Prior: 2026-10-22 | 2026-10-22-234147.md (COMPLETE — Eric walked the 19 `core` facts and the Vision — **the 2026-09-17
   two-track text** — against live-tree evidence at the 2026-10-22 review's gate [[reverify-invariants-20261022]]; ALL CONFIRMED, Java 21 still
   the toolchain until the field runs Java 25; two wordings refreshed: `event-api-local-routes-only` (the routes it reaches itself, the mesh
@@ -305,6 +309,8 @@
   Watch for this in any future async/reactive code that needs trace context. The **Flux** path was checked
   and is **safe** — it returns its response (the `x-stream-id` handle) synchronously on the worker thread, and
   `FluxPublisher` streaming never reads the trace (guarded by `WorkerHandlerTest.fluxResponseForwardsSpanId`).
+  **Second instance (2026-11-03, #609, the asynchronous `graph.extension`):** with `for_each`, the thread that starts each
+  later run of the sliding window has no trace context, so the run events carry the node's span explicitly.
   <!-- id: trace-thread-keyed-mono-gotcha | created: 2026-06-28 | last_used: 2026-06-28 | uses: 1 | tier: core -->
 
 - **Service mesh is opt-in, not the default.** `cloud.connector=none` is the framework default. The Kafka
@@ -504,7 +510,7 @@
   is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
   `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
   version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-11-05 | uses: 40 | tier: active | origin: 2026-09-11-005808 -->
+  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-11-05 | uses: 40 | tier: archive-candidate | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast — the in-house codec writes the smallest integer width, so it holds since
   ADR-0028; use `util.str2int/str2long`). (Wording refreshed 2026-10-09 at invariant re-verify — substance unchanged.)
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -765,7 +771,7 @@
   relative path the Mercury modules the lab uses, so Maven builds them from source instead of resolving the released
   version of the same number from `~/.m2`, and installs nothing. Its literal version joins the release version sweep.
   Before adding any module to the root reactor, ask whether it ships to the field's artifact repository.
-  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-11-05 | uses: 13 | tier: active | origin: 2026-10-23-215957 -->
+  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-11-05 | uses: 13 | tier: archive-candidate | origin: 2026-10-23-215957 -->
 
 - **A tool that runs from the checkout lives once, in the starter template, and the examples point to it (Eric,
   2026-11-05: do not repeat ourselves).** The Playground session broker had three identical copies (the
@@ -807,7 +813,7 @@
   **release version sweeps must include these non-reactor poms deliberately.** Relates
   [[stack-integration-spring-boot4]]. **Reactivated 2026-10-23:** a lab stays out of the root reactor, so it never
   needs a placeholder ([[conv-lab-outside-root-reactor]]).
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-11-05 | uses: 35 | tier: active | origin: 2026-09-01-022524 -->
+  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-11-05 | uses: 35 | tier: archive-candidate | origin: 2026-09-01-022524 -->
 
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
