@@ -111,12 +111,17 @@
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-11-10 | through 2026-11-10-015436.md (ON COMMAND + CADENCE — 14 sessions since 2026-11-04-050444:
-  `refresh-metadata` refreshed 23 footers, tier changes 10; archived 1 superseded fact
-  (`scheduler-resolver-contract-in-parameters` → `scheduler-resolver-conditional-claim`) and 0 faded; swept 2 completed
-  threads (`release-4-12-27`, `release-4-12-28`, both field-deployed per Eric); archive-verify pass; invariants not due
-  ([[reverify-invariants-20261104]] still awaits Eric's walk); stalled threads none; one stale thread item struck
-  ([[agent-loop-llm-run]]: step 5 shipped ahead of step 4); live facts 48 → 45. Smoke test not run.)
+- **last_review:** 2026-11-13 | through 2026-11-13-030403.md (ON COMMAND — 4 sessions since 2026-11-10-015436, this log
+  included: `refresh-metadata` refreshed 11 footers, tier changes 6 (`playground-webapp-single-source`,
+  `scheduler-example-mongodb`, `help-edit-needs-bundle-release`, `conv-config-key-not-value-and-parent` and
+  `conv-one-copy-of-shared-tooling` → archive-candidate; `historical-releases-tags-and-pages` → active); archived 1
+  superseded fact (`release-branches-historical-record` → `historical-releases-tags-and-pages`) and 1 faded
+  (`clean-knowledge-design-over-engine-coverage`, 21 sessions; step 6: the window's four commits on
+  `extensions/redis-connection` were two release sweeps and two IDE rounds, and no window log exercises the posture);
+  swept 0; archive-verify pass; invariants not due ([[reverify-invariants-20261104]] still awaits Eric's walk, 19
+  sessions on); stalled threads none; contradictions none; live facts 47 → 45. Smoke test not run.)
+  Prior: 2026-11-10 | through 2026-11-10-015436.md (ON COMMAND + CADENCE — refreshed 23 footers, tier changes 10; archived
+  1 superseded fact; swept 2 threads; one stale thread item struck; live facts 48 → 45)
   Prior: 2026-11-04 | through 2026-11-04-050444.md (CADENCE — refreshed 11 footers, tier changes 5; archived 1 faded fact and
   KEPT `playground-webapp-single-source` and `conv-library-pins-are-direct-dependencies` as declaration gaps; swept 5
   threads; invariants DUE → [[reverify-invariants-20261104]] raised; live facts 46 → 41)
@@ -258,36 +263,6 @@
   [[connected-edge-spans]].
   <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-04 | uses: 37 | tier: archive-candidate | origin: 2026-09-16-193203 -->
 
-- **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
-  over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
-  produces a hard case, the first question is whether the engine should absorb it at all. Chasing
-  edge cases into the engine has no natural stopping point, and every guard added becomes a shape the
-  engine must keep working forever. The answer is a model kept simple enough that the question does
-  not arise — exercised in the **design phase** and at the **certification gate**, not at runtime.
-  This is a standing design posture, not a MiniGraph fact: it decided four rulings in one sitting
-  (defer the parent→for_each→flow→suspending-graph case; reject an author-nominated iteration
-  discriminator; reject an index+size store key; decline CompileGraph detection of the risky shape).
-  **Corollary for documentation — constraints are DECLARED, not enforced.** A partial gate is worse
-  than none: it teaches that *unflagged means safe*, which is learned once and applied everywhere,
-  and no gate can see every shape (CompileGraph cannot see through `flow://`). So limits belong in
-  the guide's Design-rules voice, covering the whole surface. The field "designs graphs with a lot of
-  imagination", so an undeclared limit is discovered by losing a suspension.
-  **Method note from the same sitting, worth more than the outcome:** the rejected index+size key
-  *failed safe* — a changed array size missed rather than restoring wrong state — and was still
-  wrong, because the operation it made fail (appending a product to a warranty list) is the ordinary
-  thing a user does, while the hazard it never caught (reordering) is the one that corrupts. **A
-  guard that fails safe is still wrong if the thing it makes fail is the common legitimate case**;
-  reason from what the user does, not from what the engine can detect. Serves
-  [[vision-mercury-composable]] (the certification half of the governance lifecycle); applied by
-  [[ot-subgraph-for-each-suspend]].
-  **Applied 2026-09-23 to the toolchain (Eric):** embedded-redis's bundled macOS-arm64 `redis-server` is linked against Homebrew
-  OpenSSL 3 (Linux x86-64 needs `libssl.so.3` + glibc 2.34, both on `ubuntu-latest`; the rest are self-contained), so a Mac
-  without it fails `mvn clean install` in `extensions/redis-connection`. Eric REJECTED the
-  fallback-chain module of the experiment branch `fix/embedded-redis-apple-silicon` (never merge it): a dev-machine prerequisite is
-  DOCUMENTED (PR #455, squash `11bba2fd`), not engineered around, while CI and the field pass; the library's default provider
-  ignores `EMBEDDED_REDIS_EXECUTABLE`.
-  <!-- id: clean-knowledge-design-over-engine-coverage | created: 2026-09-18 | last_used: 2026-11-04 | uses: 36 | tier: archive-candidate | origin: 2026-09-18-174943 -->
-
 - **platform-core gotcha: the per-function trace context is thread-id-keyed and torn down when the worker
   returns.** `EventEmitter.traces` is keyed by `Thread.currentThread().threadId()+instance+route`, and
   `WorkerHandler` calls `stopTracing` (removing it) as soon as `processEvent` returns. So any work that
@@ -350,7 +325,7 @@
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-11-05 | uses: 27 | tier: active | origin: 2026-10-02-175751 -->
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-11-05 | uses: 27 | tier: archive-candidate | origin: 2026-10-02-175751 -->
 
 - **The mini-scheduler's state resolver picks one instance with a conditional claim in `expires`, and its contract
   changes only inside the existing `parameters`, where a key that starts with `_` is the system's (Eric, 2026-11-03 and
@@ -393,7 +368,7 @@
   so the property is the pin, and a Boot bump compares it ([[conv-library-pins-are-direct-dependencies]]). **How to
   apply:** an example that needs a database gets an embedded server that comes from Maven Central, run once against
   the real database before it ships; a helper that emulates a product says so.
-  <!-- id: scheduler-example-mongodb | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: working | origin: 2026-11-05-045407 -->
+  <!-- id: scheduler-example-mongodb | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: archive-candidate | origin: 2026-11-05-045407 -->
 
 - **The Playground entry page carries one server-filled tag: `playground.panel.name` renames the Minigraph panel
   through `<meta name="playground-panel-name" content="">` (a field installation's request, 2026-11-05).** The bundle
@@ -407,7 +382,7 @@
   apply:** a per-deployment setting the web app shows goes into the entry page as a server-filled tag, found by its
   exact text and guarded by a test of the built page (`GetIndexHtmlTest`); any webapp source edit still needs the
   release ([[help-edit-needs-bundle-release]]).
-  <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-05 | uses: 2 | tier: active | origin: 2026-11-05-175904 -->
+  <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-12 | uses: 3 | tier: active | origin: 2026-11-05-175904 -->
 
 ## Conventions
 
@@ -457,7 +432,7 @@
   Tenth instance (2026-11-04): PR #610's squash `89ffe5d9`, a two-commit PR that a side session opened, carries two
   `Co-Authored-By` lines, one per commit; the title held. A side session's PR needs the same handoff rule.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-05 | uses: 129 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-12 | uses: 131 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -484,7 +459,7 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-05 | uses: 69 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-12 | uses: 71 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -680,7 +655,7 @@
   helper that uses the resource keeps S2095 and S5778 satisfied. It cannot see a non-null proved inside another method
   (`evaluate()`), so a local guard states it. `assert x != null` to `assertNotNull(x)` adds to S5961's count (25).
   Relates [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-06 | uses: 29 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-12 | uses: 31 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
@@ -705,7 +680,7 @@
   the ignored `dist/`, which compares with the committed bundle (`public/assets`, `template/playground.html`) and with the Rust
   copy, maps excluded, without touching a tracked file; both were byte-identical. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
   only the entry page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-05 | uses: 37 | tier: active | origin: 2026-10-02-015208 -->
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-05 | uses: 37 | tier: archive-candidate | origin: 2026-10-02-015208 -->
 
 - **A reactor build rewrites every example's `target/*.jar` in place, so an app running from one fails at the next class it loads
   for the first time (2026-10-22).** `mvn verify` repackages `examples/*/target/<name>-<version>.jar`. A JVM running from that jar
@@ -718,7 +693,7 @@
   (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
   sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
-  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-05 | uses: 22 | tier: active | origin: 2026-10-22-232342 -->
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-12 | uses: 23 | tier: active | origin: 2026-10-22-232342 -->
 
 - **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
   properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
@@ -733,7 +708,7 @@
   or its child. To audit the tree, collect the keys of every `.properties` file, every `getProperty` and `@OptionalService`
   literal and every configuration-reference heading, then list each key that prefixes another. The 2026-10-23 log has the
   scan; `cloud.connector.health` is a route, not a key. YAML cannot express the collision.
-  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-11-05 | uses: 6 | tier: active | origin: 2026-10-23-215957 -->
+  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-11-05 | uses: 6 | tier: archive-candidate | origin: 2026-10-23-215957 -->
 
 - **A test server's fixed port stays below 32768, and a wait on its listen covers failure too (2026-11-04, PR #607).**
   `EventOverHttpStreamTest`'s mock peer listened on 58586 and waited on `onSuccess` alone. CI failed three times with
@@ -771,18 +746,7 @@
   to apply:** before adding a script or tool to an example, look for it in the template and point to that copy; a
   resource an application packages and loads (a flow such as `graph-executor.yml`) is copied, because the app's
   build needs it on its own classpath.
-  <!-- id: conv-one-copy-of-shared-tooling | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: working | origin: 2026-11-05-201925 -->
-
-- **The `release/v*` branches on GitHub are the historical record of releases v4.0.0 to v4.5.0 and are never
-  deleted (Eric, 2026-11-12).** Tags began at `v4.6.0` (2026-07-05); the 149 branches (`release/v4-0-0` ...
-  `release/v4.5.0`, the first 19 named with dashes) marked where each earlier release was cut. On 2026-11-12 (Eric's
-  go-ahead) each got a retroactive annotated tag `vX.Y.Z` at its branch tip, the tagger date set to the release
-  commit's date and the message naming the branch; 216 tags on GitHub, each peeled to its planned commit. The
-  exception: `release/v4.2.24` points at the 4.2.43 release, so `v4.2.24` marks `679ce398`, the last commit on `main`
-  at 4.2.24 before the bump to 4.2.25, the rule its neighbours' tips (4.2.23, 4.2.26, 4.2.28) follow; its message
-  says so. No workflow runs on a tag push. **How to apply:** a branch cleanup leaves every `release/v*` branch
-  alone, tags or not; other branches whose PR merged, or whose work an earlier PR carried, may go once Eric agrees.
-  <!-- id: release-branches-historical-record | created: 2026-11-12 | last_used: 2026-11-12 | uses: 1 | tier: superseded | superseded-by: historical-releases-tags-and-pages | origin: 2026-11-12-131639 -->
+  <!-- id: conv-one-copy-of-shared-tooling | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: archive-candidate | origin: 2026-11-05-201925 -->
 
 - **Releases v4.0.0 to v4.5.0 live as tags and GitHub releases; their `release/v*` branches are gone (Eric,
   2026-11-12).** Tags began at `v4.6.0`; before it, each release was cut as a `release/v*` branch (149). Each now has
@@ -792,10 +756,16 @@
   badge; 216 releases and 216 tags. Then Eric had the 149 branches deleted, every tip held by a tag
   (`release/v4.2.24` pointed at the 4.2.43 release; `v4.2.24` marks `679ce398`, the last commit on `main` at 4.2.24,
   its message saying so); GitHub keeps only `main` and `gh-pages`. `main`'s CHANGELOG heads 4.2.41's section
-  `4.2.42, 5/17/2025`, so its notes came from the CHANGELOG at its own tag. **How to apply:** find an old release by
+  `4.2.42, 5/17/2025`, so its notes came from the CHANGELOG at its own tag. **Applied to the siblings 2026-11-13
+  (Eric):** the Rust port's repository (the Java Mercury v1.12.8–v3.0.19 with v1.13.0; 2.9.0 was never released, so no
+  tag), mercury-python (v1.11.39–v2.5.0) and mercury-nodejs (v4.2.40–v4.3.28), each recorded in its own memory
+  (`historical-releases-tags-and-pages-rust`, `-python`, `-nodejs`); all four repositories keep only `main` and
+  `gh-pages`, and their READMEs point to the tagged releases. **How to apply:** find an old release by
   its tag or release page, never a branch. A release's notes come from its CHANGELOG section, read at its tag when
-  `main`'s heading disagrees; a release published after the fact passes `--latest=false`.
-  <!-- id: historical-releases-tags-and-pages | created: 2026-11-12 | last_used: 2026-11-12 | uses: 1 | tier: working | supersedes: release-branches-historical-record | origin: 2026-11-12-134344 -->
+  `main`'s heading disagrees, else from the next release's CHANGELOG when a heading is wrong or missing at the tag, the
+  note saying so; a release published after the fact passes `--latest=false`; a branch for a version never released
+  (its tip another release's commit, and no CHANGELOG section anywhere, like 2.9.0) gets no tag.
+  <!-- id: historical-releases-tags-and-pages | created: 2026-11-12 | last_used: 2026-11-13 | uses: 2 | tier: active | supersedes: release-branches-historical-record | origin: 2026-11-12-134344 -->
 
 - **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
   Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
