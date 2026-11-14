@@ -111,7 +111,16 @@
   Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
   `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-11-13 | through 2026-11-13-030403.md (ON COMMAND — 4 sessions since 2026-11-10-015436, this log
+- **last_review:** 2026-11-14 | through 2026-11-14-074819.md (SIZE — continuity passed 1000 lines after the ADR work; 4
+  sessions since 2026-11-13-030403: `refresh-metadata` refreshed 11 footers, tier changes 4 (`agent-loop-tool-names-map-to-routes`,
+  `graph-failed-resume-readvises` and `conv-test-fixed-port-outside-ephemeral` → active; `release-4-12-30` → archive-candidate);
+  archived 0: `otel-optional-service-and-negative-control` (22 sessions) KEPT as a declaration gap — the 2026-11-14-065413 live drive
+  applied its negative-control-first method without naming it, the window's three commits on its paths were release sweeps and
+  an IDE round; swept 0 (the three threads closed 2026-11-05 are 10 sessions old); invariants not due (3 sessions since
+  2026-11-13-031614); stalled threads: `ai-sdlc-document-ingestion` (41) → [[close-stalled-threads-20261114]] raised for Eric;
+  contradictions none; smoke test not run. Live facts 48, decaying 28 of a 35 limit; continuity stays above 1000 lines because the
+  facts are long, not many - the next lean-up is the sweep of the three 2026-11-05 threads once past the window.)
+  Prior: 2026-11-13 | through 2026-11-13-030403.md (ON COMMAND — 4 sessions since 2026-11-10-015436, this log
   included: `refresh-metadata` refreshed 11 footers, tier changes 6 (`playground-webapp-single-source`,
   `scheduler-example-mongodb`, `help-edit-needs-bundle-release`, `conv-config-key-not-value-and-parent` and
   `conv-one-copy-of-shared-tooling` → archive-candidate; `historical-releases-tags-and-pages` → active); archived 1
@@ -266,7 +275,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-04 | uses: 37 | tier: archive-candidate | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-14 | uses: 38 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -436,7 +445,7 @@
   `order-assistant` ([[graph-failed-resume-readvises]]). **How to apply:** a new tool for an agent is a route and a catalog
   row, never engine code; a new provider or MCP server is pack configuration; the hold on a write comes from the row's mark,
   so design safety on the catalog and the mode, not on the prompt. (ADR-0033)
-  <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: working | origin: 2026-11-14-071025 -->
+  <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-14 | uses: 2 | tier: active | origin: 2026-11-14-071025 -->
 
 - **A graph that resumes an agent loop re-advises on a failed resume, because `graph.resume` consumes the suspension record
   (2026-11-14, found live in sprint 3 WP1).** A resume request whose decisions the loop refuses - an unknown call id, a call
@@ -452,7 +461,7 @@
   moved, so a re-sent decision meets 409 and re-advises again; the operator then restarts the transaction. **How to
   apply:** every graph that suspends around `llm.run` needs a path from the loop's failure back to its advice while an
   approval is pending; design it on the graph, never by making the loop forgive a bad decision.
-  <!-- id: graph-failed-resume-readvises | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: working | origin: 2026-11-14-065413 -->
+  <!-- id: graph-failed-resume-readvises | created: 2026-11-14 | last_used: 2026-11-14 | uses: 2 | tier: active | origin: 2026-11-14-065413 -->
 
 ## Conventions
 
@@ -502,7 +511,7 @@
   Tenth instance (2026-11-04): PR #610's squash `89ffe5d9`, a two-commit PR that a side session opened, carries two
   `Co-Authored-By` lines, one per commit; the title held. A side session's PR needs the same handoff rule.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-12 | uses: 131 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-14 | uses: 132 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -529,7 +538,7 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-12 | uses: 71 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-14 | uses: 72 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -725,7 +734,7 @@
   helper that uses the resource keeps S2095 and S5778 satisfied. It cannot see a non-null proved inside another method
   (`evaluate()`), so a local guard states it. `assert x != null` to `assertNotNull(x)` adds to S5961's count (25).
   Relates [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-12 | uses: 31 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-14 | uses: 32 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
@@ -763,7 +772,7 @@
   (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
   sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
-  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-12 | uses: 23 | tier: active | origin: 2026-10-22-232342 -->
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-14 | uses: 24 | tier: active | origin: 2026-10-22-232342 -->
 
 - **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
   properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
@@ -793,7 +802,7 @@
   runner whose neighbouring classes ran at normal speed, more likely saw a callback that never fired than a slow one.
   A macOS negative control must hold the port on `::` with `IPV6_V6ONLY=0`: a listener on `127.0.0.1` or on IPv4
   `0.0.0.0` alone lets Vert.x bind anyway.
-  <!-- id: conv-test-fixed-port-outside-ephemeral | created: 2026-11-04 | last_used: 2026-11-05 | uses: 2 | tier: archive-candidate | origin: 2026-11-04-031520 -->
+  <!-- id: conv-test-fixed-port-outside-ephemeral | created: 2026-11-04 | last_used: 2026-11-14 | uses: 3 | tier: active | origin: 2026-11-04-031520 -->
 
 - **A lab or dev-machine tool stays out of the root reactor (Eric, 2026-10-23).** The field's static code analysis scans
   the modules the root `pom.xml` declares, registers each one, and keeps scanning it for good. A module listed there
@@ -871,7 +880,7 @@
   the same day Eric brought every common feature since 4.12.27 across instead (the agent loop `llm.run`, the
   asynchronous `graph.extension`, progress events, the abort record, `playground.panel.name`: mercury #403-#407,
   Increments 196-200), so the epic does not gate a port's catch-up; only work the port has no counterpart for does.
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-05 | uses: 53 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-14 | uses: 54 | tier: active | origin: 2026-09-16-003354 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -968,7 +977,7 @@
   stays LLM/vendor-free with adapters as functions ON the wrappers: the gateway/MCP edge is where
   vendor specifics live, never in the engine.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-05 | uses: 31 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-14 | uses: 34 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;

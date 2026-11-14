@@ -5,4 +5,4 @@
   which 4.12.29's post-squash memory commit had not. Next: the field's result, when Eric reports it.
   origin: 2026-11-05-211724; close 2026-11-05-234314.
   → serves: vision-mercury-composable
-  <!-- id: release-4-12-30 | created: 2026-11-05 | last_used: 2026-11-05 | uses: 2 | tier: active | origin: 2026-11-05-211724 -->
+  <!-- id: release-4-12-30 | created: 2026-11-05 | last_used: 2026-11-05 | uses: 2 | tier: archive-candidate | origin: 2026-11-05-211724 -->
