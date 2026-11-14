@@ -66,7 +66,12 @@
   example graph's ([[graph-failed-resume-readvises]]). Next: step 4 (the Python MCP binding, then Node; not started in
   either pack), then the drive again with an MCP tool in the catalog. **RFC-0011 PROMOTED to ADR-0033 on 2026-11-14 (Eric)**, the
   decision formalized as [[agent-loop-tool-names-map-to-routes]]; the spec header, the register and the Vision's Track 2
-  status updated the same day (the stacked PR on #624). Step 4 is built under the accepted decision.
+  status updated the same day (the stacked PR on #624). Step 4 is built under the accepted decision. **Step 4 BUILT in both packs on 2026-11-14 (sprint 3 WP2):**
+  mercury-python PR #51 and mercury-nodejs PR #118 (`extensions/mcp-binding`, the official MCP SDKs, the shared vector file
+  `mcp-binding-vectors.json`, 46 tests each over a fixture server on stdio and streamable HTTP; the Python binding's HTTP
+  transport also driven live against a public MCP server). Next: the engine-side drive with an MCP tool in a graph's
+  catalog (the server is Eric's choice - a public endpoint through the binding, or a stdio server he runs), then the packs'
+  catch-up release.
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
   README, the certification reports) are fixed by #601 (squash `72d43d06`) and mercury #401 (merge `e66ae513`), the packs' by mercury-python #48 (`463e37c`), all
   merged 2026-11-03: no live mention of the old folder is left in the family.

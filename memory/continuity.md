@@ -951,7 +951,8 @@
   report `docs/test-reports/agent-loop-live-drive.md`; the thread [[agent-loop-llm-run]]; #624 MERGED 2026-11-14, squash
   `e88a52c2`). **WP2 NEXT:** RFC-0011 step 4,
   the MCP binding in the Python helper (servers by name, stdio and HTTP streaming, the allowlist, schema digests pinned at
-  boot) against a credential-free stdio server, then the Node twin, then the drive again with an MCP tool in the catalog;
+  boot), then the Node twin - **both BUILT 2026-11-14: mercury-python #51 and mercury-nodejs #118, PRs pending** - then the
+  drive again with an MCP tool in the catalog (the server is Eric's choice);
   after both, the packs' catch-up release, then sprint 2 (document ingestion) resumes. **RFC-0011 was PROMOTED to
   ADR-0033 on 2026-11-14 (Eric), with WP1's drive as the end-to-end test it waited for; step 4 proceeds under the accepted
   decision ([[agent-loop-tool-names-map-to-routes]]); the Vision's Track 2 status says so.**
