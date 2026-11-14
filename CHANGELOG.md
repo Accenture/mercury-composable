@@ -32,8 +32,8 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    catalog row `render_diagram` maps to `diagram.render`, a function of the example (`DiagramRender`) that calls the MCP-bound
    route `diagram.render.mcp` - served by the MCP binding of a language pack (mercury-python #51, mercury-nodejs #118), which
    calls a Mermaid MCP server over streamable HTTP - and keeps the rendered image out of band: the SVG the server returns is
-   stored as `/tmp/rendered_diagrams/<reference>.svg` (`diagram.store.folder`) and the model gets the verdict, the code and the
-   reference, never the image. `mcp/mermaid-servers.yml` in the example's resources is the binding's server file, with the digest
+   stored as `/tmp/rendered_diagrams/<reference>.svg` (`diagram.store.folder`), beside `<reference>.html`, a page that inlines
+   the SVG for a browser, and the model gets the verdict, the code and the reference, never the image. `mcp/mermaid-servers.yml` in the example's resources is the binding's server file, with the digest
    that pins the tool's input schema; `event-over-http.yaml` maps `diagram.render.mcp` to the binding (`mcp.peer.host`,
    `mcp.peer.port`, default 8088). `DiagramAssistantTest` drives the graph and the storing function token-free on a mock of the
    MCP-bound route and the scripted `llm.chat`. Driven live on 2026-11-14 through the Python binding and the Python helper on

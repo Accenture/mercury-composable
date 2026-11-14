@@ -80,9 +80,10 @@ broker that lets an agent drive the Playground while you watch.
 What you see: the walk from `root` through `check-input` to `assist`; `assist` runs the agent loop, two model turns on
 Haiku 4.5 in about 10 s: the model drafts the diagram and calls `render_diagram`, the loop calls `diagram.render`, a
 function of this application that calls the MCP-bound route `diagram.render.mcp` and stores the SVG the server returned
-as `/tmp/rendered_diagrams/<reference>.svg` (`diagram.store.folder`), returning the verdict, the code and the reference;
-the model answers with the validated code, one sentence, and the reference. Open the file in a browser to see the
-rendered image. The result body carries the call log (`render_diagram` → `diagram.render`, ok) and the usage; the image
+as `/tmp/rendered_diagrams/<reference>.svg` (`diagram.store.folder`) beside a page, `<reference>.html`, that inlines it,
+returning the verdict, the code and the reference; the model answers with the validated code, one sentence, and the
+reference. Open `<reference>.html` from Finder or a browser to see the rendered image with its Mermaid code (the server's
+SVG is not a standalone document, so the page inlines it rather than linking it). The result body carries the call log (`render_diagram` → `diagram.render`, ok) and the usage; the image
 never reaches the model, so a turn costs a few thousand tokens. An invalid draft comes back as `valid: false` with the
 server's error, and the model fixes it and calls again.
 

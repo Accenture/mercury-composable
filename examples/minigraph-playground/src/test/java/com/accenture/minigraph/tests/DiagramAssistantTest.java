@@ -108,6 +108,11 @@ class DiagramAssistantTest {
         var file = new File(String.valueOf(stored.getElement("file")));
         assertTrue(file.isFile() && file.getName().equals(stored.getElement("reference") + ".svg"), String.valueOf(stored.getMap()));
         assertTrue(((Number) stored.getElement("bytes")).longValue() > 0);
+        var page = new File(String.valueOf(stored.getElement("page")));
+        assertTrue(page.isFile() && page.getName().equals(stored.getElement("reference") + ".html"), String.valueOf(stored.getMap()));
+        var html = Utility.getInstance().file2str(page);
+        assertTrue(html.contains("<svg") && html.contains("two steps") && html.contains("flowchart LR"),
+                "the page inlines the SVG and shows the title and the code");
         var invalid = po.asyncRequest(new EventEnvelope().setTo("diagram.render")
                 .setBody(Map.of("diagramCode", "this is not a diagram")), TIMEOUT).await(TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(200, invalid.getStatus(), String.valueOf(invalid.getBody()));

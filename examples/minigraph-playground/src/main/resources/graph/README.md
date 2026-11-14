@@ -85,8 +85,8 @@ a function of this application (`DiagramRender`) that calls the MCP-bound route 
 **MCP binding** of a language pack, which calls a Mermaid MCP server over streamable HTTP (`mcp/mermaid-servers.yml` in
 this folder is the binding's server file, with the server's URL and the digest of its tool's input schema) - and keeps
 the rendered image out of band: the server answers the verdict with the SVG, the function stores the SVG as
-`/tmp/rendered_diagrams/<reference>.svg` (`diagram.store.folder`) and returns the verdict, the code and the reference,
-never the image. The model drafts a Mermaid diagram from the description, validates it through the tool, fixes it if
+`/tmp/rendered_diagrams/<reference>.svg` (`diagram.store.folder`) beside `<reference>.html`, a page that inlines it for a
+browser, and returns the verdict, the code and the reference, never the image. The model drafts a Mermaid diagram from the description, validates it through the tool, fixes it if
 the server says it is invalid, and answers with the validated code and the reference. The graph names routes, the
 binding names the server, and the engine stays MCP-free (RFC-0011 / ADR-0033, step 4). The full walkthrough, with the
 Playground and the AI companion broker, is in the example's README.

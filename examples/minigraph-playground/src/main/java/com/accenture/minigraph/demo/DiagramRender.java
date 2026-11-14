@@ -39,9 +39,11 @@ import java.util.concurrent.TimeUnit;
  * The server answers the verdict together with the rendered image, and an agent loop returns a tool's
  * whole reply to the model. This function keeps the payload out of band: it calls the binding, stores the
  * SVG under a reference id in the folder {@code diagram.store.folder} (default {@code /tmp/rendered_diagrams},
- * the file named {@code <reference>.svg}), and returns the verdict, the code and the reference, never the
- * image. The model reads a small result and reports the reference; a person opens the file. An invalid
- * diagram stores nothing and returns the server's error for the model to fix.
+ * the file named {@code <reference>.svg}) beside an HTML page, {@code <reference>.html}, that inlines the SVG
+ * so a browser renders it from the file system - the server's SVG starts with a {@code <style>} element and
+ * uses {@code foreignObject} labels, which an {@code <img>} tag may refuse - and returns the verdict, the code
+ * and the reference, never the image. The model reads a small result and reports the reference; a person
+ * opens the page. An invalid diagram stores nothing and returns the server's error for the model to fix.
  */
 @PreLoad(route = "diagram.render", instances = 10)
 public class DiagramRender implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
@@ -87,10 +89,41 @@ public class DiagramRender implements TypedLambdaFunction<Map<String, Object>, M
             if (!Utility.getInstance().str2file(file, svg)) {
                 throw new AppException(500, "Unable to write " + file);
             }
+            File page = new File(folder, reference + ".html");
+            String title = rendered.get("title") instanceof String t && !t.isBlank() ? t : reference;
+            if (!Utility.getInstance().str2file(page, page(title, reference, code, svg))) {
+                throw new AppException(500, "Unable to write " + page);
+            }
             result.put("reference", reference);
             result.put("file", file.getAbsolutePath());
+            result.put("page", page.getAbsolutePath());
             result.put("bytes", file.length());
         }
         return result;
+    }
+
+    /**
+     * The HTML page beside the SVG: the title, the reference, the Mermaid code and the inlined image.
+     */
+    static String page(String title, String reference, String code, String svg) {
+        return "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>" + escape(title) + "</title>\n"
+                + "<style>\n"
+                + "  body { font-family: -apple-system, Helvetica, Arial, sans-serif; margin: 2rem; color: #222; background: #fafafa; }\n"
+                + "  h1 { font-size: 1.3rem; }\n"
+                + "  .meta { color: #666; font-size: .85rem; font-family: Menlo, monospace; }\n"
+                + "  .diagram { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; max-width: 960px; overflow: auto; }\n"
+                + "  .diagram svg { width: 100%; height: auto; }\n"
+                + "  pre { background: #f3f3f3; border-radius: 6px; padding: .8rem 1rem; max-width: 960px; overflow: auto; font-size: .85rem; }\n"
+                + "</style>\n</head>\n<body>\n"
+                + "<h1>" + escape(title) + "</h1>\n"
+                + "<p class=\"meta\">reference " + reference + " &middot; <a href=\"" + reference + ".svg\">" + reference + ".svg</a>"
+                + " &middot; rendered by the diagram assistant through its MCP-bound tool</p>\n"
+                + "<div class=\"diagram\">" + svg + "</div>\n"
+                + "<h2>Mermaid code</h2>\n<pre>" + escape(code) + "</pre>\n"
+                + "</body>\n</html>\n";
+    }
+
+    private static String escape(String text) {
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 }
