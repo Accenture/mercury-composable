@@ -1,11 +1,13 @@
 # Agent loop (`llm.run`) — tool names map to routes — design spec
 
-**Status:** DRAFT under **RFC-0011** (Open). Seven review rounds, 2026-10-28 to 2026-11-04 (Eric), section 14.
+**Status:** ACCEPTED - RFC-0011 was promoted to **ADR-0033** on 2026-11-14 (Eric), after the end-to-end drive through
+both language packs (`docs/test-reports/agent-loop-live-drive.md`). Seven review rounds, 2026-10-28 to 2026-11-04 (Eric), section 14.
 Build plan step 1 is built in both packs (2026-11-03), and sections 3.2 and 3.3 carry what building it settled.
 Build plan step 2 is built in Java (`extensions/agent-loop`, 2026-11-03), and sections 4 to 6.1 carry what building
 it settled, accepted by Eric on 2026-11-04 with the four approval modes of section 7.1 (round 7).
-**Reviewed and approved by Eric on 2026-11-03.** The promotion to an ADR is held until the end-to-end test
-from the engines to the language packs for AI SDLC is finished.
+**Reviewed and approved by Eric on 2026-11-03**; the promotion to an ADR, held until the end-to-end test from the
+engines to the language packs, followed on 2026-11-14. Step 4 (section 9, the MCP bindings) is built under the accepted
+decision.
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`ai-agent-orchestration.md`](./ai-agent-orchestration.md) adapter families A
 (`llm.chat`), B (MCP, route-per-tool) and C (agent-as-node). This paper defines the seam between

@@ -421,6 +421,23 @@
   release ([[help-edit-needs-bundle-release]]).
   <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-12 | uses: 3 | tier: active | origin: 2026-11-05-175904 -->
 
+- **The agent loop: `llm.run` in the engines maps tool names to routes; the model turn and the MCP bindings live in the
+  language packs (ADR-0033, accepted 2026-11-14 after the live drive through both packs).** A node whose model reasons with
+  tools is `llm.run`, engine-side function code in the opt-in `extensions/agent-loop` (Rust: `mercury-agent-loop`), not core,
+  linking no provider SDK, MCP client or store client. The tool catalog is graph data certified with the graph: each row maps
+  an API-safe name to a composable route with a description written on the graph, a closed-subset input schema, `strict`,
+  `write: true` or `ask: true`; the loop checks it and every route before the first turn and validates each input before
+  dispatch. The model turn stays `llm.chat` in the packs with the loop contract (the append-only transcript in the pack's
+  store, the model pinned at the first turn, a stale turn 409). The node's mode governs the use of tools (`write` default,
+  `auto`, `manual`, `unattended`); a waiting turn runs none of its calls, the graph suspends, and the resume runs the calls
+  from the restored state. Agent graphs are asynchronous (async `graph.extension`; progress events to the caller's return
+  route). MCP bindings are pack routes, one per allowlisted remote tool, failing at boot on a missing tool or a changed
+  schema digest. Design spec `draft-design-specs/llm-helper-agent-loop.md`; the runnable example is the Playground's
+  `order-assistant` ([[graph-failed-resume-readvises]]). **How to apply:** a new tool for an agent is a route and a catalog
+  row, never engine code; a new provider or MCP server is pack configuration; the hold on a write comes from the row's mark,
+  so design safety on the catalog and the mode, not on the prompt. (ADR-0033)
+  <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: working | origin: 2026-11-14-071025 -->
+
 - **A graph that resumes an agent loop re-advises on a failed resume, because `graph.resume` consumes the suspension record
   (2026-11-14, found live in sprint 3 WP1).** A resume request whose decisions the loop refuses - an unknown call id, a call
   decided twice, a decision for a call that did not wait - raises 400 before any token is spent, which is right; but the
@@ -931,10 +948,13 @@
   with the AI companion broker's recommended collaboration start in 4.12.30 (#618) - so the AI SDLC work picks up from there.
   **Sprint 3 "the live loop" (Eric, 2026-11-14): WP1 COMPLETE** - the first live drive of `llm.run`, through the new
   `order-assistant` example graph, on Haiku 4.5 and Opus 5.5 through both packs' helpers, negative control first (the
-  report `docs/test-reports/agent-loop-live-drive.md`; the thread [[agent-loop-llm-run]]). **WP2 NEXT:** RFC-0011 step 4,
+  report `docs/test-reports/agent-loop-live-drive.md`; the thread [[agent-loop-llm-run]]; #624 MERGED 2026-11-14, squash
+  `e88a52c2`). **WP2 NEXT:** RFC-0011 step 4,
   the MCP binding in the Python helper (servers by name, stdio and HTTP streaming, the allowlist, schema digests pinned at
   boot) against a credential-free stdio server, then the Node twin, then the drive again with an MCP tool in the catalog;
-  after both, the RFC's ADR promotion and the packs' catch-up release, then sprint 2 (document ingestion) resumes.
+  after both, the packs' catch-up release, then sprint 2 (document ingestion) resumes. **RFC-0011 was PROMOTED to
+  ADR-0033 on 2026-11-14 (Eric), with WP1's drive as the end-to-end test it waited for; step 4 proceeds under the accepted
+  decision ([[agent-loop-tool-names-map-to-routes]]); the Vision's Track 2 status says so.**
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than

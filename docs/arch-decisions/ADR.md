@@ -33,6 +33,82 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0033 — The agent loop: `llm.run` in the engines maps tool names to routes; model turns and MCP bindings in the language packs {#adr-0033}
+**Status:** Accepted · **Date:** 2026-11-14 · **Serves:** vision-mercury-composable · **Formalizes:** agent-loop-tool-names-map-to-routes
+<!-- id: adr-0033 | status: accepted -->
+
+**Abstract.** A graph node whose model calls tools while it reasons is `llm.run`: engine-side function code in the opt-in
+module `extensions/agent-loop` (Java; the Rust port's crate `mercury-agent-loop`). The graph certifies the tool catalog as
+data, and each row maps an API-safe tool name to a composable route. The loop sends each model turn to `llm.chat` on a
+language pack's LLM helper, which keeps the transcript in its own store and returns a reference; the loop calls the routes,
+validates every input, holds a marked write for a person, and returns an envelope the graph routes on. MCP bindings are
+routes of the packs, one per allowlisted remote tool. Proposed as RFC-0011 in [`RFC.md`](RFC.md) on 2026-10-28, reviewed in
+seven rounds to 2026-11-04 and approved on 2026-11-03, built as steps 1 to 3 and 5 of its build plan (mercury-python #46 and
+#47, mercury-nodejs #114 and #115, #605, #606, #609 and #611 here, mercury #403 to #407), shipped in Java 4.12.29 and Rust
+4.12.30, and accepted on 2026-11-14 after the end-to-end drive through both packs, negative control first (PR #624; the
+evidence is `docs/test-reports/agent-loop-live-drive.md`). The design spec is `draft-design-specs/llm-helper-agent-loop.md`.
+
+**Context.** Track 2 of the Vision, the graph as AI SDLC, puts AI in the production execution path: a node whose model
+reasons with tools, under governance, where today each such use case is a bespoke agent loop. Three constraints shaped the
+seam: the engine core stays LLM- and vendor-free (ADR-0001's decoupling, the concept's attachment at the function tier);
+enterprise LLM access is platform-mediated and lives in the packs; and a graph is certified by a product owner, so what an
+agent can do has to be visible on the graph, not buried in code or in a server's self-description.
+
+**Decision.**
+
+- **Narrow loops, composed by the graph.** Each loop has one question and a few tools; a graph holds several loop nodes,
+  each with its own catalog, mode and turn limit, and a use case grows by adding nodes, never by widening one.
+- **`llm.run` is engine-side function code**, in `extensions/agent-loop`, not engine core. It links no provider SDK, no MCP
+  client and no store client; the `llm.` prefix marks every node whose result is model output.
+- **The model turn stays `llm.chat` in the packs, with a loop contract.** The pack keeps the transcript append-only, in
+  the provider's format, in its own access-controlled store (memory, or Redis for more than one replica), pins the model
+  at the first turn, and returns a reference with the calls normalized as `{id, name, input}`; the loop answers
+  `{id, output | error}` with the expected turn count, and a stale turn is 409. The transcript never crosses an engine
+  codec. Compaction, if a loop ever needs it, is the provider's server-side compaction in the pack, never the loop's.
+- **A tool name maps to a route.** The catalog is a skill-less dataset node under the graph's island, certified with the
+  graph: name, description written on the graph, an input schema from a closed JSON Schema subset, route, `strict`,
+  `write: true` for a tool that writes, or `ask: true` for a question to a person. Before the first turn the loop checks
+  the catalog and that every route is served; it validates each input before dispatch. An unknown name, an invalid input
+  or a failed call goes back to the model as that call's error; only the loop's own machinery fails the node.
+- **Approval comes in two kinds.** The node's mode governs the use of tools: `write` (the default) holds a marked write
+  for a person, `auto` runs every call, `manual` holds every call, `unattended` refuses a marked write; a write runs
+  unasked only under a declared `mode=auto`. A turn holding a waiting call runs none of its calls; the envelope carries
+  every call with its arguments; the graph suspends; the resume runs the calls from the restored state, matched to the
+  decisions by id, and a refusal's note goes back to the model as the call's error. Separately, a business decision rides
+  the verdict for the graph's own decision node.
+- **State stays small and the settings are on the node:** `max_turns` (10), `result_limit`, `transcript_ttl`, `retention`
+  (0) and `timeout`, each with a global default. Telemetry is mandatory and carries no content.
+- **Agent graphs are asynchronous.** Unattended: `graph.extension` with `async=true`, with `for_each` fan-out, an HTTP 202
+  advice and a notification at the end. Watched: progress events, numbered per sender and carrying the correlation id,
+  the graph and the node, with `llm.run`'s own run, turn, tool and approval events, to the caller's return route: a REST
+  entry with `stream: true`, the WebSocket entry `/ws/graph-run/{graph_id}`, or a declared `x-return-path`.
+- **MCP bindings live in the language packs**, on the official MCP SDK: servers named in the pack's configuration, one route
+  per allowlisted remote tool, boot failing on a missing tool or a changed input-schema digest; the model sees the graph's
+  descriptions, never the server's; no engine process spawns an MCP server.
+- **No nesting and no A2A.** An agent is a graph node and the graph sequences agents; an external peer is a route and a
+  catalog row.
+
+**Alternatives.** (a) *The loop in the packs beside `llm.chat`, with the MCP client inside it:* one process and no new
+contract, but orchestration leaves the graph that certifies it and Mercury routes are a second hop away; rejected in review.
+(b) *A provider-hosted agent or MCP connector:* not on every platform the field uses, public URLs only, thin per-call
+controls; rejected. (c) *One generic `mcp.call` route:* hides the server and the tool inside the arguments, where the catalog
+cannot certify them; rejected. (e) *The transcript held by the engine and sent inline each turn:* the pack stays stateless,
+but the transcript crosses the engine's codec and the wire twice per turn; rejected. (f) *A progress route owned by the
+engine:* rejected, the caller already names its return route. (d), the loop in the engines with the model turn and the
+bindings in the packs, was chosen.
+
+**Consequences.** Shipped in Java 4.12.29 and Rust 4.12.30; the packs carry the loop contract on `main` and release it with
+their next catch-up. The guards are the 105 shared loop vectors and 29 schema vectors, byte-identical in Java and Rust, the
+packs' 66 vectors, `LlmRunPlatformTest`, and the Playground example's `order-assistant` graph with `OrderAssistantTest`.
+The live drive settled three readings: a prompt is advice and a catalog mark is a rule (the hold on a write comes from
+`write: true`, whatever order the model reads in); caching is the pack's job and depends on the model's minimum cacheable
+prompt; and a resume is a new run, so a graph that suspends around `llm.run` needs a path from a failed resume back to its
+advice, because the suspension record is consumed on retrieval. Open work under the accepted decision, not gating it: the
+MCP bindings (build plan step 4), the packs' release, and the AI SDLC lab that resumes on this foundation. Not built, by
+ruling: compaction in the loop, and forwarding the model's own progress notes.
+
+---
+
 ## ADR-0032 — Live invocation observers: a vendor-neutral seam in platform-core, with Dynatrace OneAgent as the shipped adapter {#adr-0032}
 **Status:** Accepted · **Date:** 2026-10-24 · **Serves:** vision-mercury-composable · **Formalizes:** live-invocation-observers
 <!-- id: adr-0032 | status: accepted -->

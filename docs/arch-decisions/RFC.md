@@ -40,8 +40,8 @@
 ---
 
 ## RFC-0011 — The agent loop: `llm.run` in the engines maps tool names to routes; model turns and MCP bindings in the language packs
-**Status:** Open · **Raised:** 2026-10-28 · **Serves:** vision-mercury-composable · **Thread:** `agent-loop-llm-run`
-<!-- id: rfc-0011 | status: open | thread: agent-loop-llm-run -->
+**Status:** Promoted → ADR-0033 · **Raised:** 2026-10-28 · **Serves:** vision-mercury-composable · **Thread:** `agent-loop-llm-run`
+<!-- id: rfc-0011 | status: promoted | thread: agent-loop-llm-run -->
 
 **Reviewed and approved by Eric on 2026-11-03.** The promotion to an ADR is held until the end-to-end test from the
 engines to the language packs for AI SDLC is finished.
@@ -136,7 +136,10 @@ favour of the pack's own store. (f) **A progress route owned by the engine**, wh
 
 The RFC is ready for promotion when Eric accepts it.
 
-**Resolution.**
+**Resolution.** Promoted → ADR-0033 (2026-11-14, Eric): option (d), the loop in the engines with the model turn and the
+MCP bindings in the language packs. Accepted after the end-to-end drive from the Java engine through both packs, negative
+control first (PR #624, `docs/test-reports/agent-loop-live-drive.md`); build plan step 4, the MCP bindings, is built under
+the accepted decision.
 
 ---
 
