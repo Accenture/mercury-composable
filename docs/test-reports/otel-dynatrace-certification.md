@@ -346,6 +346,12 @@ Java Playground 8–10 spans per round, the Rust Playground 8–10, the Python a
 (their `llm.stream` executions; the graph's `llm.chat` is an RPC leg, which folds into the caller's
 span on every runtime, so the host exports no span for it — the engines' own rule).
 
+> **Addendum (2026-11-14).** The rule above described the packs as they were. Since mercury-python #53 and
+> mercury-nodejs #120 the Python and Node hosts leave the records a Java or Rust callee leaves for a traced call -
+> the `http.request` edge, `event.api.service` and the function's round-trip record with the responder's span - so
+> an RPC into a pack now exports three spans and the lineage is continuous end to end. The drive and its tables are
+> the [agent loop's trace lineage report](agent-loop-trace-lineage.md).
+
 **Observations.** (1) The provider, not the pipeline, decided which calls succeeded: Gemini answered
 `503 This model is currently experiencing high demand` on roughly half the calls across the drives,
 `429 RESOURCE_EXHAUSTED` once, and `gemini-2.5-flash` proved retired (`no longer available to new

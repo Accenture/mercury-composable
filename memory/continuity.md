@@ -387,6 +387,24 @@
   approval is pending; design it on the graph, never by making the loop forgive a bad decision.
   <!-- id: graph-failed-resume-readvises | created: 2026-11-14 | last_used: 2026-11-14 | uses: 2 | tier: active | origin: 2026-11-14-065413 -->
 
+- **The packs' trace records mirror the engines' callee and caller, so a span lineage is continuous from an engine into a
+  pack (2026-11-14; Eric's criterion: for OpenTelemetry to be certified, the span lineage ought to be continuous end to
+  end).** The first end-to-end lineage drive - the `diagram-assistant` graph on Haiku 4.5 through the Python and the Node
+  pack, negative control first - found every engine record chained and the pack legs absent: an RPC over Event-over-HTTP is
+  recorded by neither side by default, since `async.http.request` is in `skip.rpc.tracing` here and the packs suppressed the
+  worker-side record of an RPC-served execution without the callee-side records this engine leaves (`http.request` for
+  `POST /api/event`, `event.api.service`, the function's inbox record with the responder's span), and their replies carried no
+  span for an inbox to chain onto. mercury-python #53 and mercury-nodejs #120 made the packs leave the same three records
+  and carry the responder's span on the reply; the re-drive gave 20 records per run, all connected, the tree the same shape
+  as with a Java callee (`docs/test-reports/agent-loop-trace-lineage.md`; the earlier Dynatrace report carries an addendum).
+  Also settled there: an alias route (the MCP binding's `mcp.tool` shape) never appears in a trace - every trace field comes
+  from the service entry the event was addressed to. **How to apply:** a certification drive's lineage check parses every
+  record of the trace from every process and verifies each parent is a span some record owns - a tree without orphans can
+  still be missing hops; a hop into any runtime must leave the callee's edge record, the ingress record and the function's
+  record, or the backend shows the hop as time inside the caller; every traced execution leaves exactly one record, and the
+  question for a new path is which side emits it.
+  <!-- id: pack-trace-records-engine-parity | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: working | origin: 2026-11-14-115548 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
@@ -791,6 +809,9 @@
   (mercury-python #51, mercury-nodejs #118, merged); the engine-side drive with an MCP tool in a graph's catalog RAN the same
   day on the public Mermaid Chart MCP server (Eric's choice) through the new `diagram-assistant` graph (#626 MERGED, squash
   `f4c1c30f6`) - **sprint 3 COMPLETE**.
+  **The trace lineage (2026-11-14):** the loop's trace is continuous from the engine's REST edge into both packs and back
+  after the packs mirrored the engines' callee records (mercury-python #53, mercury-nodejs #120;
+  `docs/test-reports/agent-loop-trace-lineage.md`, [[pack-trace-records-engine-parity]]).
   Next: the packs' catch-up release, then the epic's next sprint (Eric's call).
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own

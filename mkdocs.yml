@@ -173,6 +173,7 @@ nav:
     - Test Report — Dynatrace OneAgent integration: test-reports/dynatrace-one-agent-integration.md
     - Test Report — The LLM helper (Claude): test-reports/llm-helper-certification.md
     - Test Report — The agent loop, live through both packs: test-reports/agent-loop-live-drive.md
+    - Test Report — The agent loop's trace lineage through both packs: test-reports/agent-loop-trace-lineage.md
     - Test Report — MsgPack codec, minimalist-msgpack vs msgpack-core: test-reports/minimalist-msgpack-benchmark.md
     - Test Report — JSONPath, minimalist-jsonpath vs Jayway: test-reports/minimalist-jsonpath-differential.md
     - Reserved Names & Headers: guides/reserved-names-and-headers.md

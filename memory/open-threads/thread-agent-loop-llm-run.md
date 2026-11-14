@@ -81,4 +81,9 @@
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
   README, the certification reports) are fixed by #601 (squash `72d43d06`) and mercury #401 (merge `e66ae513`), the packs' by mercury-python #48 (`463e37c`), all
   merged 2026-11-03: no live mention of the old folder is left in the family.
+  **The trace lineage drive (2026-11-14, Eric's criterion: continuous end to end):** the baseline through both packs
+  showed the pack legs absent (the caller's HTTP leg skipped, the packs' RPC records suppressed, no callee records);
+  mercury-python #53 and mercury-nodejs #120 made the packs leave the Java callee's three records and carry the
+  responder's span on the reply; the re-drive: 20 records per run, all connected
+  (`docs/test-reports/agent-loop-trace-lineage.md`, [[pack-trace-records-engine-parity]]).
   <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-14 | uses: 20 | tier: working | origin: 2026-10-28-233011 -->
