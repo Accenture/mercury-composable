@@ -85,5 +85,6 @@
   showed the pack legs absent (the caller's HTTP leg skipped, the packs' RPC records suppressed, no callee records);
   mercury-python #53 and mercury-nodejs #120 made the packs leave the Java callee's three records and carry the
   responder's span on the reply; the re-drive: 20 records per run, all connected
-  (`docs/test-reports/agent-loop-trace-lineage.md`, [[pack-trace-records-engine-parity]]).
+  (`docs/test-reports/agent-loop-trace-lineage.md`, PR #628 MERGED 2026-11-14 squash `97c87145f`,
+  [[pack-trace-records-engine-parity]]).
   <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-14 | uses: 20 | tier: working | origin: 2026-10-28-233011 -->

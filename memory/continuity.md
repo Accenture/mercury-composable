@@ -452,6 +452,11 @@
   The title held; the body's trim did not. The repository default (the PR title and description) remains the open fix.
   Tenth instance (2026-11-04): PR #610's squash `89ffe5d9`, a two-commit PR that a side session opened, carries two
   `Co-Authored-By` lines, one per commit; the title held. A side session's PR needs the same handoff rule.
+  Eleventh instance (2026-11-14): PR #628's squash `97c87145f`, a two-commit docs PR, carries three - one per commit plus
+  GitHub's below the `---------` line; the title held; Eric noted afterwards that he forgot to trim. The handoff was never
+  sent: the agent opened the PR itself with `gh pr create` and announced it without the squash handoff. Guard: a PR the
+  agent opens with `gh` still gets the handoff in the message that announces it - the title on its own line and the trailer
+  rule for the commit count - and a later commit on the branch re-sends it.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-14 | uses: 132 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
@@ -810,8 +815,8 @@
   day on the public Mermaid Chart MCP server (Eric's choice) through the new `diagram-assistant` graph (#626 MERGED, squash
   `f4c1c30f6`) - **sprint 3 COMPLETE**.
   **The trace lineage (2026-11-14):** the loop's trace is continuous from the engine's REST edge into both packs and back
-  after the packs mirrored the engines' callee records (mercury-python #53, mercury-nodejs #120;
-  `docs/test-reports/agent-loop-trace-lineage.md`, [[pack-trace-records-engine-parity]]).
+  after the packs mirrored the engines' callee records (mercury-python #53, mercury-nodejs #120; the record
+  `docs/test-reports/agent-loop-trace-lineage.md`, #628 squash `97c87145f`; [[pack-trace-records-engine-parity]]).
   Next: the packs' catch-up release, then the epic's next sprint (Eric's call).
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own
