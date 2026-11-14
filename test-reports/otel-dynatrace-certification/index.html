@@ -2090,6 +2090,8 @@
       
         
       
+        
+      
     
     
     
@@ -2786,6 +2788,34 @@
     
   
     Test Report — The agent loop, live through both packs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agent-loop-trace-lineage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — The agent loop's trace lineage through both packs
   
 
     
@@ -3719,6 +3749,13 @@ span is the parent of the engine's reply-lane deliveries — the same ids in two
 Java Playground 8–10 spans per round, the Rust Playground 8–10, the Python and Node hosts 1–2 each
 (their <code>llm.stream</code> executions; the graph's <code>llm.chat</code> is an RPC leg, which folds into the caller's
 span on every runtime, so the host exports no span for it — the engines' own rule).</p>
+<blockquote>
+<p><strong>Addendum (2026-11-14).</strong> The rule above described the packs as they were. Since mercury-python #53 and
+mercury-nodejs #120 the Python and Node hosts leave the records a Java or Rust callee leaves for a traced call -
+the <code>http.request</code> edge, <code>event.api.service</code> and the function's round-trip record with the responder's span - so
+an RPC into a pack now exports three spans and the lineage is continuous end to end. The drive and its tables are
+the <a href="../agent-loop-trace-lineage/">agent loop's trace lineage report</a>.</p>
+</blockquote>
 <p><strong>Observations.</strong> (1) The provider, not the pipeline, decided which calls succeeded: Gemini answered
 <code>503 This model is currently experiencing high demand</code> on roughly half the calls across the drives,
 <code>429 RESOURCE_EXHAUSTED</code> once, and <code>gemini-2.5-flash</code> proved retired (<code>no longer available to new
