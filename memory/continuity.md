@@ -544,7 +544,7 @@
   packaged page, not only the ledger. #628's addendum in the packaged Dynatrace certification report linked the new,
   unpackaged `test-reports/agent-loop-trace-lineage.md`, and `main` went red in `ai-contract-provider`: `SkillSnapshot`'s
   static initializer raises `Broken relative link`, which every test touching the class then reports as
-  `NoClassDefFoundError`. The fix packaged the report in the three places (branch `fix/snapshot-trace-lineage-report`).
+  `NoClassDefFoundError`. The fix packaged the report in the three places (#629, squash `723963991`, MERGED 2026-11-14; one commit, one trailer).
   Guard: before a docs PR, check the pages the snapshot packages (the pom's include set) for new relative links, or run
   `mvn -o -q test -f system/ai-contract-provider/pom.xml`, which reproduces the failure in seconds.
   <!-- id: conv-proposals-not-in-adr-ledger | created: 2026-09-18 | last_used: 2026-09-18 | uses: 1 | tier: core | origin: 2026-09-18-221732 -->
