@@ -3346,8 +3346,8 @@ default token cost, the same footing as <code>ADR.md</code>).</p>
 </code></pre></div>
 <hr />
 <h2 id="rfc-0011-the-agent-loop-llmrun-in-the-engines-maps-tool-names-to-routes-model-turns-and-mcp-bindings-in-the-language-packs">RFC-0011 — The agent loop: <code>llm.run</code> in the engines maps tool names to routes; model turns and MCP bindings in the language packs<a class="headerlink" href="#rfc-0011-the-agent-loop-llmrun-in-the-engines-maps-tool-names-to-routes-model-turns-and-mcp-bindings-in-the-language-packs" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-10-28 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>agent-loop-llm-run</code></p>
-<!-- id: rfc-0011 | status: open | thread: agent-loop-llm-run -->
+<p><strong>Status:</strong> Promoted → ADR-0033 · <strong>Raised:</strong> 2026-10-28 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>agent-loop-llm-run</code></p>
+<!-- id: rfc-0011 | status: promoted | thread: agent-loop-llm-run -->
 
 <p><strong>Reviewed and approved by Eric on 2026-11-03.</strong> The promotion to an ADR is held until the end-to-end test from the
 engines to the language packs for AI SDLC is finished.</p>
@@ -3441,7 +3441,10 @@ favour of the pack's own store. (f) <strong>A progress route owned by the engine
 <li>the transcripts may share the suspend store's Redis under their own prefix.</li>
 </ul>
 <p>The RFC is ready for promotion when Eric accepts it.</p>
-<p><strong>Resolution.</strong></p>
+<p><strong>Resolution.</strong> Promoted → ADR-0033 (2026-11-14, Eric): option (d), the loop in the engines with the model turn and the
+MCP bindings in the language packs. Accepted after the end-to-end drive from the Java engine through both packs, negative
+control first (PR #624, <code>docs/test-reports/agent-loop-live-drive.md</code>); build plan step 4, the MCP bindings, is built under
+the accepted decision.</p>
 <hr />
 <h2 id="rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath">RFC-0010 — An in-house JSONPath engine to RFC 9535: <code>system/minimalist-jsonpath</code> replaces Jayway JsonPath<a class="headerlink" href="#rfc-0010-an-in-house-jsonpath-engine-to-rfc-9535-systemminimalist-jsonpath-replaces-jayway-jsonpath" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Promoted → ADR-0031 · <strong>Raised:</strong> 2026-10-22 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>minimalist-jsonpath</code></p>
