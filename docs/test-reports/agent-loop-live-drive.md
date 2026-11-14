@@ -176,6 +176,12 @@ needs come first in the server's reply): run 3's next turn cost 4,344 tokens for
 tool with a large payload gets a `result_limit` on its node; a binding-side projection of a result is a design question for
 the bindings, not something the loop should guess.
 
+**Later the same day** the route became `diagram.render.mcp` behind a function of the example, `diagram.render`, which stores
+the SVG as `/tmp/rendered_diagrams/<reference>.svg` and returns the verdict, the code and the reference - the out-of-band shape the
+research rulings asked for. A dry run in a shared Playground session through the AI companion broker (Eric watching, the
+agent driving `/sync`) completed in 9.9 s with the same two turns; the companion endpoint's 30 s REST timeout means a long
+run's outcome is read from the broker's console, and a shared session runs a dry run once per member session.
+
 ## Findings
 
 1. **The loop's own machinery never failed.** Every model turn, tool call, hold, resume and refusal behaved as the

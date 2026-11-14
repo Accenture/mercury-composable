@@ -195,7 +195,8 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
             done(reply, "I could not validate the diagram: " + conversation.renderError + ".");
         } else if (conversation.render != null && Boolean.TRUE.equals(conversation.render.get("valid"))) {
             done(reply, "Here is the validated diagram:\n```mermaid\n" + conversation.render.get("diagramCode")
-                    + "\n```\nIt shows the steps from the request to the decision.");
+                    + "\n```\nIt shows the steps from the request to the decision. The rendered image is stored under the reference "
+                    + conversation.render.get("reference") + ".");
         } else {
             done(reply, "The renderer reported the diagram invalid and I could not fix it.");
         }

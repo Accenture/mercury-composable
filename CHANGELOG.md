@@ -28,16 +28,19 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    Claude Haiku 4.5 and Opus 5.5 through the Python and the Node.js helper, negative control first. **Upgrade note:**
    none - the example adds the `agent-loop` dependency; an application copied from it that wants the loop adds the same.
 
-2. **The Playground example ships `diagram-assistant`, an agent loop whose one tool is an MCP server's, driven live.** The
-   catalog row `render_diagram` maps to the route `diagram.render`, which the MCP binding of a language pack (mercury-python
-   #51, mercury-nodejs #118) serves by calling a Mermaid MCP server over streamable HTTP; `mcp/mermaid-servers.yml` in the
-   example's resources is the binding's server file, with the digest that pins the tool's input schema. The model drafts the
-   diagram, validates it through the tool and answers with the validated code; the node caps the tool's reply at 8 KiB with
-   `result_limit`, because the server returns the rendered image with its verdict. `event-over-http.yaml` maps the route to
-   the binding (`mcp.peer.host`, `mcp.peer.port`, default 8088). `DiagramAssistantTest` drives the graph token-free on a mock
-   of the route and the scripted `llm.chat`. Driven live on 2026-11-14 through the Python binding and the Python helper on
-   Haiku 4.5: three runs, the Mermaid server's call in 3 to 4 s, one trace id across the engine, the helper and the binding
-   (`docs/test-reports/agent-loop-live-drive.md`, Scenario 9). **Upgrade note:** none.
+2. **The Playground example ships `diagram-assistant`, an agent loop whose one tool reaches an MCP server, driven live.** The
+   catalog row `render_diagram` maps to `diagram.render`, a function of the example (`DiagramRender`) that calls the MCP-bound
+   route `diagram.render.mcp` - served by the MCP binding of a language pack (mercury-python #51, mercury-nodejs #118), which
+   calls a Mermaid MCP server over streamable HTTP - and keeps the rendered image out of band: the SVG the server returns is
+   stored as `/tmp/rendered_diagrams/<reference>.svg` (`diagram.store.folder`), beside `<reference>.html`, a page that inlines
+   the SVG for a browser, and the model gets the verdict, the code and the reference, never the image. `mcp/mermaid-servers.yml` in the example's resources is the binding's server file, with the digest
+   that pins the tool's input schema; `event-over-http.yaml` maps `diagram.render.mcp` to the binding (`mcp.peer.host`,
+   `mcp.peer.port`, default 8088). `DiagramAssistantTest` drives the graph and the storing function token-free on a mock of the
+   MCP-bound route and the scripted `llm.chat`. Driven live on 2026-11-14 through the Python binding and the Python helper on
+   Haiku 4.5, from the REST entry and as a dry run in a shared Playground session through the AI companion broker: the
+   Mermaid server's call in 3 to 4 s, one trace id across the engine, the helper and the binding; before the storing function,
+   the image rode back as a 36,000 to 43,000-token tool result (`docs/test-reports/agent-loop-live-drive.md`, Scenario 9). The
+   example's README walks through the demo. **Upgrade note:** none.
 
 ### Fixed
 

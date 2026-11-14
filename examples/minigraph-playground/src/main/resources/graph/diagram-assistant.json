@@ -7,7 +7,7 @@
       ],
       "properties": {
         "name": "diagram-assistant",
-        "purpose": "An agent loop whose one tool is an MCP server's: the catalog row render_diagram maps to the route diagram.render, which the MCP binding of a language pack serves by calling a Mermaid MCP server over streamable HTTP. The graph names a route, the binding names the server, and the engine stays MCP-free (RFC-0011 / ADR-0033 step 4)"
+        "purpose": "An agent loop whose one tool reaches an MCP server: the catalog row render_diagram maps to diagram.render, a function of this application that calls diagram.render.mcp - the route the MCP binding of a language pack serves by calling a Mermaid MCP server over streamable HTTP - and stores the rendered image under a reference id, so the model gets the verdict and a reference, never the image. The graph names routes, the binding names the server, and the engine stays MCP-free (RFC-0011 / ADR-0033 step 4)"
       }
     },
     {
@@ -72,11 +72,10 @@
         "progress": "Drawing the diagram",
         "input": [
           "f:json(diagram-tools.tools) -> tools",
-          "text(You are a diagram assistant for software teams. Turn the user's description into one Mermaid diagram. Always validate it with the render_diagram tool before you answer. If the tool reports the diagram invalid, fix the code and validate again. Answer with the validated Mermaid code in a fenced mermaid block, then one sentence on what the diagram shows. Never answer with a diagram the tool has not validated.) -> system",
+          "text(You are a diagram assistant for software teams. Turn the user's description into one Mermaid diagram. Always validate it with the render_diagram tool before you answer. If the tool reports the diagram invalid, fix the code and validate again. Answer with the validated Mermaid code in a fenced mermaid block, one sentence on what the diagram shows, and the reference id the tool returned for the stored image. Never answer with a diagram the tool has not validated.) -> system",
           "input.body.question -> prompt",
           "int(6) -> max_turns",
-          "text(50s) -> timeout",
-          "int(8192) -> result_limit"
+          "text(50s) -> timeout"
         ],
         "output": [
           "result.status -> model.agent.status",
@@ -88,7 +87,7 @@
           "result.refusal -> model.agent.refusal",
           "result.cap -> model.agent.cap"
         ],
-        "purpose": "The agent loop: the model drafts the Mermaid code, the loop calls diagram.render through the binding, and the model answers with the validated code or fixes it and tries again. result_limit cuts the tool's reply at 8 KiB: the server returns the rendered image too, and the model needs the verdict and the code, not the image"
+        "purpose": "The agent loop: the model drafts the Mermaid code, the loop calls diagram.render, and the model answers with the validated code and the reference of the stored image, or fixes the code and tries again. diagram.render is a function of this application that calls the MCP-bound route diagram.render.mcp and keeps the rendered image out of band"
       }
     },
     {
