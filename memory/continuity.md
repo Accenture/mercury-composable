@@ -787,7 +787,8 @@
   Haiku 4.5 and Opus 5.5 through both packs, negative control first (#624 merged; `docs/test-reports/agent-loop-live-drive.md`);
   RFC-0011 PROMOTED to ADR-0033 (#625, [[agent-loop-tool-names-map-to-routes]]); WP2 the MCP bindings in both packs
   (mercury-python #51, mercury-nodejs #118, merged); the engine-side drive with an MCP tool in a graph's catalog RAN the same
-  day on the public Mermaid Chart MCP server (Eric's choice) through the new `diagram-assistant` graph - **sprint 3 COMPLETE**.
+  day on the public Mermaid Chart MCP server (Eric's choice) through the new `diagram-assistant` graph (#626 MERGED, squash
+  `f4c1c30f6`) - **sprint 3 COMPLETE**.
   Next: the packs' catch-up release, then the epic's next sprint (Eric's call).
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own
