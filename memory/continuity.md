@@ -421,7 +421,6 @@
   release ([[help-edit-needs-bundle-release]]).
   <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-12 | uses: 3 | tier: active | origin: 2026-11-05-175904 -->
 
-<<<<<<< HEAD
 - **The agent loop: `llm.run` in the engines maps tool names to routes; the model turn and the MCP bindings live in the
   language packs (ADR-0033, accepted 2026-11-14 after the live drive through both packs).** A node whose model reasons with
   tools is `llm.run`, engine-side function code in the opt-in `extensions/agent-loop` (Rust: `mercury-agent-loop`), not core,
@@ -439,8 +438,6 @@
   so design safety on the catalog and the mode, not on the prompt. (ADR-0033)
   <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: working | origin: 2026-11-14-071025 -->
 
-=======
->>>>>>> origin/main
 - **A graph that resumes an agent loop re-advises on a failed resume, because `graph.resume` consumes the suspension record
   (2026-11-14, found live in sprint 3 WP1).** A resume request whose decisions the loop refuses - an unknown call id, a call
   decided twice, a decision for a call that did not wait - raises 400 before any token is spent, which is right; but the
@@ -955,13 +952,9 @@
   `e88a52c2`). **WP2 NEXT:** RFC-0011 step 4,
   the MCP binding in the Python helper (servers by name, stdio and HTTP streaming, the allowlist, schema digests pinned at
   boot) against a credential-free stdio server, then the Node twin, then the drive again with an MCP tool in the catalog;
-<<<<<<< HEAD
   after both, the packs' catch-up release, then sprint 2 (document ingestion) resumes. **RFC-0011 was PROMOTED to
   ADR-0033 on 2026-11-14 (Eric), with WP1's drive as the end-to-end test it waited for; step 4 proceeds under the accepted
   decision ([[agent-loop-tool-names-map-to-routes]]); the Vision's Track 2 status says so.**
-=======
-  after both, the RFC's ADR promotion and the packs' catch-up release, then sprint 2 (document ingestion) resumes.
->>>>>>> origin/main
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
