@@ -23,10 +23,27 @@ rest:
     methods: ['POST', 'GET']
     url: '/api/graph/{graph_id}'
     flow: 'graph-executor'
-    timeout: 30s
+    timeout: 60s
     cors: cors_1
     headers: header_1
     tracing: true
+
+  #
+  # A watched graph run: the same executor flow on a streaming entry. The caller gets the
+  # run's progress events, then its result, as server-sent events (skills reference,
+  # "Progress events"). A node opts in with progress={text}; llm.run adds its own events
+  # (run.start, turn.start, tool.start, tool.end, turn.end, approval.wait, run.end). A run
+  # that sends no progress answers single-shot, so every deployed graph can use this entry.
+  #
+  - service: 'http.flow.adapter'
+    methods: ['POST']
+    url: '/api/stream/graph/{graph_id}'
+    flow: 'graph-executor'
+    timeout: 60s
+    cors: cors_1
+    headers: header_1
+    tracing: true
+    stream: true
 
   #
   # The AI-token streaming composition: the relay forwards its reply lane into the

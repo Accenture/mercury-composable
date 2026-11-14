@@ -23,6 +23,14 @@ The application also needs `llm.chat`. Deploy a language pack's LLM helper with 
 (`llm.transcript.store`), and declare `llm.chat` in `yaml.event.over.http`. A tool route is any composable function:
 a local one, or one a language pack serves (an MCP binding, for example) over Event-over-HTTP.
 
+## A runnable example
+
+`examples/minigraph-playground` ships `order-assistant`, a customer-support assistant on `llm.run`: a three-row catalog
+(two lookups and a refund marked `write: true`), the approval advice staged at a checkpoint, the run suspended on the
+Redis state store, and a resume that runs the call the supervisor saw. Its `graph/README.md` has the protocol, and
+`OrderAssistantTest` drives it on a scripted `llm.chat`. The live drive on both language packs is
+`docs/test-reports/agent-loop-live-drive.md`.
+
 ## A loop node
 
 The catalog is a skill-less dataset node under the graph's `graph.island`, so it is certified with the graph and is

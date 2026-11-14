@@ -57,6 +57,15 @@
             <version>4.12.30</version>
         </dependency>
 
+        <!-- The agent loop (RFC-0011): including this jar registers llm.run, the route the
+             order-assistant demo graph's loop node calls. It links no provider SDK: each model
+             turn goes to llm.chat on the LLM helper of a language pack (event-over-http.yaml). -->
+        <dependency>
+            <groupId>org.platformlambda</groupId>
+            <artifactId>agent-loop</artifactId>
+            <version>4.12.30</version>
+        </dependency>
+
         <!-- Redis state store for graph suspend/resume: including this jar registers
              v1.redis.persist.model and v1.redis.retrieve.model automatically (PreLoad
              classpath scan) - the connection is lazy, so the app runs normally without

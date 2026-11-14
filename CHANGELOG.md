@@ -12,6 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Each change merged to `main` after v4.12.30 is listed here; it moves under its release heading when the version is cut.
 
+### Added
+
+1. **The Playground example ships `order-assistant`, the first graph on the agent loop, driven live on both language
+   packs.** A customer-support assistant: an `llm.run` node with a three-row tool catalog held on the graph (two lookups
+   and a refund marked `write: true`), the three tool functions in `com.accenture.minigraph.demo` over an in-memory order
+   book, the approval advice staged at a checkpoint and the run suspended on the Redis state store, and a resume that
+   runs the call the supervisor saw. A resume without decisions or for another turn re-advises; a decision the loop
+   refuses, such as one for an unknown call id, re-advises too, so the transaction is never lost to a bad request. The
+   example's REST map gains `/api/stream/graph/{graph_id}`, the executor flow on a streaming entry, so any deployed
+   graph can be watched over server-sent events, and `/api/graph/{graph_id}` now allows 60 seconds, the executor flow's
+   own TTL, where it allowed 30. `OrderAssistantTest` drives the graph token-free on a scripted `llm.chat` that serves
+   the loop contract, through the plain entry, the streaming entry and the WebSocket entry, on an embedded Redis shared
+   with the tutorial-14 test. The live drive (`docs/test-reports/agent-loop-live-drive.md`) ran the unchanged graph on
+   Claude Haiku 4.5 and Opus 5.5 through the Python and the Node.js helper, negative control first. **Upgrade note:**
+   none - the example adds the `agent-loop` dependency; an application copied from it that wants the loop adds the same.
+
 ### Fixed
 
 1. **The field's Sonar scan of 4.12.30: five code smells closed; no behaviour change.** `SchedulerDatabase`'s
