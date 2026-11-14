@@ -28,6 +28,17 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    Claude Haiku 4.5 and Opus 5.5 through the Python and the Node.js helper, negative control first. **Upgrade note:**
    none - the example adds the `agent-loop` dependency; an application copied from it that wants the loop adds the same.
 
+2. **The Playground example ships `diagram-assistant`, an agent loop whose one tool is an MCP server's, driven live.** The
+   catalog row `render_diagram` maps to the route `diagram.render`, which the MCP binding of a language pack (mercury-python
+   #51, mercury-nodejs #118) serves by calling a Mermaid MCP server over streamable HTTP; `mcp/mermaid-servers.yml` in the
+   example's resources is the binding's server file, with the digest that pins the tool's input schema. The model drafts the
+   diagram, validates it through the tool and answers with the validated code; the node caps the tool's reply at 8 KiB with
+   `result_limit`, because the server returns the rendered image with its verdict. `event-over-http.yaml` maps the route to
+   the binding (`mcp.peer.host`, `mcp.peer.port`, default 8088). `DiagramAssistantTest` drives the graph token-free on a mock
+   of the route and the scripted `llm.chat`. Driven live on 2026-11-14 through the Python binding and the Python helper on
+   Haiku 4.5: three runs, the Mermaid server's call in 3 to 4 s, one trace id across the engine, the helper and the binding
+   (`docs/test-reports/agent-loop-live-drive.md`, Scenario 9). **Upgrade note:** none.
+
 ### Fixed
 
 1. **The field's Sonar scan of 4.12.30: five code smells closed; no behaviour change.** `SchedulerDatabase`'s
