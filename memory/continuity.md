@@ -366,7 +366,9 @@
   row, never engine code; a new provider or MCP server is pack configuration; the hold on a write comes from the row's mark,
   so design safety on the catalog and the mode, not on the prompt; a tool whose reply carries a payload the model does not
   need (a rendered image beside its verdict) gets `result_limit` on its node - uncapped it cost 36,000 to 43,000 tokens a turn
-  in the 2026-11-14 drive, capped at 8 KiB 4,300. (ADR-0033)
+  in the 2026-11-14 drive, capped at 8 KiB 4,300; better, a function of the application in front of the bound route stores the
+  payload and returns a reference (the example's `diagram.render`, the SVG under `/tmp/rendered_diagrams/<reference>.svg`),
+  which is the out-of-band shape the research rulings asked for. (ADR-0033)
   <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-14 | uses: 2 | tier: active | origin: 2026-11-14-071025 -->
 
 - **A graph that resumes an agent loop re-advises on a failed resume, because `graph.resume` consumes the suspension record

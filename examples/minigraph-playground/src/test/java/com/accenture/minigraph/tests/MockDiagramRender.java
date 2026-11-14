@@ -26,13 +26,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A stand-in for the route {@code diagram.render}, which the MCP binding of a language pack serves in
- * production by calling a Mermaid MCP server (the diagram-assistant graph's one tool). Here the same
- * route name resolves to this mock - the route-decoupling contract that makes an MCP-bound tool testable
- * by configuration. It answers the shape the real server answers: the title, the code, {@code valid},
+ * A stand-in for the route {@code diagram.render.mcp}, which the MCP binding of a language pack serves in
+ * production by calling a Mermaid MCP server. The application's own {@code diagram.render} function calls
+ * it and stores the image; here the same route name resolves to this mock - the route-decoupling contract
+ * that makes an MCP-bound tool testable by configuration. It answers the shape the real server answers: the title, the code, {@code valid},
  * and the rendered image when valid, or an error when the code does not start like a Mermaid diagram.
  */
-@PreLoad(route = "diagram.render", instances = 10)
+@PreLoad(route = "diagram.render.mcp", instances = 10)
 public class MockDiagramRender implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
     private static final String[] HEADERS = {"flowchart", "graph", "sequenceDiagram", "classDiagram", "stateDiagram"};
 

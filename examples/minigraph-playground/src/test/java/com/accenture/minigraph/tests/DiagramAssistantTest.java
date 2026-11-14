@@ -29,6 +29,7 @@ import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -39,14 +40,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The diagram-assistant demo graph: an {@code llm.run} node whose one catalog row is an MCP server's tool,
- * reached through the route {@code diagram.render}. In production the MCP binding of a language pack serves
- * the route by calling a Mermaid MCP server; here {@link MockDiagramRender} serves it and {@link MockLlmChat}
- * scripts the model, so the graph, the loop and the route contract are tested without a token or a network.
+ * The diagram-assistant demo graph: an {@code llm.run} node whose one catalog row reaches an MCP server's tool
+ * through {@code diagram.render}, the application's own function that calls the MCP-bound route
+ * {@code diagram.render.mcp} and stores the rendered image out of band. In production the MCP binding of a
+ * language pack serves that route by calling a Mermaid MCP server; here {@link MockDiagramRender} serves it and
+ * {@link MockLlmChat} scripts the model, so the graph, the loop, the storing function and the route contract are
+ * tested without a token or a network.
  */
 class DiagramAssistantTest {
     private static final long TIMEOUT = 10000;
@@ -83,6 +87,43 @@ class DiagramAssistantTest {
         assertEquals("diagram.render", calls.getFirst().get("route"), "the catalog maps the tool name to the bound route");
         assertEquals("ok", calls.getFirst().get("status"));
         assertEquals("mock-llm", body.getElement("model"));
+        // the tool stored the image out of band: the model reports the reference, the file holds the SVG
+        var reference = reference(text);
+        var file = new File(AppConfigReader.getInstance().getProperty("diagram.store.folder"), reference + ".svg");
+        assertTrue(file.isFile(), "the rendered image is stored as " + file);
+        assertTrue(Utility.getInstance().file2str(file).contains("<svg"), "the file holds the SVG");
+    }
+
+    @Test
+    void theRenderFunctionStoresAValidDiagramAndNothingForAnInvalidOne() throws Exception {
+        var po = PostOffice.trackable("unit.test", Utility.getInstance().getUuid(), "TEST diagram.render");
+        var valid = po.asyncRequest(new EventEnvelope().setTo("diagram.render")
+                .setBody(Map.of("diagramCode", "flowchart LR\n  A --> B", "title", "two steps")), TIMEOUT)
+                .await(TIMEOUT, TimeUnit.MILLISECONDS);
+        assertEquals(200, valid.getStatus(), String.valueOf(valid.getBody()));
+        var stored = body(valid);
+        assertEquals(true, stored.getElement("valid"));
+        assertEquals("two steps", stored.getElement("title"));
+        assertNull(stored.getElement("rawSVG"), "the image never rides the reply");
+        var file = new File(String.valueOf(stored.getElement("file")));
+        assertTrue(file.isFile() && file.getName().equals(stored.getElement("reference") + ".svg"), String.valueOf(stored.getMap()));
+        assertTrue(((Number) stored.getElement("bytes")).longValue() > 0);
+        var invalid = po.asyncRequest(new EventEnvelope().setTo("diagram.render")
+                .setBody(Map.of("diagramCode", "this is not a diagram")), TIMEOUT).await(TIMEOUT, TimeUnit.MILLISECONDS);
+        assertEquals(200, invalid.getStatus(), String.valueOf(invalid.getBody()));
+        var refused = body(invalid);
+        assertEquals(false, refused.getElement("valid"));
+        assertNotNull(refused.getElement("error"), "the server's error reaches the model");
+        assertNull(refused.getElement("reference"), "nothing is stored for an invalid diagram");
+        var missing = po.asyncRequest(new EventEnvelope().setTo("diagram.render").setBody(Map.of("title", "no code")), TIMEOUT)
+                .await(TIMEOUT, TimeUnit.MILLISECONDS);
+        assertEquals(400, missing.getStatus());
+    }
+
+    private static String reference(String text) {
+        var matcher = Pattern.compile("reference ([0-9a-f]{32})").matcher(text);
+        assertTrue(matcher.find(), "the answer names the stored image's reference: " + text);
+        return matcher.group(1);
     }
 
     @Test

@@ -1,4 +1,6 @@
 # The MCP binding's server file for the diagram-assistant demo graph (RFC-0011 / ADR-0033 step 4).
+# The route diagram.render.mcp is called by the application's own diagram.render function, which stores
+# the rendered image out of band and gives the model a reference instead.
 #
 # Run a language pack's MCP binding with it, then start this application:
 #
@@ -16,5 +18,5 @@ servers:
     timeout_ms: 20000
     tools:
       validate_and_render_mermaid_diagram:
-        route: diagram.render
+        route: diagram.render.mcp
         schema_sha256: '5ae6d75d4ecfab919d9ef934bd679605bdbfc8b90b4d46f4d9dbd54d19c275ad'
