@@ -1,6 +1,7 @@
 graphs:
   - 'tutorial-1'
   - 'support-triage'
+  - 'order-assistant'
 
 #
 # Graph set is optional

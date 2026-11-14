@@ -29,9 +29,7 @@ import org.platformlambda.core.util.MultiLevelMap;
 import org.platformlambda.core.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.embedded.RedisServer;
 
-import java.io.File;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -46,28 +44,12 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SuspendResumeTutorialTest {
     private static final Logger log = LoggerFactory.getLogger(SuspendResumeTutorialTest.class);
-    private static final int REDIS_PORT = 16381;
     private static final long TIMEOUT = 8000;
     private static String target;
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        // the state-store connection is lazy and reads configuration at first use,
-        // so a system property set before the first suspension is honored even when
-        // another test class boots the application first
-        System.setProperty("redis.port", String.valueOf(REDIS_PORT));
-        var dir = new File("/tmp/tutorial-14-redis");
-        Utility.getInstance().cleanupDir(dir);
-        if (!dir.exists() && !dir.mkdirs()) {
-            throw new IllegalStateException("Unable to create " + dir);
-        }
-        RedisServer redisServer = RedisServer.newRedisServer()
-                .port(REDIS_PORT)
-                .setting("dir " + dir.getAbsolutePath())
-                .setting("save \"\"")
-                .setting("appendonly no")
-                .build();
-        redisServer.start();
+        EmbeddedRedis.start();
         MainApp.main(new String[0]);
         var config = AppConfigReader.getInstance();
         target = "http://127.0.0.1:" + config.getProperty("rest.server.port");

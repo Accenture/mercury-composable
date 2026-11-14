@@ -22,6 +22,13 @@ While the model answers for tutorials 1 to 14 are embedded, we recommend you fol
 When you want to compare your graph model with the model answer, you can use the 'import tutorial-n' where
 n is a tutorial chapter number.
 
+## AI demo graphs
+
+Two deployed graphs reach an LLM through the LLM helper app of a language pack, with the engine holding no credential:
+`support-triage` (one AI node, the graph routes on its verdict) and `order-assistant` (an agent loop whose one write
+waits for a supervisor through suspend and resume). See `src/main/resources/graph/README.md` for the setup and the
+protocol, and `OrderAssistantTest` for the token-free end-to-end test.
+
 ## Application template
 
 You can use this subproject as a template to build your own MiniGraph application.

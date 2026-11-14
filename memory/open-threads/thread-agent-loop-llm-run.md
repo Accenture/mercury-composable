@@ -56,9 +56,15 @@
   drops a late single-shot reply to a started stream; `kafka.progress.publisher` in kafka-demo. **Step 5 SHIPPED
   ahead of step 4 (Eric, 2026-11-05):** the Rust catch-up merged as mercury #403-#407 (`llm.run` as the crate
   `mercury-agent-loop`, all 105 loop and 29 schema vectors; the async `graph.extension`; progress events and
-  `/ws/graph-run`; the Playground bundle and help by `npm run release:rust`) and released in Rust 4.12.30. Next: step
-  4 (the Python MCP binding, then Node; not started in either pack as of 2026-11-10), then the end-to-end test and
-  the ADR promotion.
+  `/ws/graph-run`; the Playground bundle and help by `npm run release:rust`) and released in Rust 4.12.30. **The end-to-end drive from the Java engine to BOTH packs ran 2026-11-14 (sprint 3 WP1, Eric):** the new
+  `order-assistant` graph of `examples/minigraph-playground` (a three-row catalog with a refund marked `write: true`, the
+  approval advice at a checkpoint, suspend on Redis, a resume that re-runs the loop node) on Claude Haiku 4.5 through the
+  Python helper and the Node helper and on Opus 5.5 through the Node helper, negative control first - 40 model calls, the
+  supervised write held and resumed, a refusal's note read by the model, the events over SSE and the WebSocket entry; the
+  report is `docs/test-reports/agent-loop-live-drive.md`. The loop's machinery never failed; the one defect was the
+  example graph's ([[graph-failed-resume-readvises]]). Next: step 4 (the Python MCP binding, then Node; not started in
+  either pack), then the drive again with an MCP tool in the catalog, then the ADR promotion - whether it waits for step
+  4 is Eric's call, since the loop's half of the end-to-end test is done.
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
   README, the certification reports) are fixed by #601 (squash `72d43d06`) and mercury #401 (merge `e66ae513`), the packs' by mercury-python #48 (`463e37c`), all
   merged 2026-11-03: no live mention of the old folder is left in the family.

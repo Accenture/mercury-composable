@@ -1,8 +1,9 @@
 #
 # Declarative Event-over-HTTP targets: routes that live on polyglot peers.
 #
-# The support-triage demo graph's AI node (llm.chat) and the streaming relay's AI
-# node (llm.stream) are functions in the LLM helper: mercury-python's
+# The support-triage demo graph's AI node (llm.chat), the order-assistant demo graph's
+# agent loop (llm.run sends each model turn to llm.chat) and the streaming relay's AI
+# node (llm.stream) reach functions in the LLM helper: mercury-python's
 # extensions/llm-helper (default port 8086) or mercury-nodejs's extensions/llm-helper
 # (port 8087). Run one with the credential in its environment:
 #

@@ -421,6 +421,22 @@
   release ([[help-edit-needs-bundle-release]]).
   <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-12 | uses: 3 | tier: active | origin: 2026-11-05-175904 -->
 
+- **A graph that resumes an agent loop re-advises on a failed resume, because `graph.resume` consumes the suspension record
+  (2026-11-14, found live in sprint 3 WP1).** A resume request whose decisions the loop refuses - an unknown call id, a call
+  decided twice, a decision for a call that did not wait - raises 400 before any token is spent, which is right; but the
+  record was consumed on retrieval, so when the handler simply reports the error the run ends and the transaction is gone,
+  while the pack still holds the conversation until its TTL. The `order-assistant` example's shape: the loop node's
+  `exception=` handler notes whether an approval was pending (`text(={model.agent.status})` probe), and a decision after it
+  sends such a failure back to the advice checkpoint (`RESET: advise` then `NEXT: advise`), which stages the waiting calls
+  with the error and pauses again; any other failure ends the run with the error. Also in that graph: a resume without
+  decisions, or naming another turn than the one that waits (`input.body.turn` against `model.agent.turn`), re-advises
+  without a model call, and the turn is the idempotency key a supervisor's client echoes. **Declared, not engineered:** a
+  loop that fails after the pack appended the results but before the model answered leaves the record's turn count
+  moved, so a re-sent decision meets 409 and re-advises again; the operator then restarts the transaction. **How to
+  apply:** every graph that suspends around `llm.run` needs a path from the loop's failure back to its advice while an
+  approval is pending; design it on the graph, never by making the loop forgive a bad decision.
+  <!-- id: graph-failed-resume-readvises | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: working | origin: 2026-11-14-065413 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
@@ -913,6 +929,12 @@
   **Resuming 2026-11-05 (Eric), on another dev machine:** the agent loop and RFC-0011 step 3 shipped on both engines -
   Java 4.12.29 (#605, #606, #609, #611) and Rust 4.12.30 (`mercury-agent-loop`, async `graph.extension`, progress events),
   with the AI companion broker's recommended collaboration start in 4.12.30 (#618) - so the AI SDLC work picks up from there.
+  **Sprint 3 "the live loop" (Eric, 2026-11-14): WP1 COMPLETE** - the first live drive of `llm.run`, through the new
+  `order-assistant` example graph, on Haiku 4.5 and Opus 5.5 through both packs' helpers, negative control first (the
+  report `docs/test-reports/agent-loop-live-drive.md`; the thread [[agent-loop-llm-run]]). **WP2 NEXT:** RFC-0011 step 4,
+  the MCP binding in the Python helper (servers by name, stdio and HTTP streaming, the allowlist, schema digests pinned at
+  boot) against a credential-free stdio server, then the Node twin, then the drive again with an MCP tool in the catalog;
+  after both, the RFC's ADR promotion and the packs' catch-up release, then sprint 2 (document ingestion) resumes.
   **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
   *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
   Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
