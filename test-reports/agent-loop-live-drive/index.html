@@ -2791,6 +2791,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scenario-9-an-mcp-servers-tool-in-the-catalog-python-binding-haiku-45-2026-11-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 9 — An MCP server's tool in the catalog (Python binding, Haiku 4.5), 2026-11-14
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#findings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3256,6 +3267,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#scenario-9-an-mcp-servers-tool-in-the-catalog-python-binding-haiku-45-2026-11-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 9 — An MCP server's tool in the catalog (Python binding, Haiku 4.5), 2026-11-14
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#findings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3335,7 +3357,12 @@ turn. This is the end-to-end test the RFC's promotion to an ADR was held on.</em
   made the loop refuse with 400 before any token was spent, which is right, but the suspension record had been consumed
   on retrieval, so the transaction was gone. The graph now routes that failure back to its advice checkpoint and
   pauses again; verified live afterwards.</li>
-<li><strong>40 model calls</strong> (one the deliberate failure), 3,839 output tokens; 28,795 uncached input tokens on Haiku 4.5, and
+<li><strong>An MCP server's tool in the catalog, later the same day (Scenario 9).</strong> The new <code>diagram-assistant</code> graph's one tool is
+  <code>render_diagram</code>, mapped to the route <code>diagram.render</code> that the Python pack's new MCP binding serves by calling the public
+  Mermaid Chart MCP server over streamable HTTP. Three runs on Haiku 4.5: the model drafted a diagram, the binding's call took
+  3 to 4 s, the model answered with the validated code, and one trace id spans the engine, the helper and the binding. The
+  server's rendered image rode back as a 36,000 to 43,000-token tool result until the node capped it at 8 KiB (4,344).</li>
+<li><strong>40 model calls</strong> in the first eight scenarios (one the deliberate failure), 3,839 output tokens; 28,795 uncached input tokens on Haiku 4.5, and
   on Opus 5.5 40 uncached input tokens against 13,734 read from the cache.</li>
 </ul>
 <h2 id="what-was-under-test">What was under test<a class="headerlink" href="#what-was-under-test" title="Permanent link">&para;</a></h2>
@@ -3377,6 +3404,11 @@ turn. This is the end-to-end test the RFC's promotion to an ADR was held on.</em
 <td>Models</td>
 <td><code>claude-haiku-4-5-20251001</code>, <code>claude-opus-5-5</code></td>
 <td>the helper's <code>llm.model</code>; the graph names none</td>
+</tr>
+<tr>
+<td>mercury-python <code>extensions/mcp-binding</code> (Scenario 9)</td>
+<td>main after #51</td>
+<td><code>diagram.render</code> → the Mermaid Chart MCP server, streamable HTTP, port 8088</td>
 </tr>
 </tbody>
 </table>
@@ -3473,6 +3505,53 @@ new decision, <code>triage-failure</code>, sends such a failure back to the <cod
 pauses again. After the fix, live: the same bad decision answered <code>type: approval</code> in 31 ms, with
 <code>error: "decisions[0].id 'toolu_does_not_exist' is not a call waiting for approval"</code>, <code>source: assist</code> and the same
 call still waiting; the right decision then completed the refund (RF-13008685) in 2.67 s. The token-free test pins it.</p>
+<h2 id="scenario-9-an-mcp-servers-tool-in-the-catalog-python-binding-haiku-45-2026-11-14">Scenario 9 — An MCP server's tool in the catalog (Python binding, Haiku 4.5), 2026-11-14<a class="headerlink" href="#scenario-9-an-mcp-servers-tool-in-the-catalog-python-binding-haiku-45-2026-11-14" title="Permanent link">&para;</a></h2>
+<p>Step 4 of RFC-0011 built the MCP bindings in both packs the same day (mercury-python #51, mercury-nodejs #118). The
+engine-side drive uses the Playground's new <code>diagram-assistant</code> graph: an <code>llm.run</code> node with a one-row catalog,
+<code>render_diagram</code> → <code>diagram.render</code>, the route the Python binding serves by calling the public Mermaid Chart MCP server's
+<code>validate_and_render_mermaid_diagram</code> over streamable HTTP. The binding ran with the example's server file
+(<code>mcp/mermaid-servers.yml</code>: the URL, a 20 s call timeout, the tool's input-schema digest), and its boot connected, listed
+the server's one tool and verified the digest before the first request. The engine's <code>event-over-http.yaml</code> maps the route
+to the binding; the graph never sees the server.</p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Request</th>
+<th>Outcome</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1, watched over SSE</td>
+<td>a flowchart of the order assistant's refund approval</td>
+<td><code>tool.start</code> and <code>tool.end</code> for <code>render_diagram</code> → <code>diagram.render</code> (<code>ok</code>, 4,002 ms), two turns, the validated flowchart in a fenced block</td>
+<td>20.8 s (turn 1 12.9 s, the session's first call)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>a sequence diagram of an agent loop turn</td>
+<td>one call (2,960 ms in the binding), two turns, the validated sequence diagram</td>
+<td>11.4 s</td>
+</tr>
+<tr>
+<td>3, <code>result_limit</code> 8 KiB</td>
+<td>the flowchart again</td>
+<td>the same shape; the tool result cut to 8 KiB and marked as cut</td>
+<td>10.8 s</td>
+</tr>
+</tbody>
+</table>
+<p>The engine logged <code>llm.run done after 2 turn(s)</code> with a <code>service=llm.run</code> span of 20,715 ms and 11,368 ms; the binding
+logged <code>Handled diagram.render status=200</code> with the server's time; the helper logged the two turns. One trace id covers all
+three processes for a run: 23 engine span lines, the helper's two turns and the binding's call.</p>
+<p><strong>What it found.</strong> The server answers the verdict together with the rendered SVG, and the loop returns the whole result to
+the model: the next turn created 36,406 and 43,483 cache tokens in runs 1 and 2. The model needs the verdict and the code, not
+the image, so the node sets <code>result_limit</code> to 8 KiB (the loop cuts a larger result and marks it as cut; the keys the model
+needs come first in the server's reply): run 3's next turn cost 4,344 tokens for the same answer. A catalog row that binds a
+tool with a large payload gets a <code>result_limit</code> on its node; a binding-side projection of a result is a design question for
+the bindings, not something the loop should guess.</p>
 <h2 id="findings">Findings<a class="headerlink" href="#findings" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>The loop's own machinery never failed.</strong> Every model turn, tool call, hold, resume and refusal behaved as the
@@ -3494,6 +3573,10 @@ call still waiting; the right decision then completed the refund (RF-13008685) i
 <li><strong>The first model call of a session is slow.</strong> Turn 1 of the first live run took 11.1 s on Haiku; every later turn
    took 2 to 3.3 s on Haiku and 1.8 to 4.6 s on Opus. The loop's 50 s deadline and the node's 55 s TTL, under the
    executor flow's 60 s, left room; the Playground's REST entry was raised from 30 s to 60 s for the same reason.</li>
+<li><strong>An MCP tool is a route like any other, and its payload is the graph's to cap.</strong> The loop, the engine's
+   Event-over-HTTP map and the binding's allowlist compose without a change to any of them: the engine never learns there
+   is an MCP server behind <code>diagram.render</code>. What the graph must decide is the size of the tool's reply (<code>result_limit</code>),
+   because a server that returns an image with its verdict otherwise spends tens of thousands of tokens per turn.</li>
 <li><strong>A resume is a new run and a new trace.</strong> The engine's trace tree covers one HTTP request; the conversation
    reference, the turn count and the call ids are what tie the runs of one transaction together, with the correlation
    id. A reader of a trace store follows the <code>cid</code>, not the trace id, across an approval.</li>
