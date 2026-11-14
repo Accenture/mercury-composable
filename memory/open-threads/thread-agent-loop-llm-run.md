@@ -76,7 +76,8 @@
   drives are DONE; sprint 3 is complete.** Then (Eric, the same day): a dry run of the graph in a shared Playground session
   through the AI companion broker, and `diagram.render` became a function of the example that stores the server's SVG as
   `/tmp/rendered_diagrams/<reference>.svg` and gives the model a reference instead of the image (the MCP-bound route is now
-  `diagram.render.mcp`); the demo is documented in the example's README. Next: the packs' catch-up release carrying the loop contract and the bindings.
+  `diagram.render.mcp`); the demo is documented in the example's README (#627 MERGED 2026-11-14, squash `92cb63a4f`; the page `<reference>.html` beside
+  each SVG lets Finder open a render - Eric confirmed the end-to-end Mermaid MCP test looks good). Next: the packs' catch-up release carrying the loop contract and the bindings.
   The engines' mentions of the packs' `examples/llm-helper` (the Playground's LLM relay, its `event-over-http.yaml` and
   README, the certification reports) are fixed by #601 (squash `72d43d06`) and mercury #401 (merge `e66ae513`), the packs' by mercury-python #48 (`463e37c`), all
   merged 2026-11-03: no live mention of the old folder is left in the family.
