@@ -364,7 +364,9 @@
   schema digest. Design spec `draft-design-specs/llm-helper-agent-loop.md`; the runnable example is the Playground's
   `order-assistant` ([[graph-failed-resume-readvises]]). **How to apply:** a new tool for an agent is a route and a catalog
   row, never engine code; a new provider or MCP server is pack configuration; the hold on a write comes from the row's mark,
-  so design safety on the catalog and the mode, not on the prompt. (ADR-0033)
+  so design safety on the catalog and the mode, not on the prompt; a tool whose reply carries a payload the model does not
+  need (a rendered image beside its verdict) gets `result_limit` on its node - uncapped it cost 36,000 to 43,000 tokens a turn
+  in the 2026-11-14 drive, capped at 8 KiB 4,300. (ADR-0033)
   <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-14 | uses: 2 | tier: active | origin: 2026-11-14-071025 -->
 
 - **A graph that resumes an agent loop re-advises on a failed resume, because `graph.resume` consumes the suspension record
@@ -784,8 +786,9 @@
   **Sprint 3 "the live loop" (Eric, 2026-11-14):** WP1 the first live drive of `llm.run` through the new `order-assistant` graph on
   Haiku 4.5 and Opus 5.5 through both packs, negative control first (#624 merged; `docs/test-reports/agent-loop-live-drive.md`);
   RFC-0011 PROMOTED to ADR-0033 (#625, [[agent-loop-tool-names-map-to-routes]]); WP2 the MCP bindings in both packs
-  (mercury-python #51, mercury-nodejs #118, merged); the engine-side drive with an MCP tool in a graph's catalog runs on the
-  public Mermaid Chart MCP server (Eric's choice). After it: the packs' catch-up release.
+  (mercury-python #51, mercury-nodejs #118, merged); the engine-side drive with an MCP tool in a graph's catalog RAN the same
+  day on the public Mermaid Chart MCP server (Eric's choice) through the new `diagram-assistant` graph - **sprint 3 COMPLETE**.
+  Next: the packs' catch-up release, then the epic's next sprint (Eric's call).
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own
   confidence; not every block enters the graph and every later round reads the previous round's output; other formats need

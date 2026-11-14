@@ -78,6 +78,33 @@ the application with `-Dgraph.websocket.enabled=true` and open `ws://127.0.0.1:8
 the first text frame `{"header": {"X-Correlation-Id": "..."}, "body": {"question": "..."}}` starts the run, and each
 event comes back as a frame before the result closes the session.
 
+### `diagram-assistant` - an MCP server's tool in the catalog
+
+The same agent loop with one tool that is not a function of this application: the catalog row `render_diagram` maps to
+the route `diagram.render`, which the **MCP binding** of a language pack serves by calling a Mermaid MCP server over
+streamable HTTP (`mcp/mermaid-servers.yml` in this folder is the binding's server file, with the server's URL and the
+digest of its tool's input schema). The model drafts a Mermaid diagram from the description, validates it through the
+tool, fixes it if the server says it is invalid, and answers with the validated code. The graph names a route, the binding
+names the server, and the engine stays MCP-free (RFC-0011 / ADR-0033, step 4).
+
+```bash
+# 1. the MCP binding of a language pack, on port 8088 (Python) or 8089 (Node.js), bound to the Mermaid server
+mercury-serve extensions/mcp-binding/mcp_binding.py \
+  -Dmcp.servers=/absolute/path/to/examples/minigraph-playground/src/main/resources/mcp/mermaid-servers.yml
+# 2. the LLM helper, as for the other graphs; then this application (-Dmcp.peer.port=8089 for the Node.js binding)
+# 3. a description
+curl -s -X POST http://127.0.0.1:8085/api/graph/diagram-assistant \
+  -H 'content-type: application/json' \
+  -d '{"question": "Draw a flowchart of a refund approval: request, review, approve or reject."}'
+```
+
+The answer carries the validated Mermaid code in a fenced block, the call log (`render_diagram` → `diagram.render`, `ok`) and
+the usage. Watched over `/api/stream/graph/diagram-assistant`, the run shows `tool.start` and `tool.end` for the MCP-bound
+route like any other tool. The node sets `result_limit` to 8 KiB: the server returns the rendered image with its verdict, and
+the model needs the verdict and the code, not the image - uncapped, the image cost 36,000 to 43,000 input tokens on the
+next turn; capped, 4,300. In the test scope `MockDiagramRender` serves the route and the scripted `llm.chat` drafts and
+validates, so the graph is tested without a token, a network or an MCP server.
+
 The graph names only routes, so the model, the provider and the pack are the helper's configuration, never the graph's:
 the same graph ran unchanged on Claude Haiku 4.5 and Opus 5.5 through both helpers
 (`docs/test-reports/agent-loop-live-drive.md`).

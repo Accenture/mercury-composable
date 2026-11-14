@@ -42,12 +42,13 @@ import java.util.regex.Pattern;
  * <ul>
  * <li>a plain chat (the support-triage graph): the reply mirrors the {@code llm.chat} contract (data,
  *     usage, model, stop_reason) with a deterministic verdict derived from the prompt;</li>
- * <li>a loop turn (the order-assistant graph, a request with {@code tools}): the reply follows the loop
+ * <li>a loop turn (the order-assistant and diagram-assistant graphs, a request with {@code tools}): the reply follows the loop
  *     contract of RFC-0011 section 3.2 - {@code tool_use} with the calls, or {@code done} with the text,
  *     a conversation reference and a turn count the next turn must echo, a 409 when it does not - and
  *     the script plays a careful assistant: it looks the order up and checks the shipment, proposes a
  *     refund only for a lost shipment, and answers from the tool results it was given, including a
- *     refund that failed or was refused.</li>
+ *     refund that failed or was refused; for the diagram assistant it drafts a flowchart, validates it through the
+ *     catalog's one tool and answers with the validated code.</li>
  * </ul>
  */
 @PreLoad(route = "llm.chat", instances = 10)
@@ -61,11 +62,17 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
     private static final String LOOKUP_CALL = "c1";
     private static final String SHIPMENT_CALL = "c2";
     private static final String REFUND_CALL = "c3";
+    private static final String RENDER_CALL = "d1";
+    private static final String RENDER_TOOL = "render_diagram";
+    private static final String DIAGRAM_CODE = "flowchart TD\n  A[Request] --> B{Review}\n  B -->|approve| C[Approved]\n  B -->|reject| D[Rejected]";
     private static final ConcurrentMap<String, Conversation> CONVERSATIONS = new ConcurrentHashMap<>();
 
     /** What the scripted assistant remembers of one conversation: the record's turn count and the facts. */
     private static final class Conversation {
         private int turn;
+        private boolean diagram;
+        private Map<String, Object> render;
+        private String renderError;
         private String orderId;
         private Map<String, Object> order;
         private String orderError;
@@ -116,7 +123,10 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
             }
             Map<String, Object> reply = new HashMap<>();
             if (conversation.turn == 1) {
+                conversation.diagram = hasTool(input.get("tools"), RENDER_TOOL);
                 firstTurn(conversation, String.valueOf(input.get("prompt")), reply);
+            } else if (conversation.diagram) {
+                laterDiagramTurn(conversation, reply);
             } else {
                 laterTurn(conversation, reply);
             }
@@ -129,7 +139,24 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
         }
     }
 
+    private static boolean hasTool(Object tools, String name) {
+        if (tools instanceof List<?> rows) {
+            for (Object row : rows) {
+                if (row instanceof Map<?, ?> map && name.equals(map.get("name"))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static void firstTurn(Conversation conversation, String prompt, Map<String, Object> reply) {
+        if (conversation.diagram) {
+            // the diagram assistant drafts the code and validates it before answering
+            calls(reply, List.of(call(RENDER_CALL, RENDER_TOOL, Map.of(
+                    "diagramCode", DIAGRAM_CODE, "title", prompt.length() > 40 ? prompt.substring(0, 40) : prompt))));
+            return;
+        }
         Matcher matcher = ORDER_ID.matcher(prompt);
         if (matcher.find()) {
             conversation.orderId = matcher.group();
@@ -163,6 +190,17 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
         }
     }
 
+    private static void laterDiagramTurn(Conversation conversation, Map<String, Object> reply) {
+        if (conversation.renderError != null) {
+            done(reply, "I could not validate the diagram: " + conversation.renderError + ".");
+        } else if (conversation.render != null && Boolean.TRUE.equals(conversation.render.get("valid"))) {
+            done(reply, "Here is the validated diagram:\n```mermaid\n" + conversation.render.get("diagramCode")
+                    + "\n```\nIt shows the steps from the request to the decision.");
+        } else {
+            done(reply, "The renderer reported the diagram invalid and I could not fix it.");
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static void remember(Conversation conversation, List<?> results) {
         for (Object entry : results) {
@@ -172,6 +210,7 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
                                                 (Map<String, Object>) map : null;
                 String error = result.containsKey(ERROR) ? String.valueOf(result.get(ERROR)) : null;
                 switch (id) {
+                    case RENDER_CALL -> { conversation.render = output; conversation.renderError = error; }
                     case LOOKUP_CALL -> { conversation.order = output; conversation.orderError = error; }
                     case SHIPMENT_CALL -> { conversation.shipment = output; conversation.shipmentError = error; }
                     case REFUND_CALL -> { conversation.refund = output; conversation.refundError = error; }

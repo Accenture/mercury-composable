@@ -20,3 +20,12 @@ event:
       target: 'http://${llm.peer.host:127.0.0.1}:${llm.peer.port:8086}/api/event'
     - route: 'llm.stream'
       target: 'http://${llm.peer.host:127.0.0.1}:${llm.peer.port:8086}/api/event'
+    #
+    # The diagram-assistant demo graph's one tool is an MCP server's: diagram.render is served by the
+    # MCP binding of a language pack (mercury-python extensions/mcp-binding on port 8088, or
+    # mercury-nodejs on 8089), bound to a Mermaid MCP server by mcp/mermaid-servers.yml in this
+    # folder - run the binding with -Dmcp.servers=<absolute path of that file>. The graph names the
+    # route; the binding names the server; the engine stays MCP-free.
+    #
+    - route: 'diagram.render'
+      target: 'http://${mcp.peer.host:127.0.0.1}:${mcp.peer.port:8088}/api/event'
