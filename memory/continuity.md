@@ -19,97 +19,53 @@
 - **project:** mercury-composable
 - **status:** active, mature framework (Maven reactor)
 - **repo:** github.com/Accenture/mercury-composable (official — source of truth)
-- **latest_release:** v4.12.30 (2026-11-05 23:41:17Z — **lock-step with Rust 4.12.30: the Playground panel name from
+- **latest_release:** v4.12.30 (2026-11-05 23:41:17Z — lock-step with Rust 4.12.30: the Playground panel name from
   `playground.panel.name` (#617, [[playground-panel-name-meta]]), the AI companion broker - renamed from the Playground session
   broker, kept once in `templates/starter-graph`, with `POST /subscribe` - and the AI agent guide's recommended collaboration
-  start (#618, [[conv-one-copy-of-shared-tooling]]), and `websocket.idle.timeout` documented in seconds (#619)**: release PR
-  #620 squash `ea06d6bc` = tag `v4.12.30` = the main head at the tag (the memory records held until after the tag); the title
-  clean, one trailer; no build file on 4.12.29 at the tag; the GitHub release published (not a draft), its notes the
-  CHANGELOG section. **READ:** a command or note naming `scripts/playground-session-broker.mjs` names
-  `scripts/ai-companion-broker.mjs`, run from `templates/starter-graph`; a `websocket.idle.timeout` written as minutes is
-  multiplied by 60. Sweep 52 build files / 118 plus the lab's three literals. Readiness: `mvn -o clean install` BUILD SUCCESS
-  7:11, 277 suites, 3007 tests, 0 failures, 3 skipped. **Rust 4.12.30 the same day**, catching up from 4.12.27 with every
-  common feature since (mercury #401–#408): #409 merge `852c2977` = tag, THIRTEEN crates on crates.io (`mercury-agent-loop`
-  first published). The packs stay at 4.12.21. agent-memory green on the tag; CI green after. **Field result 2026-11-06: the
-  field's Sonar scan reported five new-code smells, one a Blocker (S1845 in the scheduler example), and the field's
-  pipeline rejected the build; closed with the IDE's S2095 and S2629 by #622 (squash `4b92dd2b`,
-  [[conv-sonar-gate-heuristics]], twelfth round), which Eric patches into the field's pipeline - no new release (Eric).**
-  Origin 2026-11-05-234314.md.
-  Prior: v4.12.29 (2026-11-05 06:53:21Z — Java only: the scheduler's conditional claim keyed on `_origin` (#612), its guide
-  (#613) and its example on MongoDB with `helpers/mongodb-standalone` (#615); the agent loop and RFC-0011 step 3 (#605, #606,
-  #609, #611); the aborted flow closed (#610); `TargetRoute` a record (#614, engine-internal); #616 squash `39c90da8`, tag →
-  `3cf79ae8`; 276 suites / 3002 tests; no field result recorded - 4.12.30 followed the same day. Origin 2026-11-05-065411.md.)
-  Prior: v4.12.28 (2026-11-03 21:20:37Z — Java only: the scheduler's `RetryRequest` (3 s, 3 retries, each logged) and
-  `_firing` (#603), an environment store's error keeps the active environment, the LLM relay's folder (#601); #604 squash
-  `d28077b8` = tag; 267 suites / 2809 tests; **FIELD-DEPLOYED** (Eric, reported 2026-11-10). Origin
-  2026-11-03-212127.md.)
-  Prior: v4.12.27 (2026-10-30 23:18:11Z — the field's Snyk fix for 4.12.26 (Tomcat 11.0.27 with Spring Boot 4.1.2, #594), a
-  scheduled job's time zone (#599) and the `minimalist-kafka` round (#597, #598); lock-step with Rust 4.12.27; #600 squash
-  `2929ea31` = tag; 265 suites / 2802 tests; READ Added 1 (the resolver's schedule column needs 34 more characters); Rust #400
-  merge `03952aee` = tag, crates 12/12; **Field result 2026-10-30: the field's CI pipeline PASSED, Snyk and Sonar included;
-  FIELD-DEPLOYED** (Eric, reported 2026-11-10). Origin 2026-10-30-231959.md.)
-  Prior: v4.12.26 (2026-10-26 17:05:51Z — JSONPath to RFC 9535 through `minimalist-jsonpath` (ADR-0031), live invocation observers for
-  an APM agent (ADR-0032), the date plugins, `reactive-postgres` batches and transactions, the Playground round, the ASM, Vert.x and
-  Netty advisories closed; lock-step with Rust 4.12.26; #593 squash `50964467` = tag; 263 suites / 2793 tests; **Field result
-  2026-10-26: Snyk FAILED** on two critical findings in `tomcat-embed-core` 11.0.26, fixed in 4.12.27. Origin 2026-10-26-170700.md.)
-  Prior: v4.12.25 (2026-10-13 02:14:53Z — Java only: every finding of the field's Sonar gate on 4.12.24 closed, no behaviour change
-  ([[conv-sonar-gate-heuristics]]); #562 squash `f496291e` = tag; 249 suites / 1830 tests; FIELD-DEPLOYED 2026-10-14 - the field's
-  pipeline passed. Origin 2026-10-13-021606.md.)
-  Prior: v4.12.24 (2026-10-12 22:33:21Z — the Guava resolution the field's Snyk gate rejected in 4.12.23, plus the range plugins' bounds
-  and refinements (#554–#558), lock-step with Rust 4.12.24; #559 squash `e1940a4d`, tag → `c571e9c3`; Guava 33.7.2-jre, `failureaccess`
-  1.0.3 and Tink 1.23.0 as DIRECT dependencies of `minimalist-kafka` with Confluent 8.3.2, Guava out of `platform-core`
-  ([[conv-library-pins-are-direct-dependencies]]); 1830 tests; Rust #383 → `aa67a429`, crates 12/12 at 22:31Z, the platform-core
-  tarball identical to the tag. **Field result 2026-10-12: Snyk PASSED, Sonar FAILED** on 8 new-code findings (40 in the report) → fixed
-  in 4.12.25. Origin 2026-10-12-223627.md.)
-  Prior: v4.12.23 (2026-10-11 03:35:56Z — the API playground and `f:rangeLookup`, lock-step with Rust; #551 squash `79995691` plus #552
-  and #553 before the tag, tag → `14cbae7a`; the API playground round #545–#550 (Swagger UI fetched by script, a Mercury-branded page on
-  the Reactive HTTP server without Spring Boot, Deploy and `api.playground.specs`), `f:rangeLookup` #552, the front-matter fix and guard
-  #543/#544; 1802 tests; Rust #378 → `da6ba2c3`, #379, tag → `f542261d`, Increments 175–176, crates 12/12; **REJECTED by the field's
-  Snyk gate 2026-10-12** — Guava 32.0.1-jre through Confluent's serializers in every consumer of `minimalist-kafka`, fixed in 4.12.24.
-  Origin 2026-10-11-034330.md.)
-  Prior: v4.12.22 (2026-10-10 01:24:53Z — the graph contract on both engines and the mini-scheduler's active environment; #542 squash
-  `67e573e8` = tag; the graph contract (ADR-0029, [[graph-contract-by-declaration]]: #533–#536, the mock request headers #531), the
-  scheduler's active environment (ADR-0030, [[scheduler-active-environment-store]]: #539), the service registry's echo fix #530; READ: a
-  root `schema` is validated from this release on, `graph.schema.validator` is reserved; 1801 tests; Rust #374 → `e39b5597` = tag,
-  Increments 170–174, crates 12/12 at 01:30Z. Origin 2026-10-10-021202.md.)
-  Prior: v4.12.21 (2026-10-07 02:35:00Z — graph sets on both engines and the engine's own MessagePack codec, lock-step with Rust and the
-  two language packs; #528 squash `b76db298`, tag → `87dd9e78`; graph sets end to end (ADR-0027, [[graph-set-pack-and-deploy]]), the
-  in-house codec `minimalist-msgpack` #517 (ADR-0028, [[minimalist-msgpack-codec]]), the decoder hardening pinned by shared vectors
-  ([[msgpack-nesting-limit-64]], [[msgpack-hostile-header-vectors]]), the Playground's file import and download #500 and three-step run
-  controls #498; READ: `org.msgpack.*` no longer transitive, every decoding failure an `IOException`, HTTP 400 for a payload nested deeper
-  than 64 levels or followed by extra bytes; 1778 tests; Rust #368 → `28457ccf`, tag → `9f524fa3`, crates 12/12; the packs caught up from
-  4.12.15 (mercury-nodejs #110, mercury-python #42); FIELD-ACCEPTED 2026-10-08 — the field's CI, Snyk and Sonar clean, deployed. Origin
-  2026-10-07-013257.md.)
-  Prior: v4.12.20 (2026-10-01 03:11:27Z — exact decimal arithmetic for money and the deterministic package format, lock-step with
-  Rust; #485 squash `9e515825`, tag → `fc940bea`; the `DECIMAL` statement #471 ([[decimal-statement-exact-arithmetic]], ADR-0025),
-  the `f:decimal*` plugins #475, `round` half-up #472, the `CanonicalPackager` #481 ([[canonical-packager-wire-contract]], ADR-0026);
-  READ: a numeric-looking string compares as a number and `round(-2.5)` is `-3`; 1587 tests; Rust #340 → `b4783c5b`, tag → `d63e102a`,
-  crates 12/12 at 4.12.20; the Java–Rust interop on 14 tutorials and 50 fixtures found 0 differences. Origin 2026-09-30-221603.md.)
-  Prior: v4.12.19 (2026-09-25 23:58:19Z — the rapid-prototyping deploy lane on both engines; #466 squash `a261ff18`, tag → `35000ef2`;
-  `graph.model.automation` takes a comma-separated list of manifests and the later one wins ([[graph-manifest-list-later-wins]]); 1520
-  tests; Rust #333 → `ff6e269c`, crates 12/12; FIELD-ACCEPTED 2026-09-25 — the field's CI, Snyk and Sonar clean. Origin 2026-09-25-232807.md.)
-  Prior: v4.12.18 (2026-09-25 20:56:19Z — two field reports answered on both engines; #464 squash `1e419a29`, tag → `70e00474`;
-  #462 graph.math typed and finite + CONDITION ([[graph-math-typed-arithmetic]] — READ: `true` never computes as 1/0 and `Infinity`
-  never propagates) and #463 the field's Snyk bumps (Jackson 2 BOM 2.22.3, Jackson 3 BOM 3.2.3, Netty 4.2.18.Final, MsgPack 0.9.12
-  best effort — CVE-2026-90472 medium, no upstream fix); 1517 tests; Rust #331 → `568d71b2`, tag → `7d07e9bd`, Increments 140–141;
-  crates 12/12. Origin 2026-09-25-194902.md.)
-  Prior: v4.12.17 (2026-09-25 00:19:27Z — the field's Kafka gap closed on both engines; #461 squash `e9cde291`, tag → `8a13a02e`; the
-  consumer-side Schema Registry identity #458/#460 + the sample #459 ([[kafka-consumer-registry-identity]] — READ before opting in);
-  1514 tests; Rust #328 → `ad957930`, tag → `af9d6f30`, Increments 137–139; the flaky Rust tests hardened after it (mercury #329,
-  Increment 140). Origin 2026-09-24-234713.md.)
-  Prior: v4.12.16 (2026-09-24 00:08Z — the correctness round from two field reports; #457 squash `df605533`, tag → `dc0ee6fa`;
-  the shared null-source rule, graph.math naming the variable, every abort carrying its reason (#456), the embedded-Redis
-  OpenSSL docs (#455), JaCoCo 0.8.15 (#452); Rust #324 → `743d4ea2`, tag → `cc138af3`, crates 12/12. Origin 2026-09-23-234558.md.)
-  Prior: v4.12.15 (2026-09-23 01:35Z — the connected-trace release, a lock-step round on all four runtimes; #451 squash `aafeff04`,
-  tag → `b705e9ff`; [[connected-edge-spans]], [[platform-onshutdown-lifecycle]], [[minigraph-dev-mode-app-shape]]; READ notes in
-  the CHANGELOG; Rust #322 → `87ee371f`, packs 4.12.1 → 4.12.15; registries the same night. Origin 2026-09-23-014650.md.)
-  Prior: v4.12.14 (2026-09-22 — the first lock-step release with the Rust port; #437 squash `dbc26f31`, tag → `e8a8d8e5`;
-  `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` in the bundled consumer template — [[kafka-group-protocol-auto-default]], READ:
-  an app that never set it joins a KIP-848 cluster with the consumer protocol. Origin 2026-09-21-233928.md.) · v4.12.13
-  (2026-09-21, 11 accumulated improvements, #435 `1feb3d73`, FIELD-ACCEPTED) · v4.12.12 (2026-09-17, the produce-only unblock,
-  #410, [[kafka-config-class-static-init-loader]] — archived) · v4.12.11 (2026-09-16, the field unblock, #405, [[otel-optional-service-and-negative-control]]) · v4.12.10 (2026-09-16,
-  Berkeley DB store retired, ADR-0024, #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the
-  `soa.redis.health` route rename, `minimalist-kafka` no longer transitive). The live version source stays the root pom.xml.
+  start (#618, [[conv-one-copy-of-shared-tooling]]), `websocket.idle.timeout` documented in seconds (#619); release PR #620
+  squash `ea06d6bc` = tag; the GitHub release published, its notes the CHANGELOG section. **READ:** a note naming
+  `scripts/playground-session-broker.mjs` names `scripts/ai-companion-broker.mjs`, run from `templates/starter-graph`; a
+  `websocket.idle.timeout` written as minutes is multiplied by 60. Sweep 52 build files / 118 plus the lab's three literals.
+  Readiness: `mvn -o clean install` 277 suites, 3007 tests, 0 failures. Rust 4.12.30 the same day (mercury #409 merge
+  `852c2977` = tag, thirteen crates). The packs stay at 4.12.21. **Field result 2026-11-06: Sonar reported five new-code smells,
+  one a Blocker, and the field's pipeline rejected the build; closed by #622 (squash `4b92dd2b`, [[conv-sonar-gate-heuristics]]),
+  which Eric patches into the field's pipeline - no new release.** Origin 2026-11-05-234314.md.
+  **Prior releases, one line each (the full record is each origin log and the CHANGELOG; the version source stays the root pom.xml):**
+  v4.12.29 (2026-11-05, Java only: the scheduler's conditional claim keyed on `_origin` #612/#613/#615, the agent loop and
+  RFC-0011 step 3 #605/#606/#609/#611, `TargetRoute` a record #614; #616 squash `39c90da8`; 3002 tests; origin 2026-11-05-065411) ·
+  v4.12.28 (2026-11-03, Java only: the scheduler's `RetryRequest` and `_firing` #603, the LLM relay's folder #601; #604 squash
+  `d28077b8`; FIELD-DEPLOYED; origin 2026-11-03-212127) · v4.12.27 (2026-10-30, the field's Snyk fix for 4.12.26 - Tomcat 11.0.27
+  with Boot 4.1.2 #594 - a job's time zone #599, the `minimalist-kafka` round #597/#598; lock-step with Rust; #600 squash `2929ea31`;
+  FIELD-DEPLOYED, CI, Snyk and Sonar passed; origin 2026-10-30-231959) · v4.12.26 (2026-10-26, JSONPath to RFC 9535 ADR-0031, live
+  invocation observers ADR-0032, the date plugins, `reactive-postgres` batches; lock-step with Rust; #593 squash `50964467`; the
+  field's Snyk FAILED on Tomcat 11.0.26, fixed in 4.12.27; origin 2026-10-26-170700) · v4.12.25 (2026-10-13, Java only: the field's
+  Sonar findings on 4.12.24 closed; #562 squash `f496291e`; FIELD-DEPLOYED 2026-10-14; origin 2026-10-13-021606) · v4.12.24
+  (2026-10-12, the Guava resolution the field's Snyk gate rejected in 4.12.23 - [[conv-library-pins-are-direct-dependencies]] -
+  and the range plugins' bounds; lock-step with Rust; #559 squash `e1940a4d`; Snyk PASSED, Sonar FAILED, fixed in 4.12.25; origin
+  2026-10-12-223627) · v4.12.23 (2026-10-11, the API playground and `f:rangeLookup`; #551 squash `79995691`; REJECTED by the
+  field's Snyk gate, Guava 32.0.1 through Confluent; origin 2026-10-11-034330) · v4.12.22 (2026-10-10, the graph contract on both
+  engines ADR-0029 [[graph-contract-by-declaration]] and the scheduler's active environment ADR-0030; #542 squash `67e573e8`; READ:
+  a root `schema` is validated from this release on, `graph.schema.validator` is reserved; origin 2026-10-10-021202) · v4.12.21
+  (2026-10-07, graph sets ADR-0027 and the engine's own MessagePack codec ADR-0028 [[minimalist-msgpack-codec]] on both engines,
+  the packs caught up from 4.12.15; #528 squash `b76db298`; READ: `org.msgpack.*` no longer transitive, every decoding failure
+  an `IOException`, HTTP 400 past 64 nesting levels or with extra bytes; FIELD-ACCEPTED 2026-10-08; origin 2026-10-07-013257) ·
+  v4.12.20 (2026-10-01, exact decimal arithmetic ADR-0025 [[decimal-statement-exact-arithmetic]] and the deterministic package
+  format ADR-0026 [[canonical-packager-wire-contract]]; #485 squash `9e515825`; READ: a numeric-looking string compares as a
+  number and `round(-2.5)` is `-3`; origin 2026-09-30-221603) · v4.12.19 (2026-09-25, the rapid-prototyping deploy lane on both
+  engines [[graph-manifest-list-later-wins]]; #466 squash `a261ff18`; FIELD-ACCEPTED; origin 2026-09-25-232807) · v4.12.18
+  (2026-09-25, graph.math typed and finite plus CONDITION [[graph-math-typed-arithmetic]] - READ: `true` never computes as 1/0,
+  `Infinity` never propagates - and the field's Snyk bumps #463; #464 squash `1e419a29`; origin 2026-09-25-194902) · v4.12.17
+  (2026-09-25, the consumer-side Schema Registry identity [[kafka-consumer-registry-identity]] - READ before opting in; #461
+  squash `e9cde291`; origin 2026-09-24-234713) · v4.12.16 (2026-09-24, the correctness round from two field reports #456, the
+  embedded-Redis OpenSSL docs #455; #457 squash `df605533`; origin 2026-09-23-234558) · v4.12.15 (2026-09-23, the connected-trace
+  release on all four runtimes [[connected-edge-spans]], [[platform-onshutdown-lifecycle]], [[minigraph-dev-mode-app-shape]];
+  #451 squash `aafeff04`; origin 2026-09-23-014650) · v4.12.14 (2026-09-22, the first lock-step release with the Rust port;
+  `group.protocol=${KAFKA_GROUP_PROTOCOL:auto}` [[kafka-group-protocol-auto-default]] - READ: an app that never set it joins a
+  KIP-848 cluster with the consumer protocol; #437 squash `dbc26f31`; origin 2026-09-21-233928) · v4.12.13 (2026-09-21, 11
+  improvements, #435, FIELD-ACCEPTED) · v4.12.12 (2026-09-17, the produce-only unblock, #410) · v4.12.11 (2026-09-16, the field
+  unblock, #405, [[otel-optional-service-and-negative-control]]) · v4.12.10 (2026-09-16, Berkeley DB store retired, ADR-0024,
+  #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the `soa.redis.health` route rename,
+  `minimalist-kafka` no longer transitive).
 - **last_enabled:** 2026-06-20
 - **last_review:** 2026-11-14 | through 2026-11-14-074819.md (SIZE — continuity passed 1000 lines after the ADR work; 4
   sessions since 2026-11-13-030403: `refresh-metadata` refreshed 11 footers, tier changes 4 (`agent-loop-tool-names-map-to-routes`,
@@ -120,46 +76,15 @@
   2026-11-13-031614); stalled threads: `ai-sdlc-document-ingestion` (41) → [[close-stalled-threads-20261114]] raised for Eric;
   contradictions none; smoke test not run. Live facts 48, decaying 28 of a 35 limit; continuity stays above 1000 lines because the
   facts are long, not many - the next lean-up is the sweep of the three 2026-11-05 threads once past the window.)
-  Prior: 2026-11-13 | through 2026-11-13-030403.md (ON COMMAND — 4 sessions since 2026-11-10-015436, this log
-  included: `refresh-metadata` refreshed 11 footers, tier changes 6 (`playground-webapp-single-source`,
-  `scheduler-example-mongodb`, `help-edit-needs-bundle-release`, `conv-config-key-not-value-and-parent` and
-  `conv-one-copy-of-shared-tooling` → archive-candidate; `historical-releases-tags-and-pages` → active); archived 1
-  superseded fact (`release-branches-historical-record` → `historical-releases-tags-and-pages`) and 1 faded
-  (`clean-knowledge-design-over-engine-coverage`, 21 sessions; step 6: the window's four commits on
-  `extensions/redis-connection` were two release sweeps and two IDE rounds, and no window log exercises the posture);
-  swept 0; archive-verify pass; invariants not due ([[reverify-invariants-20261104]] still awaits Eric's walk, 19
-  sessions on); stalled threads none; contradictions none; live facts 47 → 45. Smoke test not run. Then Eric promoted
-  `clean-knowledge-design-over-engine-coverage` to `core`, so it moved back from the archive: live facts 46.)
-  Prior: 2026-11-10 | through 2026-11-10-015436.md (ON COMMAND + CADENCE — refreshed 23 footers, tier changes 10; archived
-  1 superseded fact; swept 2 threads; one stale thread item struck; live facts 48 → 45)
-  Prior: 2026-11-04 | through 2026-11-04-050444.md (CADENCE — refreshed 11 footers, tier changes 5; archived 1 faded fact and
-  KEPT `playground-webapp-single-source` and `conv-library-pins-are-direct-dependencies` as declaration gaps; swept 5
-  threads; invariants DUE → [[reverify-invariants-20261104]] raised; live facts 46 → 41)
-  Prior: 2026-11-03 | through 2026-11-03-010235.md (CADENCE — refreshed 26 footers, tier changes 14; archived 1 faded fact and
-  KEPT `snyk-retired-manifest-placeholders` as a declaration gap; swept 2 threads; live facts 46 → 43, lines 798 → 783)
-  Prior: 2026-10-29 | through 2026-10-29-012834.md (ON COMMAND + CADENCE — refreshed 26 footers, tier changes 14; reactivated
-  `conv-ports-adopt-java-release-number`; archived 0; swept 5 threads; one stale statement corrected; live facts 46 → 42)
-  Prior: 2026-10-24 | through 2026-10-24-030134.md (CADENCE — refreshed 20 footers, tier changes 15; archived 1 faded fact; swept 0
-  threads; one declaration gap closed; `memory/instructions.md`'s repository structure corrected; live facts 44 → 43, lines 726)
-  Prior: 2026-10-22 | through 2026-10-22-180311.md (CADENCE — refreshed 13 footers, tier changes 7; archived 10 faded facts; swept
-  2 threads; the invariant re-verify and a stalled-thread gate raised; live facts 47 → 37, lines 879 → 655)
-  Prior: 2026-10-22 | through 2026-10-22-012004.md (CADENCE — refreshed 22 footers, tier changes 13; archived 1 faded fact; swept 2
-  threads; live facts 47 → 44, lines 890 → 847) · 2026-10-14 | through 2026-10-14-000312.md (CADENCE — refreshed 22 footers, tier changes 10; archived 3 faded facts and KEPT
-  `graph-math-typed-arithmetic` and `scheduler-active-environment-store` as declaration gaps; swept 4 threads; reactivated
-  `llm-helper-certification-java`; live facts 50 → 44, lines 851 → 798) · 2026-10-11 | through 2026-10-11-034330.md (ON COMMAND,
-  CADENCE + SIZE — refreshed 24 footers, tier changes 16; archived 6 faded facts and KEPT `decimal-statement-exact-arithmetic` as a
-  declaration gap; swept 6 threads; live facts 58 → 46, lines 865 → 741) · 2026-10-09 | through 2026-10-09-032243.md (CADENCE + SIZE —
-  refreshed 35 footers, tier changes 28; archived 5 faded facts; swept 7 threads; the invariant re-verify and a stalled-thread gate
-  raised) · 2026-10-06 | through 2026-10-06-012541.md (SIZE — refreshed 19 footers, tier changes 14; archived 2 faded Key Decisions;
-  swept 4 threads; live facts 59 → 53)
-  · 2026-10-05 | through 2026-10-05-230033.md (ON COMMAND — the first step-6 declaration-gap run at v4.42.3: refreshed 30 footers,
-  archived 0 with two facts KEPT as declaration gaps, the stalled-thread gate raised; facts 56 → 57) · 2026-10-02 | through
-  2026-10-02-185029.md (CADENCE + SIZE — refreshed 35 footers, tier changes 25, archived 8 faded Key Decisions,
-  swept 4 threads; facts 62 → 50, lines 867 → 683) · 2026-09-28 | through 2026-09-28-230310.md (CADENCE — refreshed 6 footers, tier changes 3, archived 0, swept 0; two stale statements
-  corrected; facts 46; smoke test 12/12, read set gained `vision.md`) · 2026-09-25 | through 2026-09-25-014100.md (ON COMMAND after the
-  v4.12.17 cycle — archived 0, swept 0; the invariant re-verify thread raised and completed 2026-09-25-022841, `instant-serialization` demoted
-  from core and archived; lines 851 → 802, facts 52) · earlier: 2026-09-24, 2026-09-23 (×2), 2026-09-22 (size sweeps; their summaries live in
-  those session logs).
+  Prior: 2026-11-13 | through 2026-11-13-030403.md (ON COMMAND — refreshed 11 footers, tier changes 6; archived 1 superseded
+  fact and 1 faded; declaration gaps none; live facts 47 → 45; then Eric promoted `clean-knowledge-design-over-engine-coverage`
+  to `core`, so it moved back from the archive: 46.)
+  Earlier reviews, each summarized in its own session log: 2026-11-10-015436 (on command + cadence; 23 footers, 10 tier
+  changes, 1 superseded archived, 2 threads swept), 2026-11-04-050444 (cadence; the invariant gate raised), 2026-11-03-010235,
+  2026-10-29-012834, 2026-10-24-030134, 2026-10-22-180311 (10 faded facts archived; lines 879 → 655), 2026-10-22-012004,
+  2026-10-14-000312, 2026-10-11-034330, 2026-10-09-032243, 2026-10-06-012541, 2026-10-05-230033 (the first step-6
+  declaration-gap run), 2026-10-02-185029, 2026-09-28-230310 (smoke test 12/12), 2026-09-25-014100 (`instant-serialization`
+  demoted from core and archived), 2026-09-24, 2026-09-23 (×2), 2026-09-22.
 - **vision_evolved:** 2026-09-17 (Eric approved) — `memory/vision.md` now states **two tracks**: Track 1 *knowledge graph as
   application* (deterministic — rules, business logic, outcome; L3 leverages L2 + L1) and Track 2 *knowledge graph as AI SDLC*
   (governed AI processing for ambiguity a deterministic program cannot handle; L3 is the foundation and **AI is also the
@@ -173,16 +98,11 @@
   gains its second instance (#609, async fan-out); the Vision's Track 2 status refreshed (the agent loop shipped in both
   engines); core 19 → 20 with `clean-knowledge-design-over-engine-coverage`, promoted the same day. Cadence 40; the
   next re-verify is due 40 sessions after this log.)
-  Prior: 2026-11-04 | 2026-11-04-050444.md (PROMPTED — the gate raised; walked 2026-11-13.)
-  Prior: 2026-10-22 | 2026-10-22-234147.md (COMPLETE — Eric walked the 19 `core` facts and the Vision — **the 2026-09-17
-  two-track text** — against live-tree evidence at the 2026-10-22 review's gate [[reverify-invariants-20261022]]; ALL CONFIRMED, Java 21 still
-  the toolchain until the field runs Java 25; two wordings refreshed: `event-api-local-routes-only` (the routes it reaches itself, the mesh
-  included; never a relay through its own Event-over-HTTP map) and the Vision's Type line (the Rust port catches up with Java, the reference
-  implementation, when its repository has edits); core stays 19. Cadence 40; the next re-verify is due 40 sessions after 2026-10-22-234147.)
-  Prior: 2026-10-09 | 2026-10-09-045453.md (ALL CONFIRMED, `stack-messaging-kafka` and `conv-serialization-gotchas` reworded for ADR-0028;
-  core 19) · 2026-09-25 | 2026-09-25-022841.md (`instant-serialization` demoted from core; core 19 → 18) · 2026-09-16 | 2026-09-16-041500.md
-  (`virtual-threads-rpc` enriched from ADR-0024; core 18 → 17) · 2026-09-11 | 2026-09-11-005808.md.
-
+  Prior walks: 2026-11-04-050444 (the gate raised; walked 2026-11-13) · 2026-10-22-234147 (ALL CONFIRMED against the 2026-09-17
+  two-track Vision; `event-api-local-routes-only` and the Vision's Type line reworded; core 19) · 2026-10-09-045453 (ALL
+  CONFIRMED; `stack-messaging-kafka` and `conv-serialization-gotchas` reworded for ADR-0028) · 2026-09-25-022841
+  (`instant-serialization` demoted from core; 19 → 18) · 2026-09-16-041500 (`virtual-threads-rpc` enriched from ADR-0024;
+  18 → 17) · 2026-09-11-005808.
 > This agent-memory layer was seeded on 2026-06-20 from a prior prototyping
 > environment, carrying forward only the confirmed Vision + Blueprint and the
 > durable project facts — a clean start for the official repo (see the
@@ -654,85 +574,45 @@
   [[conv-template-version-sweep]] (the other reactor-wide sweep).
   <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-11-05 | uses: 11 | tier: archive-candidate | origin: 2026-10-12-221919 -->
 
-- **The field's Sonar gate judges NEW code, and five of its heuristics catch prose and framework idioms - write for them (the fifth
-  Sonar round, 2026-10-12; the earlier rounds are the archived `thread-sonar-quality-gate-4.6.2`, `thread-sonar-4-9-1-field-rejection`,
-  `thread-sonar-4-10-4-field-rejection` and `thread-sonar-4-11-x-field-round-3`).** 4.12.24 passed Snyk and failed Sonar on eight
-  new-code findings, one a Blocker. (1) S1845: a field and a constant that differ only by case (`purpose` / `PURPOSE`) - name a constant
-  that is a property key `*_KEY`, and BEFORE renaming a field grep the file for a constant of the same spelling: the round's own
-  rename `activeEnvironment` → `active` collided with `ACTIVE = "active"` and came back as the last Blocker (fixed as `current`,
-  `8d2c39f8`). (2) S125: a PROSE COMMENT LINE THAT ENDS IN A SEMICOLON reads as commented-out code, and a `${...}`
-  placeholder inside javadoc does too - end a comment with a period or nothing. (3) S6213: `record` is a restricted identifier even as a
-  lambda parameter - use `entry`. (4) S1450: a field assigned in one method and read in a callback registered in another is reported
-  as "could be local" - hold it in a final `AtomicReference` (Eric's ruling), which is also the memory-visibility shape the callback
-  needs. (5) S6548 (Info) flags every `getInstance()` singleton - an intentional one carries `@SuppressWarnings("java:S6548")` with
-  "Intentional singleton" in its javadoc (Eric's ruling; `ActiveEnvironment`, `ContractCatalog`, `SkillSnapshot`). Limits: S3776
-  cognitive complexity 15 per method; 25 assertions per test method (#558). S1168: a private helper returns an empty array, never null.
-  Kotlin: `require(...)` over if-throw, `map[key]` over `map.get(key)`, `?: throw` over `!!`, and `Unit?` over `Void` for a function
-  with no output - plain `Unit` would serialize the Unit object as the response body. **Sixth round (a local scan, 2026-10-14):** S5778 - an `assertThrows` lambda holds ONE
-  invocation, so build `List.of(...)` arguments outside it; S1192 counts a literal inside `List.of` against a constant of the same
-  value; S6204 - a loop that only maps into a list is a stream; S6035 - `\\w` over `[A-Za-z0-9_]`; S103 - 120 columns, which a
-  `throws` list widened past. **Seventh round (a local scan of the OneAgent branch, 2026-10-21):** S3077 - a `volatile` object
-  reference is a final `AtomicReference`, the S1450 shape; S3358 - a lambda written as a ternary's branch that holds a ternary is
-  NESTED, so move the lambda's body into a method (which also cleared S3776); S108 - an empty `default -> { }` carries a comment
-  saying why; S6213 again, a method named `record`; S5785 `assertNotNull` over `assertTrue(x != null)`; S1130 a `throws` the body
-  cannot throw. IntelliJ also flags every `InvocationHandler` lambda that can return null for `equals`, even behind a wrapper that
-  answers `equals` itself - give the inner handlers their own functional interface. **Eighth round (a local scan of the RFC-0010
-  code, 2026-10-22):** S1221 - a method named `equal` reads as a misspelt `equals`, so `isEqual`; a loop that counts down with
-  `i += by` for a negative `by` is reported as "Correct this loop's end condition", so pass the step's magnitude and write
-  `i -= by`; S6885 - `Math.clamp` over `Math.min(Math.max(...))`, which throws when min > max, so confirm the bounds are ordered;
-  S6353 - `\\d` over `[0-9]`; S5998 - a repeated regex group takes a possessive quantifier (`(?:\\[\\d++])*+`); S5961 counts a
-  helper that asserts (`refusal()` around `assertThrows`) as an assertion, so each line that calls it counts twice. **Review the
-  IDE's own quick fixes before keeping them:** its grammar fixes broke four javadoc sentences, and "boolean method is always
-  inverted" renamed `isSingular` to `isNotSingular` but left the javadoc describing the old result. **But one fix that looked
-  wrong was right:** IntelliJ's `ClassEscapesDefinedScope` reports a package-private type in a public method's signature, and a
-  record nested in an interface is always public, so its methods are too; the package-private `Node` in those signatures gave 27
-  warnings in `Expr` and `Selector` alone, and making `Node` public, with its javadoc saying why, is the fix. Reverting it on API-surface grounds brought them
-  back. **Ninth round (IntelliJ, after #583-#588, 2026-10-24):** a
-  method that returns null on one path flags every call chained on its result, so a test helper asserts the value non-null
-  and returns it; a parameter that every caller passes the same value is dropped; `forEach(File::delete)` ignores the
-  result, so `Utility.cleanupDir`; S3398 - a private static method that only a nested class calls moves into that class. **Tenth
-  round (IntelliJ on the new `agent-loop` module, #605, 2026-11-04), after a pre-review pass that already applied the rules
-  above:** a `Boolean` is not a `Number` in Java, so `instanceof Number && !(instanceof Boolean)` is dead code (Python's guard,
-  where `bool` subclasses `int`; written four times); S1845 compares a class's FIELDS, so check every field against every
-  constant mechanically (lower-case both), not the pairs that come to mind - `types` and `TYPES` slipped past a pass that
-  renamed `minimum`; a null map returned as a sentinel is S1168, so `Optional`; an `instanceof` chain is a pattern `switch`,
-  with `when` guards for a two-value check; `keySet` plus `get` is `entrySet`; `setScale` takes a `RoundingMode`; a route name
-  such as `llm.chat` in javadoc reads to the grammar checker as a sentence end, so `{@code llm.chat}`. False positives: "class
-  never used" on a `@PreLoad` function (the classpath scan registers it), "envelop" for the noun, "resume" read as "résumé". A
-  refactor of an equality helper that the vector harness also compares with needs a fresh negative control, or a broken
-  helper passes every case. **Eleventh round (Eric's IDE scan of the whole reactor, 2026-11-05, 114 files):** the
-  IDE's GRAMMAR quick fixes changed what 16 comments say - "may be null" to "maybe null", "whether or not" cut to
-  "whether", an instruction turned into a false statement, a product term ("specs folder") replaced, articles dropped,
-  `{reference}` stripped of its braces, prose turned into `- ` lines that javadoc renders as one paragraph - so every
-  wording quick fix is read against the sentence it replaced. LOOP-TO-STREAM with `.toList()` yields an unmodifiable
-  list, wrong wherever the list is later sorted or extended (`Collections.sort`, `addAll`), handed to an application
-  (a multi-request's replies, query parameters) or changed in place by the data mapping (`KeyNormalizationUtils`);
-  there use `new ArrayList<>(...)`, `Collectors.toCollection(ArrayList::new)`, `.sorted()` or `Stream.concat`, and a
-  loop that reads the size of the list it fills stays a loop. A class turned into a record renames its accessors, so
-  ask who calls the type before writing an upgrade note: `TargetRoute` (`manager()`/`cloud()` for
-  `getManager()`/`isCloud()`) is returned by public `EventEmitter` methods, but it is engine-internal, encapsulated
-  by the in-memory event routing, and no application touches it, so its 4.12.29 upgrade note was not needed (Eric,
-  2026-11-05). False positives: S6916 asks for a guard on a constant case label, which Java 21 does not allow; the
-  IDE scans one module, so "never used" on a constant another module reads is wrong. **Twelfth round (the field's Sonar
-  scan of 4.12.30, 2026-11-06), five findings:** S1845 again, a collection-name constant (`ENVIRONMENT`) beside its
-  accessor (`environment()`), the Blocker - name such a constant `*_COLLECTION`; S6213 again, a TEST helper named `record`
-  (the third `record` instance, so grep new code for ` record(` before a PR); S125 again, a prose comment ending in `;`;
-  S6126 - a string built from `\n`-joined literals over several lines is a text block (no trailing newline when the
-  closing `"""` ends the last line); and **S6916 is NOT a false positive to leave**, as the eleventh round had it: the field
-  reports a case body that is a lone `if`, and since Java 21 allows a `when` guard only on a pattern label, never on an
-  enum constant, the fix is to move the `if` into a method the case calls (`case STREAM -> endStream(terminal)`). The
-  IDE added S2095 on the example's `MongoClients.create(...)` local: a client that lives as long as the application
-  (closed by `onShutdown`) is held in a FIELD, created by a method that returns it, since S2095 does not raise on a
-  resource in a field and a try-with-resources would close it at once; and S2629 on the log line that moved with it - a
-  method call passed as a log argument runs even when the level is off, so it goes into a local first (a getter such
-  as `uri.getHosts()` is not flagged). A pre-existing finding counts as new the next
-  time its file is touched, so a Sonar round fixes the WHOLE report, not the gate's subset. **Thirteenth round (Eric's
-  IntelliJ scan, 2026-11-12, 77 files, #623 squash `319baf7c`):** a long sentence rewritten as `1.` `2.` lines merged two list items, left a
-  stray predicate on the last one and flattened sub-rules into siblings; such a list is a `<ul>`, read item by item
-  against the sentence it replaced. The grammar fix also split a package name (`spring.system`), so a package in
-  prose is `{@code}`. IntelliJ reports a `try` holding only a comment as empty (Sonar's S108 accepts the comment): a
-  helper that uses the resource keeps S2095 and S5778 satisfied. It cannot see a non-null proved inside another method
-  (`evaluate()`), so a local guard states it. `assert x != null` to `assertNotNull(x)` adds to S5961's count (25).
+- **The field's Sonar gate judges NEW code, and a round fixes the WHOLE report, because a pre-existing finding counts as new
+  the next time its file is touched (the fifth to thirteenth rounds, 2026-10-12 to 2026-11-12; the earlier rounds are the
+  archived `thread-sonar-*` threads). The rules, by finding:**
+  - S1845 (Blocker): a field and a constant that differ only by case. Name a property-key constant `*_KEY` and a collection
+    name `*_COLLECTION`; before renaming a field compare every field against every constant mechanically (lower-case both):
+    `activeEnvironment` → `active` met `ACTIVE`, `types` met `TYPES`, `environment()` met `ENVIRONMENT`.
+  - S125: a prose comment ending in `;`, or a `${...}` placeholder in javadoc, reads as code - end a comment with a period.
+  - S6213: `record` is a restricted identifier even as a lambda parameter, a method or a test helper - grep new code for ` record(`.
+  - S1450 / S3077: a field set in one method and read in a callback, or a `volatile` reference, is a final `AtomicReference`.
+  - S6548 (Info): an intentional singleton carries `@SuppressWarnings("java:S6548")` and "Intentional singleton" in its javadoc.
+  - Limits: S3776 cognitive complexity 15 per method; S5961 25 assertions per test method (a helper that asserts, such as
+    `refusal()`, counts, and `assert x != null` → `assertNotNull(x)` adds to it); S103 120 columns.
+  - S1168: a helper returns an empty array or an `Optional`, never null. S5778: one invocation per `assertThrows` lambda. S1192: a
+    literal inside `List.of` counts against a constant. S6204: a loop that only maps is a stream, but `.toList()` is
+    unmodifiable - where the list is later sorted, extended, handed to an application or changed by the data mapping use
+    `new ArrayList<>(...)`, `Collectors.toCollection(ArrayList::new)`, `.sorted()` or `Stream.concat`, and a loop that reads the
+    size of the list it fills stays a loop. S6035 `\\w`, S6353 `\\d`, S5998 a possessive quantifier on a repeated group.
+  - S3358: a lambda in a ternary's branch that holds a ternary is nested - move the body into a method. S108: an empty
+    `default -> { }` carries a comment. S5785 `assertNotNull` over `assertTrue(x != null)`. S1130: no `throws` the body cannot
+    throw. S1221: a method named `equal` reads as a misspelt `equals`. A loop counting down with `i += by` for a negative `by` is
+    flagged: pass the magnitude and write `i -= by`. S6885 `Math.clamp` (confirm min <= max). S3398: a private static method only
+    a nested class calls moves into it. S6916 is NOT a false positive: a case body that is a lone `if` moves into a method the
+    case calls, since Java 21 allows a `when` guard only on a pattern label. S6126: a `\n`-joined literal over several lines is
+    a text block. S2095: a resource that lives as long as the application is a FIELD created by a method that returns it, closed
+    by `onShutdown`. S2629: a method call passed as a log argument goes into a local first.
+  - Kotlin: `require(...)` over if-throw, `map[key]` over `map.get(key)`, `?: throw` over `!!`, `Unit?` over `Void` for no output.
+  - Java facts behind the IDE's findings: a `Boolean` is not a `Number`, so `instanceof Number && !(instanceof Boolean)` is dead
+    code; an `instanceof` chain is a pattern `switch` with `when` guards; `keySet` plus `get` is `entrySet`; `setScale` takes a
+    `RoundingMode`; a route name in javadoc is `{@code llm.chat}` and a package name in prose `{@code}`. A record nested in an
+    interface is public, so a package-private type in its signatures (`Node` in `Expr` and `Selector`) is made public with a
+    javadoc saying why - the fix that looked wrong and was right.
+  - **Review the IDE's quick fixes against the sentence they replace:** its grammar fixes changed what 16 comments said ("may
+    be null" to "maybe null", an instruction turned into a false statement, articles dropped, braces stripped, list items merged,
+    a package name split); "boolean method is always inverted" renamed a method and left its javadoc; a class turned into a
+    record renames its accessors, so ask who calls the type before writing an upgrade note (`TargetRoute` needed none). A
+    refactor of an equality helper that a vector harness also compares with needs a fresh negative control.
+  - False positives: "class never used" on a `@PreLoad` function; "envelop"; "resume" read as "résumé"; "never used" on a
+    constant another module reads (the IDE scans one module). IntelliJ reports a `try` holding only a comment as empty (a helper
+    that uses the resource keeps S2095 and S5778 satisfied) and cannot see a non-null proved in another method.
   Relates [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
   <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-14 | uses: 32 | tier: active | origin: 2026-10-13-001452 -->
 
@@ -884,98 +764,42 @@
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
-- [ ] (blueprint) **AI agent orchestration ("graph engineering")** — the Active Knowledge
-  Graph as the governed run-time for AI agents: LLM reasoning, MCP tools, and inner-loop
-  agents join graphs as wrapper-side functions (bounded-agency decision graphs;
-  agent-as-node); suspend/resume = human-in-the-loop; CompileGraph + the promotion
-  lifecycle = the governance answer ("governed nondeterminism", never determinism claims).
-  Engine core stays LLM/vendor-free; wrapper scope fence intact (adapters are functions ON
-  the wrappers). Run-time complement to the design-time [[bp-ai-companion-llm-backend]];
-  builds on [[bp-polyglot-functions]]; compounds [[bp-graph-governance-lifecycle]].
-  Concept doc: draft-design-specs/ai-agent-orchestration.md (Q1–Q8 open questions,
-  E0–E4 experiment plan). Direction ratified by Eric 2026-08-25. **E0 DONE 2026-09-01**
-  ([[ot-agent-orchestration-e0]]): support-triage graph + llm.chat/llm.stream python AI
-  nodes + progressive token rendering out the engine SSE edge — the first live
-  graph.task→wrapper drive, real Gemini verdicts, one distributed trace. **Re-driven 2026-10-01 with real Claude through both engines and both
-  packs ([[llm-helper-certification-java]]); the AI nodes are now a Claude-only helper app in the packs.** Enterprise LLM
-  access is platform-mediated only (Bedrock/Vertex/Foundry — concept doc Q2); the
-  Anthropic SDK covers all three, so the switch is client-construction only — re-drive
-  waits on Eric's cloud account. **Q8 second half: the TRANSPORT delivered 2026-09-12** —
-  the streaming return route ([[ot-streaming-return-route]], E-series complete incl.
-  E4's real-Gemini cross-pod token stream) carries a wrapper/graph node's tokens to
-  whichever pod holds the user's connection, zero engine change; what remains here is
-  driving that bridge from an LLM node INSIDE a live graph run. Next: E1 (suspend
-  checkpoint on an LLM verdict), the in-graph-run streaming drive.
-  **Status framing (Eric, 2026-09-17, at the first closure gate): graph-based AI SDLC is in the
-  DESIGN phase**, with experiments proving the prerequisites — progressive rendering of token
-  batches being the one already demonstrated. Sole remaining Blueprint gap, deliberately
-  long-horizon: an epic, not a task.
-  **Re-affirmed 2026-10-09 (Eric, at the stalled-thread gate [[close-stalled-threads-20261009]]):** stays open; the sequence is the
-  mini-scheduler's active-environment enhancement ([[scheduler-active-environment]]), then the v4.12.22 release, then this epic resumes.
-  **Resuming 2026-10-12 or later, on AWS Bedrock (Eric, 2026-10-11):** the AI SDLC work uses Bedrock, not a vendor API key, for enterprise
-  security compliance - the platform-mediated access the concept doc's Q2 anticipated (the Anthropic SDK covers Bedrock, so the switch is
-  client construction, not a new helper). The session resumes on a different dev machine that has the AWS environment access; this
-  machine has none, so nothing here was tried against Bedrock. The two v4.12.2x releases and the API playground round are done.
-  **Sprint 1 - AWS Bedrock integration (Eric, 2026-10-13; built 2026-10-14, mercury-python #43 merge `c25ba35` and mercury-nodejs #111 merge `def1e3a`, both MERGED 2026-10-14):** the
-  LLM helper's second backend, `llm.backend: 'bedrock'` - the SDK's Bedrock Mantle client over the AWS credential chain through IAM or
-  a Bedrock API key, the region from `llm.aws.region`/`AWS_REGION`, a bare model id prefixed `anthropic.`, no server-side fallbacks,
-  an empty chain a 503 by name, `llm.health` reporting the region; the routes, the contract and the engines unchanged; 66 shared
-  vectors, the real client built in tests with no AWS environment. Claude Platform on AWS (Anthropic-operated, bare model ids, full
-  parity) is a different route the same seam could take. **Driven live 2026-10-14 on this machine through IAM, negative
-  controls first:** a wrong secret a 401 by name, no credential a 503 by name (the Python mapping gap it found fixed in #44), then chat,
-  a structured verdict and a progressive stream on Haiku 4.5 from both helpers and this engine's shipped triage graph and streaming
-  relay in front of each - no vendor key anywhere. What it taught: Bedrock has TWO SURFACES an account may be enabled for separately
-  (`llm.aws.api`: `mantle`, the default, or `runtime`, the classic one with the account's own inference-profile ids - Eric's ruling),
-  model access is a one-time use case plus a per-model agreement (`CreateFoundationModelAgreement`, run on Eric's word), and a model
-  generation can be gated at the account on top. Certification report Scenario 8
-  and Finding 7 (#563 squash `cd708eba`, mercury #384 merge `9141cc32`, both MERGED 2026-10-14, with the packs' surface PRs
-  mercury-python #44 merge `03c5f57` and mercury-nodejs #112 merge `0ece23f`); the packs' thread closed; the concept doc's Q2 Bedrock
-  half done - sprint 1 COMPLETE on main in all four repositories. **Paused 2026-10-14 (Eric):** resumes when the newer
-  Claude models are available - additional tests and fine tuning then; **the packs' 4.12.25 catch-up release is HELD until then
-  (Eric)**. **Hold LIFTED 2026-10-29 (Eric):** the Claude API backend serves every current model, so the work no longer waits on a
-  platform's model availability; development and certification drives run on it, and the packs release when the work is ready.
-  **Research 2026-10-15/16 (Eric's direction) - sprint 2 is DOCUMENT INGESTION:** a field
-  installation converts legal PDFs into machine-readable blocks that a second round digests into a graph executing the rules
-  and math for transaction processing; the general frame is AI nodes that interpret ambiguity and return per-block outcomes a
-  deterministic node routes - to another agent, a program, or a human through suspend. Rulings: a large payload travels OUT OF
-  BAND (the event carries a reference to a blob in a shared store - the temp file system in a shared container, else S3, Redis or
-  a database - and the helper dereferences it); a conversion's verdict is a LIST of per-block outcomes with their own confidence,
-  the rendered output and the pending chunks in the shared folder; not every block enters the graph (legal text is mostly
-  elaboration) and every later round reads the previous round's output; other formats need tools made available to the graph (an
-  Excel parser), and common tools and MCP are components of this epic. First lab experiment (Haiku 4.5 on Bedrock, three
-  client-proprietary documents under neutral names in a lab folder OUTSIDE the repositories, 2026-10-16): the model's
-  segmentation is the unstable part (about half the blocks differ between two identical runs while roles agree on 84-91% of the
-  matched ones; self-reported confidence never discriminates; whole-document runs are coarser), so a DETERMINISTIC SEGMENTER
-  owns block identity and agreement across runs on stable ids is the determinism measure; agreements are operative-heavy and
-  need a relevance axis against the declared processing scope; pass 2 on the blocks alone yields the human-escalation questions
-  and conflicts. Thread [[ai-sdlc-document-ingestion]]; the helper's typed parts by reference and the manifest go to an RFC.
-  **Paused 2026-10-28 (Eric) for the agent loop, RFC-0011 ([[agent-loop-llm-run]]):** `llm.run` in the engines maps tool names to
-  routes; `llm.chat` and the MCP bindings live in the packs; agent graphs are asynchronous. The lab resumes once that design and
-  its implementation are solid.
-  **Resuming 2026-11-05 (Eric), on another dev machine:** the agent loop and RFC-0011 step 3 shipped on both engines -
-  Java 4.12.29 (#605, #606, #609, #611) and Rust 4.12.30 (`mercury-agent-loop`, async `graph.extension`, progress events),
-  with the AI companion broker's recommended collaboration start in 4.12.30 (#618) - so the AI SDLC work picks up from there.
-  **Sprint 3 "the live loop" (Eric, 2026-11-14): WP1 COMPLETE** - the first live drive of `llm.run`, through the new
-  `order-assistant` example graph, on Haiku 4.5 and Opus 5.5 through both packs' helpers, negative control first (the
-  report `docs/test-reports/agent-loop-live-drive.md`; the thread [[agent-loop-llm-run]]; #624 MERGED 2026-11-14, squash
-  `e88a52c2`). **WP2 NEXT:** RFC-0011 step 4,
-  the MCP binding in the Python helper (servers by name, stdio and HTTP streaming, the allowlist, schema digests pinned at
-  boot), then the Node twin - **both BUILT 2026-11-14: mercury-python #51 and mercury-nodejs #118, PRs pending** - then the
-  drive again with an MCP tool in the catalog (the server is Eric's choice);
-  after both, the packs' catch-up release, then sprint 2 (document ingestion) resumes. **RFC-0011 was PROMOTED to
-  ADR-0033 on 2026-11-14 (Eric), with WP1's drive as the end-to-end test it waited for; step 4 proceeds under the accepted
-  decision ([[agent-loop-tool-names-map-to-routes]]); the Vision's Track 2 status says so.**
-  **What it shares with the closed companion gap, and what it does not (Eric's clarification).**
-  *Shared:* the authoring lifecycle. An AI SDLC graph is co-invented by human and AI in the
-  Playground in dev mode — the same prototyping surface, the same maturity, reused rather than
-  rebuilt. *Different:* what survives promotion. For the companion the AI is a **design-time**
-  participant only — after promotion the UI is disabled and the graph runs without it. For AI SDLC
-  **some nodes carry AI skills**, so after promotion those nodes interface with an AI agent through
-  gateways, MCP servers or other tools: the AI is in the **production execution path**, not just the
-  authoring one. That is the whole reason this is a separate epic — the authoring pattern is
-  solved and inherited; the runtime posture is the open problem. It is also why the engine core
-  stays LLM/vendor-free with adapters as functions ON the wrappers: the gateway/MCP edge is where
-  vendor specifics live, never in the engine.
+- [ ] (blueprint) **AI agent orchestration ("graph engineering")** — the Active Knowledge Graph as the governed run-time for
+  AI agents: LLM reasoning, MCP tools and inner-loop agents join graphs as wrapper-side functions (bounded-agency decision
+  graphs; agent-as-node); suspend/resume is the human in the loop; CompileGraph and the promotion lifecycle are the governance
+  answer ("governed nondeterminism", never a determinism claim). The engine core stays LLM- and vendor-free; adapters are
+  functions ON the wrappers. Run-time complement to the design-time [[bp-ai-companion-llm-backend]]; builds on
+  [[bp-polyglot-functions]]; compounds [[bp-graph-governance-lifecycle]]. Concept doc `draft-design-specs/ai-agent-orchestration.md`
+  (Q1-Q8, E0-E4); direction ratified by Eric 2026-08-25. **Status framing (Eric, 2026-09-17): the graph-based AI SDLC is in its
+  DESIGN phase** - the sole remaining Blueprint gap, deliberately long-horizon: an epic, not a task.
+  **Delivered so far.** E0 (2026-09-01, [[ot-agent-orchestration-e0]]): the support-triage graph on `llm.chat`, the first live
+  graph.task-to-wrapper drive; re-driven 2026-10-01 with real Claude through both engines and both packs
+  ([[llm-helper-certification-java]]). Q8's transport (2026-09-12, [[ot-streaming-return-route]]). **Sprint 1, AWS Bedrock
+  (2026-10-13/14):** the helper's `bedrock` backend over the AWS credential chain (mercury-python #43/#44, mercury-nodejs
+  #111/#112), driven live through IAM with negative controls first (the certification report, Scenario 8 and Finding 7); Bedrock
+  has two surfaces (`llm.aws.api`: `mantle` or `runtime`) and per-model agreements; the concept's Q2 Bedrock half is done. The
+  2026-10-14 hold for newer models was lifted 2026-10-29: the Claude API backend serves every current model. **The agent loop
+  (RFC-0011, 2026-10-28 to 2026-11-05):** `llm.run` in the engines maps tool names to routes, the model turn and the MCP
+  bindings in the packs, agent graphs asynchronous - shipped in Java 4.12.29 and Rust 4.12.30 ([[agent-loop-llm-run]]).
+  **Sprint 3 "the live loop" (Eric, 2026-11-14):** WP1 the first live drive of `llm.run` through the new `order-assistant` graph on
+  Haiku 4.5 and Opus 5.5 through both packs, negative control first (#624 merged; `docs/test-reports/agent-loop-live-drive.md`);
+  RFC-0011 PROMOTED to ADR-0033 (#625, [[agent-loop-tool-names-map-to-routes]]); WP2 the MCP bindings in both packs
+  (mercury-python #51, mercury-nodejs #118, merged); the engine-side drive with an MCP tool in a graph's catalog runs on the
+  public Mermaid Chart MCP server (Eric's choice). After it: the packs' catch-up release.
+  **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
+  blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own
+  confidence; not every block enters the graph and every later round reads the previous round's output; other formats need
+  tools made available to the graph, and common tools and MCP are components of this epic. The first lab experiment showed
+  the model's segmentation is the unstable part, so a DETERMINISTIC SEGMENTER owns block identity, and agreement across runs
+  on stable ids is the determinism measure. **The document-ingestion lab itself is field research outside the repositories
+  (Eric, 2026-11-14): its thread closed; its results return here only as engine or pack work.**
+  **What it shares with the closed companion gap, and what it does not (Eric's clarification).** *Shared:* the authoring
+  lifecycle - an AI SDLC graph is co-invented by human and AI in the Playground in dev mode, the same prototyping surface,
+  reused rather than rebuilt. *Different:* what survives promotion. For the companion the AI is a **design-time** participant
+  only; for AI SDLC **some nodes carry AI skills**, so after promotion those nodes reach an AI agent through gateways, MCP
+  servers or other tools: the AI is in the **production execution path**. That is why this is a separate epic - the authoring
+  pattern is solved and inherited; the runtime posture is the open problem - and why the engine core stays vendor-free with
+  adapters as functions ON the wrappers: the gateway/MCP edge is where vendor specifics live.
   → serves: vision-mercury-composable
   <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-14 | uses: 34 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
