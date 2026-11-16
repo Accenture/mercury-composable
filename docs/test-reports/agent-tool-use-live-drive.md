@@ -1,6 +1,6 @@
 # Agent tool use - the `diagram-assistant` graph driven end to end on the reshaped MCP binding
 
-**Date:** 2026-11-16 · **Design:** [`draft-design-specs/agent-tool-use.md`](../../draft-design-specs/agent-tool-use.md) (ADR-0033 stands)
+**Date:** 2026-11-16 · **Design:** [`draft-design-specs/agent-tool-use.md`](https://github.com/Accenture/mercury-composable/blob/main/draft-design-specs/agent-tool-use.md) (ADR-0033 stands)
 · **Earlier records:** [`agent-loop-live-drive.md`](agent-loop-live-drive.md) (the loop, 2026-11-14) and
 [`agent-loop-trace-lineage.md`](agent-loop-trace-lineage.md) (the lineage criterion, 2026-11-14).
 
