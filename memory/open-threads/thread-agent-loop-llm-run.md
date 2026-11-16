@@ -95,5 +95,8 @@
   (PRs mercury-python #55 and mercury-nodejs #122, and the PR of branch `feat/agent-tool-use` here, opened 2026-11-16): both packs' bindings (49 tests each, the shared vectors version 2, each booted live against the
   Mermaid server and a diagram rendered through `mermaid.render`), and here the Playground's `DiagramRender`, its mock,
   its test (4 green), `event-over-http.yaml`, the server file (servers only), the READMEs, the CHANGELOG entry and the
-  ADR consequence line. Next: the three PRs, then the `diagram-assistant` graph driven end to end again.
+  ADR consequence line. The packs' PRs MERGED 2026-11-16 (mercury-python #55 `cf216f3`, mercury-nodejs #122 `5157070`);
+  the graph was driven end to end again the same day through both bindings against the live Mermaid server: 200, two
+  model turns on Haiku 4.5, the image stored, 20 trace records per run with every parent owned
+  (`docs/test-reports/agent-tool-use-live-drive.md`). Next: #630 merges; then the AI SDLC work resumes.
   <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-14 | uses: 20 | tier: working | origin: 2026-10-28-233011 -->
