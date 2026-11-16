@@ -3171,7 +3171,10 @@ The live drive settled three readings: a prompt is advice and a catalog mark is 
 <code>write: true</code>, whatever order the model reads in); caching is the pack's job and depends on the model's minimum cacheable
 prompt; and a resume is a new run, so a graph that suspends around <code>llm.run</code> needs a path from a failed resume back to its
 advice, because the suspension record is consumed on retrieval. Open work under the accepted decision, not gating it: the
-MCP bindings (build plan step 4), the packs' release, and the AI SDLC lab that resumes on this foundation. Not built, by
+MCP bindings (build plan step 4), the packs' release, and the AI SDLC lab that resumes on this foundation. The bindings'
+declaration shape was revised on 2026-11-16 without touching the decision: a pack declares each tool as a <code>preload</code> function
+bound in code through an encapsulated client, the server file keeps servers only, and a route names the capability, never
+the transport (<code>draft-design-specs/agent-tool-use.md</code>). Not built, by
 ruling: compaction in the loop, and forwarding the model's own progress notes.</p>
 <hr />
 <h2 id="adr-0032">ADR-0032 — Live invocation observers: a vendor-neutral seam in platform-core, with Dynatrace OneAgent as the shipped adapter<a class="headerlink" href="#adr-0032" title="Permanent link">&para;</a></h2>
