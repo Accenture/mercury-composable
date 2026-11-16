@@ -105,5 +105,9 @@
   mercury-nodejs #125, PyPI and npm verified against the tags); the `diagram-assistant` graph's two `purpose` texts, which
   still named `diagram.render.mcp`, now name `mermaid.render` (branch `fix/diagram-assistant-purpose`). The Rust port's
   Playground has neither agent graph yet - they are in this engine's Unreleased section and reach Rust at the next Java
-  release. Eric's next sprint theme: promote an AI graph through the governance lifecycle.
+  release. Eric's next sprint theme: promote an AI graph through the governance lifecycle. **Later the same day:** the
+  packs' 4.12.30 is on PyPI and npm; the diagram-assistant's purposes and `DiagramRender`'s result were trimmed (#632,
+  #633); and design sprint 4 opened on two extensions of this loop: the transcript audit store (RFC-0012, section 3.3
+  and 10 of the spec extended, [[transcript-audit-store]]) and the essential built-in tools (RFC-0013,
+  [[agent-essential-tools]]).
   <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-14 | uses: 20 | tier: working | origin: 2026-10-28-233011 -->
