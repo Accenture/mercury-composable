@@ -827,7 +827,14 @@
   **The trace lineage (2026-11-14):** the loop's trace is continuous from the engine's REST edge into both packs and back
   after the packs mirrored the engines' callee records (mercury-python #53, mercury-nodejs #120; the record
   `docs/test-reports/agent-loop-trace-lineage.md`, #628 squash `97c87145f`; [[pack-trace-records-engine-parity]]).
-  Next: the packs' catch-up release, then the epic's next sprint (Eric's call).
+  **The packs' catch-up release SHIPPED 2026-11-16:** mercury-python and mercury-nodejs 4.12.30 on PyPI and npm, verified
+  against their tags, carrying the loop contract, the Bedrock backend and the MCP bindings. **Sprint 4 is a design sprint
+  (Eric, 2026-11-16):** the transcript audit store ([[transcript-audit-store]], RFC-0012: the working store's TTL as the
+  transaction's expiry, a durable PostgreSQL-first store with a published schema, written by the pack per turn and
+  queryable by trace id, correlation id and time) and the essential built-in tools ([[agent-essential-tools]],
+  RFC-0013: files in a workspace and the web in an allowlist, as pack functions with published rows). Round 1 of both is
+  drafted for Eric's review; the promotion of an AI graph through the governance lifecycle, his first theme of the
+  day, stays queued behind them.
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own
   confidence; not every block enters the graph and every later round reads the previous round's output; other formats need

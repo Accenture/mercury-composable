@@ -39,6 +39,58 @@
 
 ---
 
+## RFC-0013 — Essential built-in tools for agent loops: files inside a workspace and the web inside an allowlist, as pack functions with published catalog rows
+**Status:** Open · **Raised:** 2026-11-16 · **Serves:** vision-mercury-composable · **Thread:** `agent-essential-tools`
+<!-- id: rfc-0013 | status: open | thread: agent-essential-tools -->
+
+**Proposal.** A first set of built-in tools every second agent use case needs, as composable functions in a new pack
+extension, `extensions/agent-tools/` (Python first, Node in lockstep), each shipping its catalog row: `file.read`,
+`file.write` (marked `write: true`), `file.list` inside one configured workspace root, and `web.fetch`, `web.crawl`
+inside a configured host allowlist, with private address ranges refused, redirects checked, sizes and page counts
+capped, `robots.txt` honoured, and HTML reduced to readable text in-house. The sandbox is deployment configuration,
+certified with the deployment; a tool whose sandbox is not configured does not register. A Playground example,
+`site-notes`, shows a read of the outside and a supervised write. The design spec is
+`draft-design-specs/agent-essential-tools.md`. What a decision would commit the project to: tools as pack routes
+with published rows and sandboxes in configuration, never engine code and never a generic request tool.
+
+**Options.** (A) Bind the reference MCP servers (filesystem, fetch) through the binding: zero code, but a child process
+and runtime per server, the server's schemas and descriptions, and no host allowlist on fetch; kept as an installation's
+alternative behind the same routes. (B) Engine-side Java and Rust functions: no pack needed, but two implementations
+and weaker web libraries. (C) The pack extension - proposed. (D) A generic `http.request` tool - rejected, a model-chosen
+URL is the request-forgery hole the web tools close.
+
+**Resolution.** Open; the rulings R1-R7 of the spec's section 9 are Eric's.
+
+---
+
+## RFC-0012 — The transcript audit store: a durable, queryable record of every model turn, written by the pack, with a published schema
+**Status:** Open · **Raised:** 2026-11-16 · **Serves:** vision-mercury-composable · **Thread:** `transcript-audit-store`
+<!-- id: rfc-0012 | status: open | thread: transcript-audit-store -->
+
+**Proposal.** Separate the two lifetimes the working transcript store serves today: its TTL stays the transaction's
+expiry (Redis, the compare-and-set, `retention` unchanged), and a second store, durable and append-only, keeps every
+model turn for audit on the installation's own policy. The pack's helper writes it after each turn's compare-and-set
+succeeds (the engine never holds a transcript, ADR-0033): a conversation row and a turn row carrying the trace id of
+the turn's event, the business correlation id, UTC timestamps, the model, status, stop reason, usage, the request
+message and the assistant content in the provider's format, and the normalized calls; a graph with a suspend and a
+resume shows one correlation id and a trace id per request. PostgreSQL is the reference implementation, and the
+schema is published as a specification so a field installation may implement the same tables behind the same
+interface in another database. For development, Colima runs PostgreSQL and a SQL browser, so a person queries by
+trace id, correlation id or time range. A failed audit write refuses the turn by default (`required`), or is logged
+(`best-effort`). The design spec is `draft-design-specs/transcript-audit-store.md`. What a decision would commit the
+project to: content in one governed, installation-owned store with a published schema; identity from the engine
+(two headers), content only from the pack.
+
+**Options.** When to write: (A) every turn, complete under a stopped or abandoned run and a crash, no engine contract -
+proposed; (B) once at the end of the run, Eric's first framing - loses a run the loop stops, since the helper never
+learns of it; (C) A plus a close event from the loop carrying its reason - a later step. Where: the pack's helper
+(proposed) or the engine (rejected, it never holds the transcript). The store: PostgreSQL first with psycopg 3 and
+`pg` as optional extras; another database behind the published schema.
+
+**Resolution.** Open; the rulings R1-R8 of the spec's section 11 are Eric's.
+
+---
+
 ## RFC-0011 — The agent loop: `llm.run` in the engines maps tool names to routes; model turns and MCP bindings in the language packs
 **Status:** Promoted → ADR-0033 · **Raised:** 2026-10-28 · **Serves:** vision-mercury-composable · **Thread:** `agent-loop-llm-run`
 <!-- id: rfc-0011 | status: promoted | thread: agent-loop-llm-run -->
