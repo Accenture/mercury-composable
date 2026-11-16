@@ -105,11 +105,16 @@ class DiagramAssistantTest {
         assertEquals(true, stored.getElement("valid"));
         assertEquals("two steps", stored.getElement("title"));
         assertNull(stored.getElement("rawSVG"), "the image never rides the reply");
-        var file = new File(String.valueOf(stored.getElement("file")));
-        assertTrue(file.isFile() && file.getName().equals(stored.getElement("reference") + ".svg"), String.valueOf(stored.getMap()));
-        assertTrue(((Number) stored.getElement("bytes")).longValue() > 0);
-        var page = new File(String.valueOf(stored.getElement("page")));
-        assertTrue(page.isFile() && page.getName().equals(stored.getElement("reference") + ".html"), String.valueOf(stored.getMap()));
+        // the result names the image by reference and size only: the model cannot open a path, and the
+        // folder is configuration
+        assertNull(stored.getElement("file"), "no path in the result");
+        assertNull(stored.getElement("page"), "no path in the result");
+        var folder = new File(AppConfigReader.getInstance().getProperty("diagram.store.folder"));
+        var file = new File(folder, stored.getElement("reference") + ".svg");
+        assertTrue(file.isFile(), "the rendered image is stored as " + file);
+        assertEquals(file.length(), ((Number) stored.getElement("bytes")).longValue(), "bytes is the SVG file's size");
+        var page = new File(folder, stored.getElement("reference") + ".html");
+        assertTrue(page.isFile(), "the page is stored as " + page);
         var html = Utility.getInstance().file2str(page);
         assertTrue(html.contains("<svg") && html.contains("two steps") && html.contains("flowchart LR"),
                 "the page inlines the SVG and shows the title and the code");

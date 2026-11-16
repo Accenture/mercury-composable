@@ -41,9 +41,11 @@ import java.util.concurrent.TimeUnit;
  * SVG under a reference id in the folder {@code diagram.store.folder} (default {@code /tmp/rendered_diagrams},
  * the file named {@code <reference>.svg}) beside an HTML page, {@code <reference>.html}, that inlines the SVG
  * so a browser renders it from the file system - the server's SVG starts with a {@code <style>} element and
- * uses {@code foreignObject} labels, which an {@code <img>} tag may refuse - and returns the verdict, the code
- * and the reference, never the image. The model reads a small result and reports the reference; a person
- * opens the page. An invalid diagram stores nothing and returns the server's error for the model to fix.
+ * uses {@code foreignObject} labels, which an {@code <img>} tag may refuse - and returns the verdict, the code,
+ * the reference and the image's size, never the image and never a path: the model cannot open one, and the
+ * folder is configuration. The model reads a small result and reports the reference; a person opens the page
+ * {@code <reference>.html} in the store folder. An invalid diagram stores nothing and returns the server's
+ * error for the model to fix.
  */
 @PreLoad(route = "diagram.render", instances = 10)
 public class DiagramRender implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
@@ -93,7 +95,7 @@ public class DiagramRender implements TypedLambdaFunction<Map<String, Object>, M
 
     /**
      * Keep the image out of band: the SVG under a reference id in the store folder, beside the HTML page that
-     * inlines it; the result carries the reference and the paths, never the image.
+     * inlines it; the result carries the reference and the image's size, never the image or a path.
      */
     private static void store(Map<?, ?> rendered, String code, String svg, Map<String, Object> result)
             throws AppException {
@@ -112,8 +114,6 @@ public class DiagramRender implements TypedLambdaFunction<Map<String, Object>, M
             throw new AppException(500, "Unable to write " + page);
         }
         result.put("reference", reference);
-        result.put("file", file.getAbsolutePath());
-        result.put("page", page.getAbsolutePath());
         result.put("bytes", file.length());
     }
 
