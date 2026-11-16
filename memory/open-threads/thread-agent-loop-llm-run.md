@@ -98,5 +98,7 @@
   ADR consequence line. The packs' PRs MERGED 2026-11-16 (mercury-python #55 `cf216f3`, mercury-nodejs #122 `5157070`);
   the graph was driven end to end again the same day through both bindings against the live Mermaid server: 200, two
   model turns on Haiku 4.5, the image stored, 20 trace records per run with every parent owned
-  (`docs/test-reports/agent-tool-use-live-drive.md`). Next: #630 merges; then the AI SDLC work resumes.
+  (`docs/test-reports/agent-tool-use-live-drive.md`). **#630 MERGED 2026-11-16 (squash `a69d3e0b6`)** - the design spec,
+  the Playground on `mermaid.render` and the drive report are on main; the loose end is closed in all three repositories.
+  Next: the AI SDLC work resumes on the settled shape.
   <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-14 | uses: 20 | tier: working | origin: 2026-10-28-233011 -->
