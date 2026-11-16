@@ -101,4 +101,9 @@
   (`docs/test-reports/agent-tool-use-live-drive.md`). **#630 MERGED 2026-11-16 (squash `a69d3e0b6`)** - the design spec,
   the Playground on `mermaid.render` and the drive report are on main; the loose end is closed in all three repositories.
   Next: the AI SDLC work resumes on the settled shape.
+  **2026-11-16, later:** the packs released 4.12.30 with the loop contract and the bindings (mercury-python #58,
+  mercury-nodejs #125, PyPI and npm verified against the tags); the `diagram-assistant` graph's two `purpose` texts, which
+  still named `diagram.render.mcp`, now name `mermaid.render` (branch `fix/diagram-assistant-purpose`). The Rust port's
+  Playground has neither agent graph yet - they are in this engine's Unreleased section and reach Rust at the next Java
+  release. Eric's next sprint theme: promote an AI graph through the governance lifecycle.
   <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-14 | uses: 20 | tier: working | origin: 2026-10-28-233011 -->
