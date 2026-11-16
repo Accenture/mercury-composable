@@ -30,11 +30,13 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
 
 2. **The Playground example ships `diagram-assistant`, an agent loop whose one tool reaches an MCP server, driven live.** The
    catalog row `render_diagram` maps to `diagram.render`, a function of the example (`DiagramRender`) that calls the MCP-bound
-   route `diagram.render.mcp` - served by the MCP binding of a language pack (mercury-python #51, mercury-nodejs #118), which
+   function `mermaid.render` of the MCP binding of a language pack (mercury-python #51, mercury-nodejs #118; its declaration
+   shape revised 2026-11-16, `draft-design-specs/agent-tool-use.md`: a `preload` function per tool, bound in code), which
    calls a Mermaid MCP server over streamable HTTP - and keeps the rendered image out of band: the SVG the server returns is
    stored as `/tmp/rendered_diagrams/<reference>.svg` (`diagram.store.folder`), beside `<reference>.html`, a page that inlines
-   the SVG for a browser, and the model gets the verdict, the code and the reference, never the image. `mcp/mermaid-servers.yml` in the example's resources is the binding's server file, with the digest
-   that pins the tool's input schema; `event-over-http.yaml` maps `diagram.render.mcp` to the binding (`mcp.peer.host`,
+   the SVG for a browser, and the model gets the verdict, the code and the reference, never the image. `mcp/mermaid-servers.yml` in the example's resources is a copy of the server entry the
+   binding's default file carries (the digest is pinned in the binding's code); `event-over-http.yaml` maps `mermaid.render`
+   to the binding (`mcp.peer.host`,
    `mcp.peer.port`, default 8088). `DiagramAssistantTest` drives the graph and the storing function token-free on a mock of the
    MCP-bound route and the scripted `llm.chat`. Driven live on 2026-11-14 through the Python binding and the Python helper on
    Haiku 4.5, from the REST entry and as a dry run in a shared Playground session through the AI companion broker: the

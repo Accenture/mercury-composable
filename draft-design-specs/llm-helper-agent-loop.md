@@ -7,7 +7,7 @@ Build plan step 2 is built in Java (`extensions/agent-loop`, 2026-11-03), and se
 it settled, accepted by Eric on 2026-11-04 with the four approval modes of section 7.1 (round 7).
 **Reviewed and approved by Eric on 2026-11-03**; the promotion to an ADR, held until the end-to-end test from the
 engines to the language packs, followed on 2026-11-14. Step 4 (section 9, the MCP bindings) is built under the accepted
-decision.
+decision; its declaration shape was revised on 2026-11-16 ([`agent-tool-use.md`](./agent-tool-use.md)).
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`ai-agent-orchestration.md`](./ai-agent-orchestration.md) adapter families A
 (`llm.chat`), B (MCP, route-per-tool) and C (agent-as-node). This paper defines the seam between
@@ -762,6 +762,11 @@ so v1 does not forward them.
   from the event's `cid` (the guide's content-based partitioning), keeping one run on one partition.
 
 ## 9. MCP bindings in the language packs
+
+> **Revised 2026-11-16** ([`agent-tool-use.md`](./agent-tool-use.md)): a binding is declared in code, a `preload`
+> function per tool that calls the tool through the encapsulated MCP client (`bind(server, tool, schema_sha256)`), and
+> the server file keeps servers only; a route names the capability, never the transport. The bullets below record the
+> shape built on 2026-11-14, whose allowlist row in the server file conjured the route at boot.
 
 No engine process runs a child process for a stdio MCP server. The MCP client lives in the packs,
 Python first, then Node.js. A stdio server runs as a subprocess of the pack, which is the reason the
