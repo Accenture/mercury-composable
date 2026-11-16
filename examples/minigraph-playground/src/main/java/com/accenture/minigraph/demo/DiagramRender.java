@@ -53,6 +53,9 @@ public class DiagramRender implements TypedLambdaFunction<Map<String, Object>, M
     private static final long TIMEOUT_MS = 25000;
     private static final String DIAGRAM_CODE = "diagramCode";
     private static final String RAW_SVG = "rawSVG";
+    private static final String VALID = "valid";
+    private static final String TITLE = "title";
+    private static final String ERROR = "error";
 
     @Override
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
@@ -70,36 +73,48 @@ public class DiagramRender implements TypedLambdaFunction<Map<String, Object>, M
             throw new AppException(502, MCP_ROUTE + " answered outside the tool contract");
         }
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("valid", Boolean.TRUE.equals(rendered.get("valid")));
+        boolean valid = Boolean.TRUE.equals(rendered.get(VALID));
+        result.put(VALID, valid);
         Object renderedCode = rendered.get(DIAGRAM_CODE);
         result.put(DIAGRAM_CODE, renderedCode == null ? code : renderedCode);
-        if (rendered.get("title") != null) {
-            result.put("title", rendered.get("title"));
-        }
-        if (rendered.get("error") != null) {
-            result.put("error", rendered.get("error"));
-        }
-        if (Boolean.TRUE.equals(rendered.get("valid")) && rendered.get(RAW_SVG) instanceof String svg && !svg.isBlank()) {
-            String reference = Utility.getInstance().getUuid();
-            File folder = new File(AppConfigReader.getInstance().getProperty(FOLDER_KEY, DEFAULT_FOLDER));
-            if (!folder.exists() && !folder.mkdirs()) {
-                throw new AppException(500, "Unable to create " + folder);
-            }
-            File file = new File(folder, reference + ".svg");
-            if (!Utility.getInstance().str2file(file, svg)) {
-                throw new AppException(500, "Unable to write " + file);
-            }
-            File page = new File(folder, reference + ".html");
-            String title = rendered.get("title") instanceof String t && !t.isBlank() ? t : reference;
-            if (!Utility.getInstance().str2file(page, page(title, reference, code, svg))) {
-                throw new AppException(500, "Unable to write " + page);
-            }
-            result.put("reference", reference);
-            result.put("file", file.getAbsolutePath());
-            result.put("page", page.getAbsolutePath());
-            result.put("bytes", file.length());
+        copyIfPresent(rendered, result, TITLE);
+        copyIfPresent(rendered, result, ERROR);
+        if (valid && rendered.get(RAW_SVG) instanceof String svg && !svg.isBlank()) {
+            store(rendered, code, svg, result);
         }
         return result;
+    }
+
+    private static void copyIfPresent(Map<?, ?> rendered, Map<String, Object> result, String key) {
+        if (rendered.get(key) != null) {
+            result.put(key, rendered.get(key));
+        }
+    }
+
+    /**
+     * Keep the image out of band: the SVG under a reference id in the store folder, beside the HTML page that
+     * inlines it; the result carries the reference and the paths, never the image.
+     */
+    private static void store(Map<?, ?> rendered, String code, String svg, Map<String, Object> result)
+            throws AppException {
+        String reference = Utility.getInstance().getUuid();
+        File folder = new File(AppConfigReader.getInstance().getProperty(FOLDER_KEY, DEFAULT_FOLDER));
+        if (!folder.exists() && !folder.mkdirs()) {
+            throw new AppException(500, "Unable to create " + folder);
+        }
+        File file = new File(folder, reference + ".svg");
+        if (!Utility.getInstance().str2file(file, svg)) {
+            throw new AppException(500, "Unable to write " + file);
+        }
+        File page = new File(folder, reference + ".html");
+        String title = rendered.get(TITLE) instanceof String t && !t.isBlank() ? t : reference;
+        if (!Utility.getInstance().str2file(page, page(title, reference, code, svg))) {
+            throw new AppException(500, "Unable to write " + page);
+        }
+        result.put("reference", reference);
+        result.put("file", file.getAbsolutePath());
+        result.put("page", page.getAbsolutePath());
+        result.put("bytes", file.length());
     }
 
     /**

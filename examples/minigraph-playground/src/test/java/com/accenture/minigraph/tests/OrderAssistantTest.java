@@ -41,6 +41,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -111,6 +112,33 @@ class OrderAssistantTest {
         var cid = Utility.getInstance().getUuid();
         // run 1: the model checks the order and the shipment, then asks for the refund - a marked write waits
         var advice = body(runGraph(cid, Map.of(QUESTION, "My order ORD-1002 never arrived. Can you help?")));
+        String callId = assertRefundWaits(advice);
+        // run 2: a resume without decisions keeps waiting and re-advises
+        var again = body(runGraph(cid, Map.of("note", "just checking")));
+        assertReadvised(again, callId);
+        // run 3: decisions for another turn than the one that waits are not applied
+        var stale = body(runGraph(cid, Map.of(TURN, 1, DECISIONS, List.of(decision(callId, true, "late")))));
+        assertEquals(APPROVAL, stale.getElement(TYPE), String.valueOf(stale.getMap()));
+        // run 4: a decision for a call that is not waiting is refused by the loop before any token is spent,
+        // and the graph re-advises instead of losing the transaction
+        var refused = body(runGraph(cid, Map.of(TURN, 2, DECISIONS, List.of(decision("not-a-call", true, "typo")))));
+        assertDecisionRefused(refused, callId);
+        // run 5: the supervisor approves - the loop runs the call it showed and the model answers
+        var answer = body(runGraph(cid, Map.of(TURN, 2, DECISIONS, List.of(decision(callId, true, "Checked with the carrier")))));
+        assertRefundIssued(answer);
+        // a second transaction for the same order: the write fails with 409 and the model reads the error
+        var second = Utility.getInstance().getUuid();
+        var secondAdvice = body(runGraph(second, Map.of(QUESTION, "Please refund ORD-1002, it is lost.")));
+        assertEquals(APPROVAL, secondAdvice.getElement(TYPE), String.valueOf(secondAdvice.getMap()));
+        var secondId = String.valueOf(calls(secondAdvice).getFirst().get("id"));
+        var declined = body(runGraph(second, Map.of(TURN, secondAdvice.getElement(TURN),
+                DECISIONS, List.of(decision(secondId, true, "approved")))));
+        assertSecondRefundDeclined(declined);
+        log.info("order-assistant: approved refund for cid {}, second attempt refused by the order book", cid);
+    }
+
+    /** Run 1's advice: the refund call waits for a person; the two lookups are already answered. */
+    private String assertRefundWaits(MultiLevelMap advice) {
         assertEquals(APPROVAL, advice.getElement(TYPE), String.valueOf(advice.getMap()));
         assertEquals("fresh", advice.getElement("run"));
         assertEquals(2, advice.getElement(TURN), "the refund is asked for on the second model turn");
@@ -124,29 +152,31 @@ class OrderAssistantTest {
         var arguments = new MultiLevelMap(asMap(refund.get("input")));
         assertEquals("ORD-1002", arguments.getElement("order_id"));
         assertEquals(174.0, ((Number) arguments.getElement("amount")).doubleValue());
-        String callId = String.valueOf(refund.get("id"));
         var answered = asList(advice.getElement("answered"));
         assertEquals(List.of("order_lookup", "shipment_status"), answered.stream().map(c -> c.get("name")).toList(),
                 "the advice also shows the calls the loop already answered");
         answered.forEach(c -> assertEquals("ok", c.get("status"), String.valueOf(c)));
-        // run 2: a resume without decisions keeps waiting and re-advises
-        var again = body(runGraph(cid, Map.of("note", "just checking")));
+        return String.valueOf(refund.get("id"));
+    }
+
+    /** A resume without a decision: the graph advises again, and the same call still waits. */
+    private void assertReadvised(MultiLevelMap again, String callId) {
         assertEquals(APPROVAL, again.getElement(TYPE), String.valueOf(again.getMap()));
         assertEquals("resume", again.getElement("run"));
         assertEquals(2, again.getElement(TURN));
         assertEquals(callId, calls(again).getFirst().get("id"), "the same call still waits");
-        // run 3: decisions for another turn than the one that waits are not applied
-        var stale = body(runGraph(cid, Map.of(TURN, 1, DECISIONS, List.of(decision(callId, true, "late")))));
-        assertEquals(APPROVAL, stale.getElement(TYPE), String.valueOf(stale.getMap()));
-        // run 4: a decision for a call that is not waiting is refused by the loop before any token is spent,
-        // and the graph re-advises instead of losing the transaction
-        var refused = body(runGraph(cid, Map.of(TURN, 2, DECISIONS, List.of(decision("not-a-call", true, "typo")))));
+    }
+
+    /** A decision for a call that is not waiting: refused by name, the transaction kept. */
+    private void assertDecisionRefused(MultiLevelMap refused, String callId) {
         assertEquals(APPROVAL, refused.getElement(TYPE), String.valueOf(refused.getMap()));
         assertTrue(String.valueOf(refused.getElement("error")).contains("not a call waiting for approval"),
                 String.valueOf(refused.getElement("error")));
         assertEquals(callId, calls(refused).getFirst().get("id"), "the same call still waits");
-        // run 5: the supervisor approves - the loop runs the call it showed and the model answers
-        var answer = body(runGraph(cid, Map.of(TURN, 2, DECISIONS, List.of(decision(callId, true, "Checked with the carrier")))));
+    }
+
+    /** The approved refund: the loop ran the call it showed, and the model answered with the reference. */
+    private void assertRefundIssued(MultiLevelMap answer) {
         assertEquals(ANSWER, answer.getElement(TYPE), String.valueOf(answer.getMap()));
         assertEquals("resume", answer.getElement("run"));
         assertEquals(3, answer.getElement(TURN));
@@ -156,18 +186,14 @@ class OrderAssistantTest {
         var calls = calls(answer);
         assertEquals(List.of("issue_refund"), calls.stream().map(c -> c.get("name")).toList());
         assertEquals("ok", calls.getFirst().get("status"), String.valueOf(calls));
-        // a second transaction for the same order: the write fails with 409 and the model reads the error
-        var second = Utility.getInstance().getUuid();
-        var secondAdvice = body(runGraph(second, Map.of(QUESTION, "Please refund ORD-1002, it is lost.")));
-        assertEquals(APPROVAL, secondAdvice.getElement(TYPE), String.valueOf(secondAdvice.getMap()));
-        var secondId = String.valueOf(calls(secondAdvice).getFirst().get("id"));
-        var declined = body(runGraph(second, Map.of(TURN, secondAdvice.getElement(TURN),
-                DECISIONS, List.of(decision(secondId, true, "approved")))));
+    }
+
+    /** The second refund of the same order: the order book refuses it, and the model reads the error. */
+    private void assertSecondRefundDeclined(MultiLevelMap declined) {
         assertEquals(ANSWER, declined.getElement(TYPE), String.valueOf(declined.getMap()));
         var reason = String.valueOf(declined.getElement(MESSAGE));
         assertTrue(reason.contains("could not issue") && reason.contains("already refunded"), reason);
         assertEquals("error", calls(declined).getLast().get("status"), String.valueOf(calls(declined)));
-        log.info("order-assistant: approved refund for cid {}, second attempt refused by the order book", cid);
     }
 
     @Test
@@ -203,7 +229,7 @@ class OrderAssistantTest {
                 .map(l -> json(l.substring(5).trim())).toList();
         var progress = events.stream().filter(e -> "progress".equals(e.get(TYPE))).toList();
         assertEquals("Investigating the order", progress.getFirst().get(MESSAGE), "the node's own progress text");
-        var loopEvents = progress.stream().map(e -> e.get("event")).filter(e -> e != null).toList();
+        var loopEvents = progress.stream().map(e -> e.get("event")).filter(Objects::nonNull).toList();
         assertTrue(loopEvents.containsAll(List.of("run.start", "turn.start", "tool.start", "tool.end", "turn.end", "run.end")),
                 String.valueOf(loopEvents));
         var tools = progress.stream().filter(e -> "tool.start".equals(e.get("event")))

@@ -66,6 +66,13 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    "suspend". The Playground example and the starter-graph template document `playground.panel.name` as a commented-out
    line. **Upgrade note:** none.
 
+3. **Code quality in the Playground example: the findings of a local SonarQube and IDE inspection round (2026-11-16),
+   with no behaviour change.** `DiagramRender` names its repeated literals and keeps the image's storage in a method of
+   its own, so the tool function reads below the cognitive-complexity limit; `OrderBook` names its repeated literals;
+   in the test scope, `MockLlmChat` synchronizes on a lock of the conversation's own and checks for the render tool
+   without a parameter that always held the same value, and `OrderAssistantTest` groups the assertions of its
+   five-run scenario by run, one method per run, with a method reference where a lambda tested for null.
+
 ### Documentation
 
 1. **The mini-scheduler's MongoDB worked example says where the job's `_id` comes from.** An upsert builds the

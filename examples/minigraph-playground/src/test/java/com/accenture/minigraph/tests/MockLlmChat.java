@@ -69,6 +69,7 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
 
     /** What the scripted assistant remembers of one conversation: the record's turn count and the facts. */
     private static final class Conversation {
+        private final Object lock = new Object();
         private int turn;
         private boolean diagram;
         private Map<String, Object> render;
@@ -113,7 +114,7 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
             }
         }
         int expected = input.get("turn") == null ? 0 : util.str2int(String.valueOf(input.get("turn")));
-        synchronized (conversation) {
+        synchronized (conversation.lock) {
             if (expected != conversation.turn) {
                 throw new AppException(409, "The record holds turn " + conversation.turn + ", not " + expected);
             }
@@ -123,7 +124,7 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
             }
             Map<String, Object> reply = new HashMap<>();
             if (conversation.turn == 1) {
-                conversation.diagram = hasTool(input.get("tools"), RENDER_TOOL);
+                conversation.diagram = hasRenderTool(input.get("tools"));
                 firstTurn(conversation, String.valueOf(input.get("prompt")), reply);
             } else if (conversation.diagram) {
                 laterDiagramTurn(conversation, reply);
@@ -139,10 +140,10 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
         }
     }
 
-    private static boolean hasTool(Object tools, String name) {
+    private static boolean hasRenderTool(Object tools) {
         if (tools instanceof List<?> rows) {
             for (Object row : rows) {
-                if (row instanceof Map<?, ?> map && name.equals(map.get("name"))) {
+                if (row instanceof Map<?, ?> map && RENDER_TOOL.equals(map.get("name"))) {
                     return true;
                 }
             }

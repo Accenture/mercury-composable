@@ -39,6 +39,8 @@ import java.util.concurrent.ConcurrentMap;
 final class OrderBook {
     static final String ORDER_ID = "order_id";
     private static final String CURRENCY = "USD";
+    private static final String SHIPPED = "shipped";
+    private static final String STATUS = "status";
     private static final Map<String, Map<String, Object>> ORDERS = new LinkedHashMap<>();
     private static final Map<String, Map<String, Object>> SHIPMENTS = new LinkedHashMap<>();
     private static final ConcurrentMap<String, Map<String, Object>> REFUNDS = new ConcurrentHashMap<>();
@@ -48,15 +50,15 @@ final class OrderBook {
                 item("HP-200", "Wireless headphones", 1, 89.00));
         shipment("ORD-1001", "Northwind Express", "NWX-5531-0071", "delivered", "2026-11-08",
                 "Delivered to the front desk and signed for.");
-        order("ORD-1002", "2026-11-04", 174.00, "shipped",
+        order("ORD-1002", "2026-11-04", 174.00, SHIPPED,
                 item("KB-77", "Mechanical keyboard", 1, 129.00), item("HUB-4C", "USB-C hub", 1, 45.00));
         shipment("ORD-1002", "Northwind Express", "NWX-5531-0188", "lost", "2026-11-10",
                 "The parcel left the sorting hub on 2026-11-06 and has not been scanned since; the carrier declared it lost.");
-        order("ORD-1003", "2026-11-11", 118.00, "shipped",
+        order("ORD-1003", "2026-11-11", 118.00, SHIPPED,
                 item("MS-12", "Monitor stand", 2, 59.00));
         shipment("ORD-1003", "Blue Parcel", "BP-00912-4471", "in_transit", "2026-11-13",
                 "In transit; the estimated delivery date is 2026-11-16.");
-        order("ORD-1004", "2026-11-05", 240.00, "shipped",
+        order("ORD-1004", "2026-11-05", 240.00, SHIPPED,
                 item("DK-9", "Standing desk mat", 2, 120.00));
         shipment("ORD-1004", "Blue Parcel", "BP-00912-4502", "lost", "2026-11-12",
                 "The carrier closed the trace without finding the parcel.");
@@ -138,7 +140,7 @@ final class OrderBook {
         issued.put("amount", amount);
         issued.put("currency", CURRENCY);
         issued.put("reason", reason);
-        issued.put("status", "issued");
+        issued.put(STATUS, "issued");
         Map<String, Object> earlier = REFUNDS.putIfAbsent(orderId, issued);
         if (earlier != null) {
             throw new AppException(409, "Order " + orderId + " was already refunded as " + earlier.get("refund_id"));
@@ -164,7 +166,7 @@ final class OrderBook {
         ordered.put("items", List.of(items));
         ordered.put("total", total);
         ordered.put("currency", CURRENCY);
-        ordered.put("status", status);
+        ordered.put(STATUS, status);
         ORDERS.put(orderId, ordered);
     }
 
@@ -174,7 +176,7 @@ final class OrderBook {
         shipped.put(ORDER_ID, orderId);
         shipped.put("carrier", carrier);
         shipped.put("tracking", tracking);
-        shipped.put("status", status);
+        shipped.put(STATUS, status);
         shipped.put("updated_on", updatedOn);
         shipped.put("note", note);
         SHIPMENTS.put(orderId, shipped);
