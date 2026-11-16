@@ -4,8 +4,8 @@
   `file.list` under `tools.file.root`, and `web.fetch`, `web.crawl` under `tools.web.allow` (private ranges refused,
   redirects checked, sizes, pages and depth capped, `robots.txt` honoured, HTML to text in-house); a tool whose sandbox is
   not configured does not register; rows published as files and by a `describe` command; the Playground example
-  `site-notes` (a crawl and a supervised write). Spec `draft-design-specs/agent-essential-tools.md`; rulings R1-R7
-  (section 9) are Eric's. Next: Eric's review round 1, then the build plan (Python, Node, the example and its drive).
+  `site-notes` (a crawl and a supervised write). Spec `draft-design-specs/agent-essential-tools.md` (#634, `57a267f02`); rulings
+  R1-R7 (section 9) are Eric's. Next: Eric's review round 1, then the build plan (Python, Node, the example and its drive).
   → proposal: RFC-0013
   → serves: vision-mercury-composable
   <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-16 | uses: 1 | tier: working | origin: 2026-11-16-105602 -->

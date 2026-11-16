@@ -5,7 +5,7 @@
   UTC times, model, status, usage, the request message and the assistant content in the provider's format, the
   normalized calls - written by the helper after the working store's compare-and-set; `required` or `best-effort` on a
   failed write; Colima runs PostgreSQL and pgweb for development; `x-graph-id` and `x-node` from `graph.task` and the
-  loop as an engine step. Spec `draft-design-specs/transcript-audit-store.md`; rulings R1-R8 (section 11) are Eric's.
+  loop as an engine step. Spec `draft-design-specs/transcript-audit-store.md` (#634, `57a267f02`); rulings R1-R8 (section 11) are Eric's.
   Next: Eric's review round 1, then the build plan (Python, Node, the engines' headers, the `order-assistant` drive).
   → proposal: RFC-0012
   → serves: vision-mercury-composable
