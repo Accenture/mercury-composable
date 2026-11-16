@@ -36,16 +36,18 @@ server through the MCP binding of a language pack, with the rendered image store
 this application, the LLM helper, the MCP binding (both from mercury-python or mercury-nodejs) and the AI companion
 broker that lets an agent drive the Playground while you watch.
 
-1. **The MCP binding**, bound to the Mermaid server by this example's server file (`mcp/mermaid-servers.yml`; the digest in
-   it pins the tool's input schema, so a server-side change stops the binding by name):
+1. **The MCP binding**, whose own function `mermaid.render` binds the Mermaid server's tool, the digest of the tool's
+   input schema pinned in the binding's code so a server-side change stops the binding by name (`mcp/mermaid-servers.yml`
+   here is a copy of the server entry the binding's default file carries):
 
    ```bash
    cd mercury-python && pip install -e '.[mcp]'
-   mercury-serve extensions/mcp-binding/mcp_binding.py \
-     -Dmcp.servers=/absolute/path/to/examples/minigraph-playground/src/main/resources/mcp/mermaid-servers.yml
+   mercury-serve extensions/mcp-binding/mcp_binding.py
    ```
 
-   Its log ends with `MCP server mermaid: tool validate_and_render_mermaid_diagram served as diagram.render.mcp`.
+   Its default server file names the Mermaid server and its own function `mermaid.render` binds the tool, so no
+   override is needed (`-Dmcp.servers=<absolute path of mcp/mermaid-servers.yml>` points it at this example's copy of
+   the server entry). Its log ends with `MCP server mermaid: tool validate_and_render_mermaid_diagram bound`.
 2. **The LLM helper**, with the credential in its environment only (`ANTHROPIC_API_KEY`), on port 8086:
 
    ```bash
@@ -57,7 +59,7 @@ broker that lets an agent drive the Playground while you watch.
    java -jar minigraph-playground-x.y.z.jar
    ```
 
-   The startup log shows `Compiled graph diagram-assistant` and `Event-over-HTTP diagram.render.mcp -> http://127.0.0.1:8088/api/event`.
+   The startup log shows `Compiled graph diagram-assistant` and `Event-over-HTTP mermaid.render -> http://127.0.0.1:8088/api/event`.
 4. **The Playground**, at http://127.0.0.1:8085. Two ways to watch a run:
    - **Alone:** in the console, `import graph from diagram-assistant` (the deployed model), then a dry run, which uses the
      real helper, binding and server:
@@ -79,7 +81,7 @@ broker that lets an agent drive the Playground while you watch.
 
 What you see: the walk from `root` through `check-input` to `assist`; `assist` runs the agent loop, two model turns on
 Haiku 4.5 in about 10 s: the model drafts the diagram and calls `render_diagram`, the loop calls `diagram.render`, a
-function of this application that calls the MCP-bound route `diagram.render.mcp` and stores the SVG the server returned
+function of this application that calls `mermaid.render`, a function of the pack's MCP binding, and stores the SVG the server returned
 as `/tmp/rendered_diagrams/<reference>.svg` (`diagram.store.folder`) beside a page, `<reference>.html`, that inlines it,
 returning the verdict, the code and the reference; the model answers with the validated code, one sentence, and the
 reference. Open `<reference>.html` from Finder or a browser to see the rendered image with its Mermaid code (the server's

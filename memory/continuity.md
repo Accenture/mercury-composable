@@ -361,7 +361,10 @@
   `auto`, `manual`, `unattended`); a waiting turn runs none of its calls, the graph suspends, and the resume runs the calls
   from the restored state. Agent graphs are asynchronous (async `graph.extension`; progress events to the caller's return
   route). MCP bindings are pack routes, one per allowlisted remote tool, failing at boot on a missing tool or a changed
-  schema digest. Design spec `draft-design-specs/llm-helper-agent-loop.md`; the runnable example is the Playground's
+  schema digest - since the 2026-11-16 review each declared in the pack's code as a `preload` function that calls the
+  tool through the encapsulated client (`bind(server, tool, schema_sha256)`), the server file keeping servers only, and
+  named by capability, never by transport (`draft-design-specs/agent-tool-use.md`). Design spec
+  `draft-design-specs/llm-helper-agent-loop.md`; the runnable example is the Playground's
   `order-assistant` ([[graph-failed-resume-readvises]]). **How to apply:** a new tool for an agent is a route and a catalog
   row, never engine code; a new provider or MCP server is pack configuration; the hold on a write comes from the row's mark,
   so design safety on the catalog and the mode, not on the prompt; a tool whose reply carries a payload the model does not

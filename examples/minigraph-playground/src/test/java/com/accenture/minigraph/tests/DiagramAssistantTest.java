@@ -46,8 +46,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The diagram-assistant demo graph: an {@code llm.run} node whose one catalog row reaches an MCP server's tool
- * through {@code diagram.render}, the application's own function that calls the MCP-bound route
- * {@code diagram.render.mcp} and stores the rendered image out of band. In production the MCP binding of a
+ * through {@code diagram.render}, the application's own function that calls {@code mermaid.render}, a function
+ * of a language pack's MCP binding, and stores the rendered image out of band. In production the MCP binding of a
  * language pack serves that route by calling a Mermaid MCP server; here {@link MockDiagramRender} serves it and
  * {@link MockLlmChat} scripts the model, so the graph, the loop, the storing function and the route contract are
  * tested without a token or a network.

@@ -87,4 +87,16 @@
   responder's span on the reply; the re-drive: 20 records per run, all connected
   (`docs/test-reports/agent-loop-trace-lineage.md`, PR #628 MERGED 2026-11-14 squash `97c87145f`,
   [[pack-trace-records-engine-parity]]).
+  **The binding's shape reviewed 2026-11-16 (Eric; `draft-design-specs/agent-tool-use.md`):** the allowlist row that
+  conjured a route at boot is replaced by a `preload` function per tool in the pack's code, bound through the
+  encapsulated client (`bind(server, tool, schema_sha256)`); a generic public `mcp.tool` route (ADR-0033's rejected (c))
+  was proposed and set aside in the debate; a route names the capability (`mermaid.render`), never the transport, and
+  `DiagramRender` stays as the graph's business logic. ADR-0033 stands. Built the same day in all three repositories
+  (PRs mercury-python #55 and mercury-nodejs #122, and the PR of branch `feat/agent-tool-use` here, opened 2026-11-16): both packs' bindings (49 tests each, the shared vectors version 2, each booted live against the
+  Mermaid server and a diagram rendered through `mermaid.render`), and here the Playground's `DiagramRender`, its mock,
+  its test (4 green), `event-over-http.yaml`, the server file (servers only), the READMEs, the CHANGELOG entry and the
+  ADR consequence line. The packs' PRs MERGED 2026-11-16 (mercury-python #55 `cf216f3`, mercury-nodejs #122 `5157070`);
+  the graph was driven end to end again the same day through both bindings against the live Mermaid server: 200, two
+  model turns on Haiku 4.5, the image stored, 20 trace records per run with every parent owned
+  (`docs/test-reports/agent-tool-use-live-drive.md`). Next: #630 merges; then the AI SDLC work resumes.
   <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-14 | uses: 20 | tier: working | origin: 2026-10-28-233011 -->

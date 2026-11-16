@@ -112,6 +112,8 @@ Two integration shapes considered:
    The graph names exactly which external capabilities it touches; the gate validates
    them; each call traces under its own route; **the allowlist itself is the
    certification artifact** ("what can this agent reach?" answered by config).
+   *2026-11-16:* route-per-tool is kept, declared as a `preload` function per tool bound in code, and a route
+   names the capability (`mermaid.render`), never the transport - see `agent-tool-use.md`.
 
 Security seam: MCP servers, their stdio child processes, and their credentials live in
 the wrapper's process/environment, never the JVM. (This does not contradict the shelved

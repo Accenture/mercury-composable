@@ -32,9 +32,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * The diagram-assistant graph's tool, {@code diagram.render}: a function of this application in front of the
- * MCP-bound route {@code diagram.render.mcp}, which the MCP binding of a language pack serves by calling a
- * Mermaid MCP server.
+ * The diagram-assistant graph's tool, {@code diagram.render}: a function of this application in front of
+ * {@code mermaid.render}, a function of the MCP binding of a language pack, bound in the binding's code to the
+ * tool of a Mermaid MCP server (a route names the capability, never the transport).
  * <p>
  * The server answers the verdict together with the rendered image, and an agent loop returns a tool's
  * whole reply to the model. This function keeps the payload out of band: it calls the binding, stores the
@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 @PreLoad(route = "diagram.render", instances = 10)
 public class DiagramRender implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
-    static final String MCP_ROUTE = "diagram.render.mcp";
+    static final String MCP_ROUTE = "mermaid.render";
     static final String FOLDER_KEY = "diagram.store.folder";
     static final String DEFAULT_FOLDER = "/tmp/rendered_diagrams";
     private static final long TIMEOUT_MS = 25000;

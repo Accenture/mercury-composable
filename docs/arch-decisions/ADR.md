@@ -104,7 +104,10 @@ The live drive settled three readings: a prompt is advice and a catalog mark is 
 `write: true`, whatever order the model reads in); caching is the pack's job and depends on the model's minimum cacheable
 prompt; and a resume is a new run, so a graph that suspends around `llm.run` needs a path from a failed resume back to its
 advice, because the suspension record is consumed on retrieval. Open work under the accepted decision, not gating it: the
-MCP bindings (build plan step 4), the packs' release, and the AI SDLC lab that resumes on this foundation. Not built, by
+MCP bindings (build plan step 4), the packs' release, and the AI SDLC lab that resumes on this foundation. The bindings'
+declaration shape was revised on 2026-11-16 without touching the decision: a pack declares each tool as a `preload` function
+bound in code through an encapsulated client, the server file keeps servers only, and a route names the capability, never
+the transport (`draft-design-specs/agent-tool-use.md`). Not built, by
 ruling: compaction in the loop, and forwarding the model's own progress notes.
 
 ---

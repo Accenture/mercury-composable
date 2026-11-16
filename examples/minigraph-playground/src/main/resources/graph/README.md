@@ -81,9 +81,10 @@ event comes back as a frame before the result closes the session.
 ### `diagram-assistant` - an MCP server's tool in the catalog
 
 The same agent loop with one tool that reaches an MCP server: the catalog row `render_diagram` maps to `diagram.render`,
-a function of this application (`DiagramRender`) that calls the MCP-bound route `diagram.render.mcp` - served by the
-**MCP binding** of a language pack, which calls a Mermaid MCP server over streamable HTTP (`mcp/mermaid-servers.yml` in
-this folder is the binding's server file, with the server's URL and the digest of its tool's input schema) - and keeps
+a function of this application (`DiagramRender`) that calls `mermaid.render` - a function of the **MCP binding** of a
+language pack, bound in the binding's code to the tool of a Mermaid MCP server reached over streamable HTTP, the digest of
+the tool's input schema pinned next to it (`mcp/mermaid-servers.yml` in this folder is a copy of the server entry the
+binding's own default file carries) - and keeps
 the rendered image out of band: the server answers the verdict with the SVG, the function stores the SVG as
 `/tmp/rendered_diagrams/<reference>.svg` (`diagram.store.folder`) beside `<reference>.html`, a page that inlines it for a
 browser, and returns the verdict, the code and the reference, never the image. The model drafts a Mermaid diagram from the description, validates it through the tool, fixes it if
@@ -92,9 +93,9 @@ binding names the server, and the engine stays MCP-free (RFC-0011 / ADR-0033, st
 Playground and the AI companion broker, is in the example's README.
 
 ```bash
-# 1. the MCP binding of a language pack, on port 8088 (Python) or 8089 (Node.js), bound to the Mermaid server
-mercury-serve extensions/mcp-binding/mcp_binding.py \
-  -Dmcp.servers=/absolute/path/to/examples/minigraph-playground/src/main/resources/mcp/mermaid-servers.yml
+# 1. the MCP binding of a language pack, on port 8088 (Python) or 8089 (Node.js); its default server file names
+#    the Mermaid server and its own function mermaid.render binds the tool
+mercury-serve extensions/mcp-binding/mcp_binding.py
 # 2. the LLM helper, as for the other graphs; then this application (-Dmcp.peer.port=8089 for the Node.js binding)
 # 3. a description
 curl -s -X POST http://127.0.0.1:8085/api/graph/diagram-assistant \
@@ -107,7 +108,7 @@ The answer carries the validated Mermaid code in a fenced block, the reference o
 shows `tool.start` and `tool.end` for the route like any other tool. Before the storing function existed, the server's
 image rode back to the model as a 36,000 to 43,000-token tool result; a `result_limit` on the node cut it to 4,300, and the
 out-of-band store makes the result a few hundred tokens with the image kept - the shape to copy for any tool whose
-reply carries a payload the model does not need. In the test scope `MockDiagramRender` serves `diagram.render.mcp` and the
+reply carries a payload the model does not need. In the test scope `MockDiagramRender` serves `mermaid.render` and the
 scripted `llm.chat` drafts and validates, so the graph and the storing function are tested without a token, a network or
 an MCP server.
 
