@@ -177,6 +177,43 @@ class DecimalStatementTest {
         assertEquals("0.30", new MultiLevelMap((Map<String, Object>) cents.getBody()).getElement("total"));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void theApplicationDefaultCapsTheDecimalPlacesAndANodeSetsItsOwn() throws TimeoutException {
+        // the test configuration does not set big.decimal.precision, so the default of 6 applies to a node
+        // without a precision property; a node's precision, written as text or as a number, replaces it
+        var response = runGraph("unit-test-decimal-precision", Map.of("amount", "1"));
+        assertEquals(200, response.getStatus());
+        var body = new MultiLevelMap((Map<String, Object>) response.getBody());
+        // the non-terminating quotient's 34 digits are rounded HALF_UP to 6 places
+        assertEquals("0.333333", body.getElement("third"));
+        assertEquals("0.666667", body.getElement("two_thirds"));
+        assertEquals("-0.666667", body.getElement("negative"), "half up is away from zero");
+        // a result within the limit keeps its computed scale: the limit never pads
+        assertEquals("1.5", body.getElement("short"));
+        assertEquals("1.000000", body.getElement("carried"), "a carry keeps the limit's scale, as round() does");
+        assertEquals("0", body.getElement("dust"), "a value that rounds to zero is the canonical zero");
+        // precision=2 as text
+        assertEquals("0.33", body.getElement("price"));
+        assertEquals("0.13", body.getElement("half_cent"));
+        assertEquals("1.5", body.getElement("exact"));
+        // precision=10 as a number, more than the application default
+        assertEquals("0.3333333333", body.getElement("tenth"));
+        // precision=0: whole numbers
+        assertEquals("3", body.getElement("rounded"));
+        assertInstanceOf(String.class, body.getElement("third"), "a decimal is never a JSON number");
+        log.info("DECIMAL results are limited by the application default and by a node's precision");
+    }
+
+    @Test
+    void aMalformedPrecisionIsRejectedAtTheGate() throws TimeoutException {
+        // precision=two fails GraphModelValidator, so CompileGraph never deploys the graph and the request is 404
+        var response = runGraph("unit-test-decimal-precision-bad", Map.of("amount", "1"));
+        assertEquals(404, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("not found"),
+                "unexpected error response: " + response.getBody());
+    }
+
     private EventEnvelope runLoop(Map<String, Object> body) throws TimeoutException {
         return runGraph("unit-test-decimal-loop", body);
     }
