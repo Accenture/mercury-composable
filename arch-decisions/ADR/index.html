@@ -2207,6 +2207,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0034" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0034 — A DECIMAL result carries at most a configured number of decimal places: an application default and a node-level precision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0033" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3044,6 +3055,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0034" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0034 — A DECIMAL result carries at most a configured number of decimal places: an application default and a node-level precision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0033" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3102,6 +3124,65 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0034">ADR-0034 — A <code>DECIMAL</code> result carries at most a configured number of decimal places: an application default and a node-level <code>precision</code><a class="headerlink" href="#adr-0034" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-11-17 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> decimal-result-precision-limit · <strong>Supersedes:</strong> <a href="#adr-0025">ADR-0025</a></p>
+<!-- id: adr-0034 | status: accepted | supersedes: adr-0025 -->
+
+<p><strong>Abstract.</strong> The result of a <code>graph.math</code> <code>DECIMAL:</code> statement carries at most a configured number of
+decimal places: the node's <code>precision=</code> when it has one, else the application's
+<code>big.decimal.precision</code> (default 6). A result with more decimal places is rounded <code>HALF_UP</code> to the
+limit; one with fewer keeps its computed scale, so the limit never pads. The limit applies to each
+statement's result, never to the arithmetic inside the expression, which stays exact with the
+34-digit division context of ADR-0025, and an <code>EXECUTE</code>'d module takes the calling node's limit. The
+setting is a whole number from 0 to 1000, checked by <code>CompileGraph</code> at deploy. This supersedes the
+"no application default" clause of ADR-0025; the statement, the exact arithmetic, the canonical
+strings at rest, the comparison rule and the shared conformance vectors stand.</p>
+<p><strong>Context.</strong> ADR-0025 made exactness a statement-level declaration with nothing to configure: a
+result kept whatever scale the arithmetic produced, and rounding was explicit, <code>round(x, scale,
+mode)</code>, statement by statement. A field installation then computed financial rules from inputs of
+several sources, each with its own number of decimal places (a rate at four places, an amount at
+two, a factor at six), so a product's scale was the sum of the inputs' and a non-terminating
+quotient came back with 34 significant digits. The only way to a consistent rounding policy was a
+<code>round()</code> on every statement, which is verbose and, missed on one statement, silently inconsistent.
+The field asked for the precision of the decimal point to be configurable (Eric, 2026-11-17), with a
+default in <code>application.properties</code> and an optional parameter on the <code>graph.math</code> node.</p>
+<p><strong>Decision.</strong> The limit is a <em>cap</em>, not a fixed scale: it rounds what exceeds it and leaves what does
+not, so the canonical string of a result within the limit is exactly what ADR-0025 produced and a
+graph whose results stay within 6 places is unchanged by the default. Rounding is <code>HALF_UP</code>, half
+away from zero, the dialect's money rounding (<code>f:round</code>, <code>round()</code> in <code>COMPUTE</code>); a statement that
+needs another mode says <code>round(x, scale, mode)</code> within the limit. The limit is applied once, to the
+statement's result in <code>graph.math</code>, by <code>DecimalEvaluator.evaluate(expression, maxScale)</code>; the
+arithmetic inside an expression keeps ADR-0025's exactness, so <code>1 / 3 * 3</code> rounds to <code>1.000000</code>
+rather than accumulating a per-operation error, and <code>DecimalEvaluator.evaluate(expression)</code> stays
+unbounded for the conformance vectors. A <code>round()</code> to more places than the limit is rounded again to
+the limit, which is declared in the guide: a node that needs more places raises its <code>precision</code>. Two
+levels only: the application default covers the installation's policy and the node is the unit a
+product owner reads and certifies; a graph-level setting would be a third level with little to say.
+The node property is validated by <code>GraphModelValidator</code> so a malformed value fails at deploy, the
+application property at the first <code>DECIMAL</code> statement, naming the key. The name <code>precision</code> follows
+the field's request and the property name <code>big.decimal.precision</code>; the dialect's <code>round(x, scale,
+mode)</code> keeps <code>scale</code> for the same quantity.</p>
+<p><strong>Alternatives.</strong> (a) A cap with <code>HALF_UP</code> at the statement's end — chosen. (b) A fixed scale that
+pads (<code>setScale</code> unconditionally): every existing result's text changes (<code>"11.28"</code> would become
+<code>"11.280000"</code> by default), the shared vectors and every field graph with it; a fixed scale is
+formatting, and <code>round()</code> already gives it where a statement wants it. (c) Keep ADR-0025 as it was,
+<code>round()</code> on every statement: what the field had; the policy lived in every statement instead of one
+place. (d) A limit inside the arithmetic, as a division context or a per-operation scale: trades
+the exactness within an expression for nothing the result needs. (e) A graph-level setting: a third
+level between the application and the node. (f) A configurable rounding mode beside the limit: not
+asked for; <code>HALF_UP</code> is the dialect's money default and <code>round()</code> states any other mode.</p>
+<p><strong>Consequences.</strong> A READ item at release: a <code>DECIMAL</code> result that had more than 6 decimal places is
+rounded to 6 unless its node sets <code>precision</code> or the application raises <code>big.decimal.precision</code>.
+Every executing engine applies the same limit at the same place: the Rust twin's <code>graph.math</code> reads
+the same node property and application property and rounds the statement's result the same way, so a
+graph deploys unchanged on both; the conformance vectors, which exercise the evaluator, are
+unchanged, and the graph-level behaviour is covered by the Java fixture <code>unit-test-decimal-precision</code>
+and <code>DecimalPrecisionTest</code>. The <code>f:decimal*</code> plugins of Event Script are not affected; their rounding
+is <code>f:decimalRound</code>. The Playground help carries the rule, so the bundle was rebuilt. ADR-0025's
+abstract is otherwise intact: the statement, the exact <code>+ - *</code>, the 34-digit non-terminating
+quotient, the explicit <code>round()</code>, the refusals by name, the canonical strings at rest and the
+numeric-string comparison rule all stand; only "no application default" falls.</p>
 <hr />
 <h2 id="adr-0033">ADR-0033 — The agent loop: <code>llm.run</code> in the engines maps tool names to routes; model turns and MCP bindings in the language packs<a class="headerlink" href="#adr-0033" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-11-14 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> agent-loop-tool-names-map-to-routes</p>
@@ -3683,8 +3764,8 @@ none, define precedence against <code>graph.model.automation</code> manifests an
 as its own RFC.</p>
 <hr />
 <h2 id="adr-0025">ADR-0025 — Exact decimal arithmetic is a <code>DECIMAL:</code> statement in <code>graph.math</code>, with canonical strings at rest<a class="headerlink" href="#adr-0025" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-09-30 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> decimal-statement-exact-arithmetic</p>
-<!-- id: adr-0025 | status: accepted -->
+<p><strong>Status:</strong> Superseded by <a href="#adr-0034">ADR-0034</a> (2026-11-17: the "no application default" clause; the statement, the exact arithmetic, the canonical strings and the comparison rule stand there unchanged) · <strong>Date:</strong> 2026-09-30 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> decimal-statement-exact-arithmetic</p>
+<!-- id: adr-0025 | status: superseded | superseded-by: adr-0034 -->
 
 <p><strong>Abstract.</strong> <code>graph.math</code> gains a <code>DECIMAL: var -&gt; expression</code> statement, the high-precision
 <code>COMPUTE:</code>. It evaluates with exact decimal arithmetic (<code>BigDecimal</code> in flight) and stores the

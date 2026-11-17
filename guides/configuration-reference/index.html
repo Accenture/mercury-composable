@@ -2740,6 +2740,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#big-decimal-precision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        big.decimal.precision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#locationgraphtemp" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5753,6 +5764,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#big-decimal-precision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        big.decimal.precision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#locationgraphtemp" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -8249,6 +8271,30 @@ another function with the same contract — <code>{valid: true}</code> on succes
 violation message on failure — for an installation that wants a different vocabulary or an audit hook.
 Nothing is written into the graph for the step, so a substitute applies to every graph of the
 application at once.</p>
+<h3 id="big-decimal-precision"><code>big.decimal.precision</code><a class="headerlink" href="#big-decimal-precision" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int</code> (0 to 1000)</td>
+<td><code>6</code></td>
+</tr>
+</tbody>
+</table>
+<p>The most decimal places a <code>graph.math</code> <a href="../knowledge-graph/skills-reference/#math-decimal"><code>DECIMAL</code> statement</a>
+result may carry when its node sets no <code>precision</code> of its own. A result with more decimal places is rounded
+<code>HALF_UP</code> to the limit; one with fewer keeps its computed scale, so the setting never pads a result. The limit
+applies to each statement's result, not to the arithmetic inside the expression (a non-terminating quotient
+keeps its 34 significant digits until the statement ends). A node overrides it with <code>precision=&lt;n&gt;</code> in the same
+range. The setting exists so that inputs from several sources, each with its own number of decimal places,
+leave every result under one rounding policy (<a href="../../arch-decisions/ADR/#adr-0034">ADR-0034</a>). A value outside
+the range or not a whole number fails the first <code>DECIMAL</code> statement with an error naming the key. The
+<code>f:decimal*</code> plugins of Event Script are not affected; <code>f:decimalRound</code> states their rounding.</p>
 <h3 id="locationgraphtemp"><code>location.graph.temp</code><a class="headerlink" href="#locationgraphtemp" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
