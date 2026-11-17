@@ -24,7 +24,7 @@
   mercury-nodejs #130 - the Node twin with the same twelve routes, the catalog files byte for byte the Python pack's
   (pinned), 55 tests and the same live sequence on Neo4j; the spec's section 15 records three platform differences (the
   entity subset of the HTML reader, a Word table through mammoth's HTML, integers as JavaScript numbers; #646 here, merge `8e3ee2a3e`, MERGED 2026-11-17). **Step 4, the token-free half, BUILT
-  2026-11-17** (PR opened the same day): the Playground's `site-notes` (crawl, then a supervised `file_write` through the
+  2026-11-17** as PR #647: the Playground's `site-notes` (crawl, then a supervised `file_write` through the
   advise/suspend/decide shape of `order-assistant`), `document-ingest` (`file_extract` + `graph_ingest` under `mode: auto`)
   and `document-query` (`graph_schema` + `graph_query`, sources cited); the synthetic corpus (four documents of fictional
   companies, one shape); the catalog rows copied from the packs' files; the Event-over-HTTP entries (`tools.peer.*`,
