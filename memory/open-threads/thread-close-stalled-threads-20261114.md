@@ -4,4 +4,4 @@
   WP2), so the sprint-2 lab can resume on the foundation it waited for — re-affirmation names it under the deciding
   session's `## Memory References` with that reason; closure records anything undelivered as deliberately dropped.
   **Dispositioned 2026-11-14 (Eric): ai-sdlc-document-ingestion CLOSED - the lab is field research outside the repositories.**
-  <!-- id: close-stalled-threads-20261114 | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: working | origin: 2026-11-14-074819 -->
+  <!-- id: close-stalled-threads-20261114 | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: archive-candidate | origin: 2026-11-14-074819 -->

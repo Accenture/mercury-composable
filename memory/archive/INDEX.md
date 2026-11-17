@@ -287,3 +287,11 @@
 - release-4-12-27 — Release v4.12.27 — SHIPPED 2026-10-30 on both engines: the Snyk fix for 4.12.26 (Tomcat 11… — swept (completed thread; field-deployed, Eric 2026-11-10) — 2026-Q4.md
 - release-4-12-28 — Release v4.12.28 — SHIPPED 2026-11-03, Java only: the mini-scheduler's retry and `_firing`… — swept (completed thread; field-deployed, Eric 2026-11-10) — 2026-Q4.md
 - release-branches-historical-record — The `release/v*` branches on GitHub are the historical record of releases v4.0.0 to v4.5.0… — superseded by historical-releases-tags-and-pages — 2026-Q4.md
+- release-4-12-29 — Release v4.12.29 — SHIPPED 2026-11-05, Java only: the scheduler's conditional claim with `… — completed; swept past archive_window — 2026-Q4.md
+- release-4-12-30 — Release v4.12.30 — SHIPPED 2026-11-05, lock-step with Rust 4.12.30: the panel name (#617),… — completed; swept past archive_window — 2026-Q4.md
+- scheduler-conditional-claim — The mini-scheduler's conditional claim - `_origin` in place of `_firing`, worked examples… — completed; swept past archive_window — 2026-Q4.md
+- scheduler-example-mongodb — The scheduler example is the claim's runnable worked example on MongoDB, and its embedded… — faded — 2026-Q4.md
+- conv-template-version-sweep — Release version sweeps must include the starter templates (2026-09-11). The Java — faded — 2026-Q4.md
+- conv-library-pins-are-direct-dependencies — A library's `dependencyManagement` never reaches a consumer - a transitive version the lib… — faded — 2026-Q4.md
+- conv-lab-outside-root-reactor — A lab or dev-machine tool stays out of the root reactor (Eric, 2026-10-23). The field's st… — faded — 2026-Q4.md
+- snyk-retired-manifest-placeholders — Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team + — faded — 2026-Q4.md

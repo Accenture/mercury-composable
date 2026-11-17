@@ -18,4 +18,4 @@
   `order-assistant` drive.
   → proposal: RFC-0012
   → serves: vision-mercury-composable
-  <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-16 | uses: 1 | tier: working | origin: 2026-11-16-105602 -->
+  <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->

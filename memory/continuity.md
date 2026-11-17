@@ -67,15 +67,17 @@
   #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the `soa.redis.health` route rename,
   `minimalist-kafka` no longer transitive).
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-11-14 | through 2026-11-14-074819.md (SIZE — continuity passed 1000 lines after the ADR work; 4
-  sessions since 2026-11-13-030403: `refresh-metadata` refreshed 11 footers, tier changes 4 (`agent-loop-tool-names-map-to-routes`,
-  `graph-failed-resume-readvises` and `conv-test-fixed-port-outside-ephemeral` → active; `release-4-12-30` → archive-candidate);
-  archived 0: `otel-optional-service-and-negative-control` (22 sessions) KEPT as a declaration gap — the 2026-11-14-065413 live drive
-  applied its negative-control-first method without naming it, the window's three commits on its paths were release sweeps and
-  an IDE round; swept 0 (the three threads closed 2026-11-05 are 10 sessions old); invariants not due (3 sessions since
-  2026-11-13-031614); stalled threads: `ai-sdlc-document-ingestion` (41) → [[close-stalled-threads-20261114]] raised for Eric;
-  contradictions none; smoke test not run. Live facts 48, decaying 28 of a 35 limit; continuity stays above 1000 lines because the
-  facts are long, not many - the next lean-up is the sweep of the three 2026-11-05 threads once past the window.)
+- **last_review:** 2026-11-17 | through 2026-11-17-055029.md (ON COMMAND + CADENCE — 10 sessions since 2026-11-14-074819:
+  `refresh-metadata` refreshed 20 footers; swept 3 threads closed 2026-11-05 (`release-4-12-29`, `release-4-12-30`,
+  `scheduler-conditional-claim`); archived 5 faded facts (`scheduler-example-mongodb`, `conv-template-version-sweep`,
+  `conv-library-pins-are-direct-dependencies`, `conv-lab-outside-root-reactor`, `snyk-retired-manifest-placeholders`); kept 4 as
+  declaration gaps (`playground-webapp-single-source`, `scheduler-resolver-conditional-claim`,
+  `conv-config-key-not-value-and-parent`, `conv-one-copy-of-shared-tooling`, each re-affirmed citing the session that relied
+  on it); invariants not due; stalled threads none; contradictions none, one drift note for Eric (the Vision's Track 2 row
+  still says "next the MCP bindings", shipped 2026-11-14); smoke test not run. Live facts 54 → 46; continuity 913 → 823 lines.)
+  Prior: 2026-11-14 | through 2026-11-14-074819.md (SIZE — continuity passed 1000 lines after the ADR work; 11 footers
+  refreshed, tier changes 4; `otel-optional-service-and-negative-control` KEPT as a declaration gap; `ai-sdlc-document-ingestion`
+  stalled → [[close-stalled-threads-20261114]] raised for Eric.)
   Prior: 2026-11-13 | through 2026-11-13-030403.md (ON COMMAND — refreshed 11 footers, tier changes 6; archived 1 superseded
   fact and 1 faded; declaration gaps none; live facts 47 → 45; then Eric promoted `clean-knowledge-design-over-engine-coverage`
   to `core`, so it moved back from the archive: 46.)
@@ -195,7 +197,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-14 | uses: 38 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-14 | uses: 39 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -291,7 +293,7 @@
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-11-05 | uses: 27 | tier: archive-candidate | origin: 2026-10-02-175751 -->
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-11-17 | uses: 28 | tier: active | origin: 2026-10-02-175751 -->
 
 - **The mini-scheduler's state resolver picks one instance with a conditional claim in `expires`, and its contract
   changes only inside the existing `parameters`, where a key that starts with `_` is the system's (Eric, 2026-11-03 and
@@ -314,27 +316,7 @@
   before changing what the scheduler sends the state resolver or the environment store, ask whether a field
   installation would have to change a schema to accept it; an additive key in `parameters` is the shape. A resolver
   for more than one instance needs one conditional write, so a second read in it is the smell.
-  <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-05 | uses: 4 | tier: archive-candidate | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
-
-- **The scheduler example is the claim's runnable worked example on MongoDB, and its embedded MongoDB is a pure-Java
-  emulator (Eric, 2026-11-05).** `StateResolver`, `EnvironmentStore` and `ScheduleAdmin` keep their records in MongoDB
-  (`job_state`, one document per job with the name as `_id`; `environment`), the resolver's claim the README's MongoDB
-  worked example word for word ([[scheduler-resolver-conditional-claim]]). The tests start `mongo-java-server` (test
-  scope) and `helpers/mongodb-standalone`, in the root reactor by Eric's choice, runs the same server for a test drive
-  without Docker. **Why pure Java:** the real `mongod` is a first-run download from fastdl.mongodb.org (80 MB on macOS
-  arm64, 104 MB on Linux, 791 MB on Windows) that a VDI without Docker, CI and the field's pipeline would each have to
-  reach; the emulator is a Maven dependency. Measured: with driver 5.8.1 and Netty 4.2.19 the claim race had one
-  winner in 600 of 600 rounds; it has no sessions, so no transactions, and no `hello` command. Eric: the example uses
-  a very small set of features, so the emulator is an excellent fit, and the helper's README says it is for dev and
-  testing without container support only, emulating a subset of MongoDB. The same tests run against a real MongoDB
-  with `-Dtest.mongodb.uri` (15 of 15 on 8.0.34). The 30-second window needs a period above 39 seconds, so the demo
-  jobs run once a minute. **The driver is pinned at 5.14.0 by `mongodb.version`** in both poms (Eric; the IDE's
-  dependency scan flagged Boot 4.1.2's 5.8.1, CVE-2026-88033 in sync and CVE-2026-18710 in core): a `<version>` on
-  `mongodb-driver-sync` alone left `bson`, `mongodb-driver-core` and `bson-record-codec` at Boot's 5.8.1, measured,
-  so the property is the pin, and a Boot bump compares it ([[conv-library-pins-are-direct-dependencies]]). **How to
-  apply:** an example that needs a database gets an embedded server that comes from Maven Central, run once against
-  the real database before it ships; a helper that emulates a product says so.
-  <!-- id: scheduler-example-mongodb | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: archive-candidate | origin: 2026-11-05-045407 -->
+  <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-17 | uses: 5 | tier: active | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
 
 - **The Playground entry page carries one server-filled tag: `playground.panel.name` renames the Minigraph panel
   through `<meta name="playground-panel-name" content="">` (a field installation's request, 2026-11-05).** The bundle
@@ -348,7 +330,7 @@
   apply:** a per-deployment setting the web app shows goes into the entry page as a server-filled tag, found by its
   exact text and guarded by a test of the built page (`GetIndexHtmlTest`); any webapp source edit still needs the
   release ([[help-edit-needs-bundle-release]]).
-  <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-12 | uses: 3 | tier: active | origin: 2026-11-05-175904 -->
+  <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-12 | uses: 3 | tier: archive-candidate | origin: 2026-11-05-175904 -->
 
 - **The agent loop: `llm.run` in the engines maps tool names to routes; the model turn and the MCP bindings live in the
   language packs (ADR-0033, accepted 2026-11-14 after the live drive through both packs).** A node whose model reasons with
@@ -372,7 +354,7 @@
   in the 2026-11-14 drive, capped at 8 KiB 4,300; better, a function of the application in front of the bound route stores the
   payload and returns a reference (the example's `diagram.render`, the SVG under `/tmp/rendered_diagrams/<reference>.svg`),
   which is the out-of-band shape the research rulings asked for. (ADR-0033)
-  <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-14 | uses: 2 | tier: active | origin: 2026-11-14-071025 -->
+  <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-17 | uses: 8 | tier: active | origin: 2026-11-14-071025 -->
 
 - **A graph that resumes an agent loop re-advises on a failed resume, because `graph.resume` consumes the suspension record
   (2026-11-14, found live in sprint 3 WP1).** A resume request whose decisions the loop refuses - an unknown call id, a call
@@ -388,7 +370,7 @@
   moved, so a re-sent decision meets 409 and re-advises again; the operator then restarts the transaction. **How to
   apply:** every graph that suspends around `llm.run` needs a path from the loop's failure back to its advice while an
   approval is pending; design it on the graph, never by making the loop forgive a bad decision.
-  <!-- id: graph-failed-resume-readvises | created: 2026-11-14 | last_used: 2026-11-14 | uses: 2 | tier: active | origin: 2026-11-14-065413 -->
+  <!-- id: graph-failed-resume-readvises | created: 2026-11-14 | last_used: 2026-11-14 | uses: 2 | tier: archive-candidate | origin: 2026-11-14-065413 -->
 
 - **The packs' trace records mirror the engines' callee and caller, so a span lineage is continuous from an engine into a
   pack (2026-11-14; Eric's criterion: for OpenTelemetry to be certified, the span lineage ought to be continuous end to
@@ -406,7 +388,7 @@
   still be missing hops; a hop into any runtime must leave the callee's edge record, the ingress record and the function's
   record, or the backend shows the hop as time inside the caller; every traced execution leaves exactly one record, and the
   question for a new path is which side emits it.
-  <!-- id: pack-trace-records-engine-parity | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: working | origin: 2026-11-14-115548 -->
+  <!-- id: pack-trace-records-engine-parity | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: active | origin: 2026-11-14-115548 -->
 
 - **A `DECIMAL` result carries at most a configured number of decimal places - the node's `precision`, else the
   application's `big.decimal.precision` (default 6) - rounded HALF_UP beyond the limit and kept as computed within it
@@ -481,7 +463,7 @@
   agent opens with `gh` still gets the handoff in the message that announces it - the title on its own line and the trailer
   rule for the commit count - and a later commit on the branch re-sends it.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-14 | uses: 132 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-17 | uses: 134 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -508,21 +490,10 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-14 | uses: 72 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-17 | uses: 74 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
-- **Release version sweeps must include the starter templates (2026-09-11).** The Java
-  sweep's grep must cover `--include=build.gradle` alongside `--include=pom.xml`: each
-  `templates/*` module carries a standalone pom (literal engine versions, like the Snyk
-  placeholders) AND a Gradle build with a single `def mercuryVersion = '<version>'`
-  literal. Mercury artifacts are NOT on Maven Central — the templates' Gradle builds
-  resolve engine artifacts from mavenLocal (the reactor `mvn install`), which is also why
-  ci.yml's templates-gradle job installs the engine modules first. Since v4.12.8 the sweep
-  is BUILD FILES ONLY (40 at that release): template READMEs and all guide prose use the
-  `x.y.z` placeholder with an explainer line (Eric's direction — prose never needs a
-  version bump again).
-  <!-- id: conv-template-version-sweep | created: 2026-09-11 | last_used: 2026-11-05 | uses: 40 | tier: archive-candidate | origin: 2026-09-11-005808 -->
 - Watch serialization gotchas (Long↔Integer downcast — the in-house codec writes the smallest integer width, so it holds since
   ADR-0028; use `util.str2int/str2long`). (Wording refreshed 2026-10-09 at invariant re-verify — substance unchanged.)
   <!-- id: conv-serialization-gotchas | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -594,43 +565,6 @@
   Relates [[eric-code-changes-via-pr]] (how a change reaches main).
   <!-- id: conv-compartment-downstream-secrets | created: 2026-09-30 | last_used: 2026-09-30 | uses: 1 | tier: core | origin: 2026-09-30-164034 -->
 
-- **A library's `dependencyManagement` never reaches a consumer - a transitive version the library must control is a DIRECT
-  dependency of that library, with the artifacts that declare the old one excluding it (Eric's fix, 2026-10-12; v4.12.24).** The
-  4.12.23 Guava pin in `minimalist-kafka`'s `dependencyManagement` converged that module's own build and nothing else: Maven's
-  nearest-wins in `twin-kafka`, the demos and every field application saw Confluent's Guava 32.0.1-jre two levels down and
-  `platform-core`'s 33.7.2 three levels down, picked the old one, and the field's Snyk gate - one project per pom
-  ([[snyk-retired-manifest-placeholders]]) - rejected the release on `twin-kafka`'s manifest. A direct dependency travels with the
-  library and sits one level below it in every consumer, ahead of any transitive declarer. The shape: declare the version in the
-  library that drags the old one in (`guava`, `failureaccess`, `tink` in `minimalist-kafka`), exclude it from the artifacts that
-  declare it so ONE version appears in the tree, and keep `failureaccess` explicit at the version Guava itself declares - this is the
-  SECOND Guava field incident; the first (4.6.2, archived `thread-guava-failureaccess-field-fix`) was a curated field resolver dropping
-  the deep transitive node (`NoClassDefFoundError` on `InternalFutureFailureAccess`), so the pin stays even though plain Maven brings
-  the artifact. `platform-core` declares no Guava (Caffeine is its cache; no source in the repo imports `com.google.common`). **The
-  verification that holds:** `mvn install` the edited modules first (a consumer's tree reads the INSTALLED pom), then
-  `mvn dependency:tree -Dincludes=<groups>` over the WHOLE reactor, counting versions - one of each - and the consuming modules' tests
-  (the CSFLE round trip exercises Tink). A module's own clean build proves nothing about its consumers. **Two more cases
-  (2026-10-21, the ASM/Vert.x/Netty fix):** (1) a direct pin that WINS still leaves the losing version in the verbose graph -
-  `accessors-smart`'s ASM 9.7.1 stayed "omitted for conflict" under platform-core's 9.10.1 and IntelliJ's dependency scanner
-  reported it - so exclude it from the artifact that declares it and check with `dependency:tree -Dverbose`; (2) every module's
-  parent is `spring-boot-starter-parent`, whose BOM overrides a transitive version for each consumer, which is why
-  `netty.version` is set in all 38 poms - and why `json-path` resolves 2.10.0 (Boot's) in 34 modules while platform-core
-  declares 3.0.0. **Both ways round (2026-10-26, the Tomcat fix for 4.12.26):** Caffeine 3.3.1, declared in platform-core,
-  reached no consumer (40 nodes stayed on Boot 4.1.2's 3.2.4) until `caffeine.version` joined `netty.version` in the 41 poms,
-  and Gson had shipped that way in 4.12.26 (the nine poms without `gson.version` resolved Boot's 2.13.2, 20 nodes, under the
-  2.14.0 the others set; now 2.15.0 in all 41); and an override written when it was ahead of Boot falls behind the next Boot - the Reactor BOM a pom imports itself
-  (2025.0.7, which takes precedence over the parent's), `httpcore5.version` 5.4.3 and the literal `r2dbc-postgresql`
-  1.1.2.RELEASE would each have held its library below Boot 4.1.2. So a Boot bump compares every property and pin the poms
-  set with the new `spring-boot-dependencies` properties, and a library bump in platform-core asks whether Boot manages it.
-  **A consumer's own pin hides an exclusion gap (2026-10-30):** the Guava pin five examples and lab modules kept after
-  4.12.24 rewrote the Guava 32.0.1 that two Confluent encryption artifacts (`encryption-tink`, `dek-registry-client`)
-  still declared to `version managed from 32.0.1`, so their verbose graphs looked clean while every application on
-  `minimalist-kafka` saw it `omitted for conflict`. Removing the pins exposed it, and the exclusion went into
-  `minimalist-kafka` itself. Before dropping a pin, compare `dependency:tree -Dverbose` with and without it. The same day
-  `httpcore5.version`, equal to Boot 4.1.2's managed 5.4.4, was retired from its eight poms.
-  Relates
-  [[conv-template-version-sweep]] (the other reactor-wide sweep).
-  <!-- id: conv-library-pins-are-direct-dependencies | created: 2026-10-12 | last_used: 2026-11-05 | uses: 11 | tier: archive-candidate | origin: 2026-10-12-221919 -->
-
 - **The field's Sonar gate judges NEW code, and a round fixes the WHOLE report, because a pre-existing finding counts as new
   the next time its file is touched (the fifth to thirteenth rounds, 2026-10-12 to 2026-11-12; the earlier rounds are the
   archived `thread-sonar-*` threads). The rules, by finding:**
@@ -671,7 +605,7 @@
     constant another module reads (the IDE scans one module). IntelliJ reports a `try` holding only a comment as empty (a helper
     that uses the resource keeps S2095 and S5778 satisfied) and cannot see a non-null proved in another method.
   Relates [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-14 | uses: 32 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-17 | uses: 34 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
@@ -696,7 +630,7 @@
   the ignored `dist/`, which compares with the committed bundle (`public/assets`, `template/playground.html`) and with the Rust
   copy, maps excluded, without touching a tracked file; both were byte-identical. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
   only the entry page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-05 | uses: 37 | tier: archive-candidate | origin: 2026-10-02-015208 -->
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-17 | uses: 38 | tier: active | origin: 2026-10-02-015208 -->
 
 - **A reactor build rewrites every example's `target/*.jar` in place, so an app running from one fails at the next class it loads
   for the first time (2026-10-22).** `mvn verify` repackages `examples/*/target/<name>-<version>.jar`. A JVM running from that jar
@@ -709,7 +643,7 @@
   (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
   sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
-  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-14 | uses: 24 | tier: active | origin: 2026-10-22-232342 -->
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-14 | uses: 27 | tier: active | origin: 2026-10-22-232342 -->
 
 - **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
   properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
@@ -724,7 +658,7 @@
   or its child. To audit the tree, collect the keys of every `.properties` file, every `getProperty` and `@OptionalService`
   literal and every configuration-reference heading, then list each key that prefixes another. The 2026-10-23 log has the
   scan; `cloud.connector.health` is a route, not a key. YAML cannot express the collision.
-  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-11-05 | uses: 6 | tier: archive-candidate | origin: 2026-10-23-215957 -->
+  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-11-17 | uses: 7 | tier: active | origin: 2026-10-23-215957 -->
 
 - **A test server's fixed port stays below 32768, and a wait on its listen covers failure too (2026-11-04, PR #607).**
   `EventOverHttpStreamTest`'s mock peer listened on 58586 and waited on `onSuccess` alone. CI failed three times with
@@ -739,18 +673,7 @@
   runner whose neighbouring classes ran at normal speed, more likely saw a callback that never fired than a slow one.
   A macOS negative control must hold the port on `::` with `IPV6_V6ONLY=0`: a listener on `127.0.0.1` or on IPv4
   `0.0.0.0` alone lets Vert.x bind anyway.
-  <!-- id: conv-test-fixed-port-outside-ephemeral | created: 2026-11-04 | last_used: 2026-11-14 | uses: 3 | tier: active | origin: 2026-11-04-031520 -->
-
-- **A lab or dev-machine tool stays out of the root reactor (Eric, 2026-10-23).** The field's static code analysis scans
-  the modules the root `pom.xml` declares, registers each one, and keeps scanning it for good. A module listed there
-  becomes a long-term field scan target, and removing it later needs a placeholder pom, the reason the Spring Boot 3
-  placeholders stay ([[snyk-retired-manifest-placeholders]], archived). A module outside the root reactor is never
-  scanned and needs no placeholder.
-  **How to apply:** a lab gets its own aggregator in its folder, as `lab/dynatrace-oneagent/pom.xml` does. It lists by
-  relative path the Mercury modules the lab uses, so Maven builds them from source instead of resolving the released
-  version of the same number from `~/.m2`, and installs nothing. Its literal version joins the release version sweep.
-  Before adding any module to the root reactor, ask whether it ships to the field's artifact repository.
-  <!-- id: conv-lab-outside-root-reactor | created: 2026-10-23 | last_used: 2026-11-05 | uses: 13 | tier: archive-candidate | origin: 2026-10-23-215957 -->
+  <!-- id: conv-test-fixed-port-outside-ephemeral | created: 2026-11-04 | last_used: 2026-11-14 | uses: 3 | tier: archive-candidate | origin: 2026-11-04-031520 -->
 
 - **A tool that runs from the checkout lives once, in the starter template, and the examples point to it (Eric,
   2026-11-05: do not repeat ourselves).** The Playground session broker had three identical copies (the
@@ -762,7 +685,7 @@
   to apply:** before adding a script or tool to an example, look for it in the template and point to that copy; a
   resource an application packages and loads (a flow such as `graph-executor.yml`) is copied, because the app's
   build needs it on its own classpath.
-  <!-- id: conv-one-copy-of-shared-tooling | created: 2026-11-05 | last_used: 2026-11-05 | uses: 1 | tier: archive-candidate | origin: 2026-11-05-201925 -->
+  <!-- id: conv-one-copy-of-shared-tooling | created: 2026-11-05 | last_used: 2026-11-17 | uses: 2 | tier: active | origin: 2026-11-05-201925 -->
 
 - **Releases v4.0.0 to v4.5.0 live as tags and GitHub releases; their `release/v*` branches are gone (Eric,
   2026-11-12).** Tags began at `v4.6.0`; before it, each release was cut as a `release/v*` branch (149). Each now has
@@ -781,18 +704,7 @@
   `main`'s heading disagrees, else from the next release's CHANGELOG when a heading is wrong or missing at the tag, the
   note saying so; a release published after the fact passes `--latest=false`; a branch for a version never released
   (its tip another release's commit, and no CHANGELOG section anywhere, like 2.9.0) gets no tag.
-  <!-- id: historical-releases-tags-and-pages | created: 2026-11-12 | last_used: 2026-11-13 | uses: 2 | tier: active | supersedes: release-branches-historical-record | origin: 2026-11-12-134344 -->
-
-- **Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team +
-  Eric).** Snyk keys a project on repository+branch+manifest path and never retires it —
-  deleting a module freezes its findings on the last resolved dependency tree, failing
-  the security gate forever. A parentless dependency-free `packaging=pom` placeholder
-  re-tests to an empty graph (zero findings). Live at `system/rest-spring-3/` +
-  `examples/rest-spring-3-example/` (PR #305) with relocation metadata to the Boot-4 twins;
-  **release version sweeps must include these non-reactor poms deliberately.** Relates
-  [[stack-integration-spring-boot4]]. **Reactivated 2026-10-23:** a lab stays out of the root reactor, so it never
-  needs a placeholder ([[conv-lab-outside-root-reactor]]).
-  <!-- id: snyk-retired-manifest-placeholders | created: 2026-09-01 | last_used: 2026-11-05 | uses: 35 | tier: archive-candidate | origin: 2026-09-01-022524 -->
+  <!-- id: historical-releases-tags-and-pages | created: 2026-11-12 | last_used: 2026-11-13 | uses: 2 | tier: archive-candidate | supersedes: release-branches-historical-record | origin: 2026-11-12-134344 -->
 
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
@@ -817,7 +729,7 @@
   the same day Eric brought every common feature since 4.12.27 across instead (the agent loop `llm.run`, the
   asynchronous `graph.extension`, progress events, the abort record, `playground.panel.name`: mercury #403-#407,
   Increments 196-200), so the epic does not gate a port's catch-up; only work the port has no counterpart for does.
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-14 | uses: 54 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-17 | uses: 55 | tier: active | origin: 2026-09-16-003354 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -874,7 +786,7 @@
   pattern is solved and inherited; the runtime posture is the open problem - and why the engine core stays vendor-free with
   adapters as functions ON the wrappers: the gateway/MCP edge is where vendor specifics live.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-14 | uses: 34 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-17 | uses: 38 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;

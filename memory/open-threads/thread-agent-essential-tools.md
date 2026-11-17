@@ -16,4 +16,4 @@
   build (Python, Node, the Playground's `document-ingest`/`document-query`, the recipes page).
   → proposal: RFC-0013
   → serves: vision-mercury-composable
-  <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-16 | uses: 1 | tier: working | origin: 2026-11-16-105602 -->
+  <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->

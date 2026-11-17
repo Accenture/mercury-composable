@@ -5,4 +5,4 @@
   field-level agreement run and the RFC for the helper's typed parts by reference and the manifest - they return as a new
   thread only if the field's results call for engine or pack work. Lesson: a lab that lives outside the repository gets no
   thread here, only its distilled rulings. origin: 2026-10-16-012720; closed 2026-11-14-074819.
-  <!-- id: ai-sdlc-document-ingestion | created: 2026-10-16 | last_used: 2026-11-14 | uses: 5 | tier: active | origin: 2026-10-16-012720 -->
+  <!-- id: ai-sdlc-document-ingestion | created: 2026-10-16 | last_used: 2026-11-14 | uses: 5 | tier: archive-candidate | origin: 2026-10-16-012720 -->
