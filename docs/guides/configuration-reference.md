@@ -24,8 +24,10 @@ key supported by the framework and its optional modules.
 
 Properties are set in `src/main/resources/application.properties` and can be overridden with
 JVM system properties (`-Dkey=value`), which the config reader checks first. Environment
-variables enter through `${ENV_VAR:default}` substitution inside values (and additionally
-through Spring Boot's own resolution order in `rest-spring-4` apps). When both
+variables enter through `${ENV_VAR:default}` substitution inside values - a system property's
+value included, so `-Dkey='${ENV_VAR}'` keeps a credential out of the process list and resolves
+it inside the application (and additionally through Spring Boot's own resolution order in
+`rest-spring-4` apps). When both
 `application.properties` and `application.yml` are present, they are merged and **`.yml`
 values win** for overlapping keys (`application.yml` is merged last).
 

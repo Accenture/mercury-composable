@@ -129,6 +129,31 @@ class ConfigReaderTest {
     }
 
     @Test
+    void systemPropertyValueResolvesReferences() {
+        // a -D value is resolved like a file value - an environment variable with a default, and
+        // another configuration key - so a credential may be given as -Dkey=${ENV_VAR} and never
+        // appear in the process list
+        final String KEY = "system.property.with.reference";
+        final String BASE = "system.property.referenced";
+        AppConfigReader config = AppConfigReader.getInstance();
+        System.setProperty(KEY, "${NO_SUCH_ENV_VARIABLE_FOR_TEST:from-default}");
+        assertEquals("from-default", config.getProperty(KEY));
+        System.setProperty(BASE, "8085");
+        System.setProperty(KEY, "http://127.0.0.1:${" + BASE + "}/api");
+        assertEquals("http://127.0.0.1:8085/api", config.getProperty(KEY));
+        String path = System.getenv("PATH");
+        if (path != null) {
+            System.setProperty(KEY, "${PATH}");
+            assertEquals(path, config.getProperty(KEY));
+        }
+        System.setProperty(KEY, "${NO_SUCH_ENV_VARIABLE_FOR_TEST}");
+        assertNull(config.getProperty(KEY), "an unresolved reference is no value, as in a file");
+        System.clearProperty(KEY);
+        System.clearProperty(BASE);
+        assertNull(config.getProperty(KEY));
+    }
+
+    @Test
     void getValueFromParent() {
         AppConfigReader parent = AppConfigReader.getInstance();
         String parentValue = parent.getProperty("cloud.connector");
