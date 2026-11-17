@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -66,6 +67,15 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
     private static final String RENDER_TOOL = "render_diagram";
     private static final String DIAGRAM_CODE = "flowchart TD\n  A[Request] --> B{Review}\n  B -->|approve| C[Approved]\n  B -->|reject| D[Rejected]";
     private static final ConcurrentMap<String, Conversation> CONVERSATIONS = new ConcurrentHashMap<>();
+    private static final AtomicReference<Map<String, String>> LAST_GRAPH_CONTEXT = new AtomicReference<>(Map.of());
+
+    /**
+     * The graph context the most recent loop turn carried: {@code x-graph-id} and {@code x-node}, which the engine's
+     * task node sends and the loop copies onto each turn (RFC-0012 section 8).
+     */
+    public static Map<String, String> lastGraphContext() {
+        return LAST_GRAPH_CONTEXT.get();
+    }
 
     /** What the scripted assistant remembers of one conversation: the record's turn count and the facts. */
     private static final class Conversation {
@@ -87,6 +97,13 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
     public Map<String, Object> handleEvent(Map<String, String> headers, Map<String, Object> input, int instance)
             throws AppException {
         if (input.get("tools") != null) {
+            var context = new HashMap<String, String>();
+            for (var name : List.of("x-graph-id", "x-node")) {
+                if (headers.get(name) != null) {
+                    context.put(name, headers.get(name));
+                }
+            }
+            LAST_GRAPH_CONTEXT.set(Map.copyOf(context));
             return loopTurn(input);
         }
         String prompt = String.valueOf(input.get("prompt"));

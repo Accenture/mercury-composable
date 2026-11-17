@@ -387,7 +387,7 @@ The driver is an optional extra, as Redis is (ruling R4): Python `postgres = ["p
 package stays free of any database client. A configured audit store whose driver is not installed stops the
 application at boot by name; one that does not answer at boot is logged, and the sweep repairs what the outage defers.
 
-## 8. Graph context (the engines, in this build - ruling R5)
+## 8. Graph context (the engines, in this build - ruling R5; built 2026-11-17 in Java and Rust)
 
 The loop forwards nothing but the correlation id and the return path to `llm.chat` today, and `graph.task` sets only
 `x-return-path` on a task's request (an author may map constants to headers, `-> header.x-...`, but an audit must not
