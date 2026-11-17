@@ -3,6 +3,7 @@ references/arch-decisions/ADR.md
 references/arch-decisions/RFC.md
 references/fixtures/rest-bindings.yaml
 references/guides/actuators-and-http-client.md
+references/guides/agent-tools.md
 references/guides/ai-developer-guide.md
 references/guides/annotations-reference.md
 references/guides/api-overview.md

@@ -950,6 +950,8 @@ nothing and passes nothing, so a function that forwards its headers cannot leak 
 alias, set by the engine after the input mapping (see
 [the graph context headers](../reserved-names-and-headers.md#x-graph-id)); `llm.run` copies both onto each
 `llm.chat` turn, so the LLM helper's transcript audit store records the graph and the node of every model turn.
+The tools a loop's catalog names most often - a file in a workspace, a page of an allowed site, the clock - are
+served by the packs' agent-tools extension with published rows to copy: see [Built-in Agent Tools](../agent-tools.md).
 
 ```
 create node investigate

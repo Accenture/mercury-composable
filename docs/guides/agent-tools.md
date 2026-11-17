@@ -1,0 +1,199 @@
+---
+title: Built-in Agent Tools
+summary: The essential tools an agent loop names in its tool catalog - files inside one workspace, the web
+  inside an allowlist of sites, and a clock - served by the language packs' agent-tools extension as composable
+  functions, each with a published catalog row, a sandbox that is deployment configuration and limits the tool
+  enforces itself.
+layer: knowledge-graph
+audience: [developer, architect, ai-agent]
+keywords: [agent tools, built-in tools, llm.run, tool catalog, file.read, file.write, file.list, file.search,
+  web.fetch, web.crawl, time.now, tools.file.root, tools.web.allow, sandbox, RFC-0013]
+related:
+  - guides/knowledge-graph/skills-reference.md
+  - guides/polyglot-functions.md
+  - guides/transcript-audit-schema.md
+---
+
+# Built-in Agent Tools
+
+*Reference: the tools every second agent use case needs, where they live, how each is governed, and how an author
+puts one on a graph.*
+
+> **At a glance**
+>
+> - **What** — seven composable functions in the language packs' `extensions/agent-tools/`: `file.read`,
+>   `file.write`, `file.list` and `file.search` inside one workspace; `web.fetch` and `web.crawl` inside an allowlist
+>   of sites; `time.now`. A graph's `llm.run` node names them in its tool catalog like any other route.
+> - **Why it matters** — the diagram assistant needed one tool; the next graphs want to read the file the person
+>   pointed at, write a note, fetch a page. Without a shared set, every graph repeats the same security decisions:
+>   which directory, which hosts, how big a result, what counts as a write.
+> - **The rule** — the sandbox is deployment configuration, never an argument of a call; a tool whose sandbox is not
+>   configured does not register; every refusal is a 400 naming the rule; results are text, capped and untrusted.
+> - **Versions** — version 1, step 1 (mercury-python PR #63, 2026-11-17; the Node.js twin follows in lockstep). The
+>   knowledge-graph tools (`graph.schema`, `graph.query`, `graph.write`, `graph.ingest`) and `file.extract` are the
+>   next step of the same design. Settled as RFC-0013 in the [RFC register](../arch-decisions/RFC.md).
+
+## A built-in tool is a composable function
+
+An agent loop ([`llm.run`](knowledge-graph/skills-reference.md#task)) calls the tools its catalog names through the
+engine's ordinary routing: a route is local, an Event-over-HTTP target or on the mesh, and the loop neither knows nor
+cares which. The built-in tools are functions of a pack extension, served next to the LLM helper that every agent
+deployment already runs; the engine maps their routes in its `yaml.event.over.http` file and never contains tool
+code. A route names the capability (`file.read`, `web.fetch`), never the implementation, so a built-in may later be
+replaced by an MCP tool behind the same route, or an MCP tool by a built-in, and the graph does not change.
+
+Six principles, from the design spec:
+
+1. **A built-in tool is a composable function**, declared in the pack extension, addressed by a route.
+2. **Each tool ships its catalog row** - the name the model sees, the description it reads, the input schema the loop
+   validates against, and `write: true` where it applies - so an author copies a row rather than writing one.
+3. **The sandbox is deployment configuration.** Which directory tree, which hosts: keys of the pack's configuration,
+   certified with the deployment, never arguments of a call. An unconfigured tool does not register, so it is a 404
+   to the loop's pre-flight check, not an open door.
+4. **Results are text, capped and untrusted.** No binary leaves a tool; each caps its own result; a fetched page that
+   says "ignore your instructions" is a page.
+5. **Few, essential, boring.** No shell, no arbitrary HTTP request, no SQL against a system of record. A use case with
+   another need writes its own route and certifies it on its graph.
+6. **Build or bind, by rule.** Built in-house when the sandbox must be the pack's, when no second runtime may be
+   needed, or when it is a few lines; bound from an existing MCP server (through the pack's MCP binding) when the
+   server is a product's own front door.
+
+## The set
+
+Every tool refuses an argument outside its sandbox with a **400 that names the rule and the key that governs it**;
+the loop returns it to the model as that call's error, and the node never fails because of a tool. A missing file is
+a 404, a site that does not answer in time a 408, an existing file under `create` a 409, a host that cannot be
+resolved a 502.
+
+### Files, inside one workspace
+
+The workspace is `tools.file.root`, one directory tree. Every `path` is relative to it, resolved with symbolic links
+followed, and refused when the result is outside the root (`..`, an absolute path, a link that escapes). Hidden
+entries (a name starting with `.`) are invisible to every file tool unless `tools.file.hidden=true`. The pack's
+process should run as a user with no rights beyond the tree.
+
+| Route | Row | Arguments | Result and limits |
+| --- | --- | --- | --- |
+| `file.read` | `file_read` | `path`; `max_bytes` (default and cap `tools.file.max.bytes`, 256 KiB) | `{path, bytes, text, truncated}`; UTF-8 text only, a binary file is an error naming the detected type |
+| `file.write` | `file_write`, **`write: true`** | `path`, `content`; `mode` = `create` (default), `overwrite`, `append` | `{path, bytes, mode}`; `create` refuses an existing file; parent folders are created inside the root; `tools.file.write.extensions` may restrict the suffixes |
+| `file.list` | `file_list` | `path` (a folder, default `.`); `glob` (`*.md`, `**/*.md`); `max_entries` (default 200, cap 2000) | `{entries: [{path, type, bytes, modified}], truncated}` |
+| `file.search` | `file_search` | `pattern` (a literal, or a regular expression with `regex: true`); `path`; `glob`; `case_sensitive`; `context` (cap 3); `max_results` (default 100, cap 1000) | `{matches: [{path, line, text, before, after}], files_searched, truncated}`; binaries skipped, lines cut to `tools.file.line.max.chars` |
+
+### The web, inside an allowlist
+
+The web tools register only when `tools.web.allow` names at least one host pattern (`docs.example.com`,
+`*.example.org`). A URL is fetched only when its host matches, over `https` (an `http` host must be listed with its
+scheme), and every redirect is checked against the same list. The host is resolved before the request, every address
+it resolves to is checked, and the request is made to the checked address; addresses in loopback, private,
+link-local, multicast and reserved ranges are refused unless `tools.web.allow.private=true` - the request-forgery
+route to a cloud metadata service or an internal admin port is closed by default. The download stops at
+`tools.web.max.bytes` (1 MiB), the request at `tools.web.timeout.ms` (10 s), and the tool identifies itself with a
+Mercury user agent.
+
+| Route | Row | Arguments | Result and limits |
+| --- | --- | --- | --- |
+| `web.fetch` | `web_fetch` | `url`; `as` = `text` (default), `markdown`, `raw` | `{url, status, content_type, title, text, bytes, truncated}`; HTML reduced to readable text (scripts, styles and navigation dropped; headings, lists, code and links kept as text or Markdown); a text resource as is; `raw` the body as received; the page's own status is a result |
+| `web.crawl` | `web_crawl` | `url`; `max_pages` (default 10, cap `tools.web.crawl.max.pages`, 50); `max_depth` (default 2, cap 5); `include` (a path prefix) | `{pages: [{url, title, text, bytes}], visited, truncated}`; same host, breadth-first, `robots.txt` honoured, `tools.web.crawl.delay.ms` between requests, each page cut to `tools.web.page.max.chars`, the whole result to fit the loop's result limit |
+
+The crawl is a bounded reader of a documentation section or a small site, not a spider: a model that needs more asks
+again with a narrower start page or an `include` prefix.
+
+### The clock
+
+`time.now` (`time_now`) takes an optional `timezone` (an IANA name, default `UTC`) and returns
+`{utc, local, timezone, offset, weekday, epoch_ms}`. A model has no clock, and "today", "within 30 days" and "last
+quarter" need one. It reads nothing and registers unless `tools.time=false`.
+
+## Putting a tool on a graph
+
+Three things, none of them engine code:
+
+**1. The pack's configuration** names the sandbox - two keys for the common case, reviewed with the deployment:
+
+```bash
+mercury-serve extensions/agent-tools/agent_tools.py -Dtools.file.root=/srv/workspace -Dtools.web.allow=docs.example.com
+```
+
+**2. The engine's Event-over-HTTP map** reaches the pack's routes:
+
+```yaml
+event:
+  http:
+    - route: 'file.read, file.write, file.list, file.search, web.fetch, web.crawl, time.now'
+      target: 'http://127.0.0.1:8089/api/event'
+```
+
+**3. The catalog node** carries the rows. Copy them from the extension's `catalog/` folder (`file_read.json`, ...) or
+from `python agent_tools.py describe`, which prints every row and says which tools register under the current
+configuration; the loop's pre-flight check then certifies what the graph names:
+
+```text
+create node research-tools
+with type ToolCatalog
+with properties
+tools='''[
+  { "name": "web_fetch", "route": "web.fetch", "description": "...", "input_schema": { ... } },
+  { "name": "file_write", "route": "file.write", "write": true, "description": "...", "input_schema": { ... } }
+]'''
+```
+
+The row's description is what the model reads about the tool; the shipped text is a reviewed default an author may
+sharpen for the graph's domain. The input schema is a closed object (`additionalProperties: false`) in the loop's
+[schema subset](knowledge-graph/skills-reference.md#task); the tool refuses an unknown argument by name as well. No
+shipped row sets `strict` - every row has optional properties, and the graph's author adds the flag when the model in
+use constrains them by grammar.
+
+## Governance
+
+- **The catalog is still the boundary.** A graph names the tools its agent reaches; a built-in the graph does not
+  name is as unreachable as any route. The pre-flight check verifies the routes exist, so a deployment whose sandbox
+  is not configured fails the graph before a token is spent.
+- **Writes are marked.** `file.write` carries `write: true`; under the node's default mode a person approves each
+  write, and only a node that declares `mode: auto` runs it unasked (ADR-0033). The other tools are reads, bounded by
+  the root, the allowlist and the caps.
+- **The root and the allowlist are certification artifacts.** They answer "what can this agent reach?" without
+  reading code, and they live with the pack's configuration, not in a prompt or a call.
+- **Untrusted content.** A page or a file may carry instructions; the loop never obeys a result, and the graph
+  author's system prompt should say that fetched and stored content is data.
+- **Logs.** A tool logs its route, the status, the byte, entry or page count and the host of a URL - never a path's
+  content, a page's text or a full URL (a query string may carry a token). The engine's trace names the route like
+  any function's.
+- **Limits are defaults a deployment lowers, never raises past the caps** named above; the caps are the tool's.
+
+## Configuration (the pack's)
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `tools.file.root` | unset | the workspace; unset, the file tools do not register |
+| `tools.file.max.bytes` | `262144` | the most bytes `file.read` returns and `file.write` accepts |
+| `tools.file.hidden` | `false` | expose hidden entries to the file tools |
+| `tools.file.write.extensions` | any | the suffixes `file.write` accepts (`.md, .txt`) |
+| `tools.file.line.max.chars` | `500` | the longest line `file.search` returns |
+| `tools.web.allow` | empty | the host patterns the web tools may reach; empty, they do not register |
+| `tools.web.allow.private` | `false` | allow loopback, private, link-local and multicast addresses |
+| `tools.web.max.bytes` | `1048576` | the most bytes read from one response |
+| `tools.web.timeout.ms` | `10000` | how long one request may take |
+| `tools.web.crawl.max.pages` | `50` | the most pages one crawl may ask for (the cap; a deployment may lower it) |
+| `tools.web.crawl.delay.ms` | `500` | the pause between two requests of a crawl |
+| `tools.web.page.max.chars` | `20000` | the characters kept of a page's text |
+| `tools.time` | `true` | register `time.now` |
+
+## What comes next
+
+- **The knowledge graph, inside one database** (`graph.schema`, `graph.query`, `graph.write`, `graph.ingest` over
+  openCypher and the Bolt driver) and **`file.extract`** (PDF and Word to text) - the second step of the same design:
+  documents ingested once, their entities and rules extracted into a graph the next agent queries, instead of
+  scanning the files on every question. What a model extracts belongs there; what it said belongs in the
+  [transcript audit store](transcript-audit-schema.md).
+- **The Node.js twin**, the same routes and rows, the catalog files byte-identical.
+- **The Playground examples** - `site-notes` (a crawl and a supervised write), `document-ingest` and `document-query` -
+  and a page of recipes for binding existing MCP servers (Git, GitHub, Playwright, the vendors' graph servers) where
+  a server is a product's own front door.
+
+## See also
+
+- [Built-in skills reference](knowledge-graph/skills-reference.md) — `graph.task` and the agent loop's node.
+- [Polyglot Functions](polyglot-functions.md) — how the engines reach a pack's functions over Event-over-HTTP.
+- [Transcript Audit Schema](transcript-audit-schema.md) — the record of what the model was told and said.
+- The pack's own guide, `extensions/agent-tools/README.md` in mercury-python — the function contract, the
+  configuration and the tests.
