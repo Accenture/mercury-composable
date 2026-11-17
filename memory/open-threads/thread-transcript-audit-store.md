@@ -19,9 +19,12 @@
   field, psycopg 3 as the `postgres` extra, the schema and purge files, the Colima scripts with pgweb, 28 tests and a
   live test; verified live) and this repo's PR #639 (the schema page `docs/guides/transcript-audit-schema.md`, the
   spec's build notes in section 14). **mercury-python #59 MERGED 2026-11-17; step 2 BUILT and MERGED the same day:** mercury-nodejs #126 (the Node
-  twin, field for field, the schema files byte-identical). #639's CI failed in `SkillSnapshotTest` (the skill inventory
-  `files.list` must list the new page) and was fixed on its branch. Next: #639's merge; step 3 the engines' two headers;
-  step 4 the `order-assistant` drive with an injected write failure.
+  twin, field for field, the schema files byte-identical). **#639 MERGED 2026-11-17** (squash `4a9e8dc0e`, after its CI fix: the
+  skill inventory `files.list` must list every docs/guides page). **Step 3 BUILT in both engines 2026-11-17:** Java PR
+  #641 (`GraphTask.withGraphContext`, `PlatformGateway` turn headers; rebased onto main at Eric's request) and Rust PR
+  #414 (Increment 204), both pending. Next: step 4, the `order-assistant` drive with a suspend and a resume through the
+  Python helper and then the Node helper on Colima's PostgreSQL, one injected write failure, the report under
+  `docs/test-reports/`.
   → proposal: RFC-0012
   → serves: vision-mercury-composable
   <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->
