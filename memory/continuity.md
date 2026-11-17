@@ -346,7 +346,8 @@
   SQLSTATE, never by message; a statement is bounded server-side, since a stalled database must fail like a stopped one.
   The engines contribute identity only: `graph.task` sets `x-graph-id` and `x-node`, `llm.run` copies them onto each turn.
   Retention and purge are the installation's. Built as mercury-python #59/#62, mercury-nodejs #126/#129, here #639, #641,
-  #642, mercury #414; the record is `docs/test-reports/transcript-audit-live-drive.md`. **How to apply:** anything the
+  #642, mercury #414; the record is `docs/test-reports/transcript-audit-live-drive.md`; the ADR landed as #643 (squash
+  `c283313ec`, MERGED 2026-11-17). **How to apply:** anything the
   audit must know at the end of a run travels in the working record, never in a second key or a second write; a new fact is
   a field of the turn's facts and a column in both packs' schema and the published page; the engine adds identity headers,
   never content; what a model extracts belongs in the agent's knowledge graph (RFC-0013), not here. (ADR-0035)

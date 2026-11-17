@@ -29,7 +29,8 @@
   after each check; the report `docs/test-reports/transcript-audit-live-drive.md` (#642, squash `a738e8883`, MERGED 2026-11-17). The follow-ups in
   the packs - a server-side `statement_timeout` (a paused database stalled the mailbox) and pgweb's restart policy - MERGED
   the same day (mercury-python #62, mercury-nodejs #129); the packs' threads are closed, the build plan is complete. **CLOSED 2026-11-17: RFC-0012
-  PROMOTED to ADR-0035 (Eric, after the drive)**; the durable fact is [[transcript-audit-published-contract]]. Lesson: a
+  PROMOTED to ADR-0035 (Eric, after the drive; #643, squash `c283313ec`, MERGED 2026-11-17)**; the durable fact is
+  [[transcript-audit-published-contract]]. Lesson: a
   side effect of a turn is designed as a function behind a local event with one worker - the mailbox is the ordering, the
   record is the carrier, the check is the integrity - and it is proven by a drive that stops the store under it.
   → proposal: RFC-0012
