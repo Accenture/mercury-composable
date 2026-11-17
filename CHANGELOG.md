@@ -72,6 +72,17 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    in the test scope, `MockLlmChat` synchronizes on a lock of the conversation's own and checks for the render tool
    without a parameter that always held the same value, and `OrderAssistantTest` groups the assertions of its
    five-run scenario by run, one method per run, with a method reference where a lambda tested for null.
+4. **Two CI nuisances closed: a timing-dependent assertion in `ServiceRegistryEdgeTest`, and the R2DBC query log at
+   DEBUG in the sample configurations.** The edge test's `memberLifeCycleNotifications` waited for the next `join`
+   and the next `leave` of any origin; the registry runs on several instances and the connectivity test before it
+   leaves with a fire-and-forget `leave` for its own peer, so on one run (2026-11-17) that peer's `leave`
+   notification reached the watcher first and the assertion read the wrong origin. The test now waits for the event of
+   its own peer and skips the others. The `reactive-postgres` test configuration and the `pg-example` configurations
+   (main and test) shipped `logging.level.io.r2dbc.postgresql.QUERY` and `.PARAM` at `DEBUG`, which the comment above
+   them says never to set in production and which logged every statement and parameter value of a build (about 12 700
+   lines of a CI log); both keys are now commented-out options, so the log stays at INFO, and the READMEs and the
+   configuration reference still document how to switch them on while debugging. **Upgrade note:** an application that
+   copied the example's configuration and relied on the DEBUG query log turns it back on with the two keys.
 
 ### Documentation
 

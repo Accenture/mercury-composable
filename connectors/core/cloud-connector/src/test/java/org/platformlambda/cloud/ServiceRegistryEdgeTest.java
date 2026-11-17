@@ -94,11 +94,18 @@ class ServiceRegistryEdgeTest extends TestBase {
         po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, "subscribe_life_cycle"));
     }
 
-    private Map<String, String> waitForEvent(String type) throws InterruptedException {
+    /**
+     * The next life-cycle event of the given type for the given origin. Events of other origins
+     * are skipped, not failed: the registry runs on several instances and the connectivity test
+     * that precedes this class leaves with a fire-and-forget 'leave' for its own peer, so that
+     * peer's notification can reach a watcher that subscribed a moment later (CI, 2026-11-17:
+     * the 'leave' of the earlier peer arrived before the one this test waited for).
+     */
+    private Map<String, String> waitForEvent(String type, String origin) throws InterruptedException {
         long deadline = System.currentTimeMillis() + 8000;
         while (System.currentTimeMillis() < deadline) {
             Map<String, String> event = events.poll(500, TimeUnit.MILLISECONDS);
-            if (event != null && type.equals(event.get(TYPE))) {
+            if (event != null && type.equals(event.get(TYPE)) && origin.equals(event.get(ORIGIN))) {
                 return event;
             }
         }
@@ -119,12 +126,12 @@ class ServiceRegistryEdgeTest extends TestBase {
                 .setHeader(TOPIC, "multiplex.0001-005").setHeader("name", "edge-app")
                 .setHeader("exchange", "true");
         po.send(addList);
-        Map<String, String> joined = waitForEvent("join");
+        Map<String, String> joined = waitForEvent("join", peer);
         assertNotNull(joined, "life-cycle subscriber should see the peer join");
         assertEquals(peer, joined.get(ORIGIN));
         // the peer leaving notifies subscribers and clears its routes
         po.send(ServiceDiscovery.SERVICE_REGISTRY, new Kv(TYPE, "leave"), new Kv(ORIGIN, peer));
-        Map<String, String> left = waitForEvent("leave");
+        Map<String, String> left = waitForEvent("leave", peer);
         assertNotNull(left, "life-cycle subscriber should see the peer leave");
         assertEquals(peer, left.get(ORIGIN));
         assertTrue(ServiceRegistry.getInstances("edge.service.one").isEmpty());
