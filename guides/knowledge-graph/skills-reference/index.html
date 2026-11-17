@@ -4472,6 +4472,10 @@ On a <code>graph.task</code> node the function also gets <code>x-return-path</co
 <code>turn.start</code>, <code>turn.end</code>, <code>tool.start</code>, <code>tool.end</code>, <code>approval.wait</code> and <code>run.end</code> - and a synchronous
 <code>graph.extension</code> subgraph returns its events the same way, naming itself. A node without the property sends
 nothing and passes nothing, so a function that forwards its headers cannot leak a caller's return path.</p>
+<p><strong>Every request of a <code>graph.task</code> node also carries <code>x-graph-id</code> and <code>x-node</code></strong> - the graph's id and the node's
+alias, set by the engine after the input mapping (see
+<a href="../../reserved-names-and-headers/#x-graph-id">the graph context headers</a>); <code>llm.run</code> copies both onto each
+<code>llm.chat</code> turn, so the LLM helper's transcript audit store records the graph and the node of every model turn.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>create node investigate
 <a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>with type Task
 <a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>with properties

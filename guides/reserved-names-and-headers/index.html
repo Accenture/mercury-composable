@@ -2891,6 +2891,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#x-graph-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        x-graph-id and x-node - the graph context of a task request
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3256,6 +3267,17 @@
     <span class="md-ellipsis">
       
         x-return-path - the return route for progress events
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-graph-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        x-graph-id and x-node - the graph context of a task request
       
     </span>
   </a>
@@ -3686,6 +3708,13 @@ synchronous subgraph: the value is the node's relay route (<code>graph.progress.
 without <code>progress</code> never sees the header, and a graph cannot map it (<code>header.x-return-path</code> fails CompileGraph).
 <code>llm.run</code> sends its own progress events to the route the header names. See
 <a href="../knowledge-graph/skills-reference/#progress">Progress events</a>.</p>
+<h3 id="x-graph-id"><code>x-graph-id</code> and <code>x-node</code> - the graph context of a task request<a class="headerlink" href="#x-graph-id" title="Permanent link">&para;</a></h3>
+<p>The engine sets two headers on every request a <code>graph.task</code> node sends, after the node's input mapping: <code>x-graph-id</code>,
+the graph's id, and <code>x-node</code>, the node's alias. A function that does not read them is unaffected. A function that
+records what it did for a transaction gets the graph and the node without the author mapping anything - the language
+packs' LLM helper writes both into its transcript audit store (RFC-0012), and <code>llm.run</code> copies them onto each
+<code>llm.chat</code> request for it. A caller that sends neither (a direct call, an older engine) leaves them absent, and the
+trace path still names the entry that started the transaction.</p>
 <h2 id="reserved-http-header-names">Reserved HTTP header names<a class="headerlink" href="#reserved-http-header-names" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
