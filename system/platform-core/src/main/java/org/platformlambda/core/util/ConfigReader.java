@@ -108,7 +108,9 @@ public class ConfigReader implements ConfigBase {
      * <p>
      * 1. a parameter may be substituted by a system property,
      * an environment variable or another configuration parameter key-value
-     * using the standard dot-bracket syntax
+     * using the standard dot-bracket syntax. A system property's own value is
+     * resolved the same way, so a credential may be given as -Dkey=${ENV_VAR}
+     * and never appear in the process list.
      * <p>
      * 2. the optional "loop" parameter should have zero or one element.
      * <p>
@@ -124,12 +126,17 @@ public class ConfigReader implements ConfigBase {
         }
         String systemProperty = getSystemProperty(key);
         if (systemProperty != null) {
-            return systemProperty;
+            // a system property's value resolves references the way a file value does
+            return resolveValue(systemProperty, key, defaultValue, loop);
         }
         Object value = config.getElement(key);
         if (value == null) {
             return defaultValue;
         }
+        return resolveValue(value, key, defaultValue, loop);
+    }
+
+    private Object resolveValue(Object value, String key, Object defaultValue, String... loop) {
         // parse environment variables if signature is detected
         if (value instanceof String text && baseConfig != null && text.lastIndexOf(BEGIN) != -1) {
             List<VarSegment> segments = Utility.getInstance().extractSegments(text, BEGIN, END);

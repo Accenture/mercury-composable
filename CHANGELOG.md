@@ -64,6 +64,15 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    node, or the application raises `big.decimal.precision` (up to 1000). Results within 6 places, and the `f:decimal*`
    plugins of Event Script, are unchanged.
 
+2. **A system property's value is resolved with the same `${ENV_VAR:default}` substitution as a file value.**
+   `ConfigReader.get` returned a `-Dkey=value` as written, so a key moved from `application.properties` to a `-D` flag
+   silently lost its substitution and a credential had to travel on the command line in clear. Now the value of a system
+   property - an environment variable with a default, or a reference to another configuration key - is resolved the way
+   a file value is, at read time, so `-Dkey='${ENV_VAR}'` keeps the secret out of the process list and container `args`
+   arrays, which do no shell expansion. The Rust port and the two language packs make the same change the same day.
+   **Upgrade note:** a `-D` value that relied on a literal `${...}` is now resolved, as a file value always was; an
+   unresolved reference without a default is no value, as in a file.
+
 ### Fixed
 
 1. **The field's Sonar scan of 4.12.30: five code smells closed; no behaviour change.** `SchedulerDatabase`'s
