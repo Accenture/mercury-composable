@@ -21,8 +21,8 @@
   spec's build notes in section 14). **mercury-python #59 MERGED 2026-11-17; step 2 BUILT and MERGED the same day:** mercury-nodejs #126 (the Node
   twin, field for field, the schema files byte-identical). **#639 MERGED 2026-11-17** (squash `4a9e8dc0e`, after its CI fix: the
   skill inventory `files.list` must list every docs/guides page). **Step 3 BUILT in both engines 2026-11-17:** Java PR
-  #641 (`GraphTask.withGraphContext`, `PlatformGateway` turn headers; rebased onto main at Eric's request) and Rust PR
-  #414 (Increment 204), both pending. Next: step 4, the `order-assistant` drive with a suspend and a resume through the
+  #641 (`GraphTask.withGraphContext`, `PlatformGateway` turn headers; squash `e1cefd4cb`) and Rust PR #414 (Increment 204),
+  **both MERGED 2026-11-17**. Next: step 4, the `order-assistant` drive with a suspend and a resume through the
   Python helper and then the Node helper on Colima's PostgreSQL, one injected write failure, the report under
   `docs/test-reports/`.
   → proposal: RFC-0012
