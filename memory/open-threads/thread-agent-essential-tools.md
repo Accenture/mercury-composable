@@ -17,7 +17,7 @@
   configuration, the catalog files, `describe`, 98 tests and a live https fetch; the spec's section 13 lists six
   defaults set without a ruling (hidden entries invisible to every file tool, the resolved address pinned against DNS
   rebinding, the bounds, no `strict` on the rows, the statuses, row names = routes with `_`); this repo's page
-  `docs/guides/agent-tools.md` (nav, `llms.txt`, the skill inventory). Next: step 2 in Python (the graph tools,
+  `docs/guides/agent-tools.md` (nav, `llms.txt`, the skill inventory; PR #644). Next: step 2 in Python (the graph tools,
   `file.extract`), the Node twin, the Playground's `site-notes`/`document-ingest`/`document-query`, the recipes page.
   → proposal: RFC-0013
   → serves: vision-mercury-composable
