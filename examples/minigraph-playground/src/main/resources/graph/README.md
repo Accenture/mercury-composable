@@ -3,7 +3,7 @@
 To deploy a graph model, drop the JSON file that is exported from a graph model that you created in the MiniGraph
 Playground into this folder and list it in `graphs.yaml`.
 
-## The two AI demo graphs
+## The AI demo graphs
 
 Both reach the LLM helper app of a language pack (mercury-python on port 8086, or mercury-nodejs on port 8087) through
 the declarative Event-over-HTTP map in `event-over-http.yaml`, so the engine holds no credential and no provider SDK.
@@ -115,3 +115,43 @@ an MCP server.
 The graph names only routes, so the model, the provider and the pack are the helper's configuration, never the graph's:
 the same graph ran unchanged on Claude Haiku 4.5 and Opus 5.5 through both helpers
 (`docs/test-reports/agent-loop-live-drive.md`).
+
+### `site-notes`, `document-ingest` and `document-query` - the built-in agent tools
+
+Three graphs on the essential built-in tools of RFC-0013, served by a language pack's `extensions/agent-tools` (mercury-python
+on port 8089, or mercury-nodejs on port 8090; `-Dtools.peer.port=8090` selects the Node.js one). Each catalog row is a
+copy of the row the extension publishes (`extensions/agent-tools/catalog/*.json`, or `describe`), and the sandboxes are
+the pack's configuration, never an argument of a call. Run the extension with the sandboxes the demos need:
+
+```bash
+mercury-serve extensions/agent-tools/agent_tools.py \
+  -Dtools.file.root=<this repository>/examples/minigraph-playground/corpus \
+  -Dtools.web.allow=accenture.github.io \
+  -Dtools.graph.uri=bolt://127.0.0.1:7687 -Dtools.graph.write=true
+```
+
+(`GRAPH_PASSWORD` in its environment for the database; `extensions/agent-tools/dev/graph-up.sh` of either pack starts
+Neo4j Community on Colima.) The LLM helper and Redis run as for `order-assistant`. In the test scope the tool routes
+resolve to a scripted stand-in (`MockAgentTools`) and the model turns to `MockLlmChat`, so `AgentToolsGraphsTest`
+runs the three graphs without tokens, a network or a database.
+
+- **`site-notes` - a read of the outside and a supervised write.** `POST /api/graph/site-notes` with
+  `{"section": "https://accenture.github.io/mercury-composable/guides/", "topic": "Configuration keys"}`. The
+  `research` node crawls the section (`web_crawl`, a read, unasked), then asks to write `notes/<topic>.md` into the
+  workspace with `file_write` - a marked write, so under the node's default mode the run pauses at the `advise`
+  checkpoint with the write's path and content, exactly as `order-assistant` pauses for a refund. The person approves
+  with the same correlation id (`{"turn": 2, "decisions": [{"id": "...", "approved": true}]}`), the loop runs the write it
+  showed, and the answer names the file. A refused write goes back to the model as the call's error.
+- **`document-ingest` - extract once.** `POST /api/graph/document-ingest` with `{"document": "supplier-agreement.md"}`
+  (a name in the corpus, the pack's workspace). The `ingest` node reads the document with `file_extract` and merges the
+  parties, obligations, rules and deadlines it finds into the knowledge graph with `graph_ingest`: one node per fact,
+  keyed and labelled by convention, every node and relationship stamped with the document as its `source`. The node
+  declares **`mode: auto`**, so the marked write runs without a person approving each batch - the product owner's
+  decision, written on the graph and visible in its certification. Running it twice changes nothing.
+- **`document-query` - query many.** `POST /api/graph/document-query` with `{"question": "Which deadlines do the
+  policies set?"}`. The `answer` node reads the schema (`graph_schema`), runs one read-only query (`graph_query`) and
+  answers with the facts and their sources. No file is read: the documents were read once.
+
+The synthetic corpus in `corpus/` (two agreements and two policies of fictional companies, written for the demo) is
+the workspace of the pack; the tests read it through the stand-in. The built-in tools' contract is the engines' page
+`docs/guides/agent-tools.md`.

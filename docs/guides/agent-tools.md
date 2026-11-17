@@ -229,9 +229,13 @@ belongs in the [transcript audit store](transcript-audit-schema.md).
 
 ## What comes next
 
-- **The Playground examples** - `site-notes` (a crawl and a supervised write), `document-ingest` and `document-query` -
-  with a synthetic corpus, token-free tests and live drives, and a page of recipes for binding existing MCP servers
-  (Git, GitHub, Playwright, the vendors' graph servers) where a server is a product's own front door.
+- **The Playground examples are built, token-free:** `site-notes` (a crawl, then a supervised write of the notes into
+  the pack's workspace), `document-ingest` (a document of the synthetic corpus extracted into the knowledge graph by a
+  node that declares `mode: auto`) and `document-query` (the graph read, the sources cited), with their catalog rows
+  copied from the packs' catalog files and `AgentToolsGraphsTest` on scripted stand-ins for the model and the tools
+  (`examples/minigraph-playground`, its `graph/README.md` has the protocols). Their live drives through the packs, and
+  a page of recipes for binding existing MCP servers (Git, GitHub, Playwright, the vendors' graph servers) where a
+  server is a product's own front door, come next.
 
 ## See also
 

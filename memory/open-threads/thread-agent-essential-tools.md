@@ -23,8 +23,13 @@
   spec's section 14 lists eight defaults set without a ruling; the page here extended (nav unchanged; #645, merge `a16b05d11`, MERGED 2026-11-17). **Step 3 BUILT 2026-11-17:**
   mercury-nodejs #130 - the Node twin with the same twelve routes, the catalog files byte for byte the Python pack's
   (pinned), 55 tests and the same live sequence on Neo4j; the spec's section 15 records three platform differences (the
-  entity subset of the HTML reader, a Word table through mammoth's HTML, integers as JavaScript numbers; #646 here, merge `8e3ee2a3e`, MERGED 2026-11-17). Next: the
-  Playground's `site-notes`/`document-ingest`/`document-query` with the synthetic corpus (step 4), the recipes page (step 5).
+  entity subset of the HTML reader, a Word table through mammoth's HTML, integers as JavaScript numbers; #646 here, merge `8e3ee2a3e`, MERGED 2026-11-17). **Step 4, the token-free half, BUILT
+  2026-11-17** (PR opened the same day): the Playground's `site-notes` (crawl, then a supervised `file_write` through the
+  advise/suspend/decide shape of `order-assistant`), `document-ingest` (`file_extract` + `graph_ingest` under `mode: auto`)
+  and `document-query` (`graph_schema` + `graph_query`, sources cited); the synthetic corpus (four documents of fictional
+  companies, one shape); the catalog rows copied from the packs' files; the Event-over-HTTP entries (`tools.peer.*`,
+  8089); `AgentToolsGraphsTest` (8 tests) on `MockLlmChat`'s three new scripts and `MockAgentTools`, a stand-in for
+  the pack's routes. Next: the live drives through both packs with the report (step 4b), then the recipes page (step 5).
   → proposal: RFC-0013
   → serves: vision-mercury-composable
   <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->

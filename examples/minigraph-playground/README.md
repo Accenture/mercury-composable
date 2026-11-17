@@ -24,10 +24,14 @@ n is a tutorial chapter number.
 
 ## AI demo graphs
 
-Two deployed graphs reach an LLM through the LLM helper app of a language pack, with the engine holding no credential:
-`support-triage` (one AI node, the graph routes on its verdict) and `order-assistant` (an agent loop whose one write
-waits for a supervisor through suspend and resume). See `src/main/resources/graph/README.md` for the setup and the
-protocol, and `OrderAssistantTest` for the token-free end-to-end test.
+The deployed graphs reach an LLM through the LLM helper app of a language pack, with the engine holding no credential:
+`support-triage` (one AI node, the graph routes on its verdict), `order-assistant` (an agent loop whose one write
+waits for a supervisor through suspend and resume), `diagram-assistant` (an MCP server's tool in the loop, below) and
+three graphs on the built-in agent tools of RFC-0013 - `site-notes` (a crawl of a documentation section, then a
+supervised write of the notes into the pack's workspace), `document-ingest` (a document of the synthetic corpus in
+`corpus/` extracted into the agent's knowledge graph by a node that declares `mode: auto`) and `document-query`
+(the graph read, the sources cited). See `src/main/resources/graph/README.md` for the setup and the protocols, and
+`OrderAssistantTest` and `AgentToolsGraphsTest` for the token-free end-to-end tests.
 
 ## Demo: an MCP server's tool in an agent loop, watched from the Playground
 
