@@ -1,4 +1,4 @@
-- [ ] **The transcript audit store: a durable, queryable record of every model turn, written by the pack, with a
+- [x] **The transcript audit store: a durable, queryable record of every model turn, written by the pack, with a
   published schema (RFC-0012; design sprint 4, Eric's topic of 2026-11-16).** Round 1 drafted: the working store's TTL
   stays the transaction's expiry; a second, append-only store (PostgreSQL first, the schema published so an installation
   may implement another) keeps a conversation row and a turn row per model turn - trace id per turn, correlation id,
@@ -28,8 +28,10 @@
   turn in PostgreSQL with the graph and the node, one correlation id and two trace ids each, the Redis record released
   after each check; the report `docs/test-reports/transcript-audit-live-drive.md` (#642, squash `a738e8883`, MERGED 2026-11-17). The follow-ups in
   the packs - a server-side `statement_timeout` (a paused database stalled the mailbox) and pgweb's restart policy - MERGED
-  the same day (mercury-python #62, mercury-nodejs #129); the packs' threads are closed, the build plan is complete. **Next: the
-  promotion of RFC-0012 to an ADR is Eric's call.**
+  the same day (mercury-python #62, mercury-nodejs #129); the packs' threads are closed, the build plan is complete. **CLOSED 2026-11-17: RFC-0012
+  PROMOTED to ADR-0035 (Eric, after the drive)**; the durable fact is [[transcript-audit-published-contract]]. Lesson: a
+  side effect of a turn is designed as a function behind a local event with one worker - the mailbox is the ordering, the
+  record is the carrier, the check is the integrity - and it is proven by a drive that stops the store under it.
   → proposal: RFC-0012
   → serves: vision-mercury-composable
   <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->

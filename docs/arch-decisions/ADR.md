@@ -33,6 +33,94 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0035 — The transcript audit store: every model turn of an agent loop recorded by the language pack, off the turn's path, in a governed store with a published schema {#adr-0035}
+**Status:** Accepted · **Date:** 2026-11-17 · **Serves:** vision-mercury-composable · **Formalizes:** transcript-audit-published-contract
+<!-- id: adr-0035 | status: accepted -->
+
+**Abstract.** An agent loop's transcript lives in two stores with two jobs. The *working store* of
+ADR-0033 stays as built: the language pack's helper keeps the conversation in Redis (or memory) under
+a compare-and-set on the turn count, with a time to live that is the transaction's own. Beside it, an
+*audit store* keeps every model turn durably, append-only, indexed for people and kept on the
+installation's policy: one conversation row (the reference, the business correlation id, the graph
+and the node, the model, the status, the turn count, the times, the token totals, the first turn's
+system prompt and tool catalog) and one turn row per model turn (the trace id and path, the UTC
+bounds, the stop reason, the status, the provider's request id, the usage, the messages the turn sent
+and the assistant's content blocks as returned, the normalized calls). The pack is the only writer,
+asynchronously: after the working store accepted a turn, `llm.chat` sends one local event to
+`transcript.audit`, a composable function of the helper's process with one instance, which reads the
+working record - version 2, carrying each turn's facts inside the same compare-and-set - and writes
+what the store lacks; the closing turn sends an integrity check behind its write, and only after the
+check holds every turn is the working record released. A sweep repairs what a lost event or an outage
+leaves. PostgreSQL is the reference store with a published schema
+([Transcript Audit Schema](../guides/transcript-audit-schema.md)); the engines contribute identity
+only, two headers set by `graph.task` and copied by `llm.run` (`x-graph-id`, `x-node`), never content.
+
+**Context.** Telemetry carries no content by rule (ADR-0033 and the loop spec's section 10), so the
+only place a prompt, a completion or a tool call's arguments ever existed was the working store, under
+a key nobody outside the loop knew, for as long as a time to live that `retention` set to zero by
+default. A person who had to answer "what was the model told, what did it say, what did it call, for
+this transaction on that day" had no store to ask, no index to ask it by and no retention policy to
+rely on; the concept paper's Q4 (audit capture) was open. Eric's framing (2026-11-16): the working
+store's expiry is the transaction's; at the end of a graph's processing the transcript is saved to a
+persistent store, indexed by trace id, correlation id and UTC time, with a published schema so each
+field installation may implement its own. His rulings of 2026-11-17 set the shape: every turn,
+asynchronously, by a composable function behind a local event; a failed write logged and never
+blocking; the end of a run a data-integrity check in the same function, so that it runs after the
+writes with no race and the deletion of the working record is deferred until after it. The
+design is `draft-design-specs/transcript-audit-store.md` (RFC-0012, rounds 1 and 2; its section 14
+holds the build precisions).
+
+**Decision.** The two lifetimes are separated and the audit never touches the turn's path. (1) The
+record is the carrier: version 2 of the working record holds each turn's facts, saved inside the
+compare-and-set that accepts the turn, so the audit never records a turn the conversation did not
+take and the function reads nothing but the record. (2) One function, one instance: `transcript.audit`
+is a private `preload` route with a single worker, so a conversation's writes and its check are
+ordered by the mailbox, not by a lock, and the check can never overtake the write it verifies. (3)
+Two events: `{conversation, turn}` after every accepted turn, `{conversation, check: true}` behind a
+closing turn and from the sweep; the check counts the turns the record holds against the rows the
+store holds, writes the missing ones and releases a closed record to its `retention`, leaving an open
+record filled but never released. Until its check a closed record waits with
+`llm.transcript.audit.grace` (one day) instead of `retention`; its `audited` mark - a third hash field
+the compare-and-set never touches - is set by the check after the release, so `audited < turn` means
+the check has not completed and the sweep (`llm.transcript.audit.sweep.ms`, sixty seconds, one replica
+per interval on Redis) re-sends it. (4) Writes are idempotent (`ON CONFLICT`) and the conversation's
+totals are recomputed from its turn rows, so a replayed write stays exact; a failure is logged by type
+and SQLSTATE, never by message, because a constraint violation quotes the row. (5) PostgreSQL first,
+psycopg 3 in Python and `pg` in Node.js as optional extras; the schema is the contract an installation
+re-implements on another database (the two tables, the key semantics, the status values, the three
+indexes); JSON travels as text cast to `jsonb` and stamps as text cast to `timestamptz`, so both packs
+run the same statements; `request` is the array of messages a turn sent and `response` the array of
+assistant blocks. (6) Retention and purge are the installation's: `expires_at` is written from
+`llm.transcript.audit.retention` (365 days), the helper runs no purge, a sample purge ships for the
+developer. (7) The engine stays blind: `graph.task` sets `x-graph-id` and `x-node` on every task
+request after the input mapping, `llm.run` copies them onto each `llm.chat` turn, and a caller that
+sends neither leaves the columns null.
+
+**Alternatives.** (a) Write at the end of the run only (Eric's first framing): loses every run the
+loop stops or that is never resumed, since the helper never learns of it. (b) Every turn with a
+synchronous write on the turn's path and a `required`/`best-effort` switch (round 1): the write
+could slow or fail a turn; withdrawn for the function behind a local event. (c) The engine as the
+writer: rejected, the engine never holds a transcript (ADR-0033). (d) A second Redis key for the
+facts: a record and its facts would be two writes; the facts live in the record. (e) A per-conversation
+lock or a sharded writer: the mailbox of one instance already orders a conversation's events; sharding
+is the extension if the rate ever asks for it. (f) Binding a database's MCP server for the audit:
+the audit is a side effect of a turn inside the helper, not a tool of the model.
+
+**Consequences.** Every model turn of every agent loop run is queryable by transaction (the
+correlation id spans a suspend and a resume), by request (the trace id) and by time, in a store the
+installation governs with roles, TLS and its own retention; the content is personal data until proven
+otherwise, and the audit does not redact. The turn's latency is the model's: in the live drive of
+2026-11-17 (`docs/test-reports/transcript-audit-live-drive.md`) five conversations on both packs
+landed every turn, a stopped database cost a logged failure and one sweep interval, and a resume
+served by the other pack from the first pack's record was indistinguishable from a single-pack run;
+the drive added a server-side `statement_timeout` to both pools, since a stalled database must fail
+like a stopped one. A field installation that keeps another database implements the published schema
+behind the same helper interface. The knowledge a model extracts does not belong here but in the
+agent's own knowledge graph (RFC-0013): the transcript store holds a turn, the audit store holds what
+was said, the graph holds what was learned.
+
+---
+
 ## ADR-0034 — A `DECIMAL` result carries at most a configured number of decimal places: an application default and a node-level `precision` {#adr-0034}
 **Status:** Accepted · **Date:** 2026-11-17 · **Serves:** vision-mercury-composable · **Formalizes:** decimal-result-precision-limit · **Supersedes:** [ADR-0025](#adr-0025)
 <!-- id: adr-0034 | status: accepted | supersedes: adr-0025 -->

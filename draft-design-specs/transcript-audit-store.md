@@ -9,7 +9,7 @@ helper) is mercury-python PR #59 (2026-11-17), with the build notes of section 1
 mercury-composable #641 and mercury #414; the schema page is published as
 [`docs/guides/transcript-audit-schema.md`](../docs/guides/transcript-audit-schema.md); step 4, the live drive of
 2026-11-17, is [`docs/test-reports/transcript-audit-live-drive.md`](../docs/test-reports/transcript-audit-live-drive.md).
-The promotion to an ADR is Eric's call.
+**Promoted to [ADR-0035](../docs/arch-decisions/ADR.md#adr-0035) on 2026-11-17 (Eric), after the drive.**
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`llm-helper-agent-loop.md`](./llm-helper-agent-loop.md) section 3.3 (the transcript store) and section 10
 (telemetry, audit and security); answers the concept's Q4 (audit capture) in
