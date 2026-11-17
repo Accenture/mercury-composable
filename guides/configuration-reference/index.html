@@ -7719,8 +7719,10 @@ equivalent <code>application.yml</code>). This page is the exhaustive reference 
 key supported by the framework and its optional modules.</p>
 <p>Properties are set in <code>src/main/resources/application.properties</code> and can be overridden with
 JVM system properties (<code>-Dkey=value</code>), which the config reader checks first. Environment
-variables enter through <code>${ENV_VAR:default}</code> substitution inside values (and additionally
-through Spring Boot's own resolution order in <code>rest-spring-4</code> apps). When both
+variables enter through <code>${ENV_VAR:default}</code> substitution inside values - a system property's
+value included, so <code>-Dkey='${ENV_VAR}'</code> keeps a credential out of the process list and resolves
+it inside the application (and additionally through Spring Boot's own resolution order in
+<code>rest-spring-4</code> apps). When both
 <code>application.properties</code> and <code>application.yml</code> are present, they are merged and <strong><code>.yml</code>
 values win</strong> for overlapping keys (<code>application.yml</code> is merged last).</p>
 <blockquote>
