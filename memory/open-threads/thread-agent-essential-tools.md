@@ -20,8 +20,11 @@
   `docs/guides/agent-tools.md` (nav, `llms.txt`, the skill inventory; #644, merge `640c07577`, MERGED 2026-11-17). **Step 2 BUILT 2026-11-17:** mercury-python #64 - `graph.schema`, `graph.query`, `graph.write`, `graph.ingest` over
   the Bolt driver (a transaction seam, Neo4j's and Memgraph's schema procedures, the endpoint check inside the ingest's
   transaction), `file.extract` behind the `documents` extra, Neo4j on Colima for development, a live round trip; the
-  spec's section 14 lists eight defaults set without a ruling; the page here extended (nav unchanged; #645, merge `a16b05d11`, MERGED 2026-11-17). Next: the Node
-  twin (step 3), the Playground's `site-notes`/`document-ingest`/`document-query` (step 4), the recipes page (step 5).
+  spec's section 14 lists eight defaults set without a ruling; the page here extended (nav unchanged; #645, merge `a16b05d11`, MERGED 2026-11-17). **Step 3 BUILT 2026-11-17:**
+  mercury-nodejs #130 - the Node twin with the same twelve routes, the catalog files byte for byte the Python pack's
+  (pinned), 55 tests and the same live sequence on Neo4j; the spec's section 15 records three platform differences (the
+  entity subset of the HTML reader, a Word table through mammoth's HTML, integers as JavaScript numbers; PR #646 here). Next: the
+  Playground's `site-notes`/`document-ingest`/`document-query` with the synthetic corpus (step 4), the recipes page (step 5).
   → proposal: RFC-0013
   → serves: vision-mercury-composable
   <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->
