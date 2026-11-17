@@ -26,8 +26,9 @@
   helper (one with PostgreSQL paused, one with it stopped: the writes failed by type and the sweep repaired the open
   record 46 s after the restart), one resumed by the Node helper from the Python-written record, one all on Node - every
   turn in PostgreSQL with the graph and the node, one correlation id and two trace ids each, the Redis record released
-  after each check; the report `docs/test-reports/transcript-audit-live-drive.md` (PR pending). Follow-ups in the packs:
-  a server-side `statement_timeout` (a paused database stalled the mailbox) and pgweb's restart policy. **Next: the
+  after each check; the report `docs/test-reports/transcript-audit-live-drive.md` (#642, squash `a738e8883`, MERGED 2026-11-17). The follow-ups in
+  the packs - a server-side `statement_timeout` (a paused database stalled the mailbox) and pgweb's restart policy - MERGED
+  the same day (mercury-python #62, mercury-nodejs #129); the packs' threads are closed, the build plan is complete. **Next: the
   promotion of RFC-0012 to an ADR is Eric's call.**
   → proposal: RFC-0012
   → serves: vision-mercury-composable
