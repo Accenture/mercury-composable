@@ -76,7 +76,7 @@ page `docs/guides/agent-tools.md` here (#644, merged 2026-11-17). **Step 2 BUILT
 (the four knowledge-graph tools over the Bolt driver, driven live on Neo4j, and `file.extract`; eight defaults in the
 spec's section 14); the page extended here (#645, merged 2026-11-17). **Step 3 BUILT 2026-11-17:** mercury-nodejs #130
 (the Node twin, the catalog files byte for byte the Python pack's, the same live sequence on Neo4j; the spec's section
-15 lists the three visible differences).
+15 lists the three visible differences; #646, merged 2026-11-17).
 
 ---
 
