@@ -2029,6 +2029,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-two-packs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two packs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-comes-next" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3355,6 +3366,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-two-packs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two packs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-comes-next" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3412,8 +3434,9 @@ puts one on a graph.</em></p>
 <li><strong>The rule</strong> — the sandbox is deployment configuration, never an argument of a call; a tool whose sandbox is not
   configured does not register; every refusal is a 400 naming the rule; results are text, capped and untrusted.</li>
 <li><strong>Versions</strong> — version 1: the file, web and clock tools (mercury-python #63) and the knowledge-graph tools with
-  <code>file.extract</code> (mercury-python #64), both 2026-11-17; the Node.js twin follows in lockstep. Settled as RFC-0013
-  in the <a href="../../arch-decisions/RFC/">RFC register</a>.</li>
+  <code>file.extract</code> (mercury-python #64), and the Node.js twin (mercury-nodejs #130), all 2026-11-17; the two packs
+  serve the same routes from the same catalog files, byte for byte. Settled as RFC-0013 in the
+  <a href="../../arch-decisions/RFC/">RFC register</a>.</li>
 </ul>
 </blockquote>
 <h2 id="a-built-in-tool-is-a-composable-function">A built-in tool is a composable function<a class="headerlink" href="#a-built-in-tool-is-a-composable-function" title="Permanent link">&para;</a></h2>
@@ -3744,13 +3767,20 @@ use constrains them by grammar.</p>
 </tr>
 </tbody>
 </table>
+<h2 id="the-two-packs">The two packs<a class="headerlink" href="#the-two-packs" title="Permanent link">&para;</a></h2>
+<p>The Python pack (<code>extensions/agent-tools/agent_tools.py</code>) and the Node.js pack (<code>extensions/agent-tools/agent-tools.mjs</code>)
+serve the same twelve routes with the same rows, limits, statuses and messages; the catalog files under each pack's
+<code>catalog/</code> folder are byte for byte the same, pinned by a test in each. A deployment runs whichever pack already hosts
+its <code>llm.chat</code>. Three differences are visible in a result and recorded in the packs' memory: the Node reader decodes
+the common named HTML character references and every numeric one where Python's decodes all of HTML5's; a Word table
+renders through mammoth's HTML in Node (cells separated by spaces) where Python joins cells with <code>|</code>; and a graph
+integer comes back as a JavaScript number in Node. What a model extracts belongs in the knowledge graph; what it said
+belongs in the <a href="../transcript-audit-schema/">transcript audit store</a>.</p>
 <h2 id="what-comes-next">What comes next<a class="headerlink" href="#what-comes-next" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>The Node.js twin</strong>, the same routes and rows, the catalog files byte-identical. What a model extracts belongs in
-  the knowledge graph; what it said belongs in the <a href="../transcript-audit-schema/">transcript audit store</a>.</li>
 <li><strong>The Playground examples</strong> - <code>site-notes</code> (a crawl and a supervised write), <code>document-ingest</code> and <code>document-query</code> -
-  and a page of recipes for binding existing MCP servers (Git, GitHub, Playwright, the vendors' graph servers) where
-  a server is a product's own front door.</li>
+  with a synthetic corpus, token-free tests and live drives, and a page of recipes for binding existing MCP servers
+  (Git, GitHub, Playwright, the vendors' graph servers) where a server is a product's own front door.</li>
 </ul>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
