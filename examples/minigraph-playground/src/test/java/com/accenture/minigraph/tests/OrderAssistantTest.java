@@ -105,6 +105,9 @@ class OrderAssistantTest {
         calls.forEach(c -> assertEquals("ok", c.get("status"), String.valueOf(c)));
         assertEquals("mock-llm", body.getElement("model"));
         assertNotNull(body.getElement("usage.input_tokens"));
+        // the engine's graph context reached the model turns: the graph's id and the loop node's alias, which the
+        // LLM helper's transcript audit store records (RFC-0012 section 8)
+        assertEquals(Map.of("x-graph-id", GRAPH, "x-node", "assist"), MockLlmChat.lastGraphContext());
     }
 
     @Test

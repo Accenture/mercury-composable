@@ -44,6 +44,15 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    the image rode back as a 36,000 to 43,000-token tool result (`docs/test-reports/agent-loop-live-drive.md`, Scenario 9). The
    example's README walks through the demo. **Upgrade note:** none.
 
+3. **`graph.task` sets `x-graph-id` and `x-node` on every request, and `llm.run` copies both onto each `llm.chat`
+   turn (RFC-0012 section 8, ruling R5).** The graph's id and the node's alias, set after the node's input mapping so
+   they always carry the engine's values. A function that does not read them is unaffected; one that records what it
+   did for a transaction gets the graph and the node without the author mapping anything - the language packs' LLM
+   helper writes both onto the conversation row of its transcript audit store (mercury-python #59, mercury-nodejs
+   #126), where a person queries by transaction, request or time. The Rust port makes the same change the same day.
+   `LlmRunPlatformTest` pins the copy onto the turns, `OrderAssistantTest` reads the two headers back through the
+   scripted `llm.chat`. **Upgrade note:** none.
+
 ### Changed
 
 1. **A `DECIMAL` result carries at most a configured number of decimal places: `big.decimal.precision` (default 6) for

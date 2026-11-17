@@ -38,6 +38,10 @@ import java.util.Map;
  * Progress: when the caller passes {@code x-return-path} (the graph engine does, for a node with {@code progress}),
  * the loop sends its progress events there - {@code run.start}, {@code turn.start}, {@code turn.end},
  * {@code tool.start}, {@code tool.end}, {@code approval.wait} and {@code run.end} - numbered from 1 for each call.
+ * <p>
+ * Graph context: the {@code x-graph-id} and {@code x-node} headers the engine's task node sends are copied onto every
+ * {@code llm.chat} request, so the LLM helper's transcript audit store records the graph and the node of each turn
+ * (RFC-0012 section 8).
  */
 @PreLoad(route = "llm.run", instances = 50, envInstances = "worker.instances.llm.run")
 public class LlmRun implements TypedLambdaFunction<Map<String, Object>, Map<String, Object>> {
@@ -51,7 +55,7 @@ public class LlmRun implements TypedLambdaFunction<Map<String, Object>, Map<Stri
             throws AppException {
         var po = new PostOffice(headers, instance);
         var gateway = new PlatformGateway(po, headers.get(PlatformGateway.X_RETURN_PATH),
-                headers.get(MY_CORRELATION_ID));
+                headers.get(MY_CORRELATION_ID), PlatformGateway.graphContext(headers));
         var loop = new AgentLoop(gateway, LoopSettings.Defaults.fromConfig(), System::currentTimeMillis);
         var envelope = loop.run(input);
         var status = String.valueOf(envelope.get(AgentLoop.STATUS));

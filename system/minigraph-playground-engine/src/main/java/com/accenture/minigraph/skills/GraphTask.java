@@ -49,6 +49,9 @@ import java.util.concurrent.ExecutionException;
 public class GraphTask extends GraphLambdaFunction {
     private static final Logger log = LoggerFactory.getLogger(GraphTask.class);
     public static final String ROUTE = "graph.task";
+    /** The graph context the engine sets on every request a task node sends (RFC-0012 section 8). */
+    public static final String X_GRAPH_ID = "x-graph-id";
+    public static final String X_NODE = "x-node";
     private static final String WHOLE_BODY = "*";
 
     @Override
@@ -87,7 +90,7 @@ public class GraphTask extends GraphLambdaFunction {
         var mapping = getEntries(node.getProperty(INPUT));
         var forEach = getEntries(node.getProperty(FOR_EACH));
         if (forEach.isEmpty()) {
-            var request = withReturnPath(buildTaskRequest(nodeName, route, mapping, stateMachine), graphInstance, node);
+            var request = withGraphContext(buildTaskRequest(nodeName, route, mapping, stateMachine), graphInstance, node);
             return invokeTask(po, node, graphInstance, route, request, timeout);
         }
         Map<String, List<Object>> forEachMapping = getForEachMapping(nodeName, forEach, stateMachine);
@@ -100,7 +103,15 @@ public class GraphTask extends GraphLambdaFunction {
         return nextPath(stateMachine, node);
     }
 
-    private EventEnvelope withReturnPath(EventEnvelope request, GraphInstance graphInstance, SimpleNode node) {
+    /**
+     * The graph context on every request - the graph's id as {@code x-graph-id} and the node's alias as
+     * {@code x-node}, set after the input mapping so they always carry the engine's values: a function that records
+     * what it did for a transaction (the language packs' LLM helper writes them into its transcript audit store,
+     * RFC-0012 section 8) gets both without the author mapping anything - and the node's relay as
+     * {@code x-return-path} for a node that carries {@code progress} in a watched run.
+     */
+    private EventEnvelope withGraphContext(EventEnvelope request, GraphInstance graphInstance, SimpleNode node) {
+        request.setHeader(X_GRAPH_ID, graphInstance.graphId).setHeader(X_NODE, node.getAlias());
         var returnPath = returnPathFor(graphInstance, node);
         return returnPath == null? request : request.setHeader(ReturnChannel.X_RETURN_PATH, returnPath);
     }
@@ -213,7 +224,7 @@ public class GraphTask extends GraphLambdaFunction {
             for (var kv : paramSet.entrySet()) {
                 stateMachine.setElement(kv.getKey(), kv.getValue());
             }
-            stack.add(withReturnPath(buildTaskRequest(nodeName, route, mapping, stateMachine), graphInstance, node));
+            stack.add(withGraphContext(buildTaskRequest(nodeName, route, mapping, stateMachine), graphInstance, node));
         }
         log.info("Call task {}, for each {}, parallel={}, ttl={}",
                 route, forEachMapping.keySet(), concurrency, timeout);

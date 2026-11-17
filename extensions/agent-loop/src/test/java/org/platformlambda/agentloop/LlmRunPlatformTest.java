@@ -63,6 +63,7 @@ class LlmRunPlatformTest {
     private static final BlockingQueue<EventEnvelope> WATCHED = new LinkedBlockingQueue<>();
     private static final ConcurrentLinkedQueue<Map<String, Object>> REPLIES = new ConcurrentLinkedQueue<>();
     private static final List<Map<String, Object>> REQUESTS = new CopyOnWriteArrayList<>();
+    private static final List<Map<String, String>> CHAT_HEADERS = new CopyOnWriteArrayList<>();
 
     @BeforeAll
     static void boot() throws InterruptedException {
@@ -74,6 +75,7 @@ class LlmRunPlatformTest {
         platform.registerPrivate(PlatformGateway.LLM_CHAT,
                 (TypedLambdaFunction<Map<String, Object>, Object>) (headers, input, instance) -> {
                     REQUESTS.add(input);
+                    CHAT_HEADERS.add(Map.copyOf(headers));
                     var reply = REPLIES.poll();
                     if (reply == null) {
                         throw new AppException(500, "no scripted reply");
@@ -103,6 +105,7 @@ class LlmRunPlatformTest {
     void reset() {
         REPLIES.clear();
         REQUESTS.clear();
+        CHAT_HEADERS.clear();
         WATCHED.clear();
     }
 
@@ -202,6 +205,32 @@ class LlmRunPlatformTest {
                 "turn.end", "run.end"), names);
         var end = (Map<String, Object>) ((Map<String, Object>) last.getBody()).get("data");
         assertEquals("done", end.get("status"));
+    }
+
+    @Test
+    void theGraphContextReachesEveryModelTurn() throws Exception {
+        // the engine's task node sends x-graph-id and x-node; the loop copies both onto each llm.chat request, so
+        // the helper's transcript audit store records the graph and the node without the author mapping anything
+        // (RFC-0012 section 8)
+        REPLIES.add(toolUse());
+        REPLIES.add(done());
+        var po = new PostOffice("unit.test", "trace-agent-loop", "TEST /agent-loop");
+        var request = new EventEnvelope().setTo("llm.run").setBody(input(CREDIT_LIMIT))
+                .setHeader("x-graph-id", "order-assistant").setHeader("x-node", "assist");
+        var response = po.request(request, 15000).get();
+        assertEquals(200, response.getStatus(), String.valueOf(response.getError()));
+        assertEquals(2, CHAT_HEADERS.size());
+        for (var headers : CHAT_HEADERS) {
+            assertEquals("order-assistant", headers.get("x-graph-id"));
+            assertEquals("assist", headers.get("x-node"));
+        }
+        // a caller that sends neither leaves the turns without them
+        reset();
+        REPLIES.add(done());
+        assertEquals(200, run(input(CREDIT_LIMIT)).getStatus());
+        assertEquals(1, CHAT_HEADERS.size());
+        assertFalse(CHAT_HEADERS.getFirst().containsKey("x-graph-id"));
+        assertFalse(CHAT_HEADERS.getFirst().containsKey("x-node"));
     }
 
     @Test
