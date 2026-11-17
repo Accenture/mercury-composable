@@ -8,7 +8,7 @@
   The Playground bundle was rebuilt here Java-only (`npm run release`); once the twin lands, `npm run release:rust`
   deploys the bundle and the help mirror there ([[help-edit-needs-bundle-release]]). Java PR #637 squash-MERGED 2026-11-17 (`84fec92c9`); the Rust twin OPENED the same day as mercury #412 (Increment
   202, one commit `696cafaf`; 22 binaries, 113 tests; the bundle and 44 help pages deployed, byte-identical). Open: the
-  merge of #412; the Rust deploy; Eric's call on padding (the limit is a cap - a fixed scale was the rejected alternative
+  merge of #412; Eric's call on padding (the limit is a cap - a fixed scale was the rejected alternative
   (b) of ADR-0034) if the field asks for it.
   → origin: 2026-11-17-055029.md
   <!-- id: decimal-precision-rust-twin | created: 2026-11-17 | last_used: 2026-11-17 | uses: 1 | tier: working | origin: 2026-11-17-055029 -->
