@@ -1,13 +1,17 @@
-# Essential built-in tools for agent loops — files and the web, governed — design spec
+# Essential built-in tools for agent loops — files, the web, a knowledge graph, a clock — design spec
 
-**Status:** DRAFT for review, round 1 (2026-11-16, Claude Code for Eric). Raised as RFC-0013 in
-[`docs/arch-decisions/RFC.md`](../docs/arch-decisions/RFC.md); the rulings this paper needs are listed in section 9.
+**Status:** DRAFT, round 2 (2026-11-17, Claude Code for Eric). Round 1 (2026-11-16) was raised as RFC-0013 in
+[`docs/arch-decisions/RFC.md`](../docs/arch-decisions/RFC.md). Eric's rulings of 2026-11-17 on R1-R7 are recorded in
+section 11 and applied: the set gains `file.search`. On his proposal the paper adds the knowledge-graph tools (section
+4.3) and a clock, answers his question on the reference MCP servers (section 8), and records the round-2 rulings
+R8-R16, all agreed by Eric on 2026-11-17; the paper is settled for the build.
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`agent-tool-use.md`](./agent-tool-use.md) (a tool is a composable function; a route names the capability,
 never the transport) and [`llm-helper-agent-loop.md`](./llm-helper-agent-loop.md) section 5 (the tool catalog) and
 section 10 (security).
 **Repo scope:** a new extension in the packs, `extensions/agent-tools/` (mercury-python first, mercury-nodejs in
-lockstep), each tool with its published catalog row; a Playground example graph here. No engine code.
+lockstep), each tool with its published catalog row; Playground example graphs here; a documentation page for the
+tools and one for the reference-server recipes. No engine code.
 
 ---
 
@@ -20,52 +24,69 @@ function per tool, or binds a reference MCP server through the binding. Both wor
 decisions in every graph: which directory, which hosts, how big a result, what counts as a write.
 
 Eric's direction (2026-11-16): identify and build the built-in tools that are essential for common cases, reading and
-writing local files and crawling web content among them. This paper names a first set, says where they live, how each
-is governed, and how an author puts one on a graph.
+writing local files and crawling web content among them. His additions (2026-11-17): a built-in tool for graph
+database read and write, for semantic analysis - documents ingested once and their rules extracted into a graph, so
+the model does not scan the files again and again - and more built-ins to get started with; and a question, which
+reference MCP servers exist out of the box, so that nothing is re-invented in custom code where a server already does
+the job. This paper names the set, says where each tool lives, how each is governed, how an author puts one on a graph,
+and when to bind a server instead of building a function.
 
 ## 2. Principles
 
 1. **A built-in tool is a composable function**, declared with `preload` in a pack extension, addressed by a route that
-   names the capability (`file.read`, `web.fetch`). The loop, the catalog and the graph see nothing special about it; a
-   built-in may later be replaced by an MCP tool behind the same route, or an MCP tool by a built-in, as
-   `agent-tool-use.md` promises.
+   names the capability (`file.read`, `web.fetch`, `graph.query`). The loop, the catalog and the graph see nothing
+   special about it; a built-in may later be replaced by an MCP tool behind the same route, or an MCP tool by a
+   built-in, as `agent-tool-use.md` promises.
 2. **Each tool ships its catalog row.** The name, the description the model reads, the input schema the loop validates
    against, `strict`, and `write: true` where it applies, are published with the tool, so an author copies a row onto
    the graph rather than writing one; the loop's pre-flight check still certifies what the graph names.
-3. **The sandbox is deployment configuration.** Which directory tree the file tools may touch and which hosts the web
-   tools may reach are keys of the pack's configuration, certified with the deployment like the MCP server file, never
-   arguments of a call. A tool whose sandbox is not configured does not register, so an unconfigured tool is a 404 to
-   the loop's pre-flight check, not an open door.
+3. **The sandbox is deployment configuration.** Which directory tree the file tools may touch, which hosts the web
+   tools may reach and which database the graph tools may query are keys of the pack's configuration, certified with
+   the deployment like the MCP server file, never arguments of a call. A tool whose sandbox is not configured does not
+   register, so an unconfigured tool is a 404 to the loop's pre-flight check, not an open door (ruling R4: restricted
+   to registered constraints).
 4. **Results are text, capped, and untrusted.** A tool returns text or a small map; it never returns a binary; it caps
    its own result below the loop's `result_limit`; and what it returns is data a model reads, never an instruction the
    loop obeys. A fetched page that says "ignore your instructions" is a page.
 5. **Few, essential, boring.** The set is what every second use case needs, with the dangerous generalities left out:
-   no shell, no arbitrary HTTP request, no database query. A use case with such a need writes its own route and
+   no shell, no arbitrary HTTP request, no SQL against a system of record. **Amended 2026-11-17 (Eric):** the agent's
+   own knowledge graph is in - a database the agent fills and queries, inside configured limits, is a capability of
+   the agent and not a door into the business's data. A use case with another such need writes its own route and
    certifies it on its graph.
+6. **Build or bind, by rule** (section 8). A capability is built in-house when its sandbox must be the pack's, when the
+   pack process must not depend on a second runtime, when the contract must be portable across backends, or when it is
+   a few lines; it is bound from an existing MCP server when the server is a product's own front door whose surface is
+   what would be written anyway. Neither is the default for everything.
+7. **Extract once, query many.** Knowledge a model extracts belongs in a store the next agent queries, not in a
+   transcript that expires: the transcript store holds a turn, the audit store holds what was said (RFC-0012), the
+   knowledge graph holds what was learned, across transactions.
 
 ## 3. Shapes considered
 
 **A. The reference MCP servers through the binding** (the filesystem server, the fetch server). Zero code and already
-possible; set aside as the default because each server is a child process with its own runtime, its schemas and
-descriptions are the server's (the author rewrites them on the graph anyway), and the controls differ: the filesystem
-server takes allowed directories, the fetch server takes no host allowlist at all. An installation that prefers a
-server binds it; the routes are the same.
+possible; set aside as the default because each server is a child process with its own runtime (Node for the
+filesystem server, Python with an optional Node for the fetch server), its schemas and descriptions are the server's
+(the author rewrites them on the graph anyway), and the controls differ from the ones a deployment certifies here: the
+filesystem server takes allowed directories and a read-only flag, with fifteen tools where a graph wants three or
+four; the fetch server (2026) refuses private addresses by default and takes `--allowed-hosts`, but has no crawl and
+answers in pages of 5 000 characters. An installation that prefers a server binds it; the routes are the same
+(section 8 carries the recipes).
 
 **B. Engine-side functions** in `extensions/agent-loop` (Java, and Rust in lockstep). Available without a pack
 process; set aside because an agent deployment always runs a pack for `llm.chat`, the web-content libraries are weaker
 there, and two implementations must be kept in lockstep for every tool.
 
-**C. A pack extension, `extensions/agent-tools/`** (chosen). One implementation per pack beside the helper that every
-agent deployment runs, the richest libraries for the web, and the packs' lockstep discipline already in place. The
-extension is an application on the pack, like the helper and the binding, not part of the package.
+**C. A pack extension, `extensions/agent-tools/`** (ruled, R2). One implementation per pack beside the helper that
+every agent deployment runs, the richest libraries for the web, and the packs' lockstep discipline already in place.
+The extension is an application on the pack, like the helper and the binding, not part of the package.
 
 **D. A generic `http.request` tool.** Rejected: a URL the model chooses is the server-side request forgery the web
 tools exist to prevent; an API the use case needs gets a wrapper route with its own schema, certified on the graph.
 
 ## 4. The set (version 1)
 
-Five tools, two groups. Every tool refuses out-of-sandbox input with a 400 that names the rule, which the loop returns
-to the model as that call's error; the node never fails because of a tool.
+Fourteen tools in four groups (`file.extract` joined version 1 by ruling R14). Every tool refuses out-of-sandbox input with a 400 that names the rule, which the loop
+returns to the model as that call's error; the node never fails because of a tool.
 
 ### 4.1 Files, inside one workspace
 
@@ -76,12 +97,12 @@ process should run as a user with no rights beyond that tree.
 | Route | Row | Input | Result |
 | --- | --- | --- | --- |
 | `file.read` | `file_read` | `path` (string, required); `max_bytes` (integer, optional, capped by `tools.file.max.bytes`, default 256 KiB) | `{path, bytes, text, truncated}`; UTF-8 text only, a binary file is an error naming the detected type |
-| `file.write` | `file_write`, **`write: true`** | `path`, `content` (string), `mode` (`create` default, `overwrite`, `append`) | `{path, bytes, mode}`; `create` refuses an existing file; parent directories are created inside the root; `tools.file.write.extensions` may restrict the suffixes (default: any) |
+| `file.write` | `file_write`, **`write: true`** | `path`, `content` (string), `mode` (`create` default, `overwrite`, `append`) | `{path, bytes, mode}`; `create` refuses an existing file (ruling R5); parent directories are created inside the root; `tools.file.write.extensions` may restrict the suffixes (default: any) |
 | `file.list` | `file_list` | `path` (directory, default `.`), `glob` (optional, e.g. `**/*.md`), `max_entries` (default 200, cap 2000) | `{entries: [{path, type, bytes, modified}], truncated}`; hidden entries excluded unless `tools.file.hidden=true` |
+| `file.search` | `file_search` | `pattern` (string, required: a literal, or a regular expression with `regex: true`), `path` (directory, default `.`), `glob` (optional file filter), `case_sensitive` (default false), `context` (lines around a match, default 0, cap 3), `max_results` (default 100, cap 1000) | `{matches: [{path, line, text, before, after}], files_searched, truncated}`; text files only, binaries skipped, each line cut to `tools.file.line.max.chars` (default 500); the read-only sixth tool of ruling R1 |
 
-`file.write` carries the write mark, so under the node's default mode a person approves it; `file.read` and
-`file.list` are reads and run unasked. A `file.search` (text search across the workspace) is a natural sixth tool and
-is listed in section 9 as a question rather than built unasked.
+`file.write` carries the write mark, so under the node's default mode a person approves it; the other three are reads
+and run unasked.
 
 ### 4.2 The web, inside an allowlist
 
@@ -96,35 +117,82 @@ itself with a Mercury user agent.
 | Route | Row | Input | Result |
 | --- | --- | --- | --- |
 | `web.fetch` | `web_fetch` | `url` (string, required); `as` (`text` default, `markdown`, `raw`) | `{url, status, content_type, title, text, bytes, truncated}`; HTML is reduced to its readable text (scripts, styles and navigation dropped; headings, lists and links kept as text or Markdown); `raw` returns the body as received when it is text |
-| `web.crawl` | `web_crawl` | `url` (the start page); `max_pages` (default 10, cap `tools.web.crawl.max.pages`, 50); `max_depth` (default 2); `include` (an optional path prefix the crawl stays under) | `{pages: [{url, title, text, bytes}], visited, truncated}`; same host only, links followed breadth-first, `robots.txt` honoured, `tools.web.crawl.delay.ms` between requests (default 500), each page's text cut to `tools.web.page.max.chars` (default 20 000) |
+| `web.crawl` | `web_crawl` | `url` (the start page); `max_pages` (default 10, cap `tools.web.crawl.max.pages`, 50); `max_depth` (default 2); `include` (an optional path prefix the crawl stays under) | `{pages: [{url, title, text, bytes}], visited, truncated}`; same host only, links followed breadth-first, `robots.txt` honoured, `tools.web.crawl.delay.ms` between requests (default 500), each page's text cut to `tools.web.page.max.chars` (default 20 000); the defaults and caps of ruling R6 |
 
 The crawl is a bounded reader of a documentation section or a small site, not a spider: the page cap, the depth, the
 include prefix and the delay are all limits, and the whole result is cut to fit the loop's `result_limit`, so a model
 that needs more asks again with a narrower start.
 
-### 4.3 Dependencies
+### 4.3 The knowledge graph, inside one database (Eric's proposal, 2026-11-17)
 
-The packs already depend on an HTTP client (aiohttp in Python; Node's built-in `fetch`), so the web tools add no
-client. HTML to text is written in-house in each pack, as the OTLP encoder and the MessagePack codec were: a small
-tokenizer that drops `script`, `style`, `nav`, `header` and `footer`, keeps the text of the rest, and renders headings,
-list items, paragraphs and links in Markdown. It is enough for documentation and articles, it has no dependency, and
-it is tested on a fixture set of pages. A library (trafilatura, Readability) stays an option an installation may swap
-in behind the same route if its pages need main-content extraction; ruling R3.
+A built-in tool for graph database read and write, for semantic analysis: an agent ingests documents once - contracts,
+regulations, specifications - and extracts their entities, relations and rules into a graph, and later agents answer
+from the graph instead of scanning the files again on every question (principle 7). The sandbox is one database:
+`tools.graph.uri` (a Bolt URI), `tools.graph.database`, the credential by reference (`tools.graph.username`,
+`tools.graph.password: ${GRAPH_PASSWORD}`). The reads register when the URI is set; the writes only when
+`tools.graph.write=true`. The query language is openCypher, which the models know well and which Neo4j, Memgraph,
+FalkorDB, Apache AGE and Amazon Neptune all speak; the reference backend is the Bolt protocol through the official
+driver, which reaches Neo4j and Memgraph alike (section 4.5).
+
+| Route | Row | Input | Result |
+| --- | --- | --- | --- |
+| `graph.schema` | `graph_schema` | none | `{labels: [{label, count, properties: [{name, types}]}], relationship_types: [{type, count, from, to}]}` from the database's own schema procedures (no plugin: `db.labels`, `db.schema.nodeTypeProperties`, `db.schema.relTypeProperties`, and Memgraph's equivalents); what the model reads before it writes a query |
+| `graph.query` | `graph_query` | `query` (openCypher, read-only), `parameters` (object, optional) | `{columns, rows, truncated}`: run in a read transaction, so a statement that writes fails with the database's access-mode error, and refused before sending when it carries a write clause (`CREATE`, `MERGE`, `SET`, `DELETE`, `REMOVE`, `DROP`, `LOAD CSV`); rows capped by `tools.graph.max.rows` (200, cap 2000); a node rendered `{id, labels, properties}`, a relationship `{id, type, start, end, properties}`, a path as a list; `tools.graph.timeout.ms` (10 s) |
+| `graph.write` | `graph_write`, **`write: true`** | `query` (openCypher), `parameters` | `{counters: {nodes_created, nodes_deleted, relationships_created, relationships_deleted, properties_set, labels_added, labels_removed, indexes_added, constraints_added}}` from a write transaction; `DELETE`, `DETACH DELETE` and `DROP` refused unless `tools.graph.delete=true` |
+| `graph.ingest` | `graph_ingest`, **`write: true`** | `nodes: [{key, label, properties}]`, `relationships: [{from, to, type, properties}]`, `source` (string, optional) | `{nodes, relationships}` counts: one `MERGE` per node on `(:Label {key})` with `SET n += $properties`, one per relationship between two keys (both must exist, in this call or already in the graph), every value a parameter, `source` stamped on each node and relationship; labels and types validated `^[A-Za-z][A-Za-z0-9_]{0,63}$`, values scalars or lists of scalars; at most `tools.graph.ingest.max.nodes` (500) per call; running it twice changes nothing |
+
+Why `graph.ingest` beside `graph.write`: extraction is the ingestion case, and a model writing a long `MERGE`
+statement with dozens of parameters is where Cypher goes wrong. A list of nodes and relationships is what a model
+extracts well; the tool makes the Cypher, no value is ever interpolated into a statement, and the write is idempotent.
+The row's description tells the model the conventions: a key unique across the graph, prefixed with the label in
+lower case (`clause:12`, `party:supplier-a`), a `source` on every ingest (the document's path or URL, so an answer
+can cite), and the labels of the domain the graph author names in the system prompt. `graph.write` stays for
+everything else - an index, a constraint, a correction - under the write mark. Both writers carry the mark: under
+the node's default mode a person approves each, and an ingestion graph declares `mode: auto` on its ingest node
+(ADR-0033: a write runs unasked only under a declared `auto`), the product owner's decision at design time, visible
+in the graph's certification. The reference Memory server's shape (entities, relations, observations in a JSON file)
+is the same idea at toy scale; these four tools put it over a database an installation governs.
+
+### 4.4 The clock
+
+A model has no clock, and "today", "within 30 days" and "last quarter" need one. `time.now` (`time_now`): `timezone`
+(an IANA name, optional, default `UTC`) returns `{utc, local, timezone, offset, weekday, epoch_ms}`. It reads nothing
+and has no sandbox to miss, so it registers unless `tools.time=false`. It replaces a child process for a clock (the
+reference Time server, section 8).
+
+### 4.5 Dependencies
+
+Files, web and clock add nothing: the packs already depend on an HTTP client (aiohttp in Python; Node's built-in
+`fetch`), and HTML to text is written in-house in each pack (ruling R3), as the OTLP encoder and the MessagePack codec
+were: a small tokenizer that drops `script`, `style`, `nav`, `header` and `footer`, keeps the text of the rest, and
+renders headings, list items, paragraphs and links in Markdown. It is enough for documentation and articles, and it is
+tested on a fixture set of pages; a library (trafilatura, Readability) stays an option an installation may swap in
+behind the same route if its pages need main-content extraction.
+
+The graph tools take the official Bolt driver as an optional extra, as the helper takes Redis and PostgreSQL: Python
+`graph = ["neo4j>=6,<7"]` (asynchronous, Python ≥ 3.10 like the pack), Node `neo4j-driver` as a dev dependency, so the
+published packages stay free of a database client. The same driver reaches Neo4j and Memgraph. FalkorDB (its own
+client over the Redis protocol) and Apache AGE (openCypher wrapped in SQL through psycopg, on the PostgreSQL the audit
+store already runs) are an installation's alternative: the four routes over another client, behind the same rows.
 
 ## 5. Governance and security
 
 - **The catalog is still the boundary.** A graph names the tools its agent reaches; a built-in the graph does not name
   is as unreachable as any route. The pre-flight check verifies the routes exist, so a deployment whose sandbox is not
   configured fails the graph before a token is spent.
-- **Writes are marked.** `file.write` is the only writer and carries `write: true`; the node's mode decides whether a
-  person approves it. `web.fetch` and `web.crawl` are reads of the outside, bounded by the allowlist.
-- **The allowlist and the root are certification artifacts.** They live in the pack's configuration with the server
-  file, are reviewed with the deployment, and answer "what can this agent reach?" without reading code.
-- **Untrusted content.** A page or a file may carry instructions; the loop never obeys a result (section 10 of the loop
-  spec), and the graph author's system prompt should say that fetched content is data. The tools add nothing to a
-  result but what they read.
-- **Logs.** A tool logs the route, the status, the byte count and the host of a URL; never the path's content, the page
-  text or the full URL (a query string may carry a token).
+- **Writes are marked.** `file.write`, `graph.write` and `graph.ingest` carry `write: true`; the node's mode decides
+  whether a person approves each. The web tools and the other file and graph tools are reads, bounded by the allowlist,
+  the root and the read transaction.
+- **The allowlist, the root and the database are certification artifacts.** They live in the pack's configuration with
+  the server file, are reviewed with the deployment, and answer "what can this agent reach?" without reading code.
+- **The graph's two gates.** Writing needs `tools.graph.write=true`; deleting needs `tools.graph.delete=true` as well.
+  A read runs in a read transaction with a reader's credential where the database offers one; an ingest is parameters
+  only, and a label or type that is not an identifier is refused.
+- **Untrusted content.** A page, a file or a graph property may carry instructions; the loop never obeys a result
+  (section 10 of the loop spec), and the graph author's system prompt should say that fetched and stored content is
+  data. The tools add nothing to a result but what they read.
+- **Logs.** A tool logs the route, the status, the byte or row count and the host of a URL; never a path's content,
+  a page's text, a query's parameters or a full URL (a query string may carry a token).
 - **Limits are defaults a deployment lowers, never raises past the caps** named above; the caps are the tool's.
 
 ## 6. Publishing the rows
@@ -137,44 +205,144 @@ uv run mercury-serve extensions/agent-tools/agent_tools.py --describe
 ```
 
 The same rows are kept as files under `extensions/agent-tools/catalog/` (`file_read.json`, ...) for a copy without
-running anything, and the engine's documentation gains a page listing them with their limits, so an author reads the
+running anything, and the engines' documentation gains a page listing them with their limits, so an author reads the
 contract where the catalog syntax is documented. The rows are shared byte for byte between the packs, with a test
 that pins them, as the vector files are.
 
-## 7. The example graph
+## 7. The example graphs (the Playground)
 
-`site-notes` in the Playground: the person names a documentation section and a topic; the agent crawls the section
-(the allowlist names the documentation host), reads what it needs, writes `notes/<topic>.md` into the workspace, and
-returns the summary with the file's path. It exercises a read of the outside, a supervised write (the node's default
-mode holds `file_write` for a person, so the graph suspends and resumes as `order-assistant` does), and the
-transcript audit of RFC-0012 if that build lands first. A token-free test drives it on a scripted `llm.chat` and a
-fixture web server; a live drive runs it on Haiku 4.5 against a public documentation site.
+- **`site-notes`** (ruling R7): the person names a documentation section and a topic; the agent crawls the section
+  (the allowlist names the documentation host), reads what it needs, writes `notes/<topic>.md` into the workspace, and
+  returns the summary with the file's path. It exercises a read of the outside and a supervised write (the node's
+  default mode holds `file_write` for a person, so the graph suspends and resumes as `order-assistant` does).
+- **`document-ingest`**: the person names a document in the workspace (a synthetic corpus of a few policies and
+  agreements ships with the example, written for it, no real document); the agent reads it, extracts the parties,
+  obligations, rules and deadlines it finds, and ingests them with the document as `source`. The ingest node declares
+  `mode: auto`, so an ingestion batch runs without a person approving each write; the graph's certification shows it.
+- **`document-query`**: a question; the agent reads the schema, queries the graph, and answers with the sources it
+  found - no file is read. Run after `document-ingest` over the corpus, it shows the point of the knowledge graph: the
+  documents were read once.
 
-## 8. Consequences
+Each has a token-free test on a scripted `llm.chat` with a fixture web server or a fake graph store, and a live drive
+on Haiku 4.5: `site-notes` against a public documentation site, the two document graphs against Colima's database. The
+transcript audit of RFC-0012 records every drive if that build lands first.
 
-- **For the packs:** a new extension with five routes, a configuration block, an in-house HTML-to-text, a fixture web
-  server for the tests, a README and the catalog files; no new dependency; lockstep as always.
-- **For the engines:** none in code. One documentation page, and the example graph with its test.
+## 8. The reference MCP servers (Eric's question, 2026-11-17)
+
+What exists out of the box, as of 2026-11, and what this paper does with each. The reference repository's own words:
+the servers are reference implementations to demonstrate the protocol and the SDKs, educational examples for
+developers building their own, not production-ready solutions. The MCP Registry is the live catalog; the vendors'
+own servers are where the production-grade work is.
+
+**Maintained reference servers** (`modelcontextprotocol/servers`):
+
+| Server | Runtime | What it offers | Here |
+| --- | --- | --- | --- |
+| Filesystem | Node (`npx @modelcontextprotocol/server-filesystem <dirs>`) | 15 tools: read (text, media, many), write, append, edit, create directory, list (with sizes), tree, move, copy, search by glob, file info; allowed directories, `--read-only` | covered by the six `file.*` tools in-house (workspace root, write mark, no Node runtime in the pack's process); the server stays an alternative behind the same routes |
+| Fetch | Python (`uvx mcp-server-fetch`), optional Node for readability | one tool, `fetch` (`url`, `max_length` 5 000, `start_index`, `raw`); Markdown out; `robots.txt`; private addresses refused by default; `--allowed-hosts`; proxies | covered by `web.fetch` and `web.crawl` in-house (the crawl, the allowlist in the pack's configuration, no child process); a fair alternative for `web.fetch` alone |
+| Git | Python (`uvx mcp-server-git --repository <path>`) | 14 tools: status, diffs, log, show, add, commit, reset, branches, checkout, merge, remotes | **bind** when a use case works on a repository (a recipe); not built |
+| Time | Python (`uvx mcp-server-time`) | `get_current_time`, `convert_time`, `get_time_ago` | `time.now` in-house: a clock is a few lines, not a process; the server is the alternative |
+| Memory | Node | a knowledge graph in a JSON file: entities, relations, observations | the right shape, a toy store; the `graph.*` tools give the same shape over a database |
+| Sequential Thinking | Node | a scaffold for step-by-step reasoning, no external state | not on a graph: the models' own extended thinking covers it, and it reads and writes nothing of the system |
+| Everything | Node | a test server exercising every protocol feature | the binding's tests may use it; never on a graph |
+
+**Archived** (`modelcontextprotocol/servers-archived`, no longer maintained): AWS KB Retrieval, Brave Search, EverArt,
+GitHub, GitLab, Google Drive, Google Maps, PostgreSQL, Puppeteer, Redis, Sentry, Slack, SQLite. Where one is wanted,
+the vendor's own server is the successor: GitHub's official server, GitLab's built-in one, Brave's search server,
+Microsoft's Playwright server for browser automation (Puppeteer's successor), Redis's official server, Sentry's remote
+server, and for PostgreSQL the database vendors' or the community's servers. Each is bound through the binding like
+any other; none is built here.
+
+**Graph databases** (vendor servers, relevant to section 4.3): Neo4j's `mcp-neo4j-cypher` (Python; `get_neo4j_schema`,
+which needs the APOC plugin, `read_neo4j_cypher`, `write_neo4j_cypher`; `--read-only`; stdio or HTTP; a response
+token limit), Memgraph's `mcp-memgraph` (Python; its toolbox; stdio or HTTP), FalkorDB's `mcp-server-falkordb`
+(Python; schema, read, write), and community servers for Apache AGE. The Neo4j server is the bind alternative to
+`graph.schema`, `graph.query` and `graph.write`; `graph.ingest` has no counterpart in any of them - a model would
+write the `MERGE` statements itself - which is the reason the graph tools are built rather than bound.
+
+**The rule** (principle 6), applied: build when the sandbox must be the pack's (a workspace root and a write mark; a
+host allowlist; row caps and a delete gate), when the pack's process must not depend on a second runtime, when the
+contract must be portable across backends and shipped as rows the packs pin byte for byte, or when the capability is a
+few lines; bind when the server is a product's own front door - a code forge, a browser, a SaaS, a database vendor's
+server - maintained by its vendor, with the surface that would be written anyway, its reads unasked and its writes
+approved under the node's mode like any other.
+
+**The recipes.** Binding is already zero code (`agent-tool-use.md`: a server-file entry, a `bind` line, a `preload`
+function, a catalog row); what is missing is the worked set. A documentation page in the engines' docs, "Tools from
+MCP servers", and commented entries in the binding's `resources/mcp-servers.yml` carry, for each recipe, the
+server-file entry with its credential references, the `describe` digests, the `bind` lines and the catalog rows with
+the descriptions rewritten for the graph: Git, Time, Fetch and Filesystem (the reference servers), Neo4j's Cypher
+server (the alternative to the graph tools), GitHub's server and Playwright's (vendor servers). A gated live test
+starts each reference server locally with `uvx` or `npx` and checks its digests, so a recipe that rots is caught at the
+digest, as the binding's boot would catch it.
+
+## 9. Candidates kept out of version 1, or in by ruling
+
+- **`file.extract`** (`file_extract`): PDF, Word and HTML files to text with page markers, `path`, `pages` (a range),
+  `max_chars`, for the ingestion of documents that are not plain text - which is what contracts and regulations are.
+  Python `pypdf` and `python-docx`, Node `pdf-parse` and `mammoth`, behind an optional extra `documents`. The
+  ingestion example reads Markdown without it; the field's documents will need it. In version 1 (ruling R14).
+- **`sql.query`**: read-only, parameterized SQL on one allowlisted database with a reader's credential; the archived
+  PostgreSQL reference server was this. Kept out: a system of record behind a wrapper route with its own schema is the
+  certifiable form, and the knowledge graph is in precisely because it is the agent's own store (ruling R16).
+- **`web.search`**: a vendor's API (Brave, Tavily, Exa) with a key. Bound from the vendor's server by recipe, never
+  built; the key is a reference in the server file.
+- **Repositories and browsers**: the Git recipe and the Playwright recipe (section 8).
+- **A shell, a generic request, an e-mail or a notification**: never a tool. The first two are principle 5; the last
+  two are a graph node's job after the loop, under the graph's own rules, not a model's call.
+
+## 10. Consequences
+
+- **For the packs:** a new extension with fourteen routes, four configuration blocks, an in-house HTML-to-text, a
+  fixture web server and a fake graph driver for the tests, a README and the catalog files; two optional extras
+  (`graph`, `documents`); lockstep as always.
+- **For the engines:** none in code. Two documentation pages, and the example graphs with their tests and corpus.
 - **For an author:** a tool is a row copied from the catalog folder and an Event-over-HTTP entry for the pack's host;
-  the sandbox is two configuration keys on the pack.
-- **For the binding:** unchanged. An installation that prefers the reference MCP servers binds them to the same routes
-  and the graphs do not change.
+  the sandbox is a few configuration keys on the pack; an ingestion node declares `mode: auto` knowingly.
+- **For the binding:** unchanged in code; it gains the recipes and their digest test.
+- **For the field:** a server-side knowledge graph fed by agents and governed like any database (roles, TLS, backup),
+  with an openCypher contract that lets an installation choose its graph database.
 
-## 9. Rulings needed (Eric)
+## 11. Rulings
 
-- **R1 — the set.** The five above, or the five plus `file.search` (a text search across the workspace, read-only)?
-- **R2 — where.** The pack extension `extensions/agent-tools/`, Python first, Node in lockstep?
-- **R3 — HTML to text.** In-house with no dependency, as proposed, or a library from the start?
-- **R4 — registration.** The file tools register only with `tools.file.root` set and the web tools only with
-  `tools.web.allow` set, so an unconfigured tool is a 404 to the pre-flight check?
-- **R5 — `file.write`.** `create` as the default mode, refusing an existing file unless `overwrite` or `append` is asked?
-- **R6 — the crawl's defaults and caps.** 10 pages, depth 2, 500 ms between requests, 50 pages at most?
-- **R7 — the example.** `site-notes` as described, with its supervised write and its live drive?
+**Recorded (Eric, 2026-11-17, on round 1):**
 
-## 10. Build plan
+- **R1 — the set.** Extended: the five plus `file.search` (section 4.1).
+- **R2 — where.** Agreed: `extensions/agent-tools/`, Python first, Node in lockstep.
+- **R3 — HTML to text.** In-house, with no dependency.
+- **R4 — registration.** Agreed: a tool is restricted to its registered constraints; unconfigured, it does not register.
+- **R5 — `file.write`.** Agreed: `create` the default, refusing an existing file.
+- **R6 — the crawl's defaults and caps.** Agreed.
+- **R7 — the example.** Agreed: `site-notes` with its supervised write and live drive.
 
-1. **Python:** `extensions/agent-tools/` with the five tools, the sandbox checks, the HTML-to-text, the `describe`
-   command, the catalog files, the fixture web server and the tests, the README. The engines' documentation page.
-2. **Node in lockstep:** the same routes, rows and tests; the catalog files byte-identical and pinned.
-3. **The Playground:** the `site-notes` graph, its token-free test, the Event-over-HTTP entries, the README; then the
-   live drive and its report under `docs/test-reports/`. Then promotion of RFC-0013 is Eric's call.
+**Round 2 (Eric, 2026-11-17): agreed to all of R8-R16 as proposed.**
+
+- **R8 — the knowledge-graph tools.** Agreed: `graph.schema`, `graph.query`, `graph.write` and `graph.ingest` as in
+  section 4.3, with `graph.ingest` the structured, parameterized `MERGE` for extraction results.
+- **R9 — the backend.** Agreed: Bolt and openCypher through the official driver as the `graph` extra (Neo4j and
+  Memgraph), with FalkorDB and Apache AGE as an installation's alternative behind the same routes.
+- **R10 — the graph's gates.** Agreed: writers register only with `tools.graph.write=true`; `DELETE`, `DETACH
+  DELETE` and `DROP` refused unless `tools.graph.delete=true`.
+- **R11 — development.** Agreed: Neo4j community on Colima, its own Browser as the viewer, in `dev/graph-up.sh`.
+- **R12 — the examples.** Agreed: `document-ingest` (its ingest node `mode: auto`) and `document-query` over a
+  synthetic corpus, beside `site-notes`.
+- **R13 — the clock.** Agreed: `time.now` in version 1, registered unless switched off.
+- **R14 — `file.extract`.** Agreed: PDF and Word to text behind the `documents` extra, in version 1.
+- **R15 — the reference servers.** Agreed: the recipes page and server-file entries (Git, Time, Fetch, Filesystem,
+  Neo4j's Cypher server, GitHub's, Playwright's) as the documented way to leverage existing servers; Memory,
+  Sequential Thinking and Everything left off graphs.
+- **R16 — `sql.query`.** Agreed: out of version 1; a system of record gets a wrapper route.
+
+## 12. Build plan
+
+1. **Python, the sandboxed tools:** `extensions/agent-tools/` with the six file tools, the two web tools and the
+   clock, the sandbox checks, the HTML-to-text, the `describe` command, the catalog files, the fixture web server and
+   the tests, the README. The engines' documentation page "Built-in tools".
+2. **Python, the knowledge graph:** the four graph tools over the Bolt driver (`graph` extra), the fake driver for the
+   unit tests, `dev/graph-up.sh` and `graph-down.sh`, the gated live test against Colima's database; `file.extract`
+   behind the `documents` extra (R14).
+3. **Node in lockstep:** the same routes, rows and tests; the catalog files byte-identical and pinned.
+4. **The Playground:** `site-notes`, `document-ingest` and `document-query` with the synthetic corpus, their token-free
+   tests, the Event-over-HTTP entries, the READMEs; then the live drives and their reports under `docs/test-reports/`.
+5. **The recipes:** the page "Tools from MCP servers", the server-file entries and the gated digest test. Then promotion
+   of RFC-0013 is Eric's call.

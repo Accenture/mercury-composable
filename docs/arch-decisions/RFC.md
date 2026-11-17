@@ -39,27 +39,38 @@
 
 ---
 
-## RFC-0013 — Essential built-in tools for agent loops: files inside a workspace and the web inside an allowlist, as pack functions with published catalog rows
+## RFC-0013 — Essential built-in tools for agent loops: files inside a workspace, the web inside an allowlist and a knowledge graph inside one database, as pack functions with published catalog rows
 **Status:** Open · **Raised:** 2026-11-16 · **Serves:** vision-mercury-composable · **Thread:** `agent-essential-tools`
 <!-- id: rfc-0013 | status: open | thread: agent-essential-tools -->
 
 **Proposal.** A first set of built-in tools every second agent use case needs, as composable functions in a new pack
 extension, `extensions/agent-tools/` (Python first, Node in lockstep), each shipping its catalog row: `file.read`,
-`file.write` (marked `write: true`), `file.list` inside one configured workspace root, and `web.fetch`, `web.crawl`
-inside a configured host allowlist, with private address ranges refused, redirects checked, sizes and page counts
-capped, `robots.txt` honoured, and HTML reduced to readable text in-house. The sandbox is deployment configuration,
-certified with the deployment; a tool whose sandbox is not configured does not register. A Playground example,
-`site-notes`, shows a read of the outside and a supervised write. The design spec is
+`file.write` (marked `write: true`), `file.list` and `file.search` inside one configured workspace root; `web.fetch`
+and `web.crawl` inside a configured host allowlist, with private address ranges refused, redirects checked, sizes and
+page counts capped, `robots.txt` honoured, and HTML reduced to readable text in-house; on Eric's proposal
+(2026-11-17) a knowledge graph inside one configured database - `graph.schema`, `graph.query` in a read transaction,
+`graph.write` and `graph.ingest` (a structured, parameterized `MERGE` for what a model extracts) marked `write: true`,
+openCypher over the official Bolt driver (Neo4j, Memgraph), so documents are read once and queried many times - and a
+clock, `time.now`. The sandbox is deployment configuration, certified with the deployment; a tool whose sandbox is not
+configured does not register. Playground examples: `site-notes` (a crawl and a supervised write), `document-ingest`
+and `document-query` (extract once, query many). Existing MCP servers are leveraged by recipe where a server is a
+product's own front door (Git, GitHub, Playwright, a search vendor, Neo4j's Cypher server). The design spec is
 `draft-design-specs/agent-essential-tools.md`. What a decision would commit the project to: tools as pack routes
-with published rows and sandboxes in configuration, never engine code and never a generic request tool.
+with published rows and sandboxes in configuration, never engine code and never a generic request tool; an agent's
+own knowledge graph in, systems of record out (a wrapper route).
 
 **Options.** (A) Bind the reference MCP servers (filesystem, fetch) through the binding: zero code, but a child process
-and runtime per server, the server's schemas and descriptions, and no host allowlist on fetch; kept as an installation's
-alternative behind the same routes. (B) Engine-side Java and Rust functions: no pack needed, but two implementations
-and weaker web libraries. (C) The pack extension - proposed. (D) A generic `http.request` tool - rejected, a model-chosen
-URL is the request-forgery hole the web tools close.
+and runtime per server, the server's schemas and descriptions, and no crawl; kept as an installation's alternative
+behind the same routes, and the documented path for vendor servers. (B) Engine-side Java and Rust functions: no pack
+needed, but two implementations and weaker web libraries. (C) The pack extension - ruled. (D) A generic
+`http.request` tool - rejected, a model-chosen URL is the request-forgery hole the web tools close. For the graph:
+Neo4j's own MCP server bound (zero code; no structured ingest, APOC for its schema tool) versus the four in-house tools
+over the Bolt driver (proposed).
 
-**Resolution.** Open; the rulings R1-R7 of the spec's section 9 are Eric's.
+**Resolution.** Open. Reviewed by Eric on 2026-11-17: rulings R1-R7 recorded in the spec's section 11 (`file.search`
+added; the extension, the in-house HTML-to-text, the gated registration, the defaults and the example confirmed), and
+R8-R16 agreed the same day (the knowledge-graph tools, the clock, `file.extract` in version 1, the recipes, `sql.query`
+out). Settled for the build; promotion after the drives.
 
 ---
 
@@ -68,26 +79,34 @@ URL is the request-forgery hole the web tools close.
 <!-- id: rfc-0012 | status: open | thread: transcript-audit-store -->
 
 **Proposal.** Separate the two lifetimes the working transcript store serves today: its TTL stays the transaction's
-expiry (Redis, the compare-and-set, `retention` unchanged), and a second store, durable and append-only, keeps every
-model turn for audit on the installation's own policy. The pack's helper writes it after each turn's compare-and-set
-succeeds (the engine never holds a transcript, ADR-0033): a conversation row and a turn row carrying the trace id of
-the turn's event, the business correlation id, UTC timestamps, the model, status, stop reason, usage, the request
-message and the assistant content in the provider's format, and the normalized calls; a graph with a suspend and a
-resume shows one correlation id and a trace id per request. PostgreSQL is the reference implementation, and the
-schema is published as a specification so a field installation may implement the same tables behind the same
-interface in another database. For development, Colima runs PostgreSQL and a SQL browser, so a person queries by
-trace id, correlation id or time range. A failed audit write refuses the turn by default (`required`), or is logged
-(`best-effort`). The design spec is `draft-design-specs/transcript-audit-store.md`. What a decision would commit the
-project to: content in one governed, installation-owned store with a published schema; identity from the engine
-(two headers), content only from the pack.
+expiry (Redis, the compare-and-set, `retention` a working-store setting), and a second store, durable and append-only,
+keeps every model turn for audit on the installation's own policy. The pack's helper records every turn (the engine
+never holds a transcript, ADR-0033), asynchronously: after the compare-and-set accepts a turn, `llm.chat` sends a local
+event to a composable function with one worker, `transcript.audit`, which writes a conversation row and a turn row
+from the working record - the trace id of the turn's event, the business correlation id, the graph and node from two
+engine headers, UTC timestamps, the model, status, stop reason, usage, the request message and the assistant content
+in the provider's format, the normalized calls; a graph with a suspend and a resume shows one correlation id and a
+trace id per request. A failed write is logged and never blocks a turn. When the model ends the run, a second event
+to the same function runs the data-integrity check - the turns in Redis counted against the rows in PostgreSQL, the
+missing ones persisted - and only then is the Redis record released; one mailbox orders the writes and the check, so
+there is no race. A sweep repairs what a lost event or an outage leaves behind. PostgreSQL is the reference
+implementation (psycopg 3, `pg`), the schema is published so a field installation may implement the same tables in
+another database, a sample purge script ships for developers and the installation's operations schedule the purge.
+For development, Colima runs PostgreSQL and pgweb. The design spec is `draft-design-specs/transcript-audit-store.md`.
+What a decision would commit the project to: content in one governed, installation-owned store with a published
+schema; identity from the engine (two headers), content only from the pack; the audit off the turn's path.
 
 **Options.** When to write: (A) every turn, complete under a stopped or abandoned run and a crash, no engine contract -
-proposed; (B) once at the end of the run, Eric's first framing - loses a run the loop stops, since the helper never
-learns of it; (C) A plus a close event from the loop carrying its reason - a later step. Where: the pack's helper
-(proposed) or the engine (rejected, it never holds the transcript). The store: PostgreSQL first with psycopg 3 and
-`pg` as optional extras; another database behind the published schema.
+ruled, asynchronously; (B) once at the end of the run, Eric's first framing - loses a run the loop stops, since the
+helper never learns of it; (C) A plus a close event from the loop carrying its reason - a later step. How: a
+synchronous write on the turn's path with a `required`/`best-effort` switch (round 1, withdrawn) or a composable
+function behind a local event with an end-of-run integrity check (ruled). Where: the pack's helper (ruled) or the
+engine (rejected, it never holds the transcript). The store: PostgreSQL first with psycopg 3 and `pg` as optional
+extras; another database behind the published schema.
 
-**Resolution.** Open; the rulings R1-R8 of the spec's section 11 are Eric's.
+**Resolution.** Open. Reviewed by Eric on 2026-11-17: rulings R1-R8 and his notes recorded in the spec's section 11
+and applied (round 2); the defaults set without a ruling (its section 12) confirmed by him the same day. Settled for
+the build; promotion after the drive.
 
 ---
 
