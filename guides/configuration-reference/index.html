@@ -2414,17 +2414,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oversizehttpresponseheader" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        oversize.http.response.header
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#restserverport" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3026,6 +3015,17 @@
     <span class="md-ellipsis">
       
         http.client.connection.timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oversizehttpresponseheader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        oversize.http.response.header
       
     </span>
   </a>
@@ -5438,17 +5438,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#oversizehttpresponseheader" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        oversize.http.response.header
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#restserverport" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6050,6 +6039,17 @@
     <span class="md-ellipsis">
       
         http.client.connection.timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oversizehttpresponseheader" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        oversize.http.response.header
       
     </span>
   </a>
@@ -7801,22 +7801,6 @@ For example, <code>rest.server.port=8100</code> becomes:
 </tbody>
 </table>
 <p>Enable the <code>Strict-Transport-Security</code> response header (HSTS).</p>
-<h3 id="oversizehttpresponseheader"><code>oversize.http.response.header</code><a class="headerlink" href="#oversizehttpresponseheader" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Type</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>boolean</code></td>
-<td><code>false</code></td>
-</tr>
-</tbody>
-</table>
-<p>Allow HTTP response headers up to 16 KB (default limit is 8 KB).</p>
 <h3 id="restserverport"><code>rest.server.port</code><a class="headerlink" href="#restserverport" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -8692,6 +8676,28 @@ single worker pool size.</p>
 </tbody>
 </table>
 <p>Connection timeout in milliseconds for the built-in async HTTP client.</p>
+<h3 id="oversizehttpresponseheader"><code>oversize.http.response.header</code><a class="headerlink" href="#oversizehttpresponseheader" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Lets the built-in async HTTP client (<code>async.http.request</code>) accept a response whose headers total up to 16 KB,
+where the default limit is 8 KB (Netty's). Without it, a downstream API that answers with larger headers
+fails the call before the body is read, with a decoder error saying the header is larger than 8192 bytes.
+The switch applies to every downstream call the application makes, not per target, so turn it on only for
+the service that needs it and measure its headers first; the request headers the application itself serves
+are governed by the REST server, not by this key. Added in v4.3.61 for a third-party service that returns
+headers above 8 KB.</p>
 <h3 id="eventoverhttpformat"><code>event.over.http.format</code><a class="headerlink" href="#eventoverhttpformat" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
