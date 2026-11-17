@@ -2342,6 +2342,8 @@
       
         
       
+        
+      
     
     
     
@@ -2934,6 +2936,34 @@
     
   
     Test Report — The transcript audit store, live through both packs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../test-reports/agent-tools-live-drive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — The built-in agent tools, live through both packs
   
 
     
@@ -3613,8 +3643,11 @@ quarter" need one. It reads nothing and registers unless <code>tools.time=false<
 <p><strong>2. The engine's Event-over-HTTP map</strong> reaches the pack's routes:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">event</span><span class="p">:</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">http</span><span class="p">:</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">'file.read,</span><span class="nv"> </span><span class="s">file.write,</span><span class="nv"> </span><span class="s">file.list,</span><span class="nv"> </span><span class="s">file.search,</span><span class="nv"> </span><span class="s">web.fetch,</span><span class="nv"> </span><span class="s">web.crawl,</span><span class="nv"> </span><span class="s">time.now'</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">'file.read'</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">'http://127.0.0.1:8089/api/event'</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">route</span><span class="p">:</span><span class="w"> </span><span class="s">'web.fetch'</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="s">'http://127.0.0.1:8089/api/event'</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="c1"># ... one entry per route the graph names; the map takes no comma-separated list</span>
 </code></pre></div>
 <p><strong>3. The catalog node</strong> carries the rows. Copy them from the extension's <code>catalog/</code> folder (<code>file_read.json</code>, ...) or
 from <code>python agent_tools.py describe</code>, which prints every row and says which tools register under the current
@@ -3778,9 +3811,14 @@ integer comes back as a JavaScript number in Node. What a model extracts belongs
 belongs in the <a href="../transcript-audit-schema/">transcript audit store</a>.</p>
 <h2 id="what-comes-next">What comes next<a class="headerlink" href="#what-comes-next" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>The Playground examples</strong> - <code>site-notes</code> (a crawl and a supervised write), <code>document-ingest</code> and <code>document-query</code> -
-  with a synthetic corpus, token-free tests and live drives, and a page of recipes for binding existing MCP servers
-  (Git, GitHub, Playwright, the vendors' graph servers) where a server is a product's own front door.</li>
+<li><strong>The Playground examples are built, token-free:</strong> <code>site-notes</code> (a crawl, then a supervised write of the notes into
+  the pack's workspace), <code>document-ingest</code> (a document of the synthetic corpus extracted into the knowledge graph by a
+  node that declares <code>mode: auto</code>) and <code>document-query</code> (the graph read, the sources cited), with their catalog rows
+  copied from the packs' catalog files and <code>AgentToolsGraphsTest</code> on scripted stand-ins for the model and the tools
+  (<code>examples/minigraph-playground</code>, its <code>graph/README.md</code> has the protocols), and <strong>driven live through both packs</strong>
+  on Haiku 4.5 - the record is <code>docs/test-reports/agent-tools-live-drive.md</code>. A page of recipes
+  for binding existing MCP servers (Git, GitHub, Playwright, the vendors' graph servers) where a server is a product's
+  own front door comes next.</li>
 </ul>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
