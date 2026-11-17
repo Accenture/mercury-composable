@@ -93,14 +93,6 @@ Value for the `Access-Control-Allow-Origin` CORS response header.
 
 Enable the `Strict-Transport-Security` response header (HSTS).
 
-### `oversize.http.response.header`
-
-| Type | Default |
-|------|---------|
-| `boolean` | `false` |
-
-Allow HTTP response headers up to 16 KB (default limit is 8 KB).
-
 ### `rest.server.port`
 
 | Type | Default |
@@ -626,6 +618,20 @@ Temporary folder used to buffer large async HTTP response bodies.
 | `int` (ms) | `5000` |
 
 Connection timeout in milliseconds for the built-in async HTTP client.
+
+### `oversize.http.response.header`
+
+| Type | Default |
+|------|---------|
+| `boolean` | `false` |
+
+Lets the built-in async HTTP client (`async.http.request`) accept a response whose headers total up to 16 KB,
+where the default limit is 8 KB (Netty's). Without it, a downstream API that answers with larger headers
+fails the call before the body is read, with a decoder error saying the header is larger than 8192 bytes.
+The switch applies to every downstream call the application makes, not per target, so turn it on only for
+the service that needs it and measure its headers first; the request headers the application itself serves
+are governed by the REST server, not by this key. Added in v4.3.61 for a third-party service that returns
+headers above 8 KB.
 
 ### `event.over.http.format`
 

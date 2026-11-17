@@ -112,6 +112,12 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    equality would insert under a new `ObjectId` every time and let every instance win. In the mini-scheduler README
    and the user guide.
 
+2. **`oversize.http.response.header` is documented under HTTP Client, where it belongs.** The configuration reference
+   listed it under Server, but the key governs the built-in async HTTP client's reading of a downstream API's response
+   headers (8 KB by default, 16 KB with the switch), not the headers the application serves. The entry now says what
+   fails without it, that it applies to every downstream call, and that it was added in v4.3.61 for a third-party
+   service with large headers. **Upgrade note:** none - a documentation move.
+
 ---
 ## Version 4.12.30, 11/5/2026
 
