@@ -70,7 +70,9 @@ over the Bolt driver (proposed).
 **Resolution.** Open. Reviewed by Eric on 2026-11-17: rulings R1-R7 recorded in the spec's section 11 (`file.search`
 added; the extension, the in-house HTML-to-text, the gated registration, the defaults and the example confirmed), and
 R8-R16 agreed the same day (the knowledge-graph tools, the clock, `file.extract` in version 1, the recipes, `sql.query`
-out). Settled for the build; promotion after the drives.
+out). Settled for the build; promotion after the drives. **Step 1 BUILT 2026-11-17:** mercury-python #63 (the file,
+web and clock tools with their catalog files; six defaults set without a ruling in the spec's section 13) and the
+page `docs/guides/agent-tools.md` here.
 
 ---
 

@@ -12,8 +12,13 @@
   `graph.ingest` (parameterized `MERGE` of what a model extracts) over openCypher and the official Bolt driver (Neo4j,
   Memgraph; FalkorDB and Apache AGE behind the same routes), `time.now`, `file.extract` as a candidate, and section 8's
   survey (seven maintained reference servers, thirteen archived, the vendors' graph servers, the build-or-bind rule, the
-  bind recipes). Eric agreed to all of R8-R16 the same day (`file.extract` in version 1): SETTLED for the build. Next: the
-  build (Python, Node, the Playground's `document-ingest`/`document-query`, the recipes page).
+  bind recipes). Eric agreed to all of R8-R16 the same day (`file.extract` in version 1): SETTLED for the build. **Step 1 BUILT 2026-11-17:** mercury-python
+  #63 - `extensions/agent-tools/` with the four file tools, the two web tools and the clock, the sandboxes as
+  configuration, the catalog files, `describe`, 98 tests and a live https fetch; the spec's section 13 lists six
+  defaults set without a ruling (hidden entries invisible to every file tool, the resolved address pinned against DNS
+  rebinding, the bounds, no `strict` on the rows, the statuses, row names = routes with `_`); this repo's page
+  `docs/guides/agent-tools.md` (nav, `llms.txt`, the skill inventory). Next: step 2 in Python (the graph tools,
+  `file.extract`), the Node twin, the Playground's `site-notes`/`document-ingest`/`document-query`, the recipes page.
   → proposal: RFC-0013
   → serves: vision-mercury-composable
   <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->

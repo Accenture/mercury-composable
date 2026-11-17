@@ -346,3 +346,33 @@ digest, as the binding's boot would catch it.
    tests, the Event-over-HTTP entries, the READMEs; then the live drives and their reports under `docs/test-reports/`.
 5. **The recipes:** the page "Tools from MCP servers", the server-file entries and the gated digest test. Then promotion
    of RFC-0013 is Eric's call.
+
+## 13. Build notes (mercury-python, 2026-11-17 - PR #63, step 1)
+
+The Python build of step 1 kept the paper as settled and set six defaults the paper left to the build; the Node twin
+follows them, so the two extensions serve the same contract from the same catalog files:
+
+1. **Hidden entries are invisible to every file tool** unless `tools.file.hidden=true` - section 4.1 said it for
+   `file.list`; a `.env` or a `.git` folder inside the workspace must not be readable by default either, so the rule
+   covers `file.read`, `file.write` and `file.search` too (a 400 naming the key).
+2. **The resolved address is pinned.** The host is resolved before the request, every address it resolves to is
+   checked against the ranges (IPv4-mapped IPv6 included), and the request is made to the checked address with the
+   `Host` header and the TLS server name set from the URL - so a second resolution between the check and the connect
+   (DNS rebinding) cannot point the request elsewhere. Every redirect goes through the same path.
+3. **Bounds the paper did not name.** A `file.write` is bounded by `tools.file.max.bytes` as a read is; a crawl's
+   whole text is cut to 60 000 characters, under the loop's default `llm.run.result.limit` (65 536); `max_depth` is
+   capped at 5; a crawl skips a page that fails and counts the pages it fetched in `visited`. The page's own HTTP
+   status (a 404, a 500) is a result of `web.fetch`, not an error of the tool.
+4. **No row sets `strict`.** Every row has optional properties, and whether a grammar-constrained schema may carry
+   them is the model's and the API's; the graph's author adds the flag. Every row closes its object
+   (`additionalProperties: false`) and the tool refuses an unknown argument by name, so the loop and the tool agree.
+5. **Statuses.** 400 a refusal naming the rule and the key, 404 a missing file or folder, 408 a site that did not
+   answer within `tools.web.timeout.ms`, 409 an existing file under `create`, 502 a host that cannot be resolved or
+   a failed connection.
+6. **Row names are the routes with `_` for `.`** (`file_read` for `file.read`), pinned by a test, and the catalog files
+   are the rows byte for byte (`json.dumps(row, indent=2, ensure_ascii=False)` plus one newline), so the Node twin
+   copies the files and pins the same bytes.
+
+The in-house HTML reader also drops any element marked `role="navigation"`, `role="banner"`, `role="contentinfo"` or
+`aria-hidden="true"`: a documentation site's sidebar is a `div` with a role as often as a `nav`, which the first live
+fetch of a public documentation page showed.

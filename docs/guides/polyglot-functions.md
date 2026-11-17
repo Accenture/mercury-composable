@@ -176,5 +176,7 @@ extended to the wrapper family.
   functions: handler styles, local composition, testing, AI agent guides.
 - [Interop Test Report](../test-reports/event-over-http-interop.md) — the conformance
   evidence, including the polyglot wrapper round.
+- [Built-in Agent Tools](agent-tools.md) — the packs' agent-tools extension: the file, web and clock
+  tools an agent loop names in its catalog, reached over the same map.
 - [Event Envelope Wire Format](event-envelope-wire-format.md) — the language-neutral
   contract everything above rides on.
