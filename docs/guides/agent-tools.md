@@ -31,8 +31,9 @@ puts one on a graph.*
 > - **The rule** — the sandbox is deployment configuration, never an argument of a call; a tool whose sandbox is not
 >   configured does not register; every refusal is a 400 naming the rule; results are text, capped and untrusted.
 > - **Versions** — version 1: the file, web and clock tools (mercury-python #63) and the knowledge-graph tools with
->   `file.extract` (mercury-python #64), both 2026-11-17; the Node.js twin follows in lockstep. Settled as RFC-0013
->   in the [RFC register](../arch-decisions/RFC.md).
+>   `file.extract` (mercury-python #64), and the Node.js twin (mercury-nodejs #130), all 2026-11-17; the two packs
+>   serve the same routes from the same catalog files, byte for byte. Settled as RFC-0013 in the
+>   [RFC register](../arch-decisions/RFC.md).
 
 ## A built-in tool is a composable function
 
@@ -215,13 +216,22 @@ use constrains them by grammar.
 | `tools.graph.ingest.max.nodes` | `500` | the most nodes one `graph.ingest` call may carry |
 | `tools.time` | `true` | register `time.now` |
 
+## The two packs
+
+The Python pack (`extensions/agent-tools/agent_tools.py`) and the Node.js pack (`extensions/agent-tools/agent-tools.mjs`)
+serve the same twelve routes with the same rows, limits, statuses and messages; the catalog files under each pack's
+`catalog/` folder are byte for byte the same, pinned by a test in each. A deployment runs whichever pack already hosts
+its `llm.chat`. Three differences are visible in a result and recorded in the packs' memory: the Node reader decodes
+the common named HTML character references and every numeric one where Python's decodes all of HTML5's; a Word table
+renders through mammoth's HTML in Node (cells separated by spaces) where Python joins cells with ` | `; and a graph
+integer comes back as a JavaScript number in Node. What a model extracts belongs in the knowledge graph; what it said
+belongs in the [transcript audit store](transcript-audit-schema.md).
+
 ## What comes next
 
-- **The Node.js twin**, the same routes and rows, the catalog files byte-identical. What a model extracts belongs in
-  the knowledge graph; what it said belongs in the [transcript audit store](transcript-audit-schema.md).
 - **The Playground examples** - `site-notes` (a crawl and a supervised write), `document-ingest` and `document-query` -
-  and a page of recipes for binding existing MCP servers (Git, GitHub, Playwright, the vendors' graph servers) where
-  a server is a product's own front door.
+  with a synthetic corpus, token-free tests and live drives, and a page of recipes for binding existing MCP servers
+  (Git, GitHub, Playwright, the vendors' graph servers) where a server is a product's own front door.
 
 ## See also
 

@@ -411,3 +411,16 @@ unreachable database or a refused credential a 503, logged by type and never by 
 on Neo4j 5 Community through the gated test: an ingest run twice leaves one node, a query renders node, relationship and
 path, the schema carries the counts, a syntax error comes back by code, a missing endpoint is refused, the delete gate
 holds.
+
+## 15. Build notes (mercury-nodejs, 2026-11-17 - PR #130, step 3)
+
+The Node twin follows the Python build's defaults (sections 13 and 14) and keeps the contract, the messages and the
+catalog files byte for byte (the rows in the module are generated from the shared files). Three differences are visible
+in a result, by the platform rather than by design: the HTML reader decodes the common named character references and
+every numeric one (Node has no HTML parser in its standard library; Python's decodes all of HTML5's); a Word table
+renders through mammoth's HTML (cells separated by spaces, rows as blocks) where Python joins cells with ` | `; and a
+graph integer comes back as a JavaScript number (`disableLosslessIntegers`). Two implementation notes: the pinned
+address is a custom `lookup` on `node:http` with the TLS server name from the URL, the same closure of DNS rebinding as
+Python's pinned request; and pdfjs-dist is used directly for PDF text, since `pdf-parse` v2 pulls a native canvas
+binding the tool does not need. Driven live on Neo4j 5 Community through the same gated sequence as the Python build;
+the readiness wait must use the driver, because the Bolt port accepts connections before the server is up.
