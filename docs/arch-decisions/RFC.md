@@ -68,8 +68,9 @@ Neo4j's own MCP server bound (zero code; no structured ingest, APOC for its sche
 over the Bolt driver (proposed).
 
 **Resolution.** Open. Reviewed by Eric on 2026-11-17: rulings R1-R7 recorded in the spec's section 11 (`file.search`
-added; the extension, the in-house HTML-to-text, the gated registration, the defaults and the example confirmed); the
-knowledge-graph tools, the clock, `file.extract` and the recipes await his rulings R8-R16 (round 2).
+added; the extension, the in-house HTML-to-text, the gated registration, the defaults and the example confirmed), and
+R8-R16 agreed the same day (the knowledge-graph tools, the clock, `file.extract` in version 1, the recipes, `sql.query`
+out). Settled for the build; promotion after the drives.
 
 ---
 
@@ -104,8 +105,8 @@ engine (rejected, it never holds the transcript). The store: PostgreSQL first wi
 extras; another database behind the published schema.
 
 **Resolution.** Open. Reviewed by Eric on 2026-11-17: rulings R1-R8 and his notes recorded in the spec's section 11
-and applied (round 2); the defaults set without a ruling are listed in its section 12. Building next; promotion after
-the drive.
+and applied (round 2); the defaults set without a ruling (its section 12) confirmed by him the same day. Settled for
+the build; promotion after the drive.
 
 ---
 

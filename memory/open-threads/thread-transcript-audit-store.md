@@ -13,8 +13,9 @@
   check (turns in Redis counted against rows in PostgreSQL, the missing persisted) as a second event in the same
   mailbox, so the writes and the check run in order with no race; the record is version 2 and carries each turn's
   facts; a sweep repairs lost events and stopped runs. Section 12 lists the defaults set without a ruling (one
-  instance, facts in the record, grace `1d`, the sweep, no release of an open record). Next: Eric's nod on section 12,
-  then build plan step 1 (Python), Node in lockstep, the engines' two headers, the `order-assistant` drive.
+  instance, facts in the record, grace `1d`, the sweep, no release of an open record). Eric confirmed section 12 the same
+  day: SETTLED for the build. Next: build plan step 1 (Python), Node in lockstep, the engines' two headers, the
+  `order-assistant` drive.
   → proposal: RFC-0012
   → serves: vision-mercury-composable
   <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-16 | uses: 1 | tier: working | origin: 2026-11-16-105602 -->

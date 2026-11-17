@@ -12,8 +12,8 @@
   `graph.ingest` (parameterized `MERGE` of what a model extracts) over openCypher and the official Bolt driver (Neo4j,
   Memgraph; FalkorDB and Apache AGE behind the same routes), `time.now`, `file.extract` as a candidate, and section 8's
   survey (seven maintained reference servers, thirteen archived, the vendors' graph servers, the build-or-bind rule, the
-  bind recipes). Rulings R8-R16 are Eric's. Next: his round-2 rulings, then the build (Python, Node, the Playground's
-  `document-ingest`/`document-query`, the recipes page).
+  bind recipes). Eric agreed to all of R8-R16 the same day (`file.extract` in version 1): SETTLED for the build. Next: the
+  build (Python, Node, the Playground's `document-ingest`/`document-query`, the recipes page).
   → proposal: RFC-0013
   → serves: vision-mercury-composable
   <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-16 | uses: 1 | tier: working | origin: 2026-11-16-105602 -->

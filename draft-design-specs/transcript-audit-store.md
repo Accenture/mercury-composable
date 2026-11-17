@@ -3,8 +3,8 @@
 **Status:** DRAFT, round 2 (2026-11-17, Claude Code for Eric). Round 1 (2026-11-16) was raised as RFC-0012 in
 [`docs/arch-decisions/RFC.md`](../docs/arch-decisions/RFC.md). Eric's rulings of 2026-11-17 are recorded in section 11 and
 applied throughout: the audit is written by a composable function behind a local event, never on the turn's path, and
-the end of a run is an integrity check before the working record is released. The defaults set without a ruling are
-listed in section 12 for round 2.
+the end of a run is an integrity check before the working record is released. The defaults set without a ruling
+(section 12) were confirmed by Eric on 2026-11-17; the paper is settled for the build.
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`llm-helper-agent-loop.md`](./llm-helper-agent-loop.md) section 3.3 (the transcript store) and section 10
 (telemetry, audit and security); answers the concept's Q4 (audit capture) in
@@ -472,9 +472,10 @@ of the turns, the data-integrity check is itself an in-memory event to the same 
 sequentially after the writes, with no race and no eventual-consistency issue from the asynchronous writes; the
 deletion of the Redis records for the conversation is deferred until after the check.
 
-## 12. Defaults set without a ruling (for round 2)
+## 12. Defaults set without a ruling (confirmed by Eric, 2026-11-17)
 
-Each follows from the rulings; none was ruled on by name, so each is open to change:
+Each follows from the rulings; none was ruled on by name in round 1. Eric agreed to all five on 2026-11-17, so they
+are settled for the build:
 
 1. **One instance** for `transcript.audit`: the sequencing the notes ask for is the mailbox's; a sharded variant
    (one instance per hash of the conversation) is the extension if the rate ever asks for it.

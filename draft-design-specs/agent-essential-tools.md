@@ -3,7 +3,8 @@
 **Status:** DRAFT, round 2 (2026-11-17, Claude Code for Eric). Round 1 (2026-11-16) was raised as RFC-0013 in
 [`docs/arch-decisions/RFC.md`](../docs/arch-decisions/RFC.md). Eric's rulings of 2026-11-17 on R1-R7 are recorded in
 section 11 and applied: the set gains `file.search`. On his proposal the paper adds the knowledge-graph tools (section
-4.3) and a clock, answers his question on the reference MCP servers (section 8), and lists the rulings round 2 needs.
+4.3) and a clock, answers his question on the reference MCP servers (section 8), and records the round-2 rulings
+R8-R16, all agreed by Eric on 2026-11-17; the paper is settled for the build.
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`agent-tool-use.md`](./agent-tool-use.md) (a tool is a composable function; a route names the capability,
 never the transport) and [`llm-helper-agent-loop.md`](./llm-helper-agent-loop.md) section 5 (the tool catalog) and
@@ -84,7 +85,7 @@ tools exist to prevent; an API the use case needs gets a wrapper route with its 
 
 ## 4. The set (version 1)
 
-Thirteen tools in four groups. Every tool refuses out-of-sandbox input with a 400 that names the rule, which the loop
+Fourteen tools in four groups (`file.extract` joined version 1 by ruling R14). Every tool refuses out-of-sandbox input with a 400 that names the rule, which the loop
 returns to the model as that call's error; the node never fails because of a tool.
 
 ### 4.1 Files, inside one workspace
@@ -280,7 +281,7 @@ digest, as the binding's boot would catch it.
 - **`file.extract`** (`file_extract`): PDF, Word and HTML files to text with page markers, `path`, `pages` (a range),
   `max_chars`, for the ingestion of documents that are not plain text - which is what contracts and regulations are.
   Python `pypdf` and `python-docx`, Node `pdf-parse` and `mammoth`, behind an optional extra `documents`. The
-  ingestion example reads Markdown without it; the field's documents will need it. Proposed for version 1 (ruling R14).
+  ingestion example reads Markdown without it; the field's documents will need it. In version 1 (ruling R14).
 - **`sql.query`**: read-only, parameterized SQL on one allowlisted database with a reader's credential; the archived
   PostgreSQL reference server was this. Kept out: a system of record behind a wrapper route with its own schema is the
   certifiable form, and the knowledge graph is in precisely because it is the agent's own store (ruling R16).
@@ -292,9 +293,9 @@ digest, as the binding's boot would catch it.
 
 ## 10. Consequences
 
-- **For the packs:** a new extension with thirteen routes (fourteen with `file.extract`), four configuration blocks,
-  an in-house HTML-to-text, a fixture web server and a fake graph driver for the tests, a README and the catalog files;
-  one optional extra (`graph`; a second, `documents`, if R14 says so); lockstep as always.
+- **For the packs:** a new extension with fourteen routes, four configuration blocks, an in-house HTML-to-text, a
+  fixture web server and a fake graph driver for the tests, a README and the catalog files; two optional extras
+  (`graph`, `documents`); lockstep as always.
 - **For the engines:** none in code. Two documentation pages, and the example graphs with their tests and corpus.
 - **For an author:** a tool is a row copied from the catalog folder and an Event-over-HTTP entry for the pack's host;
   the sandbox is a few configuration keys on the pack; an ingestion node declares `mode: auto` knowingly.
@@ -314,23 +315,23 @@ digest, as the binding's boot would catch it.
 - **R6 — the crawl's defaults and caps.** Agreed.
 - **R7 — the example.** Agreed: `site-notes` with its supervised write and live drive.
 
-**Needed (round 2):**
+**Round 2 (Eric, 2026-11-17): agreed to all of R8-R16 as proposed.**
 
-- **R8 — the knowledge-graph tools.** `graph.schema`, `graph.query`, `graph.write` and `graph.ingest` as in section
-  4.3, with `graph.ingest` the structured, parameterized `MERGE` for extraction results?
-- **R9 — the backend.** Bolt and openCypher through the official driver as the `graph` extra (Neo4j and Memgraph),
-  with FalkorDB and Apache AGE as an installation's alternative behind the same routes?
-- **R10 — the graph's gates.** Writers register only with `tools.graph.write=true`; `DELETE`, `DETACH DELETE` and
-  `DROP` refused unless `tools.graph.delete=true`?
-- **R11 — development.** Neo4j community on Colima, its own Browser as the viewer, in `dev/graph-up.sh`?
-- **R12 — the examples.** `document-ingest` (its ingest node `mode: auto`) and `document-query` over a synthetic corpus,
-  beside `site-notes`?
-- **R13 — the clock.** `time.now` in version 1, registered unless switched off?
-- **R14 — `file.extract`.** PDF and Word to text behind the `documents` extra in version 1, or the next?
-- **R15 — the reference servers.** The recipes page and server-file entries (Git, Time, Fetch, Filesystem, Neo4j's
-  Cypher server, GitHub's, Playwright's) as the documented way to leverage existing servers; Memory, Sequential
-  Thinking and Everything left off graphs?
-- **R16 — `sql.query`.** Out of version 1: a system of record gets a wrapper route?
+- **R8 — the knowledge-graph tools.** Agreed: `graph.schema`, `graph.query`, `graph.write` and `graph.ingest` as in
+  section 4.3, with `graph.ingest` the structured, parameterized `MERGE` for extraction results.
+- **R9 — the backend.** Agreed: Bolt and openCypher through the official driver as the `graph` extra (Neo4j and
+  Memgraph), with FalkorDB and Apache AGE as an installation's alternative behind the same routes.
+- **R10 — the graph's gates.** Agreed: writers register only with `tools.graph.write=true`; `DELETE`, `DETACH
+  DELETE` and `DROP` refused unless `tools.graph.delete=true`.
+- **R11 — development.** Agreed: Neo4j community on Colima, its own Browser as the viewer, in `dev/graph-up.sh`.
+- **R12 — the examples.** Agreed: `document-ingest` (its ingest node `mode: auto`) and `document-query` over a
+  synthetic corpus, beside `site-notes`.
+- **R13 — the clock.** Agreed: `time.now` in version 1, registered unless switched off.
+- **R14 — `file.extract`.** Agreed: PDF and Word to text behind the `documents` extra, in version 1.
+- **R15 — the reference servers.** Agreed: the recipes page and server-file entries (Git, Time, Fetch, Filesystem,
+  Neo4j's Cypher server, GitHub's, Playwright's) as the documented way to leverage existing servers; Memory,
+  Sequential Thinking and Everything left off graphs.
+- **R16 — `sql.query`.** Agreed: out of version 1; a system of record gets a wrapper route.
 
 ## 12. Build plan
 
@@ -339,7 +340,7 @@ digest, as the binding's boot would catch it.
    the tests, the README. The engines' documentation page "Built-in tools".
 2. **Python, the knowledge graph:** the four graph tools over the Bolt driver (`graph` extra), the fake driver for the
    unit tests, `dev/graph-up.sh` and `graph-down.sh`, the gated live test against Colima's database; `file.extract`
-   if R14 says so.
+   behind the `documents` extra (R14).
 3. **Node in lockstep:** the same routes, rows and tests; the catalog files byte-identical and pinned.
 4. **The Playground:** `site-notes`, `document-ingest` and `document-query` with the synthetic corpus, their token-free
    tests, the Event-over-HTTP entries, the READMEs; then the live drives and their reports under `docs/test-reports/`.
