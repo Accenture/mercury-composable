@@ -22,9 +22,13 @@
   twin, field for field, the schema files byte-identical). **#639 MERGED 2026-11-17** (squash `4a9e8dc0e`, after its CI fix: the
   skill inventory `files.list` must list every docs/guides page). **Step 3 BUILT in both engines 2026-11-17:** Java PR
   #641 (`GraphTask.withGraphContext`, `PlatformGateway` turn headers; squash `e1cefd4cb`) and Rust PR #414 (Increment 204),
-  **both MERGED 2026-11-17**. Next: step 4, the `order-assistant` drive with a suspend and a resume through the
-  Python helper and then the Node helper on Colima's PostgreSQL, one injected write failure, the report under
-  `docs/test-reports/`.
+  **both MERGED 2026-11-17**. **Step 4 DRIVEN 2026-11-17:** five `order-assistant` conversations on Haiku 4.5 - three through the Python
+  helper (one with PostgreSQL paused, one with it stopped: the writes failed by type and the sweep repaired the open
+  record 46 s after the restart), one resumed by the Node helper from the Python-written record, one all on Node - every
+  turn in PostgreSQL with the graph and the node, one correlation id and two trace ids each, the Redis record released
+  after each check; the report `docs/test-reports/transcript-audit-live-drive.md` (PR pending). Follow-ups in the packs:
+  a server-side `statement_timeout` (a paused database stalled the mailbox) and pgweb's restart policy. **Next: the
+  promotion of RFC-0012 to an ADR is Eric's call.**
   → proposal: RFC-0012
   → serves: vision-mercury-composable
   <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->

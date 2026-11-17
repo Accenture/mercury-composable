@@ -5,8 +5,11 @@
 applied throughout: the audit is written by a composable function behind a local event, never on the turn's path, and
 the end of a run is an integrity check before the working record is released. The defaults set without a ruling
 (section 12) were confirmed by Eric on 2026-11-17; the paper is settled for the build. **Build:** step 1 (the Python
-helper) is mercury-python PR #59 (2026-11-17), with the build notes of section 14; the schema page is published as
-[`docs/guides/transcript-audit-schema.md`](../docs/guides/transcript-audit-schema.md).
+helper) is mercury-python PR #59 (2026-11-17), with the build notes of section 14; step 2 mercury-nodejs #126; step 3
+mercury-composable #641 and mercury #414; the schema page is published as
+[`docs/guides/transcript-audit-schema.md`](../docs/guides/transcript-audit-schema.md); step 4, the live drive of
+2026-11-17, is [`docs/test-reports/transcript-audit-live-drive.md`](../docs/test-reports/transcript-audit-live-drive.md).
+The promotion to an ADR is Eric's call.
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`llm-helper-agent-loop.md`](./llm-helper-agent-loop.md) section 3.3 (the transcript store) and section 10
 (telemetry, audit and security); answers the concept's Q4 (audit capture) in
