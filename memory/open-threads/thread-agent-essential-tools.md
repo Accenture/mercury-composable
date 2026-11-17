@@ -24,7 +24,7 @@
   mercury-nodejs #130 - the Node twin with the same twelve routes, the catalog files byte for byte the Python pack's
   (pinned), 55 tests and the same live sequence on Neo4j; the spec's section 15 records three platform differences (the
   entity subset of the HTML reader, a Word table through mammoth's HTML, integers as JavaScript numbers; #646 here, merge `8e3ee2a3e`, MERGED 2026-11-17). **Step 4, the token-free half, BUILT
-  2026-11-17** as PR #647: the Playground's `site-notes` (crawl, then a supervised `file_write` through the
+  2026-11-17** as PR #647 (merge `795b1f088`, MERGED 2026-11-17): the Playground's `site-notes` (crawl, then a supervised `file_write` through the
   advise/suspend/decide shape of `order-assistant`), `document-ingest` (`file_extract` + `graph_ingest` under `mode: auto`)
   and `document-query` (`graph_schema` + `graph_query`, sources cited); the synthetic corpus (four documents of fictional
   companies, one shape); the catalog rows copied from the packs' files; the Event-over-HTTP entries (`tools.peer.*`,
@@ -35,7 +35,8 @@
   `docs/test-reports/agent-tools-live-drive.md`: one route per Event-over-HTTP entry, the peer overrides as JVM properties
   before `-jar`, the document key spelled out in the ingest prompt (the model keyed it two ways once), a relative
   `include` (both packs changed: mercury-python #65, mercury-nodejs #131), a three-step research prompt against
-  dithering, the loop's schema check correcting a call, a fetched 404 as a result. Next: the recipes page (step 5).
+  dithering, the loop's schema check correcting a call, a fetched 404 as a result. Steps 1-4 are complete in all three repositories. Next: the recipes page (step 5) -
+  HELD at Eric's direction on 2026-11-17, to resume 2026-11-18.
   → proposal: RFC-0013
   → serves: vision-mercury-composable
   <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->
