@@ -408,6 +408,26 @@
   question for a new path is which side emits it.
   <!-- id: pack-trace-records-engine-parity | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: working | origin: 2026-11-14-115548 -->
 
+- **A `DECIMAL` result carries at most a configured number of decimal places - the node's `precision`, else the
+  application's `big.decimal.precision` (default 6) - rounded HALF_UP beyond the limit and kept as computed within it
+  (ADR-0034, superseding ADR-0025's "no application default"; Eric, 2026-11-17, from a field request).** The field
+  computes financial rules from inputs of several sources, each with its own number of decimal places, so a product's
+  scale was the sum of the inputs' and a non-terminating quotient came back with 34 digits; one rounding policy needed a
+  `round()` on every statement, and a missed one was silently inconsistent. The limit is a CAP, not a fixed scale: a
+  result within it is exactly what ADR-0025 produced, so a graph whose results stay within 6 places is unchanged, and
+  the limit never pads (`1.5 * 2` stays `"3.0"`; a fixed scale is formatting, which `round()` gives). It applies once,
+  to the statement's result in `graph.math` (`DecimalEvaluator.evaluate(expression, maxScale)`), never inside the
+  arithmetic, so `1 / 3 * 3` rounds to `1.000000`; `evaluate(expression)` stays unbounded for the shared vectors, which
+  are unchanged. A `round()` to more places than the limit is rounded again - declared, and the node raises its
+  `precision` (0 to 1000). `GraphModelValidator` rejects a malformed node value at deploy; a malformed application value
+  fails the first statement naming the key. An `EXECUTE`'d module takes the calling node's limit. The name `precision`
+  is the field's word; the dialect's `round(x, scale, mode)` keeps `scale` for the same quantity. **How to apply:** a
+  policy the field wants everywhere goes in `application.properties` with the node as the override, two levels only; a
+  limit on a result is applied at the statement boundary so the arithmetic's exactness is untouched; before changing
+  what a canonical string looks like, ask whether a result within the old rules changes text - if it does, the shared
+  vectors and every field graph change with it. The Rust twin is [[decimal-precision-rust-twin]].
+  <!-- id: decimal-result-precision-limit | created: 2026-11-17 | last_used: 2026-11-17 | uses: 1 | tier: working | supersedes: decimal-statement-exact-arithmetic | origin: 2026-11-17-055029 -->
+
 ## Conventions
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
