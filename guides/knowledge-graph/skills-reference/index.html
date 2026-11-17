@@ -1894,6 +1894,8 @@
       
         
       
+        
+      
     
     
     
@@ -2122,6 +2124,34 @@
     
   
     Transcript Audit Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agent-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Built-in Agent Tools
   
 
     
@@ -4505,7 +4535,9 @@ nothing and passes nothing, so a function that forwards its headers cannot leak 
 <p><strong>Every request of a <code>graph.task</code> node also carries <code>x-graph-id</code> and <code>x-node</code></strong> - the graph's id and the node's
 alias, set by the engine after the input mapping (see
 <a href="../../reserved-names-and-headers/#x-graph-id">the graph context headers</a>); <code>llm.run</code> copies both onto each
-<code>llm.chat</code> turn, so the LLM helper's transcript audit store records the graph and the node of every model turn.</p>
+<code>llm.chat</code> turn, so the LLM helper's transcript audit store records the graph and the node of every model turn.
+The tools a loop's catalog names most often - a file in a workspace, a page of an allowed site, the clock - are
+served by the packs' agent-tools extension with published rows to copy: see <a href="../../agent-tools/">Built-in Agent Tools</a>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>create node investigate
 <a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>with type Task
 <a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>with properties
