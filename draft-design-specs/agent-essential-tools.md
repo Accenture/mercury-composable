@@ -376,3 +376,38 @@ follows them, so the two extensions serve the same contract from the same catalo
 The in-house HTML reader also drops any element marked `role="navigation"`, `role="banner"`, `role="contentinfo"` or
 `aria-hidden="true"`: a documentation site's sidebar is a `div` with a role as often as a `nav`, which the first live
 fetch of a public documentation page showed.
+
+## 14. Build notes (mercury-python, 2026-11-17 - PR #64, step 2)
+
+The Python build of step 2 kept section 4.3 and ruling R14 as settled and set eight defaults the paper left to the
+build; the Node twin follows them:
+
+1. **A missing relationship endpoint fails the whole ingest.** The endpoints are checked inside the transaction after
+   the node merges, and a key that exists neither in the call nor in the graph is a 400 naming it, with nothing
+   written - never a silent skip of the relationship.
+2. **Rows are capped by configuration only** (`tools.graph.max.rows`, 200, the tool's cap 2000), no per-call argument;
+   the model narrows a cut result with `WHERE` and `LIMIT`.
+3. **The ingest's bounds.** At most `tools.graph.ingest.max.nodes` nodes and four times as many relationships per call;
+   a key at most 512 characters; property names identifiers; `key` and `source` reserved for the tool; a null value
+   dropped rather than written.
+4. **`graph.write` returns `columns`, `rows` and `truncated` beside `counters`**, so a `RETURN` after a write is kept.
+5. **The schema joins two sources:** the counting queries (`MATCH (n) UNWIND labels(n) ...`, `MATCH (a)-[r]->(b) ...`)
+   and the property procedures, so a label with no instance or a type with no property still appears with count 0;
+   Memgraph's `schema.*` procedures are tried when Neo4j's `db.schema.*` are missing (the error code
+   `ProcedureNotFound`, or the message).
+6. **The rendering:** a node `{id, labels (sorted), properties}`, a relationship `{id, type, start, end, properties}`,
+   a path the alternating list, temporal values in ISO text, a point `{srid, coordinates}`, bytes as base64; `id` is
+   the driver's element id.
+7. **A database that does not answer at boot is logged, not fatal** (the audit store's precedent): the tools register
+   and answer 503 until it does. A URI that is not a Bolt URI, or one set without the driver installed, stops the boot
+   by name.
+8. **`file.extract`** returns `type` (`pdf`, `docx`, `html`, `text`) and the document's page count beside the text with
+   its `--- page N ---` markers; a Word document is one page; `tools.file.extract.max.chars` (60 000) is the cap key
+   the paper did not name; the tool registers only when both libraries of the `documents` extra import.
+
+The driver's failures map to the tool's statuses by type: a client error (syntax, type, constraint, a write in a read
+transaction) is a 400 carrying the database's code and message for the model; a transaction over the timeout a 408; an
+unreachable database or a refused credential a 503, logged by type and never by message; the rest a 502. Driven live
+on Neo4j 5 Community through the gated test: an ingest run twice leaves one node, a query renders node, relationship and
+path, the schema carries the counts, a syntax error comes back by code, a missing endpoint is refused, the delete gate
+holds.

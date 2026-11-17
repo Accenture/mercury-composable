@@ -17,8 +17,11 @@
   configuration, the catalog files, `describe`, 98 tests and a live https fetch; the spec's section 13 lists six
   defaults set without a ruling (hidden entries invisible to every file tool, the resolved address pinned against DNS
   rebinding, the bounds, no `strict` on the rows, the statuses, row names = routes with `_`); this repo's page
-  `docs/guides/agent-tools.md` (nav, `llms.txt`, the skill inventory; #644, merge `640c07577`, MERGED 2026-11-17). Next: step 2 in Python (the graph tools,
-  `file.extract`), the Node twin, the Playground's `site-notes`/`document-ingest`/`document-query`, the recipes page.
+  `docs/guides/agent-tools.md` (nav, `llms.txt`, the skill inventory; #644, merge `640c07577`, MERGED 2026-11-17). **Step 2 BUILT 2026-11-17:** mercury-python #64 - `graph.schema`, `graph.query`, `graph.write`, `graph.ingest` over
+  the Bolt driver (a transaction seam, Neo4j's and Memgraph's schema procedures, the endpoint check inside the ingest's
+  transaction), `file.extract` behind the `documents` extra, Neo4j on Colima for development, a live round trip; the
+  spec's section 14 lists eight defaults set without a ruling; the page here extended (nav unchanged). Next: the Node
+  twin (step 3), the Playground's `site-notes`/`document-ingest`/`document-query` (step 4), the recipes page (step 5).
   → proposal: RFC-0013
   → serves: vision-mercury-composable
   <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->
