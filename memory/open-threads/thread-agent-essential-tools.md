@@ -23,7 +23,7 @@
   spec's section 14 lists eight defaults set without a ruling; the page here extended (nav unchanged; #645, merge `a16b05d11`, MERGED 2026-11-17). **Step 3 BUILT 2026-11-17:**
   mercury-nodejs #130 - the Node twin with the same twelve routes, the catalog files byte for byte the Python pack's
   (pinned), 55 tests and the same live sequence on Neo4j; the spec's section 15 records three platform differences (the
-  entity subset of the HTML reader, a Word table through mammoth's HTML, integers as JavaScript numbers). Next: the
+  entity subset of the HTML reader, a Word table through mammoth's HTML, integers as JavaScript numbers; PR #646 here). Next: the
   Playground's `site-notes`/`document-ingest`/`document-query` with the synthetic corpus (step 4), the recipes page (step 5).
   → proposal: RFC-0013
   → serves: vision-mercury-composable
