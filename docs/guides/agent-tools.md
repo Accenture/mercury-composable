@@ -21,17 +21,18 @@ puts one on a graph.*
 
 > **At a glance**
 >
-> - **What** — seven composable functions in the language packs' `extensions/agent-tools/`: `file.read`,
->   `file.write`, `file.list` and `file.search` inside one workspace; `web.fetch` and `web.crawl` inside an allowlist
->   of sites; `time.now`. A graph's `llm.run` node names them in its tool catalog like any other route.
+> - **What** — twelve composable functions in the language packs' `extensions/agent-tools/`: `file.read`,
+>   `file.write`, `file.list`, `file.search` and `file.extract` inside one workspace; `web.fetch` and `web.crawl`
+>   inside an allowlist of sites; `graph.schema`, `graph.query`, `graph.write` and `graph.ingest` inside one graph
+>   database; `time.now`. A graph's `llm.run` node names them in its tool catalog like any other route.
 > - **Why it matters** — the diagram assistant needed one tool; the next graphs want to read the file the person
 >   pointed at, write a note, fetch a page. Without a shared set, every graph repeats the same security decisions:
 >   which directory, which hosts, how big a result, what counts as a write.
 > - **The rule** — the sandbox is deployment configuration, never an argument of a call; a tool whose sandbox is not
 >   configured does not register; every refusal is a 400 naming the rule; results are text, capped and untrusted.
-> - **Versions** — version 1, step 1 (mercury-python PR #63, 2026-11-17; the Node.js twin follows in lockstep). The
->   knowledge-graph tools (`graph.schema`, `graph.query`, `graph.write`, `graph.ingest`) and `file.extract` are the
->   next step of the same design. Settled as RFC-0013 in the [RFC register](../arch-decisions/RFC.md).
+> - **Versions** — version 1: the file, web and clock tools (mercury-python #63) and the knowledge-graph tools with
+>   `file.extract` (mercury-python #64), both 2026-11-17; the Node.js twin follows in lockstep. Settled as RFC-0013
+>   in the [RFC register](../arch-decisions/RFC.md).
 
 ## A built-in tool is a composable function
 
@@ -78,6 +79,7 @@ process should run as a user with no rights beyond the tree.
 | `file.write` | `file_write`, **`write: true`** | `path`, `content`; `mode` = `create` (default), `overwrite`, `append` | `{path, bytes, mode}`; `create` refuses an existing file; parent folders are created inside the root; `tools.file.write.extensions` may restrict the suffixes |
 | `file.list` | `file_list` | `path` (a folder, default `.`); `glob` (`*.md`, `**/*.md`); `max_entries` (default 200, cap 2000) | `{entries: [{path, type, bytes, modified}], truncated}` |
 | `file.search` | `file_search` | `pattern` (a literal, or a regular expression with `regex: true`); `path`; `glob`; `case_sensitive`; `context` (cap 3); `max_results` (default 100, cap 1000) | `{matches: [{path, line, text, before, after}], files_searched, truncated}`; binaries skipped, lines cut to `tools.file.line.max.chars` |
+| `file.extract` | `file_extract` | `path`; `pages` (a range such as `1-3,7`); `max_chars` (default and cap `tools.file.extract.max.chars`, 60 000) | `{path, type, pages, text, truncated}`; a PDF or Word document (the pack's `documents` extra), an HTML or a text file, with a `--- page N ---` marker before each page; registers only when the extra is installed |
 
 ### The web, inside an allowlist
 
@@ -97,6 +99,32 @@ Mercury user agent.
 
 The crawl is a bounded reader of a documentation section or a small site, not a spider: a model that needs more asks
 again with a narrower start page or an `include` prefix.
+
+### The knowledge graph, inside one database
+
+The agent's own store for what it extracts (principle 7: extract once, query many): documents ingested once, their
+entities, relations and rules queried by every later agent instead of scanning the files again. The sandbox is one
+database, `tools.graph.uri` (a Bolt URI), `tools.graph.database` and the credential by reference; the query language is
+openCypher, which the models know and which Neo4j, Memgraph, FalkorDB, Apache AGE and Amazon Neptune speak; the
+reference backend is the official Bolt driver (the pack's `graph` extra), which reaches Neo4j and Memgraph alike. The
+reads register when the URI is set; the writers only when `tools.graph.write=true`; `DELETE`, `DETACH DELETE` and
+`DROP` are refused unless `tools.graph.delete=true` as well. Every statement runs in a managed transaction with
+`tools.graph.timeout.ms` set server-side, a read in a read transaction.
+
+| Route | Row | Arguments | Result and limits |
+| --- | --- | --- | --- |
+| `graph.schema` | `graph_schema` | none | `{labels: [{label, count, properties: [{name, types}]}], relationship_types: [{type, count, from, to, properties}]}` from the database's own schema procedures (Neo4j's `db.schema.*`, else Memgraph's `schema.*`) and two counting queries - what the model reads before it writes a query |
+| `graph.query` | `graph_query` | `query` (openCypher, read-only); `parameters` | `{columns, rows, truncated}`; refused before sending when it carries `CREATE`, `MERGE`, `SET`, `DELETE`, `REMOVE`, `DROP` or `LOAD CSV` outside a string or a comment; rows capped by `tools.graph.max.rows` (200, cap 2000); a node `{id, labels, properties}`, a relationship `{id, type, start, end, properties}`, a path the list of its nodes and relationships |
+| `graph.write` | `graph_write`, **`write: true`** | `query`; `parameters` | `{counters: {nodes_created, nodes_deleted, relationships_created, relationships_deleted, properties_set, labels_added, labels_removed, indexes_added, constraints_added}, columns, rows, truncated}` from a write transaction |
+| `graph.ingest` | `graph_ingest`, **`write: true`** | `nodes: [{key, label, properties}]`; `relationships: [{from, to, type, properties}]`; `source` | `{nodes, relationships}`: one parameterized `MERGE` per node on `(:Label {key})` with `SET n += properties`, one per relationship between two keys that exist (in this call or already in the graph; a missing key is a 400 and nothing is written), `source` stamped on each; labels and types `^[A-Za-z][A-Za-z0-9_]{0,63}$`, values scalars or lists of scalars, at most `tools.graph.ingest.max.nodes` (500) nodes per call; running it twice changes nothing |
+
+Why `graph.ingest` beside `graph.write`: a list of nodes and relationships is what a model extracts well, and a long
+`MERGE` with dozens of parameters is where Cypher goes wrong. The tool makes the Cypher, no value is ever
+interpolated into a statement, and the write is idempotent. The row's description tells the model the conventions: a
+key unique across the graph, prefixed with the label in lower case (`clause:12`, `party:supplier-a`); a `source` on
+every ingest so an answer can cite it; the labels of the domain the graph author names in the system prompt. Both
+writers carry the mark: under the node's default mode a person approves each, and an ingestion graph declares
+`mode: auto` on its ingest node - the product owner's decision at design time, visible in the graph's certification.
 
 ### The clock
 
@@ -148,11 +176,12 @@ use constrains them by grammar.
 - **The catalog is still the boundary.** A graph names the tools its agent reaches; a built-in the graph does not
   name is as unreachable as any route. The pre-flight check verifies the routes exist, so a deployment whose sandbox
   is not configured fails the graph before a token is spent.
-- **Writes are marked.** `file.write` carries `write: true`; under the node's default mode a person approves each
-  write, and only a node that declares `mode: auto` runs it unasked (ADR-0033). The other tools are reads, bounded by
-  the root, the allowlist and the caps.
-- **The root and the allowlist are certification artifacts.** They answer "what can this agent reach?" without
-  reading code, and they live with the pack's configuration, not in a prompt or a call.
+- **Writes are marked.** `file.write`, `graph.write` and `graph.ingest` carry `write: true`; under the node's default
+  mode a person approves each write, and only a node that declares `mode: auto` runs it unasked (ADR-0033). The other
+  tools are reads, bounded by the root, the allowlist, the read transaction and the caps.
+- **The root, the allowlist and the database are certification artifacts.** They answer "what can this agent reach?"
+  without reading code, and they live with the pack's configuration, not in a prompt or a call. The graph has two
+  gates: writing needs `tools.graph.write=true`, deleting `tools.graph.delete=true` as well.
 - **Untrusted content.** A page or a file may carry instructions; the loop never obeys a result, and the graph
   author's system prompt should say that fetched and stored content is data.
 - **Logs.** A tool logs its route, the status, the byte, entry or page count and the host of a URL - never a path's
@@ -176,16 +205,20 @@ use constrains them by grammar.
 | `tools.web.crawl.max.pages` | `50` | the most pages one crawl may ask for (the cap; a deployment may lower it) |
 | `tools.web.crawl.delay.ms` | `500` | the pause between two requests of a crawl |
 | `tools.web.page.max.chars` | `20000` | the characters kept of a page's text |
+| `tools.file.extract.max.chars` | `60000` | the most characters `file.extract` returns |
+| `tools.graph.uri` | unset | the graph database, a Bolt URI; unset, the graph tools do not register |
+| `tools.graph.database`, `tools.graph.username`, `tools.graph.password` | unset | the database and the credential, by reference |
+| `tools.graph.write` | `false` | register `graph.write` and `graph.ingest` |
+| `tools.graph.delete` | `false` | allow `DELETE` and `DROP` in `graph.write` |
+| `tools.graph.max.rows` | `200` | the most rows a query returns (the cap is 2000) |
+| `tools.graph.timeout.ms` | `10000` | how long one transaction may take, set server-side |
+| `tools.graph.ingest.max.nodes` | `500` | the most nodes one `graph.ingest` call may carry |
 | `tools.time` | `true` | register `time.now` |
 
 ## What comes next
 
-- **The knowledge graph, inside one database** (`graph.schema`, `graph.query`, `graph.write`, `graph.ingest` over
-  openCypher and the Bolt driver) and **`file.extract`** (PDF and Word to text) - the second step of the same design:
-  documents ingested once, their entities and rules extracted into a graph the next agent queries, instead of
-  scanning the files on every question. What a model extracts belongs there; what it said belongs in the
-  [transcript audit store](transcript-audit-schema.md).
-- **The Node.js twin**, the same routes and rows, the catalog files byte-identical.
+- **The Node.js twin**, the same routes and rows, the catalog files byte-identical. What a model extracts belongs in
+  the knowledge graph; what it said belongs in the [transcript audit store](transcript-audit-schema.md).
 - **The Playground examples** - `site-notes` (a crawl and a supervised write), `document-ingest` and `document-query` -
   and a page of recipes for binding existing MCP servers (Git, GitHub, Playwright, the vendors' graph servers) where
   a server is a product's own front door.

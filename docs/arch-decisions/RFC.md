@@ -72,7 +72,9 @@ added; the extension, the in-house HTML-to-text, the gated registration, the def
 R8-R16 agreed the same day (the knowledge-graph tools, the clock, `file.extract` in version 1, the recipes, `sql.query`
 out). Settled for the build; promotion after the drives. **Step 1 BUILT 2026-11-17:** mercury-python #63 (the file,
 web and clock tools with their catalog files; six defaults set without a ruling in the spec's section 13) and the
-page `docs/guides/agent-tools.md` here (#644, merged 2026-11-17).
+page `docs/guides/agent-tools.md` here (#644, merged 2026-11-17). **Step 2 BUILT 2026-11-17:** mercury-python #64
+(the four knowledge-graph tools over the Bolt driver, driven live on Neo4j, and `file.extract`; eight defaults in the
+spec's section 14); the page extended here.
 
 ---
 
