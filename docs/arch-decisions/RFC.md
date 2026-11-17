@@ -75,8 +75,8 @@ out). Settled for the build; promotion after the drives.
 ---
 
 ## RFC-0012 — The transcript audit store: a durable, queryable record of every model turn, written by the pack, with a published schema
-**Status:** Open · **Raised:** 2026-11-16 · **Serves:** vision-mercury-composable · **Thread:** `transcript-audit-store`
-<!-- id: rfc-0012 | status: open | thread: transcript-audit-store -->
+**Status:** Promoted → ADR-0035 · **Raised:** 2026-11-16 · **Serves:** vision-mercury-composable · **Thread:** `transcript-audit-store`
+<!-- id: rfc-0012 | status: promoted | thread: transcript-audit-store -->
 
 **Proposal.** Separate the two lifetimes the working transcript store serves today: its TTL stays the transaction's
 expiry (Redis, the compare-and-set, `retention` a working-store setting), and a second store, durable and append-only,
@@ -104,9 +104,11 @@ function behind a local event with an end-of-run integrity check (ruled). Where:
 engine (rejected, it never holds the transcript). The store: PostgreSQL first with psycopg 3 and `pg` as optional
 extras; another database behind the published schema.
 
-**Resolution.** Open. Reviewed by Eric on 2026-11-17: rulings R1-R8 and his notes recorded in the spec's section 11
-and applied (round 2); the defaults set without a ruling (its section 12) confirmed by him the same day. Settled for
-the build; promotion after the drive.
+**Resolution.** Promoted → ADR-0035 (2026-11-17, Eric), after the live drive through both packs
+(`docs/test-reports/transcript-audit-live-drive.md`, #642). Reviewed by Eric on 2026-11-17: rulings R1-R8 and his notes
+recorded in the spec's section 11 and applied (round 2); the defaults set without a ruling (its section 12) confirmed by
+him the same day; built as mercury-python #59, mercury-nodejs #126, the engines' #641 and mercury #414, the schema page
+#639, with the build precisions in the spec's section 14.
 
 ---
 

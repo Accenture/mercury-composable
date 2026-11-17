@@ -332,6 +332,26 @@
   release ([[help-edit-needs-bundle-release]]).
   <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-12 | uses: 3 | tier: archive-candidate | origin: 2026-11-05-175904 -->
 
+- **The transcript audit store: every model turn of an agent loop recorded by the pack's helper, off the turn's path,
+  in a governed store with a published schema (ADR-0035, accepted 2026-11-17 after the live drive through both packs).**
+  Two stores, two jobs: the working store of ADR-0033 keeps the conversation under its compare-and-set with the
+  transaction's time to live; the audit store (PostgreSQL first, the schema published as
+  `docs/guides/transcript-audit-schema.md`, re-implementable on another database) keeps a conversation row and a turn row
+  per model turn, the provider's format as sent and as returned, indexed by correlation id, trace id and time. The pack is
+  the only writer: after the compare-and-set accepted a turn, `llm.chat` sends a local event to `transcript.audit`, a
+  private function with ONE instance whose mailbox orders a conversation's writes and its end-of-run integrity check; the
+  working record (version 2, each turn's facts saved inside the compare-and-set) is released only after the check, waiting
+  with `llm.transcript.audit.grace` until then; the `audited` mark is set by the check after the release, so the sweep
+  re-sends a check that failed. Writes are idempotent, totals recomputed from the rows, failures logged by type and
+  SQLSTATE, never by message; a statement is bounded server-side, since a stalled database must fail like a stopped one.
+  The engines contribute identity only: `graph.task` sets `x-graph-id` and `x-node`, `llm.run` copies them onto each turn.
+  Retention and purge are the installation's. Built as mercury-python #59/#62, mercury-nodejs #126/#129, here #639, #641,
+  #642, mercury #414; the record is `docs/test-reports/transcript-audit-live-drive.md`. **How to apply:** anything the
+  audit must know at the end of a run travels in the working record, never in a second key or a second write; a new fact is
+  a field of the turn's facts and a column in both packs' schema and the published page; the engine adds identity headers,
+  never content; what a model extracts belongs in the agent's knowledge graph (RFC-0013), not here. (ADR-0035)
+  <!-- id: transcript-audit-published-contract | created: 2026-11-17 | last_used: 2026-11-17 | uses: 1 | tier: working | origin: 2026-11-17-094416 -->
+
 - **The agent loop: `llm.run` in the engines maps tool names to routes; the model turn and the MCP bindings live in the
   language packs (ADR-0033, accepted 2026-11-14 after the live drive through both packs).** A node whose model reasons with
   tools is `llm.run`, engine-side function code in the opt-in `extensions/agent-loop` (Rust: `mercury-agent-loop`), not core,
@@ -769,7 +789,8 @@
   event per turn, with an end-of-run integrity check in the same mailbox before the Redis record is released; the tool
   set gains `file.search`, and his knowledge-graph tools (openCypher over Bolt: schema, query, write, ingest - extract
   once, query many), a clock, `file.extract` and the reference-server recipes agreed the same day - both papers settled (#635
-  merged 2026-11-17), the builds next; the promotion of an AI graph through the governance lifecycle, his first theme of the
+  merged 2026-11-17); **RFC-0012 BUILT and PROMOTED to ADR-0035 the same day** ([[transcript-audit-published-contract]]:
+  mercury-python #59, mercury-nodejs #126, #639, #641, mercury #414, the drive #642), RFC-0013's build next; the promotion of an AI graph through the governance lifecycle, his first theme of the
   day, stays queued behind them.
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own
