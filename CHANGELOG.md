@@ -53,6 +53,23 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    `LlmRunPlatformTest` pins the copy onto the turns, `OrderAssistantTest` reads the two headers back through the
    scripted `llm.chat`. **Upgrade note:** none.
 
+4. **The Playground ships three graphs on the built-in agent tools (RFC-0013 step 4, the token-free half):** `site-notes`
+   (an `llm.run` node crawls a documentation section the person names with `web_crawl` and writes the notes into the
+   pack's workspace with `file_write`, a marked write that waits for a person at the `advise` checkpoint and runs when
+   approved - the same suspend and resume as `order-assistant`), `document-ingest` (a document of the new synthetic
+   corpus in `examples/minigraph-playground/corpus` read with `file_extract`, its parties, obligations, rules and
+   deadlines merged into the agent's knowledge graph with `graph_ingest` by a node that declares `mode: auto`, so the
+   write runs unasked by the product owner's decision written on the graph) and `document-query` (the schema, one
+   read-only `graph_query`, an answer citing every fact's source - no file is read). Each catalog row is a copy of the
+   row the packs publish in `extensions/agent-tools/catalog`; the routes reach a pack's `extensions/agent-tools`
+   through the example's Event-over-HTTP map (`tools.peer.host`, `tools.peer.port`, default 8089). `AgentToolsGraphsTest`
+   drives the three graphs token-free on `MockLlmChat`, which gains the three scripts, and `MockAgentTools`, a
+   stand-in for the pack's routes with the tools' result shapes and refusals (a fake site of two pages, the corpus,
+   an in-memory graph). Driven live through both packs on Haiku 4.5 the same day - the four documents ingested, the
+   facts merged across runs and packs, the questions answered with sources, the notes written after approval - and recorded
+   in `docs/test-reports/agent-tools-live-drive.md`, whose findings shaped the prompts (a spelled-out key rule, a three-step
+   research plan) and the packs' crawl (a relative `include`).
+
 ### Changed
 
 1. **A `DECIMAL` result carries at most a configured number of decimal places: `big.decimal.precision` (default 6) for

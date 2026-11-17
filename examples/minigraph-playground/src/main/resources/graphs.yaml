@@ -3,6 +3,9 @@ graphs:
   - 'support-triage'
   - 'order-assistant'
   - 'diagram-assistant'
+  - 'site-notes'
+  - 'document-ingest'
+  - 'document-query'
 
 #
 # Graph set is optional

@@ -148,8 +148,11 @@ mercury-serve extensions/agent-tools/agent_tools.py -Dtools.file.root=/srv/works
 ```yaml
 event:
   http:
-    - route: 'file.read, file.write, file.list, file.search, web.fetch, web.crawl, time.now'
+    - route: 'file.read'
       target: 'http://127.0.0.1:8089/api/event'
+    - route: 'web.fetch'
+      target: 'http://127.0.0.1:8089/api/event'
+    # ... one entry per route the graph names; the map takes no comma-separated list
 ```
 
 **3. The catalog node** carries the rows. Copy them from the extension's `catalog/` folder (`file_read.json`, ...) or
@@ -229,9 +232,14 @@ belongs in the [transcript audit store](transcript-audit-schema.md).
 
 ## What comes next
 
-- **The Playground examples** - `site-notes` (a crawl and a supervised write), `document-ingest` and `document-query` -
-  with a synthetic corpus, token-free tests and live drives, and a page of recipes for binding existing MCP servers
-  (Git, GitHub, Playwright, the vendors' graph servers) where a server is a product's own front door.
+- **The Playground examples are built, token-free:** `site-notes` (a crawl, then a supervised write of the notes into
+  the pack's workspace), `document-ingest` (a document of the synthetic corpus extracted into the knowledge graph by a
+  node that declares `mode: auto`) and `document-query` (the graph read, the sources cited), with their catalog rows
+  copied from the packs' catalog files and `AgentToolsGraphsTest` on scripted stand-ins for the model and the tools
+  (`examples/minigraph-playground`, its `graph/README.md` has the protocols), and **driven live through both packs**
+  on Haiku 4.5 - the record is `docs/test-reports/agent-tools-live-drive.md`. A page of recipes
+  for binding existing MCP servers (Git, GitHub, Playwright, the vendors' graph servers) where a server is a product's
+  own front door comes next.
 
 ## See also
 
