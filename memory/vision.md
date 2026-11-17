@@ -4,7 +4,8 @@
 > re-verification walkthrough), 2026-09-16, 2026-09-25 (the first walk of the two-track text), 2026-10-09 and
 > 2026-10-22 (the Type line refreshed: ports catch up, not lock-step); the Type line refined 2026-11-03 (Eric: how
 > closely each port catches up); re-confirmed 2026-11-13, Track 2's status refreshed (the agent loop shipped); Track 2's status refreshed again
-> 2026-11-14 (Eric: the loop driven live end to end through both language packs and RFC-0011 promoted to ADR-0033). **EVOLVED 2026-09-17 (Eric): the two tracks made explicit** — the
+> 2026-11-14 (Eric: the loop driven live end to end through both language packs and RFC-0011 promoted to ADR-0033) and
+> 2026-11-17 (Eric: the MCP bindings shipped and released, sprint 4 the design sprint). **EVOLVED 2026-09-17 (Eric): the two tracks made explicit** — the
 > graph as application (deterministic) and the graph as AI SDLC (governed AI processing for
 > ambiguity). North star for the VBDI loop;
 > tier `core`, re-confirmed on the invariant-verification cadence. The Blueprint
@@ -37,7 +38,7 @@ human inputs; that collaboration is the shared foundation, and it is delivered.
 | Execution | Layer 3 **leverages** Event Script (layer 2) and Platform Core (layer 1) | Layer 3 **is the foundation**; **AI is also the runtime for certain nodes** |
 | AI at runtime | no — a design-time collaborator only | **yes** — AI-bearing nodes reach an agent through gateways, MCP servers or other tools |
 | After promotion | authoring UI disabled; the graph runs on the Mercury stack | authoring UI disabled; the graph runs, and its AI nodes call out |
-| State | **delivered** — production quality, measured in field installations | **design phase, the runtime foundation decided and proven** — the agent loop `llm.run` (ADR-0033) shipped in both engines (Java 4.12.29, Rust 4.12.30) and driven live end to end through both language packs on 2026-11-14 (`docs/test-reports/agent-loop-live-drive.md`); next the MCP bindings in the packs, then the AI SDLC lab resumes on this foundation; prerequisites proven (progressive rendering of token batches) |
+| State | **delivered** — production quality, measured in field installations | **design phase, the runtime foundation decided and proven** — the agent loop `llm.run` (ADR-0033) shipped in both engines (Java 4.12.29, Rust 4.12.30) and driven live end to end through both language packs on 2026-11-14 (`docs/test-reports/agent-loop-live-drive.md`); the MCP bindings shipped in both packs (2026-11-14) and released in their 4.12.30 (2026-11-16); the trace lineage is continuous from the engine into both packs; sprint 4 is a design sprint (the transcript audit store RFC-0012 and the essential built-in tools RFC-0013, both settled 2026-11-17, the builds next); the promotion of an AI graph through the governance lifecycle is queued behind them; prerequisites proven (progressive rendering of token batches) |
 
 The asymmetry is the whole of it: Track 1 delegates execution *down* the three layers; Track 2
 stands on layer 3 and delegates *out* to an agent for the nodes that carry AI skills. Everything
