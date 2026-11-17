@@ -832,8 +832,11 @@
   (Eric, 2026-11-16):** the transcript audit store ([[transcript-audit-store]], RFC-0012: the working store's TTL as the
   transaction's expiry, a durable PostgreSQL-first store with a published schema, written by the pack per turn and
   queryable by trace id, correlation id and time) and the essential built-in tools ([[agent-essential-tools]],
-  RFC-0013: files in a workspace and the web in an allowlist, as pack functions with published rows). Round 1 of both is on
-  `main` (#634 squash `57a267f02`, 2026-11-16) for Eric's review; the promotion of an AI graph through the governance lifecycle, his first theme of the
+  RFC-0013: files in a workspace and the web in an allowlist, as pack functions with published rows). Round 1 landed as #634
+  (2026-11-16); Eric ruled on both 2026-11-17 (round 2): the audit is an asynchronous composable function behind a local
+  event per turn, with an end-of-run integrity check in the same mailbox before the Redis record is released; the tool
+  set gains `file.search`, and his knowledge-graph tools (openCypher over Bolt: schema, query, write, ingest - extract
+  once, query many), a clock, `file.extract` and the reference-server recipes await his round-2 rulings; the promotion of an AI graph through the governance lifecycle, his first theme of the
   day, stays queued behind them.
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own
