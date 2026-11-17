@@ -4,7 +4,9 @@
 [`docs/arch-decisions/RFC.md`](../docs/arch-decisions/RFC.md). Eric's rulings of 2026-11-17 are recorded in section 11 and
 applied throughout: the audit is written by a composable function behind a local event, never on the turn's path, and
 the end of a run is an integrity check before the working record is released. The defaults set without a ruling
-(section 12) were confirmed by Eric on 2026-11-17; the paper is settled for the build.
+(section 12) were confirmed by Eric on 2026-11-17; the paper is settled for the build. **Build:** step 1 (the Python
+helper) is mercury-python PR #59 (2026-11-17), with the build notes of section 14; the schema page is published as
+[`docs/guides/transcript-audit-schema.md`](../docs/guides/transcript-audit-schema.md).
 **Serves:** `bp-agent-orchestration` → `vision-mercury-composable` (Track 2, the graph as AI SDLC).
 **Extends:** [`llm-helper-agent-loop.md`](./llm-helper-agent-loop.md) section 3.3 (the transcript store) and section 10
 (telemetry, audit and security); answers the concept's Q4 (audit capture) in
@@ -503,3 +505,29 @@ are settled for the build:
    Colima's PostgreSQL; the browser shows one correlation id, two trace ids, every turn, and the Redis key released;
    a write failure injected once to watch the check repair it; the report under `docs/test-reports/`. Then promotion
    of RFC-0012 is Eric's call.
+
+## 14. Build notes (mercury-python, 2026-11-17 - PR #59)
+
+The Python build of step 1 kept the paper as settled and fixed four details the paper left to the build; the Node twin
+follows them, so the two helpers write the same rows from the same record:
+
+1. **Constant JSON shapes.** `request` is the array of the messages a turn sent (one normally: the prompt, or the
+   `tool_result` message; a first turn that carried a conversation history sends them all), `response` the array of
+   assistant content blocks. A query never branches on a turn's kind.
+2. **The audited mark of a closed record is set by its check, after the release.** A write of a closing turn leaves
+   both to the check behind it; an open record is marked by any event. So `audited < turn` reads "the check has not
+   completed", and the sweep re-sends the check of a closed record whose store was unreachable; a released record kept
+   with `retention > 0` carries `audited == turn`. The Redis mark is a Lua that writes only when the key exists, so it
+   never resurrects a released record as a hash with no time to live.
+3. **Any closed record waits with the grace** when an audit store is configured - a `max_tokens` cap included - and the
+   check releases it to `retention`; without an audit store the time-to-live rules of the loop spec apply unchanged.
+4. **The statements.** The conversation row upserted (`DO UPDATE` of status, turns, updated_at, ended_at), the turn rows
+   inserted (`DO NOTHING`), the totals recomputed from the turn rows by one `UPDATE`, in that order in one transaction
+   (the turn rows reference the conversation row); JSON as text cast to `jsonb`, stamps as ISO-8601 text cast to
+   `timestamptz`, so no driver-specific wrapper enters either pack. `ssl` maps to `sslmode=require` or `disable`.
+
+Also learned: a `-D` override value is never substituted in the packs, so the development credential reaches the helper
+through the shipped `application.yml`'s `${POSTGRES_USER:mercury}` and `${POSTGRES_PASSWORD:}` references, never a
+command line; and `psql -c` does not interpolate variables, so the purge script feeds its statements on stdin. Verified
+live on Colima: the schema applied at the container's first start, the live test green, pgweb reachable through
+`host.docker.internal`, the purge dry run and purge on seeded rows.
