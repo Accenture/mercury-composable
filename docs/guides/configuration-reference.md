@@ -375,6 +375,22 @@ violation message on failure — for an installation that wants a different voca
 Nothing is written into the graph for the step, so a substitute applies to every graph of the
 application at once.
 
+### `big.decimal.precision` {#big-decimal-precision}
+
+| Type | Default |
+|------|---------|
+| `int` (0 to 1000) | `6` |
+
+The most decimal places a `graph.math` [`DECIMAL` statement](knowledge-graph/skills-reference.md#math-decimal)
+result may carry when its node sets no `precision` of its own. A result with more decimal places is rounded
+`HALF_UP` to the limit; one with fewer keeps its computed scale, so the setting never pads a result. The limit
+applies to each statement's result, not to the arithmetic inside the expression (a non-terminating quotient
+keeps its 34 significant digits until the statement ends). A node overrides it with `precision=<n>` in the same
+range. The setting exists so that inputs from several sources, each with its own number of decimal places,
+leave every result under one rounding policy ([ADR-0034](../arch-decisions/ADR.md#adr-0034)). A value outside
+the range or not a whole number fails the first `DECIMAL` statement with an error naming the key. The
+`f:decimal*` plugins of Event Script are not affected; `f:decimalRound` states their rounding.
+
 ### `location.graph.temp`
 
 | Type | Default |

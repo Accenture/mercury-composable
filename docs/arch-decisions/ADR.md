@@ -33,6 +33,71 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0034 — A `DECIMAL` result carries at most a configured number of decimal places: an application default and a node-level `precision` {#adr-0034}
+**Status:** Accepted · **Date:** 2026-11-17 · **Serves:** vision-mercury-composable · **Formalizes:** decimal-result-precision-limit · **Supersedes:** [ADR-0025](#adr-0025)
+<!-- id: adr-0034 | status: accepted | supersedes: adr-0025 -->
+
+**Abstract.** The result of a `graph.math` `DECIMAL:` statement carries at most a configured number of
+decimal places: the node's `precision=` when it has one, else the application's
+`big.decimal.precision` (default 6). A result with more decimal places is rounded `HALF_UP` to the
+limit; one with fewer keeps its computed scale, so the limit never pads. The limit applies to each
+statement's result, never to the arithmetic inside the expression, which stays exact with the
+34-digit division context of ADR-0025, and an `EXECUTE`'d module takes the calling node's limit. The
+setting is a whole number from 0 to 1000, checked by `CompileGraph` at deploy. This supersedes the
+"no application default" clause of ADR-0025; the statement, the exact arithmetic, the canonical
+strings at rest, the comparison rule and the shared conformance vectors stand.
+
+**Context.** ADR-0025 made exactness a statement-level declaration with nothing to configure: a
+result kept whatever scale the arithmetic produced, and rounding was explicit, `round(x, scale,
+mode)`, statement by statement. A field installation then computed financial rules from inputs of
+several sources, each with its own number of decimal places (a rate at four places, an amount at
+two, a factor at six), so a product's scale was the sum of the inputs' and a non-terminating
+quotient came back with 34 significant digits. The only way to a consistent rounding policy was a
+`round()` on every statement, which is verbose and, missed on one statement, silently inconsistent.
+The field asked for the precision of the decimal point to be configurable (Eric, 2026-11-17), with a
+default in `application.properties` and an optional parameter on the `graph.math` node.
+
+**Decision.** The limit is a *cap*, not a fixed scale: it rounds what exceeds it and leaves what does
+not, so the canonical string of a result within the limit is exactly what ADR-0025 produced and a
+graph whose results stay within 6 places is unchanged by the default. Rounding is `HALF_UP`, half
+away from zero, the dialect's money rounding (`f:round`, `round()` in `COMPUTE`); a statement that
+needs another mode says `round(x, scale, mode)` within the limit. The limit is applied once, to the
+statement's result in `graph.math`, by `DecimalEvaluator.evaluate(expression, maxScale)`; the
+arithmetic inside an expression keeps ADR-0025's exactness, so `1 / 3 * 3` rounds to `1.000000`
+rather than accumulating a per-operation error, and `DecimalEvaluator.evaluate(expression)` stays
+unbounded for the conformance vectors. A `round()` to more places than the limit is rounded again to
+the limit, which is declared in the guide: a node that needs more places raises its `precision`. Two
+levels only: the application default covers the installation's policy and the node is the unit a
+product owner reads and certifies; a graph-level setting would be a third level with little to say.
+The node property is validated by `GraphModelValidator` so a malformed value fails at deploy, the
+application property at the first `DECIMAL` statement, naming the key. The name `precision` follows
+the field's request and the property name `big.decimal.precision`; the dialect's `round(x, scale,
+mode)` keeps `scale` for the same quantity.
+
+**Alternatives.** (a) A cap with `HALF_UP` at the statement's end — chosen. (b) A fixed scale that
+pads (`setScale` unconditionally): every existing result's text changes (`"11.28"` would become
+`"11.280000"` by default), the shared vectors and every field graph with it; a fixed scale is
+formatting, and `round()` already gives it where a statement wants it. (c) Keep ADR-0025 as it was,
+`round()` on every statement: what the field had; the policy lived in every statement instead of one
+place. (d) A limit inside the arithmetic, as a division context or a per-operation scale: trades
+the exactness within an expression for nothing the result needs. (e) A graph-level setting: a third
+level between the application and the node. (f) A configurable rounding mode beside the limit: not
+asked for; `HALF_UP` is the dialect's money default and `round()` states any other mode.
+
+**Consequences.** A READ item at release: a `DECIMAL` result that had more than 6 decimal places is
+rounded to 6 unless its node sets `precision` or the application raises `big.decimal.precision`.
+Every executing engine applies the same limit at the same place: the Rust twin's `graph.math` reads
+the same node property and application property and rounds the statement's result the same way, so a
+graph deploys unchanged on both; the conformance vectors, which exercise the evaluator, are
+unchanged, and the graph-level behaviour is covered by the Java fixture `unit-test-decimal-precision`
+and `DecimalPrecisionTest`. The `f:decimal*` plugins of Event Script are not affected; their rounding
+is `f:decimalRound`. The Playground help carries the rule, so the bundle was rebuilt. ADR-0025's
+abstract is otherwise intact: the statement, the exact `+ - *`, the 34-digit non-terminating
+quotient, the explicit `round()`, the refusals by name, the canonical strings at rest and the
+numeric-string comparison rule all stand; only "no application default" falls.
+
+---
+
 ## ADR-0033 — The agent loop: `llm.run` in the engines maps tool names to routes; model turns and MCP bindings in the language packs {#adr-0033}
 **Status:** Accepted · **Date:** 2026-11-14 · **Serves:** vision-mercury-composable · **Formalizes:** agent-loop-tool-names-map-to-routes
 <!-- id: adr-0033 | status: accepted -->
@@ -653,8 +718,8 @@ as its own RFC.
 ---
 
 ## ADR-0025 — Exact decimal arithmetic is a `DECIMAL:` statement in `graph.math`, with canonical strings at rest {#adr-0025}
-**Status:** Accepted · **Date:** 2026-09-30 · **Serves:** vision-mercury-composable · **Formalizes:** decimal-statement-exact-arithmetic
-<!-- id: adr-0025 | status: accepted -->
+**Status:** Superseded by [ADR-0034](#adr-0034) (2026-11-17: the "no application default" clause; the statement, the exact arithmetic, the canonical strings and the comparison rule stand there unchanged) · **Date:** 2026-09-30 · **Serves:** vision-mercury-composable · **Formalizes:** decimal-statement-exact-arithmetic
+<!-- id: adr-0025 | status: superseded | superseded-by: adr-0034 -->
 
 **Abstract.** `graph.math` gains a `DECIMAL: var -> expression` statement, the high-precision
 `COMPUTE:`. It evaluates with exact decimal arithmetic (`BigDecimal` in flight) and stores the

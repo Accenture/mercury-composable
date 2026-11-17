@@ -27,17 +27,26 @@ import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
+import org.platformlambda.core.util.AppConfigReader;
 import org.platformlambda.core.util.MultiLevelMap;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @PreLoad(route = GraphMath.ROUTE, instances=300)
 public class GraphMath extends GraphLambdaFunction {
     public static final String ROUTE = "graph.math";
+    /** The node property that limits the decimal places of this node's DECIMAL results. */
+    public static final String PRECISION = "precision";
+    /** The application property that limits the decimal places of every DECIMAL result without a node limit. */
+    public static final String PRECISION_CONFIG = "big.decimal.precision";
+    /** The limit when neither the node nor the application sets one. */
+    public static final int DEFAULT_PRECISION = 6;
     private static final String RESULT = ".result.";
     private static final ExpressionEngine engine = new ExpressionEngine();
+    private static final AtomicInteger defaultPrecision = new AtomicInteger(-1);
 
     @Override
     public Object handleEvent(Map<String, String> headers, EventEnvelope input, int instance) {
@@ -202,6 +211,11 @@ public class GraphMath extends GraphLambdaFunction {
      * rendered (5.0E-4 renders 0.0005, not the 0.00050 its own text would parse as). That is exact over the
      * text received and only as exact as the computation that produced the double - the guide declares it,
      * so sending a number instead of a string is a conscious decision.
+     * <p>
+     * The result's decimal places are limited by the node's 'precision' property, else by the application's
+     * big.decimal.precision (default 6): a result with more is rounded HALF_UP to the limit, one with fewer
+     * keeps its computed scale. The limit applies to each statement's result, never to the arithmetic inside
+     * the expression, and an EXECUTE'd module takes the calling node's limit, as its results land on the caller.
      *
      * @param command the statement after the tag
      * @param nodeName the node's alias
@@ -216,11 +230,12 @@ public class GraphMath extends GraphLambdaFunction {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
             var stateMachine = graphInstance.stateMachine;
+            var precision = decimalPrecision(nodeName, graphInstance);
             assertVariablesResolved(rhs, stateMachine);
             var text = substituteVarIfAny(renderInexactNumbers(rhs, stateMachine), stateMachine, false);
             final String result;
             try {
-                result = DecimalEvaluator.evaluate(text);
+                result = DecimalEvaluator.evaluate(text, precision);
             } catch (RuntimeException e) {
                 throw nameOffendingSelectors(e, rhs, stateMachine);
             }
@@ -228,6 +243,41 @@ public class GraphMath extends GraphLambdaFunction {
         } else {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have '->' in '"+command+"'");
         }
+    }
+
+    /**
+     * The decimal places a DECIMAL result of this node may carry: the node's 'precision' property when it has
+     * one, else the application's default.
+     *
+     * @param nodeName the node's alias
+     * @param graphInstance the graph instance
+     * @return a whole number from 0 to DecimalEvaluator.MAX_SCALE
+     */
+    private int decimalPrecision(String nodeName, GraphInstance graphInstance) {
+        var value = getNode(nodeName, graphInstance.graph).getProperty(PRECISION);
+        if (value == null) {
+            return getDefaultPrecision();
+        }
+        try {
+            return DecimalEvaluator.precision(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(NODE_NAME + nodeName + " - " + PRECISION + " " + e.getMessage());
+        }
+    }
+
+    private static int getDefaultPrecision() {
+        var precision = defaultPrecision.get();
+        if (precision < 0) {
+            var configured = AppConfigReader.getInstance().getProperty(PRECISION_CONFIG,
+                    String.valueOf(DEFAULT_PRECISION));
+            try {
+                precision = DecimalEvaluator.precision(configured);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(PRECISION_CONFIG + " " + e.getMessage());
+            }
+            defaultPrecision.set(precision);
+        }
+        return precision;
     }
 
     private String renderInexactNumbers(String expression, MultiLevelMap stateMachine) {

@@ -77,6 +77,10 @@ graphs:
   - 'unit-test-dynamic-jump'
   - 'unit-test-decimal'
   - 'unit-test-decimal-loop'
+  # the decimal places of a DECIMAL result: the application default and a node's precision
+  - 'unit-test-decimal-precision'
+  # deliberately invalid: precision=two on a graph.math node - CompileGraph must reject it and requests answer 404
+  - 'unit-test-decimal-precision-bad'
   # the virtual 'error' node reports recovery: a successful retry of error.source resolves
   # the context to {source, code 200} with the failure details removed
   - 'unit-test-error-recovery'

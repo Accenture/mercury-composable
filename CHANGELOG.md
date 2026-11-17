@@ -44,6 +44,26 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    the image rode back as a 36,000 to 43,000-token tool result (`docs/test-reports/agent-loop-live-drive.md`, Scenario 9). The
    example's README walks through the demo. **Upgrade note:** none.
 
+### Changed
+
+1. **A `DECIMAL` result carries at most a configured number of decimal places: `big.decimal.precision` (default 6) for
+   the application and `precision=` on a `graph.math` node for that node (ADR-0034, which supersedes ADR-0025's "no
+   application default").** A field installation computes with inputs from several sources, each with its own number of
+   decimal places, and needed one rounding policy; before, a result kept whatever scale the arithmetic produced, 34
+   significant digits for a non-terminating quotient, unless every statement said `round()`. A result with more decimal
+   places than the limit is rounded `HALF_UP` to it; one with fewer keeps its computed scale, so the limit never pads. The
+   limit applies to each statement's result, never to the arithmetic inside the expression, and an `EXECUTE`'d module
+   takes the calling node's limit, as its results land on the caller. `precision` is a whole number from 0 to 1000,
+   checked by `CompileGraph` at deploy (a malformed value rejects the graph); a malformed `big.decimal.precision` fails
+   the first `DECIMAL` statement naming the key. `DecimalEvaluator.evaluate(expression)` stays unbounded and the shared
+   conformance vectors are unchanged; the limit is `evaluate(expression, maxScale)`, and `GraphModelValidator` checks the
+   node property. Documented in the skills reference, the command reference, the Playground help (bundle rebuilt) and the
+   configuration reference. **Upgrade note - READ:** a `DECIMAL` result that had more than 6 decimal places - a
+   non-terminating quotient, a product of long-scale operands, or an explicit `round()` to more than 6 places - is now
+   rounded `HALF_UP` to 6 unless its node sets `precision`. A graph that relied on those digits sets `precision` on the
+   node, or the application raises `big.decimal.precision` (up to 1000). Results within 6 places, and the `f:decimal*`
+   plugins of Event Script, are unchanged.
+
 ### Fixed
 
 1. **The field's Sonar scan of 4.12.30: five code smells closed; no behaviour change.** `SchedulerDatabase`'s

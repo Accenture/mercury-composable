@@ -19,6 +19,7 @@
 package com.accenture.minigraph.common;
 
 import com.accenture.minigraph.contract.GraphSchema;
+import com.accenture.minigraph.math.DecimalEvaluator;
 import com.accenture.minigraph.progress.ReturnChannel;
 import com.accenture.minigraph.skills.GraphApiFetcher;
 import com.accenture.minigraph.skills.GraphExtension;
@@ -117,6 +118,29 @@ public class GraphModelValidator {
         validateModelMetadataImmutability(graph);
         validateJsonPaths(graph);
         validateSchemas(graph);
+        validateDecimalPrecision(graph);
+    }
+
+    /**
+     * A graph.math node's 'precision' - the most decimal places its DECIMAL results may carry - is a whole
+     * number from 0 to DecimalEvaluator.MAX_SCALE, checked here so a malformed value fails at deploy rather
+     * than at the node's first DECIMAL statement.
+     *
+     * @param graph an imported MiniGraph
+     * @throws IllegalArgumentException naming the node and the value
+     */
+    private static void validateDecimalPrecision(MiniGraph graph) {
+        for (SimpleNode node : graph.getNodes()) {
+            var value = node.getProperty(GraphMath.PRECISION);
+            if (value != null && GraphMath.ROUTE.equals(node.getProperty(SKILL))) {
+                try {
+                    DecimalEvaluator.precision(value);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " - " + GraphMath.PRECISION +
+                            " " + e.getMessage());
+                }
+            }
+        }
     }
 
     /**

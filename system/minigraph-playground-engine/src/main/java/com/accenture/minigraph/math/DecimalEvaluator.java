@@ -32,7 +32,8 @@ import java.util.Set;
 public final class DecimalEvaluator {
     // the exponent of ** and pow() is bounded so an expression cannot exhaust memory
     static final int MAX_EXPONENT = 999;
-    private static final int MAX_SCALE = 1000;
+    /** The most decimal places a result, a round() or a 'precision' setting may ask for. */
+    public static final int MAX_SCALE = 1000;
     private static final int MAX_LITERAL_SCALE = 1000;
     private static final int MAX_LITERAL_PRECISION = 1000;
     private static final int MAX_RESULT_PRECISION = 10_000;
@@ -57,6 +58,62 @@ public final class DecimalEvaluator {
      */
     public static String evaluate(String expression) {
         return canonical(evaluateDecimal(expression));
+    }
+
+    /**
+     * Evaluate a DECIMAL statement's expression with a limit on the decimal places of its result.
+     * <p>
+     * The arithmetic inside the expression is unchanged - exact, with the 34-digit division context - and the
+     * limit applies to the result alone, through {@link #limitScale(BigDecimal, int)}: a result with more decimal
+     * places than the limit is rounded HALF_UP to it, and one with fewer keeps its computed scale.
+     *
+     * @param expression the statement text after its variables were rendered into it
+     * @param maxScale the most decimal places the result may carry (0 to {@link #MAX_SCALE})
+     * @return the result as a canonical decimal string
+     */
+    public static String evaluate(String expression, int maxScale) {
+        return canonical(limitScale(evaluateDecimal(expression), maxScale));
+    }
+
+    /**
+     * Apply a limit on decimal places: a value with more decimal places than the limit is rounded HALF_UP (half
+     * away from zero, the rounding of f:round and of the dialect's round()) to the limit; a value with fewer is
+     * returned as it is, so the limit never pads a result.
+     *
+     * @param value a decimal
+     * @param maxScale the most decimal places allowed
+     * @return the value within the limit
+     */
+    public static BigDecimal limitScale(BigDecimal value, int maxScale) {
+        return value.scale() > maxScale? value.setScale(maxScale, RoundingMode.HALF_UP) : value;
+    }
+
+    /**
+     * The decimal places a 'precision' setting allows - a graph.math node's 'precision' property or the
+     * application's big.decimal.precision - given as a number or as text.
+     *
+     * @param value the setting as configured
+     * @return a whole number from 0 to {@link #MAX_SCALE}
+     * @throws IllegalArgumentException for anything else; the message starts with "must be", so a caller
+     *                                  prefixes the setting's name
+     */
+    public static int precision(Object value) {
+        Integer places = null;
+        if (value instanceof Number n && !(value instanceof Double || value instanceof Float)) {
+            var whole = n.longValue();
+            places = whole >= 0 && whole <= MAX_SCALE? (int) whole : -1;
+        } else if (value instanceof Number || value instanceof String) {
+            try {
+                places = Integer.parseInt(String.valueOf(value).trim());
+            } catch (NumberFormatException e) {
+                // reported below
+            }
+        }
+        if (places == null || places < 0 || places > MAX_SCALE) {
+            throw new IllegalArgumentException("must be a whole number from 0 to " + MAX_SCALE + ", got '" +
+                    value + "'");
+        }
+        return places;
     }
 
     /**
