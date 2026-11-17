@@ -131,7 +131,9 @@ mercury-serve extensions/agent-tools/agent_tools.py \
 ```
 
 (`GRAPH_PASSWORD` in its environment for the database; `extensions/agent-tools/dev/graph-up.sh` of either pack starts
-Neo4j Community on Colima.) The LLM helper and Redis run as for `order-assistant`. In the test scope the tool routes
+Neo4j Community on Colima.) The LLM helper and Redis run as for `order-assistant`. The peer overrides are JVM properties,
+before `-jar`: `java -Dllm.peer.port=8087 -Dtools.peer.port=8090 -jar minigraph-playground-4.12.30.jar` selects the
+Node.js pack. The three graphs were driven live through both packs on 2026-11-17 (`docs/test-reports/agent-tools-live-drive.md`). In the test scope the tool routes
 resolve to a scripted stand-in (`MockAgentTools`) and the model turns to `MockLlmChat`, so `AgentToolsGraphsTest`
 runs the three graphs without tokens, a network or a database.
 

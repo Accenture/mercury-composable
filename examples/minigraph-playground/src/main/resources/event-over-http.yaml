@@ -43,8 +43,29 @@ event:
     #       -Dtools.web.allow=accenture.github.io -Dtools.graph.uri=bolt://127.0.0.1:7687 -Dtools.graph.write=true
     #
     # Select the Node.js extension, or any other peer, with -Dtools.peer.host / -Dtools.peer.port.
+    # One route per entry: the map does not take a comma-separated list.
     #
-    - route: 'file.read, file.write, file.list, file.search, file.extract, web.fetch, web.crawl'
+    - route: 'file.read'
       target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
-    - route: 'graph.schema, graph.query, graph.write, graph.ingest, time.now'
+    - route: 'file.write'
+      target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
+    - route: 'file.list'
+      target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
+    - route: 'file.search'
+      target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
+    - route: 'file.extract'
+      target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
+    - route: 'web.fetch'
+      target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
+    - route: 'web.crawl'
+      target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
+    - route: 'graph.schema'
+      target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
+    - route: 'graph.query'
+      target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
+    - route: 'graph.write'
+      target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
+    - route: 'graph.ingest'
+      target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
+    - route: 'time.now'
       target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'

@@ -29,7 +29,13 @@
   and `document-query` (`graph_schema` + `graph_query`, sources cited); the synthetic corpus (four documents of fictional
   companies, one shape); the catalog rows copied from the packs' files; the Event-over-HTTP entries (`tools.peer.*`,
   8089); `AgentToolsGraphsTest` (8 tests) on `MockLlmChat`'s three new scripts and `MockAgentTools`, a stand-in for
-  the pack's routes. Next: the live drives through both packs with the report (step 4b), then the recipes page (step 5).
+  the pack's routes. **Step 4b DRIVEN 2026-11-17:** the three graphs live through the Python pack and then the Node.js pack on Haiku 4.5 (Redis
+  and Neo4j on Colima, this project's published documentation as the crawl target) - every fact merged across runs and
+  packs, the questions answered with sources, the notes written after approval; seven findings in
+  `docs/test-reports/agent-tools-live-drive.md`: one route per Event-over-HTTP entry, the peer overrides as JVM properties
+  before `-jar`, the document key spelled out in the ingest prompt (the model keyed it two ways once), a relative
+  `include` (both packs changed: mercury-python #65, mercury-nodejs #131), a three-step research prompt against
+  dithering, the loop's schema check correcting a call, a fetched 404 as a result. Next: the recipes page (step 5).
   → proposal: RFC-0013
   → serves: vision-mercury-composable
   <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->

@@ -65,7 +65,10 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    through the example's Event-over-HTTP map (`tools.peer.host`, `tools.peer.port`, default 8089). `AgentToolsGraphsTest`
    drives the three graphs token-free on `MockLlmChat`, which gains the three scripts, and `MockAgentTools`, a
    stand-in for the pack's routes with the tools' result shapes and refusals (a fake site of two pages, the corpus,
-   an in-memory graph). The live drives through the packs follow.
+   an in-memory graph). Driven live through both packs on Haiku 4.5 the same day - the four documents ingested, the
+   facts merged across runs and packs, the questions answered with sources, the notes written after approval - and recorded
+   in `docs/test-reports/agent-tools-live-drive.md`, whose findings shaped the prompts (a spelled-out key rule, a three-step
+   research plan) and the packs' crawl (a relative `include`).
 
 ### Changed
 
