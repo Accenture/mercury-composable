@@ -14,8 +14,12 @@
   mailbox, so the writes and the check run in order with no race; the record is version 2 and carries each turn's
   facts; a sweep repairs lost events and stopped runs. Section 12 lists the defaults set without a ruling (one
   instance, facts in the record, grace `1d`, the sweep, no release of an open record). Eric confirmed section 12 the same
-  day: SETTLED for the build. Next: build plan step 1 (Python), Node in lockstep, the engines' two headers, the
-  `order-assistant` drive.
+  day: SETTLED for the build. **Step 1 BUILT 2026-11-17:** mercury-python PR #59 (the version 2 record, the
+  `transcript.audit` function with one instance behind the write and check events, the sweep, the Redis `audited`
+  field, psycopg 3 as the `postgres` extra, the schema and purge files, the Colima scripts with pgweb, 28 tests and a
+  live test; verified live) and this repo's PR #639 (the schema page `docs/guides/transcript-audit-schema.md`, the
+  spec's build notes in section 14). Next: Eric's review and merge of both; step 2 the Node helper in lockstep;
+  step 3 the engines' two headers; step 4 the `order-assistant` drive with an injected write failure.
   → proposal: RFC-0012
   → serves: vision-mercury-composable
   <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->
