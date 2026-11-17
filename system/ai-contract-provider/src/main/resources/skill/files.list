@@ -55,6 +55,7 @@ references/guides/schema-registry-mock.md
 references/guides/service-mesh.md
 references/guides/spring-boot.md
 references/guides/sync-over-async.md
+references/guides/transcript-audit-schema.md
 references/guides/twin-kafka.md
 references/index.md
 references/test-reports/agent-loop-trace-lineage.md
