@@ -18,8 +18,10 @@
   `transcript.audit` function with one instance behind the write and check events, the sweep, the Redis `audited`
   field, psycopg 3 as the `postgres` extra, the schema and purge files, the Colima scripts with pgweb, 28 tests and a
   live test; verified live) and this repo's PR #639 (the schema page `docs/guides/transcript-audit-schema.md`, the
-  spec's build notes in section 14). Next: Eric's review and merge of both; step 2 the Node helper in lockstep;
-  step 3 the engines' two headers; step 4 the `order-assistant` drive with an injected write failure.
+  spec's build notes in section 14). **mercury-python #59 MERGED 2026-11-17; step 2 BUILT and MERGED the same day:** mercury-nodejs #126 (the Node
+  twin, field for field, the schema files byte-identical). #639's CI failed in `SkillSnapshotTest` (the skill inventory
+  `files.list` must list the new page) and was fixed on its branch. Next: #639's merge; step 3 the engines' two headers;
+  step 4 the `order-assistant` drive with an injected write failure.
   → proposal: RFC-0012
   → serves: vision-mercury-composable
   <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->
