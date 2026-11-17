@@ -1969,6 +1969,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-knowledge-graph-inside-one-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The knowledge graph, inside one database
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-clock" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3284,6 +3295,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-knowledge-graph-inside-one-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The knowledge graph, inside one database
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#the-clock" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3380,17 +3402,18 @@ puts one on a graph.</em></p>
 <blockquote>
 <p><strong>At a glance</strong></p>
 <ul>
-<li><strong>What</strong> — seven composable functions in the language packs' <code>extensions/agent-tools/</code>: <code>file.read</code>,
-  <code>file.write</code>, <code>file.list</code> and <code>file.search</code> inside one workspace; <code>web.fetch</code> and <code>web.crawl</code> inside an allowlist
-  of sites; <code>time.now</code>. A graph's <code>llm.run</code> node names them in its tool catalog like any other route.</li>
+<li><strong>What</strong> — twelve composable functions in the language packs' <code>extensions/agent-tools/</code>: <code>file.read</code>,
+  <code>file.write</code>, <code>file.list</code>, <code>file.search</code> and <code>file.extract</code> inside one workspace; <code>web.fetch</code> and <code>web.crawl</code>
+  inside an allowlist of sites; <code>graph.schema</code>, <code>graph.query</code>, <code>graph.write</code> and <code>graph.ingest</code> inside one graph
+  database; <code>time.now</code>. A graph's <code>llm.run</code> node names them in its tool catalog like any other route.</li>
 <li><strong>Why it matters</strong> — the diagram assistant needed one tool; the next graphs want to read the file the person
   pointed at, write a note, fetch a page. Without a shared set, every graph repeats the same security decisions:
   which directory, which hosts, how big a result, what counts as a write.</li>
 <li><strong>The rule</strong> — the sandbox is deployment configuration, never an argument of a call; a tool whose sandbox is not
   configured does not register; every refusal is a 400 naming the rule; results are text, capped and untrusted.</li>
-<li><strong>Versions</strong> — version 1, step 1 (mercury-python PR #63, 2026-11-17; the Node.js twin follows in lockstep). The
-  knowledge-graph tools (<code>graph.schema</code>, <code>graph.query</code>, <code>graph.write</code>, <code>graph.ingest</code>) and <code>file.extract</code> are the
-  next step of the same design. Settled as RFC-0013 in the <a href="../../arch-decisions/RFC/">RFC register</a>.</li>
+<li><strong>Versions</strong> — version 1: the file, web and clock tools (mercury-python #63) and the knowledge-graph tools with
+  <code>file.extract</code> (mercury-python #64), both 2026-11-17; the Node.js twin follows in lockstep. Settled as RFC-0013
+  in the <a href="../../arch-decisions/RFC/">RFC register</a>.</li>
 </ul>
 </blockquote>
 <h2 id="a-built-in-tool-is-a-composable-function">A built-in tool is a composable function<a class="headerlink" href="#a-built-in-tool-is-a-composable-function" title="Permanent link">&para;</a></h2>
@@ -3460,6 +3483,12 @@ process should run as a user with no rights beyond the tree.</p>
 <td><code>pattern</code> (a literal, or a regular expression with <code>regex: true</code>); <code>path</code>; <code>glob</code>; <code>case_sensitive</code>; <code>context</code> (cap 3); <code>max_results</code> (default 100, cap 1000)</td>
 <td><code>{matches: [{path, line, text, before, after}], files_searched, truncated}</code>; binaries skipped, lines cut to <code>tools.file.line.max.chars</code></td>
 </tr>
+<tr>
+<td><code>file.extract</code></td>
+<td><code>file_extract</code></td>
+<td><code>path</code>; <code>pages</code> (a range such as <code>1-3,7</code>); <code>max_chars</code> (default and cap <code>tools.file.extract.max.chars</code>, 60 000)</td>
+<td><code>{path, type, pages, text, truncated}</code>; a PDF or Word document (the pack's <code>documents</code> extra), an HTML or a text file, with a <code>--- page N ---</code> marker before each page; registers only when the extra is installed</td>
+</tr>
 </tbody>
 </table>
 <h3 id="the-web-inside-an-allowlist">The web, inside an allowlist<a class="headerlink" href="#the-web-inside-an-allowlist" title="Permanent link">&para;</a></h3>
@@ -3497,6 +3526,58 @@ Mercury user agent.</p>
 </table>
 <p>The crawl is a bounded reader of a documentation section or a small site, not a spider: a model that needs more asks
 again with a narrower start page or an <code>include</code> prefix.</p>
+<h3 id="the-knowledge-graph-inside-one-database">The knowledge graph, inside one database<a class="headerlink" href="#the-knowledge-graph-inside-one-database" title="Permanent link">&para;</a></h3>
+<p>The agent's own store for what it extracts (principle 7: extract once, query many): documents ingested once, their
+entities, relations and rules queried by every later agent instead of scanning the files again. The sandbox is one
+database, <code>tools.graph.uri</code> (a Bolt URI), <code>tools.graph.database</code> and the credential by reference; the query language is
+openCypher, which the models know and which Neo4j, Memgraph, FalkorDB, Apache AGE and Amazon Neptune speak; the
+reference backend is the official Bolt driver (the pack's <code>graph</code> extra), which reaches Neo4j and Memgraph alike. The
+reads register when the URI is set; the writers only when <code>tools.graph.write=true</code>; <code>DELETE</code>, <code>DETACH DELETE</code> and
+<code>DROP</code> are refused unless <code>tools.graph.delete=true</code> as well. Every statement runs in a managed transaction with
+<code>tools.graph.timeout.ms</code> set server-side, a read in a read transaction.</p>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Row</th>
+<th>Arguments</th>
+<th>Result and limits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>graph.schema</code></td>
+<td><code>graph_schema</code></td>
+<td>none</td>
+<td><code>{labels: [{label, count, properties: [{name, types}]}], relationship_types: [{type, count, from, to, properties}]}</code> from the database's own schema procedures (Neo4j's <code>db.schema.*</code>, else Memgraph's <code>schema.*</code>) and two counting queries - what the model reads before it writes a query</td>
+</tr>
+<tr>
+<td><code>graph.query</code></td>
+<td><code>graph_query</code></td>
+<td><code>query</code> (openCypher, read-only); <code>parameters</code></td>
+<td><code>{columns, rows, truncated}</code>; refused before sending when it carries <code>CREATE</code>, <code>MERGE</code>, <code>SET</code>, <code>DELETE</code>, <code>REMOVE</code>, <code>DROP</code> or <code>LOAD CSV</code> outside a string or a comment; rows capped by <code>tools.graph.max.rows</code> (200, cap 2000); a node <code>{id, labels, properties}</code>, a relationship <code>{id, type, start, end, properties}</code>, a path the list of its nodes and relationships</td>
+</tr>
+<tr>
+<td><code>graph.write</code></td>
+<td><code>graph_write</code>, <strong><code>write: true</code></strong></td>
+<td><code>query</code>; <code>parameters</code></td>
+<td><code>{counters: {nodes_created, nodes_deleted, relationships_created, relationships_deleted, properties_set, labels_added, labels_removed, indexes_added, constraints_added}, columns, rows, truncated}</code> from a write transaction</td>
+</tr>
+<tr>
+<td><code>graph.ingest</code></td>
+<td><code>graph_ingest</code>, <strong><code>write: true</code></strong></td>
+<td><code>nodes: [{key, label, properties}]</code>; <code>relationships: [{from, to, type, properties}]</code>; <code>source</code></td>
+<td><code>{nodes, relationships}</code>: one parameterized <code>MERGE</code> per node on <code>(:Label {key})</code> with <code>SET n += properties</code>, one per relationship between two keys that exist (in this call or already in the graph; a missing key is a 400 and nothing is written), <code>source</code> stamped on each; labels and types <code>^[A-Za-z][A-Za-z0-9_]{0,63}$</code>, values scalars or lists of scalars, at most <code>tools.graph.ingest.max.nodes</code> (500) nodes per call; running it twice changes nothing</td>
+</tr>
+</tbody>
+</table>
+<p>Why <code>graph.ingest</code> beside <code>graph.write</code>: a list of nodes and relationships is what a model extracts well, and a long
+<code>MERGE</code> with dozens of parameters is where Cypher goes wrong. The tool makes the Cypher, no value is ever
+interpolated into a statement, and the write is idempotent. The row's description tells the model the conventions: a
+key unique across the graph, prefixed with the label in lower case (<code>clause:12</code>, <code>party:supplier-a</code>); a <code>source</code> on
+every ingest so an answer can cite it; the labels of the domain the graph author names in the system prompt. Both
+writers carry the mark: under the node's default mode a person approves each, and an ingestion graph declares
+<code>mode: auto</code> on its ingest node - the product owner's decision at design time, visible in the graph's certification.</p>
 <h3 id="the-clock">The clock<a class="headerlink" href="#the-clock" title="Permanent link">&para;</a></h3>
 <p><code>time.now</code> (<code>time_now</code>) takes an optional <code>timezone</code> (an IANA name, default <code>UTC</code>) and returns
 <code>{utc, local, timezone, offset, weekday, epoch_ms}</code>. A model has no clock, and "today", "within 30 days" and "last
@@ -3533,11 +3614,12 @@ use constrains them by grammar.</p>
 <li><strong>The catalog is still the boundary.</strong> A graph names the tools its agent reaches; a built-in the graph does not
   name is as unreachable as any route. The pre-flight check verifies the routes exist, so a deployment whose sandbox
   is not configured fails the graph before a token is spent.</li>
-<li><strong>Writes are marked.</strong> <code>file.write</code> carries <code>write: true</code>; under the node's default mode a person approves each
-  write, and only a node that declares <code>mode: auto</code> runs it unasked (ADR-0033). The other tools are reads, bounded by
-  the root, the allowlist and the caps.</li>
-<li><strong>The root and the allowlist are certification artifacts.</strong> They answer "what can this agent reach?" without
-  reading code, and they live with the pack's configuration, not in a prompt or a call.</li>
+<li><strong>Writes are marked.</strong> <code>file.write</code>, <code>graph.write</code> and <code>graph.ingest</code> carry <code>write: true</code>; under the node's default
+  mode a person approves each write, and only a node that declares <code>mode: auto</code> runs it unasked (ADR-0033). The other
+  tools are reads, bounded by the root, the allowlist, the read transaction and the caps.</li>
+<li><strong>The root, the allowlist and the database are certification artifacts.</strong> They answer "what can this agent reach?"
+  without reading code, and they live with the pack's configuration, not in a prompt or a call. The graph has two
+  gates: writing needs <code>tools.graph.write=true</code>, deleting <code>tools.graph.delete=true</code> as well.</li>
 <li><strong>Untrusted content.</strong> A page or a file may carry instructions; the loop never obeys a result, and the graph
   author's system prompt should say that fetched and stored content is data.</li>
 <li><strong>Logs.</strong> A tool logs its route, the status, the byte, entry or page count and the host of a URL - never a path's
@@ -3616,6 +3698,46 @@ use constrains them by grammar.</p>
 <td>the characters kept of a page's text</td>
 </tr>
 <tr>
+<td><code>tools.file.extract.max.chars</code></td>
+<td><code>60000</code></td>
+<td>the most characters <code>file.extract</code> returns</td>
+</tr>
+<tr>
+<td><code>tools.graph.uri</code></td>
+<td>unset</td>
+<td>the graph database, a Bolt URI; unset, the graph tools do not register</td>
+</tr>
+<tr>
+<td><code>tools.graph.database</code>, <code>tools.graph.username</code>, <code>tools.graph.password</code></td>
+<td>unset</td>
+<td>the database and the credential, by reference</td>
+</tr>
+<tr>
+<td><code>tools.graph.write</code></td>
+<td><code>false</code></td>
+<td>register <code>graph.write</code> and <code>graph.ingest</code></td>
+</tr>
+<tr>
+<td><code>tools.graph.delete</code></td>
+<td><code>false</code></td>
+<td>allow <code>DELETE</code> and <code>DROP</code> in <code>graph.write</code></td>
+</tr>
+<tr>
+<td><code>tools.graph.max.rows</code></td>
+<td><code>200</code></td>
+<td>the most rows a query returns (the cap is 2000)</td>
+</tr>
+<tr>
+<td><code>tools.graph.timeout.ms</code></td>
+<td><code>10000</code></td>
+<td>how long one transaction may take, set server-side</td>
+</tr>
+<tr>
+<td><code>tools.graph.ingest.max.nodes</code></td>
+<td><code>500</code></td>
+<td>the most nodes one <code>graph.ingest</code> call may carry</td>
+</tr>
+<tr>
 <td><code>tools.time</code></td>
 <td><code>true</code></td>
 <td>register <code>time.now</code></td>
@@ -3624,12 +3746,8 @@ use constrains them by grammar.</p>
 </table>
 <h2 id="what-comes-next">What comes next<a class="headerlink" href="#what-comes-next" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>The knowledge graph, inside one database</strong> (<code>graph.schema</code>, <code>graph.query</code>, <code>graph.write</code>, <code>graph.ingest</code> over
-  openCypher and the Bolt driver) and <strong><code>file.extract</code></strong> (PDF and Word to text) - the second step of the same design:
-  documents ingested once, their entities and rules extracted into a graph the next agent queries, instead of
-  scanning the files on every question. What a model extracts belongs there; what it said belongs in the
-  <a href="../transcript-audit-schema/">transcript audit store</a>.</li>
-<li><strong>The Node.js twin</strong>, the same routes and rows, the catalog files byte-identical.</li>
+<li><strong>The Node.js twin</strong>, the same routes and rows, the catalog files byte-identical. What a model extracts belongs in
+  the knowledge graph; what it said belongs in the <a href="../transcript-audit-schema/">transcript audit store</a>.</li>
 <li><strong>The Playground examples</strong> - <code>site-notes</code> (a crawl and a supervised write), <code>document-ingest</code> and <code>document-query</code> -
   and a page of recipes for binding existing MCP servers (Git, GitHub, Playwright, the vendors' graph servers) where
   a server is a product's own front door.</li>
