@@ -295,3 +295,9 @@
 - conv-library-pins-are-direct-dependencies — A library's `dependencyManagement` never reaches a consumer - a transitive version the lib… — faded — 2026-Q4.md
 - conv-lab-outside-root-reactor — A lab or dev-machine tool stays out of the root reactor (Eric, 2026-10-23). The field's st… — faded — 2026-Q4.md
 - snyk-retired-manifest-placeholders — Retired Maven modules need placeholder manifests for Snyk (2026-09-01, Snyk team + — faded — 2026-Q4.md
+- playground-panel-name-meta — The Playground entry page carries one server-filled tag: `playground.panel.name` renames t… — faded — 2026-Q4.md
+- conv-test-fixed-port-outside-ephemeral — A test server's fixed port stays below 32768, and a wait on its listen covers failure too… — faded — 2026-Q4.md
+- historical-releases-tags-and-pages — Releases v4.0.0 to v4.5.0 live as tags and GitHub releases; their `release/v*` branches ar… — faded — 2026-Q4.md
+- ai-sdlc-document-ingestion — AI SDLC sprint 2 - document ingestion into executable rule graphs - CLOSED 2026-11-14 (Eri… — faded — 2026-Q4.md
+- close-stalled-threads-20261114 — Close stalled threads (due): ai-sdlc-document-ingestion (41 sessions) — for each, close it… — faded — 2026-Q4.md
+- reverify-invariants-20261104 — Re-verify invariants — COMPLETE 2026-11-13: Eric walked the 20 `core` facts and the Vision… — faded — 2026-Q4.md

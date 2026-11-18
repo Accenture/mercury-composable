@@ -67,7 +67,14 @@
   #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the `soa.redis.health` route rename,
   `minimalist-kafka` no longer transitive).
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-11-17 | through 2026-11-17-055029.md (ON COMMAND + CADENCE — 10 sessions since 2026-11-14-074819:
+- **last_review:** 2026-11-18 | through 2026-11-18-094338.md (CADENCE — 12 sessions since 2026-11-17-055029: `refresh-metadata`
+  refreshed 17 footers; archived 3 faded facts (`playground-panel-name-meta`, `conv-test-fixed-port-outside-ephemeral`,
+  `historical-releases-tags-and-pages`) and swept 3 completed threads (`ai-sdlc-document-ingestion`,
+  `close-stalled-threads-20261114`, `reverify-invariants-20261104`) → 2026-Q4; kept 1 as a declaration gap
+  (`graph-failed-resume-readvises`, applied by `site-notes` in 2026-11-17-113917); invariants not due (25 of 40); stalled none;
+  contradictions none; the Vision's Track 2 status row refreshed (sprint 4 built and accepted). Live facts 49 → 43; continuity
+  869 → 821 lines. Smoke test not run.)
+  Prior: 2026-11-17 | through 2026-11-17-055029.md (ON COMMAND + CADENCE — 10 sessions since 2026-11-14-074819:
   `refresh-metadata` refreshed 20 footers; swept 3 threads closed 2026-11-05 (`release-4-12-29`, `release-4-12-30`,
   `scheduler-conditional-claim`); archived 5 faded facts (`scheduler-example-mongodb`, `conv-template-version-sweep`,
   `conv-library-pins-are-direct-dependencies`, `conv-lab-outside-root-reactor`, `snyk-retired-manifest-placeholders`); kept 4 as
@@ -197,7 +204,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-14 | uses: 39 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-14 | uses: 39 | tier: archive-candidate | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -293,7 +300,7 @@
   `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
   the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
   once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-11-17 | uses: 28 | tier: active | origin: 2026-10-02-175751 -->
+  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-11-17 | uses: 28 | tier: archive-candidate | origin: 2026-10-02-175751 -->
 
 - **The mini-scheduler's state resolver picks one instance with a conditional claim in `expires`, and its contract
   changes only inside the existing `parameters`, where a key that starts with `_` is the system's (Eric, 2026-11-03 and
@@ -316,21 +323,7 @@
   before changing what the scheduler sends the state resolver or the environment store, ask whether a field
   installation would have to change a schema to accept it; an additive key in `parameters` is the shape. A resolver
   for more than one instance needs one conditional write, so a second read in it is the smell.
-  <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-17 | uses: 5 | tier: active | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
-
-- **The Playground entry page carries one server-filled tag: `playground.panel.name` renames the Minigraph panel
-  through `<meta name="playground-panel-name" content="">` (a field installation's request, 2026-11-05).** The bundle
-  ships the tag empty; the Java `get.index.html` fills it, escaped for HTML, in dev mode; `webapp/src/utils/panelName.ts`
-  shows it in place of the config title, for the Minigraph playground only (`titleFromServer`). The default stays
-  `Minigraph Playground` (Eric), and the browser tab and the JSON-Path playground keep their titles. A server-filled
-  tag rather than a REST read: the page is already served by a function, so every application's `rest.yaml` stays as
-  it is and the default title never flashes first. A page served with the tag empty keeps the default, so the bundle
-  could be shared before the twin landed; the Rust engine fills the tag too since mercury #407 (Increment 200,
-  `with_panel_name`, 2026-11-05), with the bundle and help deployed from here. **How to
-  apply:** a per-deployment setting the web app shows goes into the entry page as a server-filled tag, found by its
-  exact text and guarded by a test of the built page (`GetIndexHtmlTest`); any webapp source edit still needs the
-  release ([[help-edit-needs-bundle-release]]).
-  <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-12 | uses: 3 | tier: archive-candidate | origin: 2026-11-05-175904 -->
+  <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-17 | uses: 5 | tier: archive-candidate | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
 
 - **Essential tools for agent loops: built into the packs with published rows and sandboxes in configuration, or
   bound from a product's own MCP server by recipe (ADR-0036, accepted 2026-11-18 after the live drives and the recipes).**
@@ -371,7 +364,7 @@
   audit must know at the end of a run travels in the working record, never in a second key or a second write; a new fact is
   a field of the turn's facts and a column in both packs' schema and the published page; the engine adds identity headers,
   never content; what a model extracts belongs in the agent's knowledge graph (RFC-0013), not here. (ADR-0035)
-  <!-- id: transcript-audit-published-contract | created: 2026-11-17 | last_used: 2026-11-17 | uses: 1 | tier: working | origin: 2026-11-17-094416 -->
+  <!-- id: transcript-audit-published-contract | created: 2026-11-17 | last_used: 2026-11-18 | uses: 2 | tier: active | origin: 2026-11-17-094416 -->
 
 - **The agent loop: `llm.run` in the engines maps tool names to routes; the model turn and the MCP bindings live in the
   language packs (ADR-0033, accepted 2026-11-14 after the live drive through both packs).** A node whose model reasons with
@@ -395,7 +388,7 @@
   in the 2026-11-14 drive, capped at 8 KiB 4,300; better, a function of the application in front of the bound route stores the
   payload and returns a reference (the example's `diagram.render`, the SVG under `/tmp/rendered_diagrams/<reference>.svg`),
   which is the out-of-band shape the research rulings asked for. (ADR-0033)
-  <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-17 | uses: 8 | tier: active | origin: 2026-11-14-071025 -->
+  <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-18 | uses: 14 | tier: active | origin: 2026-11-14-071025 -->
 
 - **A graph that resumes an agent loop re-advises on a failed resume, because `graph.resume` consumes the suspension record
   (2026-11-14, found live in sprint 3 WP1).** A resume request whose decisions the loop refuses - an unknown call id, a call
@@ -411,7 +404,7 @@
   moved, so a re-sent decision meets 409 and re-advises again; the operator then restarts the transaction. **How to
   apply:** every graph that suspends around `llm.run` needs a path from the loop's failure back to its advice while an
   approval is pending; design it on the graph, never by making the loop forgive a bad decision.
-  <!-- id: graph-failed-resume-readvises | created: 2026-11-14 | last_used: 2026-11-14 | uses: 2 | tier: archive-candidate | origin: 2026-11-14-065413 -->
+  <!-- id: graph-failed-resume-readvises | created: 2026-11-14 | last_used: 2026-11-18 | uses: 3 | tier: active | origin: 2026-11-14-065413 -->
 
 - **The packs' trace records mirror the engines' callee and caller, so a span lineage is continuous from an engine into a
   pack (2026-11-14; Eric's criterion: for OpenTelemetry to be certified, the span lineage ought to be continuous end to
@@ -429,7 +422,7 @@
   still be missing hops; a hop into any runtime must leave the callee's edge record, the ingress record and the function's
   record, or the backend shows the hop as time inside the caller; every traced execution leaves exactly one record, and the
   question for a new path is which side emits it.
-  <!-- id: pack-trace-records-engine-parity | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: active | origin: 2026-11-14-115548 -->
+  <!-- id: pack-trace-records-engine-parity | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: archive-candidate | origin: 2026-11-14-115548 -->
 
 - **A `DECIMAL` result carries at most a configured number of decimal places - the node's `precision`, else the
   application's `big.decimal.precision` (default 6) - rounded HALF_UP beyond the limit and kept as computed within it
@@ -504,7 +497,7 @@
   agent opens with `gh` still gets the handoff in the message that announces it - the title on its own line and the trailer
   rule for the commit count - and a later commit on the branch re-sends it.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-17 | uses: 134 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-17 | uses: 134 | tier: archive-candidate | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -531,7 +524,7 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-17 | uses: 74 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-17 | uses: 74 | tier: archive-candidate | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -646,7 +639,7 @@
     constant another module reads (the IDE scans one module). IntelliJ reports a `try` holding only a comment as empty (a helper
     that uses the resource keeps S2095 and S5778 satisfied) and cannot see a non-null proved in another method.
   Relates [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-17 | uses: 34 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-17 | uses: 34 | tier: archive-candidate | origin: 2026-10-13-001452 -->
 
 - **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
   (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
@@ -671,7 +664,7 @@
   the ignored `dist/`, which compares with the committed bundle (`public/assets`, `template/playground.html`) and with the Rust
   copy, maps excluded, without touching a tracked file; both were byte-identical. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
   only the entry page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-17 | uses: 38 | tier: active | origin: 2026-10-02-015208 -->
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-17 | uses: 38 | tier: archive-candidate | origin: 2026-10-02-015208 -->
 
 - **A reactor build rewrites every example's `target/*.jar` in place, so an app running from one fails at the next class it loads
   for the first time (2026-10-22).** `mvn verify` repackages `examples/*/target/<name>-<version>.jar`. A JVM running from that jar
@@ -684,7 +677,7 @@
   (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
   sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
-  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-14 | uses: 27 | tier: active | origin: 2026-10-22-232342 -->
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-17 | uses: 28 | tier: active | origin: 2026-10-22-232342 -->
 
 - **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
   properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
@@ -699,22 +692,7 @@
   or its child. To audit the tree, collect the keys of every `.properties` file, every `getProperty` and `@OptionalService`
   literal and every configuration-reference heading, then list each key that prefixes another. The 2026-10-23 log has the
   scan; `cloud.connector.health` is a route, not a key. YAML cannot express the collision.
-  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-11-17 | uses: 7 | tier: active | origin: 2026-10-23-215957 -->
-
-- **A test server's fixed port stays below 32768, and a wait on its listen covers failure too (2026-11-04, PR #607).**
-  `EventOverHttpStreamTest`'s mock peer listened on 58586 and waited on `onSuccess` alone. CI failed three times with
-  "misbehaving-peer mock must start" (2026-10-06 twice, 2026-11-04), and the failure was first read as a slow runner.
-  The cause was a refused bind. 58586 lies in the ephemeral range of Linux (32768-60999), macOS and Windows
-  (49152-65535), so the client side of one of the suite's many loopback connections can hold it. A refused bind
-  completes the listen's `Future` with a failure, which nothing waited on, so the wait expired and logged nothing.
-  **How to apply:** bind port 0 when the test can learn the port. When a static config must address the server (the
-  mock's `${sse.mock.port}` in `event-over-http.yaml`), use a fixed port below 32768 that no other test uses. Wait on
-  the listen's own outcome, for example `listen(p).toCompletionStage().toCompletableFuture().get(...)`, so a refused
-  bind fails at once with its cause. **Reading the evidence:** a timed wait that expires at its exact bound, on a
-  runner whose neighbouring classes ran at normal speed, more likely saw a callback that never fired than a slow one.
-  A macOS negative control must hold the port on `::` with `IPV6_V6ONLY=0`: a listener on `127.0.0.1` or on IPv4
-  `0.0.0.0` alone lets Vert.x bind anyway.
-  <!-- id: conv-test-fixed-port-outside-ephemeral | created: 2026-11-04 | last_used: 2026-11-14 | uses: 3 | tier: archive-candidate | origin: 2026-11-04-031520 -->
+  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-11-17 | uses: 8 | tier: archive-candidate | origin: 2026-10-23-215957 -->
 
 - **A tool that runs from the checkout lives once, in the starter template, and the examples point to it (Eric,
   2026-11-05: do not repeat ourselves).** The Playground session broker had three identical copies (the
@@ -726,26 +704,7 @@
   to apply:** before adding a script or tool to an example, look for it in the template and point to that copy; a
   resource an application packages and loads (a flow such as `graph-executor.yml`) is copied, because the app's
   build needs it on its own classpath.
-  <!-- id: conv-one-copy-of-shared-tooling | created: 2026-11-05 | last_used: 2026-11-17 | uses: 2 | tier: active | origin: 2026-11-05-201925 -->
-
-- **Releases v4.0.0 to v4.5.0 live as tags and GitHub releases; their `release/v*` branches are gone (Eric,
-  2026-11-12).** Tags began at `v4.6.0`; before it, each release was cut as a `release/v*` branch (149). Each now has
-  an annotated tag `vX.Y.Z` at its branch tip (the tagger date the release commit's) and a GitHub release titled with
-  the tag, its notes the version's CHANGELOG section after a line saying it was published retroactively, not marked
-  latest. GitHub dates a release by its tagged commit, so these sort into history and `v4.12.30` kept the Latest
-  badge; 216 releases and 216 tags. Then Eric had the 149 branches deleted, every tip held by a tag
-  (`release/v4.2.24` pointed at the 4.2.43 release; `v4.2.24` marks `679ce398`, the last commit on `main` at 4.2.24,
-  its message saying so); GitHub keeps only `main` and `gh-pages`. `main`'s CHANGELOG heads 4.2.41's section
-  `4.2.42, 5/17/2025`, so its notes came from the CHANGELOG at its own tag. **Applied to the siblings 2026-11-13
-  (Eric):** the Rust port's repository (the Java Mercury v1.12.8–v3.0.19 with v1.13.0; 2.9.0 was never released, so no
-  tag), mercury-python (v1.11.39–v2.5.0) and mercury-nodejs (v4.2.40–v4.3.28), each recorded in its own memory
-  (`historical-releases-tags-and-pages-rust`, `-python`, `-nodejs`); all four repositories keep only `main` and
-  `gh-pages`, and their READMEs point to the tagged releases. **How to apply:** find an old release by
-  its tag or release page, never a branch. A release's notes come from its CHANGELOG section, read at its tag when
-  `main`'s heading disagrees, else from the next release's CHANGELOG when a heading is wrong or missing at the tag, the
-  note saying so; a release published after the fact passes `--latest=false`; a branch for a version never released
-  (its tip another release's commit, and no CHANGELOG section anywhere, like 2.9.0) gets no tag.
-  <!-- id: historical-releases-tags-and-pages | created: 2026-11-12 | last_used: 2026-11-13 | uses: 2 | tier: archive-candidate | supersedes: release-branches-historical-record | origin: 2026-11-12-134344 -->
+  <!-- id: conv-one-copy-of-shared-tooling | created: 2026-11-05 | last_used: 2026-11-17 | uses: 2 | tier: archive-candidate | origin: 2026-11-05-201925 -->
 
 - **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
   sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
@@ -770,7 +729,7 @@
   the same day Eric brought every common feature since 4.12.27 across instead (the agent loop `llm.run`, the
   asynchronous `graph.extension`, progress events, the abort record, `playground.panel.name`: mercury #403-#407,
   Increments 196-200), so the epic does not gate a port's catch-up; only work the port has no counterpart for does.
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-17 | uses: 55 | tier: active | origin: 2026-09-16-003354 -->
+  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-17 | uses: 55 | tier: archive-candidate | origin: 2026-09-16-003354 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -830,7 +789,7 @@
   pattern is solved and inherited; the runtime posture is the open problem - and why the engine core stays vendor-free with
   adapters as functions ON the wrappers: the gateway/MCP edge is where vendor specifics live.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-17 | uses: 38 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-18 | uses: 43 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;

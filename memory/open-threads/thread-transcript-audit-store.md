@@ -35,4 +35,4 @@
   record is the carrier, the check is the integrity - and it is proven by a drive that stops the store under it.
   → proposal: RFC-0012
   → serves: vision-mercury-composable
-  <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->
+  <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-17 | uses: 7 | tier: active | origin: 2026-11-16-105602 -->
