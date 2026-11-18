@@ -346,7 +346,7 @@
   re-read by a gated test (recipes for Git, Time, Fetch, Filesystem, Neo4j's Cypher server, GitHub's hosted server,
   Playwright; 95 digests). Built as mercury-python #63/#64/#66/#67, mercury-nodejs #130/#132/#133, here #644 to #649; the
   evidence is `docs/test-reports/agent-tools-live-drive.md` (47 nodes, 43 relationships from four documents, no fact
-  doubled across six ingests and two packs) and the recipes page's live digest checks; the ADR landed as PR-PENDING.
+  doubled across six ingests and two packs) and the recipes page's live digest checks; the ADR opened as PR #650.
   **How to apply:** a new capability is first a question of the rule - a pack function with a row, or a recipe for an
   existing server - never engine code, never a generic request tool, never a call argument as a boundary; an
   ingestion node declares `mode: auto` on the graph; a system of record gets a wrapper route. (ADR-0036)
