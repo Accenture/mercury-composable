@@ -424,3 +424,27 @@ address is a custom `lookup` on `node:http` with the TLS server name from the UR
 Python's pinned request; and pdfjs-dist is used directly for PDF text, since `pdf-parse` v2 pulls a native canvas
 binding the tool does not need. Driven live on Neo4j 5 Community through the same gated sequence as the Python build;
 the readiness wait must use the driver, because the Bolt port accepts connections before the server is up.
+
+## 16. Build notes (all three repositories, 2026-11-18 - step 5)
+
+The recipes page `docs/guides/tools-from-mcp-servers.md` here, with the packs' `extensions/mcp-binding/resources/mcp-recipes.yml`,
+the shared digest vector `mcp-recipes.json` and the gated live test (mercury-python #66, mercury-nodejs #132). Seven
+decisions made without a ruling: (1) the recipes live in a real server file of their own, `mcp-recipes.yml`, that the
+binding does not load, rather than as commented entries of `mcp-servers.yml` - the gated test loads it with the binding's
+own loader and a deployment copies an entry, while `mcp-servers.yml` keeps its two commented examples; (2) the entries pin
+the package versions the digests were read from (`mcp-server-git==2026.11.11`, `@playwright/mcp@0.0.85` and so on), so a
+bump is a deliberate re-run of `describe`; (3) the digests are pinned in one vector file shared byte for byte - 56 tools of
+the six servers that list without a credential - and GitHub's are not pinned, since its listing needs a token: the page
+says to run `describe` with the deployment's own; (4) the test gates on `MCP_RECIPES_LIVE` (the Neo4j server also on
+`NEO4J_PASSWORD`), treats a missing or a changed pinned tool as rot and a tool the server added as not rot; (5) the
+Filesystem recipe runs `--read-only` (ten tools) and the Neo4j recipe takes its connection from `NEO4J_*` variables rather
+than arguments, since an argument is visible in the process list; (6) Playwright runs `--headless --isolated
+--allowed-origins`, its actions are `write: true` on a graph and `browser_evaluate` and `browser_run_code_unsafe` are never
+bound; (7) a row on the graph is written in the loop's closed vocabulary from the server's schema, never copied from it,
+because several servers' schemas carry `$schema` or `anyOf`, which the loop refuses - the function in between adds what
+the graph must not expose (a repository path from configuration). What the build found: the binding resolves `${}`
+references in `args` as in `env` and `headers`, so a path placeholder works in an argument list; the two bindings print
+identical digests for every tool, as the canonical form intends; the Fetch server's own description addresses a chat
+assistant, the plainest case for the rule that the model reads the graph's row; the Git server's `--repository` takes a
+path inside the repository and confines every tool to it; a credential reference without a default fails the load of the
+whole server file, so the tests set placeholders for the credentials they never send.

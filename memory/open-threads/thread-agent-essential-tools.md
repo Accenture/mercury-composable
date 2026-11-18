@@ -35,8 +35,14 @@
   `docs/test-reports/agent-tools-live-drive.md`: one route per Event-over-HTTP entry, the peer overrides as JVM properties
   before `-jar`, the document key spelled out in the ingest prompt (the model keyed it two ways once), a relative
   `include` (both packs changed: mercury-python #65, mercury-nodejs #131), a three-step research prompt against
-  dithering, the loop's schema check correcting a call, a fetched 404 as a result. Steps 1-4 are complete in all three repositories. Next: the recipes page (step 5) -
-  HELD at Eric's direction on 2026-11-17, to resume 2026-11-18.
+  dithering, the loop's schema check correcting a call, a fetched 404 as a result. Steps 1-4 are complete in all three repositories. **Step 5 BUILT 2026-11-18** (held overnight at Eric's direction): the page `docs/guides/tools-from-mcp-servers.md` -
+  seven recipes (Git, Time, Fetch, Filesystem, Neo4j's Cypher server, GitHub's hosted server, Playwright's browser), each
+  the server-file entry, the digests, the bind lines and a row rewritten for the graph in the loop's vocabulary; the
+  digests of 56 tools read from the pinned versions through both packs' `describe`, identical - with nav, `llms.txt`,
+  the skill inventory and the agent-tools page's links; the packs' `mcp-recipes.yml`, the shared digest vector and the
+  gated live test (mercury-python #66, mercury-nodejs #132, 11 live passes each); the spec's section 16 (#648
+  here). GitHub's digests are not pinned (the listing needs a credential). The build plan is complete. Next: Eric's call
+  on RFC-0013's promotion to an ADR.
   → proposal: RFC-0013
   → serves: vision-mercury-composable
   <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-17 | uses: 2 | tier: working | origin: 2026-11-16-105602 -->

@@ -58,7 +58,7 @@ Six principles, from the design spec:
    another need writes its own route and certifies it on its graph.
 6. **Build or bind, by rule.** Built in-house when the sandbox must be the pack's, when no second runtime may be
    needed, or when it is a few lines; bound from an existing MCP server (through the pack's MCP binding) when the
-   server is a product's own front door.
+   server is a product's own front door - the recipes are on [Tools from MCP Servers](tools-from-mcp-servers.md).
 
 ## The set
 
@@ -237,13 +237,15 @@ belongs in the [transcript audit store](transcript-audit-schema.md).
   node that declares `mode: auto`) and `document-query` (the graph read, the sources cited), with their catalog rows
   copied from the packs' catalog files and `AgentToolsGraphsTest` on scripted stand-ins for the model and the tools
   (`examples/minigraph-playground`, its `graph/README.md` has the protocols), and **driven live through both packs**
-  on Haiku 4.5 - the record is `docs/test-reports/agent-tools-live-drive.md`. A page of recipes
-  for binding existing MCP servers (Git, GitHub, Playwright, the vendors' graph servers) where a server is a product's
-  own front door comes next.
+  on Haiku 4.5 - the record is `docs/test-reports/agent-tools-live-drive.md`. The recipes for binding existing MCP servers - Git, Time, Fetch,
+  Filesystem, Neo4j's Cypher server, GitHub's and Playwright's - are on [Tools from MCP Servers](tools-from-mcp-servers.md)
+  (step 5, 2026-11-18), with the digests read from the pinned server versions and a gated test in each pack that
+  re-reads them.
 
 ## See also
 
 - [Built-in skills reference](knowledge-graph/skills-reference.md) — `graph.task` and the agent loop's node.
+- [Tools from MCP Servers](tools-from-mcp-servers.md) — binding an existing server's tool behind a route of your own.
 - [Polyglot Functions](polyglot-functions.md) — how the engines reach a pack's functions over Event-over-HTTP.
 - [Transcript Audit Schema](transcript-audit-schema.md) — the record of what the model was told and said.
 - The pack's own guide, `extensions/agent-tools/README.md` in mercury-python — the function contract, the
