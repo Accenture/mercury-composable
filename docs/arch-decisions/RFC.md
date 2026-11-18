@@ -40,8 +40,8 @@
 ---
 
 ## RFC-0013 — Essential built-in tools for agent loops: files inside a workspace, the web inside an allowlist and a knowledge graph inside one database, as pack functions with published catalog rows
-**Status:** Open · **Raised:** 2026-11-16 · **Serves:** vision-mercury-composable · **Thread:** `agent-essential-tools`
-<!-- id: rfc-0013 | status: open | thread: agent-essential-tools -->
+**Status:** Promoted → ADR-0036 · **Raised:** 2026-11-16 · **Serves:** vision-mercury-composable · **Thread:** `agent-essential-tools`
+<!-- id: rfc-0013 | status: promoted | thread: agent-essential-tools -->
 
 **Proposal.** A first set of built-in tools every second agent use case needs, as composable functions in a new pack
 extension, `extensions/agent-tools/` (Python first, Node in lockstep), each shipping its catalog row: `file.read`,
@@ -82,8 +82,9 @@ through both packs on Haiku 4.5 (`docs/test-reports/agent-tools-live-drive.md`; 
 `docs/guides/tools-from-mcp-servers.md` (seven recipes - Git, Time, Fetch, Filesystem, Neo4j's Cypher server, GitHub's
 hosted server, Playwright's browser - with the digests of 95 tools read from the pinned server versions through both
 packs' `describe`, GitHub's with a maintainer's token), the packs' `mcp-recipes.yml` with the shared digest vector and the gated live test (mercury-python
-#66, mercury-nodejs #132 and #648 here, all merged 2026-11-18; the spec's section 16). The build plan is complete; promotion
-is the maintainer's call.
+#66, mercury-nodejs #132 and #648 here, all merged 2026-11-18; the spec's section 16). The build plan is complete. **PROMOTED → ADR-0036 (2026-11-18, Eric: "since we have demonstrated that we can use existing
+MCP servers, please promote RFC-0013 as ADR")**, after the build of steps 1-5 in all three repositories, the live drives of
+2026-11-17 and the recipes' live digest checks of 2026-11-18.
 
 ---
 

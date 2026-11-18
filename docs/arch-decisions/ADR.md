@@ -33,6 +33,103 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0036 — Essential tools for agent loops: files inside one workspace, the web inside an allowlist, a knowledge graph inside one database and a clock as language-pack functions with published catalog rows; a product's own front door bound from its MCP server, by recipe {#adr-0036}
+**Status:** Accepted · **Date:** 2026-11-18 · **Serves:** vision-mercury-composable · **Formalizes:** agent-tools-built-or-bound
+<!-- id: adr-0036 | status: accepted -->
+
+**Abstract.** The tools an agent loop names beyond its use case's own routes come from two sources, both outside the
+engines. Twelve *built-in* tools are composable functions of a language-pack extension, `extensions/agent-tools/`
+(Python and Node.js in lockstep), each shipping the catalog row an author copies onto the graph: `file.read`,
+`file.write`, `file.list`, `file.search` and `file.extract` inside one workspace root; `web.fetch` and `web.crawl`
+inside an allowlist of hosts; `graph.schema`, `graph.query`, `graph.write` and `graph.ingest` inside one openCypher
+database reached over the Bolt driver; and `time.now`. Every sandbox is a key of the pack's configuration certified
+with the deployment, never an argument of a call; a tool whose sandbox is not configured does not register; results
+are text, capped and untrusted; every refusal is a 400 naming the rule and the key. Everything else an agent needs from
+a product's own front door - a repository, a code forge, a browser, the database vendor's server - is *bound* from an
+existing MCP server through the pack's MCP binding (ADR-0033), by recipe: the server-file entry, the input-schema
+digests the binding pins, the bind lines and a row rewritten for the graph, with a gated test that re-reads the
+digests. The engines contribute no tool code: a graph names routes, `llm.run` validates and dispatches, and the
+Event-over-HTTP map reaches the pack.
+
+**Context.** ADR-0033 made a tool a route and the catalog data certified with the graph, and the diagram assistant
+proved it with one tool from one MCP server. The next graphs wanted to read the file a person pointed at, write a note,
+fetch a page, keep what a model extracted; without a shared set every graph would repeat the same security decisions -
+which directory, which hosts, how big a result, what counts as a write - and the field's bespoke agent loops each
+carry their own tool code, which is what Track 2 of the Vision exists to consolidate. Eric's topic of 2026-11-16
+(design sprint 4) asked for the essential set; on 2026-11-17 he proposed the knowledge graph - documents ingested
+once, rules extracted into a graph, never re-scanned - asked which reference MCP servers exist, and ruled R1-R16 (the
+spec's section 11): `file.search` added, the pack extension, the in-house HTML-to-text, the gated registration, the
+graph tools over Bolt with their two gates, the clock, `file.extract`, the recipes, `sql.query` out. The design is
+`draft-design-specs/agent-essential-tools.md` (RFC-0013; sections 13 to 16 hold the build notes and the defaults set
+without a ruling).
+
+**Decision.**
+
+- **A built-in tool is a composable function**, declared with `preload` in the pack extension and addressed by a route
+  that names the capability. The loop, the catalog and the graph see nothing special about it, so a built-in may later
+  be served by an MCP tool behind the same route, or an MCP tool by a built-in, and the graph does not change.
+- **Each tool ships its catalog row** - the name the model sees, the description it reads, an input schema in the
+  loop's closed vocabulary and `write: true` where it applies - as files and through a `describe` command, byte for
+  byte identical across the packs and pinned by their tests; the loop's pre-flight check still certifies what the
+  graph names.
+- **The sandbox is deployment configuration.** `tools.file.root` (hidden entries invisible), `tools.web.allow`
+  (private, loopback and link-local ranges refused, the resolved address pinned against DNS rebinding, redirects
+  re-checked, `robots.txt` honoured, sizes, pages, depth and pace capped) and `tools.graph.uri` with the two gates
+  `tools.graph.write` and `tools.graph.delete` (reads in read transactions, a write clause refused before it is sent)
+  are reviewed with the deployment and answer "what can this agent reach?" without reading code. An unconfigured tool
+  is a 404 to the pre-flight check, never an open door; limits are defaults a deployment lowers and never raises past
+  the tool's caps.
+- **Results are text, capped and untrusted.** No binary leaves a tool; each caps its own result; a page's or a
+  document's own status and content are a result, never the tool's error or an instruction the loop obeys. A refusal
+  is a 400 naming the rule and the key, returned to the model as the call's error; only the loop's own machinery fails
+  the node. A tool logs the route, the status, a count and a host - never a path's content, a page's text, a query's
+  parameters or a full URL.
+- **Few, essential, boring - and the agent's own knowledge graph is in.** No shell, no arbitrary HTTP request, no SQL
+  against a system of record: a use case with such a need writes a wrapper route and certifies it on its graph. The
+  graph a deployment configures is the agent's own store: `graph.ingest` merges what a model extracts - nodes by key
+  and label, relationships between keys, every value a parameter, a `source` on each - idempotently, so documents are
+  read once and queried many times. The transcript store holds a turn, the audit store what was said (ADR-0035), the
+  knowledge graph what was learned.
+- **Build or bind, by rule.** A capability is built when its sandbox must be the pack's, when the pack's process must
+  not depend on a second runtime, when the contract must be portable across backends, or when it is a few lines; it is
+  bound from an existing MCP server when that server is a product's own front door, maintained by its vendor, with the
+  surface that would be written anyway. A bound tool is governed like a built-in: the row on the graph carries the
+  description the model reads, never the server's; its writes are `write: true`; the binding pins the input-schema
+  digest and refuses to boot when the server changes it; a gated test re-reads the digests of every recipe. The
+  reference servers Memory, Sequential Thinking and Everything are left off graphs.
+- **Supervision is the node's, unchanged.** A built-in or bound write waits for a person under the default mode; an
+  ingestion node declares `mode: auto` knowingly, on the graph. The Playground's `site-notes`, `document-ingest` and
+  `document-query` are the reference shapes.
+
+**Alternatives.** (a) The reference MCP servers (Filesystem, Fetch) through the binding as the default: zero code,
+but a child process and a second runtime per server, the server's schemas and descriptions, controls that differ from
+the ones a deployment certifies here and no crawl; kept as an installation's alternative behind the same routes, by
+recipe. (b) Engine-side functions in `extensions/agent-loop`, Java and Rust in lockstep: no pack needed, but an agent
+deployment runs a pack for `llm.chat` anyway, the web libraries are weaker there and every tool would be written twice.
+(c) A generic `http.request` tool: rejected - a URL the model chooses is the server-side request forgery the web tools
+exist to prevent; an API a use case needs gets a wrapper route with its own schema. (d) Neo4j's own MCP server in
+place of the graph tools: zero code, but no structured ingest (a model would write the `MERGE` statements), APOC for
+its schema tool, and no portability across openCypher databases; kept as a recipe. (e) `sql.query` against a system of
+record: out of version 1 by ruling; a system of record gets a wrapper route. (f) Sandboxes as call arguments or as
+prompt text: an argument the model chooses is not a boundary and a prompt is not a certification artifact.
+
+**Consequences.** The packs gain one extension with twelve routes, two optional extras (`graph`, `documents`), an
+in-house HTML-to-text and the catalog files, in lockstep; the engines gain no code - two documentation pages
+([Built-in Agent Tools](../guides/agent-tools.md), [Tools from MCP Servers](../guides/tools-from-mcp-servers.md)),
+the Playground's three graphs with a synthetic corpus and token-free tests, and Event-over-HTTP entries, one route
+each. An author copies a row and sets a configuration key; a field installation gets a server-side knowledge graph fed
+by agents and governed like any database, with an openCypher contract that lets it choose the database. The evidence:
+the live drives of 2026-11-17 through both packs on Haiku 4.5 (`docs/test-reports/agent-tools-live-drive.md`) - four
+documents into 47 nodes and 43 relationships with every node carrying its source, no fact doubled across six ingests
+and two packs, questions answered with sources, notes written after a person's approval, and seven findings folded
+back into the graphs, the packs and the pages; and the recipes of 2026-11-18, the digests of 95 tools of seven servers
+read through both packs' `describe` with identical results, GitHub's hosted server with a maintainer's token, and
+checked live by the packs' gated tests. What stays open is version 2 (the spec's section 9) and the other toolsets of
+GitHub's server; a graph that must stay clean adds a uniqueness constraint on `key` per label through `graph.write`,
+since idempotence is the tool's and the keys are the model's.
+
+---
+
 ## ADR-0035 — The transcript audit store: every model turn of an agent loop recorded by the language pack, off the turn's path, in a governed store with a published schema {#adr-0035}
 **Status:** Accepted · **Date:** 2026-11-17 · **Serves:** vision-mercury-composable · **Formalizes:** transcript-audit-published-contract
 <!-- id: adr-0035 | status: accepted -->

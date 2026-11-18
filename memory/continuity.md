@@ -332,6 +332,26 @@
   release ([[help-edit-needs-bundle-release]]).
   <!-- id: playground-panel-name-meta | created: 2026-11-05 | last_used: 2026-11-12 | uses: 3 | tier: archive-candidate | origin: 2026-11-05-175904 -->
 
+- **Essential tools for agent loops: built into the packs with published rows and sandboxes in configuration, or
+  bound from a product's own MCP server by recipe (ADR-0036, accepted 2026-11-18 after the live drives and the recipes).**
+  Twelve built-in tools are composable functions of `extensions/agent-tools/` in both packs - `file.read`, `file.write`,
+  `file.list`, `file.search`, `file.extract` inside `tools.file.root`; `web.fetch`, `web.crawl` inside `tools.web.allow`
+  (private ranges refused, the address pinned, redirects re-checked, `robots.txt`, caps); `graph.schema`, `graph.query`,
+  `graph.write`, `graph.ingest` inside `tools.graph.uri` with the `write` and `delete` gates; `time.now` - each shipping
+  its catalog row (files and `describe`, byte-identical across the packs); an unconfigured tool does not register;
+  results are text, capped, untrusted; a refusal is a 400 naming the rule, returned to the model as the call's error;
+  logs carry counts and hosts, never content. Build or bind, by rule: built when the sandbox must be the pack's, no second
+  runtime may be needed, the contract must be portable or it is a few lines; bound through the MCP binding when the
+  server is a product's own front door - the row rewritten on the graph, writes `write: true`, the digest pinned and
+  re-read by a gated test (recipes for Git, Time, Fetch, Filesystem, Neo4j's Cypher server, GitHub's hosted server,
+  Playwright; 95 digests). Built as mercury-python #63/#64/#66/#67, mercury-nodejs #130/#132/#133, here #644 to #649; the
+  evidence is `docs/test-reports/agent-tools-live-drive.md` (47 nodes, 43 relationships from four documents, no fact
+  doubled across six ingests and two packs) and the recipes page's live digest checks; the ADR landed as PR-PENDING.
+  **How to apply:** a new capability is first a question of the rule - a pack function with a row, or a recipe for an
+  existing server - never engine code, never a generic request tool, never a call argument as a boundary; an
+  ingestion node declares `mode: auto` on the graph; a system of record gets a wrapper route. (ADR-0036)
+  <!-- id: agent-tools-built-or-bound | created: 2026-11-18 | last_used: 2026-11-18 | uses: 1 | tier: working | origin: 2026-11-18-094338 -->
+
 - **The transcript audit store: every model turn of an agent loop recorded by the pack's helper, off the turn's path,
   in a governed store with a published schema (ADR-0035, accepted 2026-11-17 after the live drive through both packs).**
   Two stores, two jobs: the working store of ADR-0033 keeps the conversation under its compare-and-set with the
@@ -791,7 +811,9 @@
   set gains `file.search`, and his knowledge-graph tools (openCypher over Bolt: schema, query, write, ingest - extract
   once, query many), a clock, `file.extract` and the reference-server recipes agreed the same day - both papers settled (#635
   merged 2026-11-17); **RFC-0012 BUILT and PROMOTED to ADR-0035 the same day** ([[transcript-audit-published-contract]]:
-  mercury-python #59, mercury-nodejs #126, #639, #641, mercury #414, the drive #642), RFC-0013's build next; the promotion of an AI graph through the governance lifecycle, his first theme of the
+  mercury-python #59, mercury-nodejs #126, #639, #641, mercury #414, the drive #642); **RFC-0013 BUILT 2026-11-17/18
+  (steps 1-5, all three repositories) and PROMOTED to ADR-0036 on 2026-11-18** ([[agent-tools-built-or-bound]]: the drives
+  `agent-tools-live-drive.md`, the recipes `tools-from-mcp-servers.md`); the promotion of an AI graph through the governance lifecycle, his first theme of the
   day, stays queued behind them.
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own

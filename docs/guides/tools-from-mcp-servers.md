@@ -8,7 +8,7 @@ summary: Recipes for giving an agent loop a tool that an existing MCP server alr
 layer: knowledge-graph
 audience: [developer, architect, ai-agent]
 keywords: [MCP, MCP server, mcp-binding, bind, schema digest, tool catalog, llm.run, Git, Time, Fetch,
-  Filesystem, Neo4j, GitHub, Playwright, recipes, mcp-recipes.yml, RFC-0013]
+  Filesystem, Neo4j, GitHub, Playwright, recipes, mcp-recipes.yml, RFC-0013, ADR-0036]
 related:
   - guides/agent-tools.md
   - guides/knowledge-graph/skills-reference.md
@@ -447,8 +447,8 @@ has an entry, so a broken entry fails the ordinary suite.
 
 ## What comes next
 
-- This page, the packs' `mcp-recipes.yml` and the gated digests test are step 5 of RFC-0013's build plan, the last
-  step; the proposal's promotion to an architecture decision is the maintainer's call.
+- This page, the packs' `mcp-recipes.yml` and the gated digests test were step 5 of RFC-0013's build plan, the last
+  step; the proposal was accepted as [ADR-0036](../arch-decisions/ADR.md#adr-0036) on 2026-11-18.
 - The other toolsets of GitHub's server (actions, code security, discussions and the rest of its documentation) are
   listed with the same `describe` run under a different `X-MCP-Toolsets` value; a reviewed set may be added here.
 
