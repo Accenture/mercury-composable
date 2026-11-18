@@ -5,11 +5,13 @@ Playground into this folder and list it in `graphs.yaml`.
 
 ## The AI demo graphs
 
-Both reach the LLM helper app of a language pack (mercury-python on port 8086, or mercury-nodejs on port 8087) through
-the declarative Event-over-HTTP map in `event-over-http.yaml`, so the engine holds no credential and no provider SDK.
-Run one helper with `ANTHROPIC_API_KEY` in its environment (its README has the command), then start this application.
-`-Dllm.peer.port=8087` selects the Node.js helper. In the test scope the same route names resolve to a scripted mock
-(`MockLlmChat`), so the graphs are tested without tokens.
+All of them reach the LLM helper app of a language pack (mercury-python on port 8086, or mercury-nodejs on port 8087)
+through the declarative Event-over-HTTP map in `event-over-http.yaml`, so the engine holds no credential and no
+provider SDK. Run one helper with `ANTHROPIC_API_KEY` in its environment (its README has the command), then start
+this application. `-Dllm.peer.port=8087` selects the Node.js helper. In the test scope the same route names resolve
+to a scripted mock (`MockLlmChat`), so the graphs are tested without tokens. The Rust port's Playground example
+(`examples/minigraph-playground` of mercury) ships these JSON models unchanged, compiled by that engine, and drove
+every one of them live (its `docs/test-reports/agent-graphs-live-drive.md`).
 
 ### `support-triage` - one AI node, the graph decides
 
