@@ -41,7 +41,7 @@
   digests of 56 tools read from the pinned versions through both packs' `describe`, identical - with nav, `llms.txt`,
   the skill inventory and the agent-tools page's links; the packs' `mcp-recipes.yml`, the shared digest vector and the
   gated live test (mercury-python #66, mercury-nodejs #132, 11 live passes each); the spec's section 16 (#648
-  here). GitHub's digests are not pinned (the listing needs a credential). The build plan is complete. Next: Eric's call
+  here, squash `dac2816f0`, MERGED 2026-11-18; the pack PRs merged the same day). GitHub's digests are not pinned (the listing needs a credential). The build plan is complete. Next: Eric's call
   on RFC-0013's promotion to an ADR.
   → proposal: RFC-0013
   → serves: vision-mercury-composable

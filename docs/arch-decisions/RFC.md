@@ -82,7 +82,8 @@ through both packs on Haiku 4.5 (`docs/test-reports/agent-tools-live-drive.md`; 
 `docs/guides/tools-from-mcp-servers.md` (seven recipes - Git, Time, Fetch, Filesystem, Neo4j's Cypher server, GitHub's
 hosted server, Playwright's browser - with the digests of 56 tools read from the pinned server versions through both
 packs' `describe`), the packs' `mcp-recipes.yml` with the shared digest vector and the gated live test (mercury-python
-#66, mercury-nodejs #132; the spec's section 16). The build plan is complete; promotion is the maintainer's call.
+#66, mercury-nodejs #132 and #648 here, all merged 2026-11-18; the spec's section 16). The build plan is complete; promotion
+is the maintainer's call.
 
 ---
 
