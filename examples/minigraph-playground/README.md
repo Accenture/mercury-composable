@@ -31,7 +31,9 @@ three graphs on the built-in agent tools of RFC-0013 - `site-notes` (a crawl of 
 supervised write of the notes into the pack's workspace), `document-ingest` (a document of the synthetic corpus in
 `corpus/` extracted into the agent's knowledge graph by a node that declares `mode: auto`) and `document-query`
 (the graph read, the sources cited). See `src/main/resources/graph/README.md` for the setup and the protocols, and
-`OrderAssistantTest` and `AgentToolsGraphsTest` for the token-free end-to-end tests.
+`OrderAssistantTest` and `AgentToolsGraphsTest` for the token-free end-to-end tests. The Rust port's Playground example
+(`examples/minigraph-playground` of mercury) ships the same six models unchanged, compiled by that engine and driven
+live there too (`docs/test-reports/agent-graphs-live-drive.md` in that repository).
 
 ## Demo: an MCP server's tool in an agent loop, watched from the Playground
 
