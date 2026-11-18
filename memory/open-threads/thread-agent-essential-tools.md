@@ -40,7 +40,7 @@
   the server-file entry, the digests, the bind lines and a row rewritten for the graph in the loop's vocabulary; the
   digests of 56 tools read from the pinned versions through both packs' `describe`, identical - with nav, `llms.txt`,
   the skill inventory and the agent-tools page's links; the packs' `mcp-recipes.yml`, the shared digest vector and the
-  gated live test (mercury-python #66, mercury-nodejs #132, 11 live passes each); the spec's section 16 (PR-PENDING
+  gated live test (mercury-python #66, mercury-nodejs #132, 11 live passes each); the spec's section 16 (#648
   here). GitHub's digests are not pinned (the listing needs a credential). The build plan is complete. Next: Eric's call
   on RFC-0013's promotion to an ADR.
   → proposal: RFC-0013
