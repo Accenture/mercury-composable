@@ -16,7 +16,7 @@
         <link rel="prev" href="../transcript-audit-schema/">
       
       
-        <link rel="next" href="../minimalist-kafka/">
+        <link rel="next" href="../tools-from-mcp-servers/">
       
       
         
@@ -1613,6 +1613,8 @@
       
         
       
+        
+      
     
     
     
@@ -2065,6 +2067,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools-from-mcp-servers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools from MCP Servers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -3490,7 +3520,7 @@ replaced by an MCP tool behind the same route, or an MCP tool by a built-in, and
    another need writes its own route and certifies it on its graph.</li>
 <li><strong>Build or bind, by rule.</strong> Built in-house when the sandbox must be the pack's, when no second runtime may be
    needed, or when it is a few lines; bound from an existing MCP server (through the pack's MCP binding) when the
-   server is a product's own front door.</li>
+   server is a product's own front door - the recipes are on <a href="../tools-from-mcp-servers/">Tools from MCP Servers</a>.</li>
 </ol>
 <h2 id="the-set">The set<a class="headerlink" href="#the-set" title="Permanent link">&para;</a></h2>
 <p>Every tool refuses an argument outside its sandbox with a <strong>400 that names the rule and the key that governs it</strong>;
@@ -3816,13 +3846,15 @@ belongs in the <a href="../transcript-audit-schema/">transcript audit store</a>.
   node that declares <code>mode: auto</code>) and <code>document-query</code> (the graph read, the sources cited), with their catalog rows
   copied from the packs' catalog files and <code>AgentToolsGraphsTest</code> on scripted stand-ins for the model and the tools
   (<code>examples/minigraph-playground</code>, its <code>graph/README.md</code> has the protocols), and <strong>driven live through both packs</strong>
-  on Haiku 4.5 - the record is <code>docs/test-reports/agent-tools-live-drive.md</code>. A page of recipes
-  for binding existing MCP servers (Git, GitHub, Playwright, the vendors' graph servers) where a server is a product's
-  own front door comes next.</li>
+  on Haiku 4.5 - the record is <code>docs/test-reports/agent-tools-live-drive.md</code>. The recipes for binding existing MCP servers - Git, Time, Fetch,
+  Filesystem, Neo4j's Cypher server, GitHub's and Playwright's - are on <a href="../tools-from-mcp-servers/">Tools from MCP Servers</a>
+  (step 5, 2026-11-18), with the digests read from the pinned server versions and a gated test in each pack that
+  re-reads them.</li>
 </ul>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../knowledge-graph/skills-reference/">Built-in skills reference</a> — <code>graph.task</code> and the agent loop's node.</li>
+<li><a href="../tools-from-mcp-servers/">Tools from MCP Servers</a> — binding an existing server's tool behind a route of your own.</li>
 <li><a href="../polyglot-functions/">Polyglot Functions</a> — how the engines reach a pack's functions over Event-over-HTTP.</li>
 <li><a href="../transcript-audit-schema/">Transcript Audit Schema</a> — the record of what the model was told and said.</li>
 <li>The pack's own guide, <code>extensions/agent-tools/README.md</code> in mercury-python — the function contract, the
@@ -3885,13 +3917,13 @@ belongs in the <a href="../transcript-audit-schema/">transcript audit store</a>.
         
         
           
-          <a href="../minimalist-kafka/" class="md-footer__link md-footer__link--next" aria-label="Next: Minimalist Kafka">
+          <a href="../tools-from-mcp-servers/" class="md-footer__link md-footer__link--next" aria-label="Next: Tools from MCP Servers">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Minimalist Kafka
+                Tools from MCP Servers
               </div>
             </div>
             <div class="md-footer__button md-icon">
