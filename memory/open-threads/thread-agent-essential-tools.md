@@ -42,7 +42,7 @@
   the skill inventory and the agent-tools page's links; the packs' `mcp-recipes.yml`, the shared digest vector and the
   gated live test (mercury-python #66, mercury-nodejs #132, 11 live passes each); the spec's section 16 (#648
   here, squash `dac2816f0`, MERGED 2026-11-18; the pack PRs merged the same day). GitHub's digests followed the same day, read with Eric's fine-grained token (39 tools of the default toolsets, 22
-  under the read-only header; mercury-python #67, mercury-nodejs #133, PR-PENDING here). The build plan is complete. Next: Eric's call
+  under the read-only header; mercury-python #67, mercury-nodejs #133, #649 here). The build plan is complete. Next: Eric's call
   on RFC-0013's promotion to an ADR.
   → proposal: RFC-0013
   → serves: vision-mercury-composable
