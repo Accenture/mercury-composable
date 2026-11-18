@@ -78,8 +78,11 @@ spec's section 14); the page extended here (#645, merged 2026-11-17). **Step 3 B
 (the Node twin, the catalog files byte for byte the Python pack's, the same live sequence on Neo4j; the spec's section
 15 lists the three visible differences; #646, merged 2026-11-17). **Step 4 BUILT and DRIVEN 2026-11-17:** the Playground's
 `site-notes`, `document-ingest` and `document-query` with the synthetic corpus and token-free tests, then the live drives
-through both packs on Haiku 4.5 (`docs/test-reports/agent-tools-live-drive.md`; #647, merged 2026-11-17). Step 5, the
-recipes page, remains.
+through both packs on Haiku 4.5 (`docs/test-reports/agent-tools-live-drive.md`; #647, merged 2026-11-17). **Step 5 BUILT 2026-11-18:** the page
+`docs/guides/tools-from-mcp-servers.md` (seven recipes - Git, Time, Fetch, Filesystem, Neo4j's Cypher server, GitHub's
+hosted server, Playwright's browser - with the digests of 56 tools read from the pinned server versions through both
+packs' `describe`), the packs' `mcp-recipes.yml` with the shared digest vector and the gated live test (mercury-python
+#66, mercury-nodejs #132; the spec's section 16). The build plan is complete; promotion is the maintainer's call.
 
 ---
 
