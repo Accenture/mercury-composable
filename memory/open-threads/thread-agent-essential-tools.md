@@ -38,10 +38,11 @@
   dithering, the loop's schema check correcting a call, a fetched 404 as a result. Steps 1-4 are complete in all three repositories. **Step 5 BUILT 2026-11-18** (held overnight at Eric's direction): the page `docs/guides/tools-from-mcp-servers.md` -
   seven recipes (Git, Time, Fetch, Filesystem, Neo4j's Cypher server, GitHub's hosted server, Playwright's browser), each
   the server-file entry, the digests, the bind lines and a row rewritten for the graph in the loop's vocabulary; the
-  digests of 56 tools read from the pinned versions through both packs' `describe`, identical - with nav, `llms.txt`,
+  digests of 95 tools read from the pinned versions through both packs' `describe`, identical - with nav, `llms.txt`,
   the skill inventory and the agent-tools page's links; the packs' `mcp-recipes.yml`, the shared digest vector and the
   gated live test (mercury-python #66, mercury-nodejs #132, 11 live passes each); the spec's section 16 (#648
-  here, squash `dac2816f0`, MERGED 2026-11-18; the pack PRs merged the same day). GitHub's digests are not pinned (the listing needs a credential). The build plan is complete. Next: Eric's call
+  here, squash `dac2816f0`, MERGED 2026-11-18; the pack PRs merged the same day). GitHub's digests followed the same day, read with Eric's fine-grained token (39 tools of the default toolsets, 22
+  under the read-only header; mercury-python #67, mercury-nodejs #133, PR-PENDING here). The build plan is complete. Next: Eric's call
   on RFC-0013's promotion to an ADR.
   → proposal: RFC-0013
   → serves: vision-mercury-composable

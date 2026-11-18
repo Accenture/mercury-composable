@@ -434,8 +434,9 @@ binding does not load, rather than as commented entries of `mcp-servers.yml` - t
 own loader and a deployment copies an entry, while `mcp-servers.yml` keeps its two commented examples; (2) the entries pin
 the package versions the digests were read from (`mcp-server-git==2026.11.11`, `@playwright/mcp@0.0.85` and so on), so a
 bump is a deliberate re-run of `describe`; (3) the digests are pinned in one vector file shared byte for byte - 56 tools of
-the six servers that list without a credential - and GitHub's are not pinned, since its listing needs a token: the page
-says to run `describe` with the deployment's own; (4) the test gates on `MCP_RECIPES_LIVE` (the Neo4j server also on
+the six servers that list without a credential - and GitHub's followed the same day, read with the maintainer's own
+fine-grained token (39 tools of the default toolsets, 22 of them under the read-only header; the test checks both
+modes when `GITHUB_MCP_TOKEN` is set); (4) the test gates on `MCP_RECIPES_LIVE` (the Neo4j server also on
 `NEO4J_PASSWORD`), treats a missing or a changed pinned tool as rot and a tool the server added as not rot; (5) the
 Filesystem recipe runs `--read-only` (ten tools) and the Neo4j recipe takes its connection from `NEO4J_*` variables rather
 than arguments, since an argument is visible in the process list; (6) Playwright runs `--headless --isolated

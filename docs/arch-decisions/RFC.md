@@ -80,8 +80,8 @@ spec's section 14); the page extended here (#645, merged 2026-11-17). **Step 3 B
 `site-notes`, `document-ingest` and `document-query` with the synthetic corpus and token-free tests, then the live drives
 through both packs on Haiku 4.5 (`docs/test-reports/agent-tools-live-drive.md`; #647, merged 2026-11-17). **Step 5 BUILT 2026-11-18:** the page
 `docs/guides/tools-from-mcp-servers.md` (seven recipes - Git, Time, Fetch, Filesystem, Neo4j's Cypher server, GitHub's
-hosted server, Playwright's browser - with the digests of 56 tools read from the pinned server versions through both
-packs' `describe`), the packs' `mcp-recipes.yml` with the shared digest vector and the gated live test (mercury-python
+hosted server, Playwright's browser - with the digests of 95 tools read from the pinned server versions through both
+packs' `describe`, GitHub's with a maintainer's token), the packs' `mcp-recipes.yml` with the shared digest vector and the gated live test (mercury-python
 #66, mercury-nodejs #132 and #648 here, all merged 2026-11-18; the spec's section 16). The build plan is complete; promotion
 is the maintainer's call.
 

@@ -34,8 +34,8 @@ tool.*
 >   changes anything is `write: true` on its row and waits for a person under the node's default mode; the binding
 >   refuses to boot when a server changes a tool's schema under the graph.
 > - **Kept honest** — a gated test in each pack starts the servers from the recipes file and checks the digests
->   (`MCP_RECIPES_LIVE=1`). The digests here were read on 2026-11-18 from the versions the entries pin, through both
->   packs; a changed digest is the recipe rotting, caught at the test or at the boot.
+>   (`MCP_RECIPES_LIVE=1`; GitHub's with `GITHUB_MCP_TOKEN`). The 95 digests here were read on 2026-11-18 from the
+>   versions the entries pin, through both packs; a changed digest is the recipe rotting, caught at the test or at the boot.
 
 ## Build or bind
 
@@ -288,11 +288,13 @@ the graph holds and that the statement must read, and the deployment adds `--rea
 
 The vendor's hosted server over streamable HTTP, reached with a fine-grained personal access token of least privilege
 (or the deployment's GitHub App installation token). The `X-MCP-Toolsets` header selects the tool families the server
-offers - `repos`, `issues`, `pull_requests` and the others of its documentation - and `X-MCP-Readonly: true` hides
-every write. The listing needs the credential, so the digests are not pinned on this page: run `describe` with the
-token, review each schema and pin what it prints. A self-hosted alternative is the vendor's container image over
-stdio (`command: docker`, `args: ['run', '-i', '--rm', '-e', 'GITHUB_PERSONAL_ACCESS_TOKEN', 'ghcr.io/github/github-mcp-server']`,
-`env: { GITHUB_PERSONAL_ACCESS_TOKEN: '${GITHUB_MCP_TOKEN}' }`), with `--toolsets` and `--read-only` as arguments.
+offers - the recipe's default, `repos,issues,pull_requests`, lists the 39 tools below; its documentation names the
+others - and `X-MCP-Readonly: true` hides the seventeen that write, leaving the 22 reads. The listing needs the
+credential: these digests were read on 2026-11-18 with a maintainer's fine-grained token through both packs'
+`describe`, identical, and the packs' test checks them whenever `GITHUB_MCP_TOKEN` is set, in both modes. A
+self-hosted alternative is the vendor's container image over stdio (`command: docker`, `args: ['run', '-i', '--rm',
+'-e', 'GITHUB_PERSONAL_ACCESS_TOKEN', 'ghcr.io/github/github-mcp-server']`, `env: { GITHUB_PERSONAL_ACCESS_TOKEN:
+'${GITHUB_MCP_TOKEN}' }`), with `--toolsets` and `--read-only` as arguments.
 
 ```yaml
 github:
@@ -305,11 +307,63 @@ github:
   timeout_ms: 30000
 ```
 
-A use case that reads a forge binds a few reads - a file's contents, a code search, the issues of a repository - and
-one that files an issue or opens a pull request binds that one write with `write: true`, so the person sees the title
-and the body before anything is created. The token's scope is the first fence and the read-only header the second;
-the row's description names the repositories the use case works on, and the function pins `owner` and `repo` from
-configuration where the graph must not choose them.
+| Tool | Digest (`schema_sha256`) | On a graph |
+| --- | --- | --- |
+| `get_commit` | `f084d5addb427982ea2cb3064e8c7faf23ef2117009b17707ca1f3dca2e08945` | read |
+| `get_file_contents` | `3e8fd49a5ed6d35c07b9b3d712312ffe317391a11f7fdd185fe7c86ed8a241bd` | read |
+| `get_label` | `cf89e3a5ff5d176d7be8375ae68fdde2bb90a85a524cb39037d0bf2d272fa474` | read |
+| `get_latest_release` | `6bd7211e72d2921f609892e467a7b293cc3ed176557cc391f736361ea718e021` | read |
+| `get_release_by_tag` | `9012396d62f53b04de455a466203e7c9ee6c56fa9f61063f28e08c147cb881f9` | read |
+| `get_tag` | `8b13651d5e7162c741afd862aa15fa2a1419c539ebcba092bfd07ef1ee88a82a` | read |
+| `issue_read` | `4129cf817f37afefbc65885a75ba37817ae95f46ab9658b0b9de8c37d6b26c2e` | read |
+| `list_branches` | `cc4d347261dd31b2df9f0a36d7bd49a5acb4dba8043c857f70a5dfb74c6b7804` | read |
+| `list_commits` | `591090af37df44793d29ce44be3afe0ec122e3ac2db6edc4e5db62d330b0a35c` | read |
+| `list_issue_fields` | `ae44b8d0eadc50902f62a7907ab1c45dfbf95a71ec87ec4aa836fece8477c002` | read |
+| `list_issue_types` | `fa18815229ec77ba88b9a249313ed41dd9e62382729cb72bc472587f1c06fb37` | read |
+| `list_issues` | `ae3a1945a49d3648618475385a0d3647f107f57e40720f1889e2360b40a98d37` | read |
+| `list_pull_requests` | `e1e093b013497fae6ca27152cc7d2ffed822ab389a5983e68773466bf83dc38b` | read |
+| `list_releases` | `4118d959bb3b13749813d74442a4d143f9a2a0fad7ac5e23880fc5d1f1aace03` | read |
+| `list_repository_collaborators` | `ee69edd2a4af5094260553c303fbc28db0a701ef28a9e93016aed005d6bc89a9` | read |
+| `list_tags` | `cc4d347261dd31b2df9f0a36d7bd49a5acb4dba8043c857f70a5dfb74c6b7804` | read |
+| `pull_request_read` | `380c0d04d38cb7ae46ac5862485e29277e353f7f7d868b558125e27be06017c1` | read |
+| `search_code` | `4ad473c9570e3a825e6d60c9869b87324e0a5d371cf293ffb70fd2b840358cf7` | read |
+| `search_commits` | `e477f9b9a99ce91db99e3380c7272485b0ee66cf06d9415674918bc6e8c159f7` | read |
+| `search_issues` | `a055d2bd8d73374c84787996a5dae3934ef1570fda9c0aa1ad7061038bc0e12e` | read |
+| `search_pull_requests` | `1d885a55314d8a1aff83ac5536600429ac3ae089d0f760335fa8ed559e99a9a1` | read |
+| `search_repositories` | `7b4cad1aba3867b93477594b3054d4e6a3b2fb2fa09ba9b7e11cb42b034a7902` | read |
+| `add_comment_to_pending_review` | `4db72d6ccc6cbf6c5a5a60db2269bdb78076bf2150838c932c4756fa16bc4667` | `write: true` |
+| `add_issue_comment` | `d93b8edaabd74e3c655651f4fcd84fcb30d30bbd9b648cf3194c410faed2f282` | `write: true` |
+| `add_reply_to_pull_request_comment` | `b3e21f358fb25d6e1e9b60c6b4133d50823f3401cb28a742b461b7f37bdc7951` | `write: true` |
+| `create_branch` | `e65b73ec25a45f23ce7371d5a18b7d2bb749388c330c01f592f1c288016fc385` | `write: true` |
+| `create_or_update_file` | `4bbfd9f8df3736e4897c2a0466b2131764d414c3075e3691711282eae7dc209e` | `write: true` |
+| `create_pull_request` | `e249ccd5a1f2364cbfc0a5d9e11bebdc298626351cc7e43fd59b851c3d520238` | `write: true` |
+| `create_repository` | `eb38a6e274e4b762d210740cdec57eacc9ebf0b5b87c013e32ee80406036f76b` | `write: true` |
+| `delete_file` | `af29cf413864c65dee4ac821b10d15f9bb0673e2977d2298918b1317d160d4ba` | `write: true` |
+| `fork_repository` | `ac52a51d95996c5af97cac680c7bc1b7dcc423061174a84c727dfd4a1d06b210` | `write: true` |
+| `issue_write` | `083aa952baecd960494979902818962438474a84f1985252f3024597e9442f5f` | `write: true` |
+| `merge_pull_request` | `d6b25b3006b7124dc4a1d775458febd3e802fe1dd9ff61347fc9bdb5e0176a02` | `write: true` |
+| `pull_request_review_write` | `250438d8197b381022f562f96943dfab18a397fafaada3fdca3d3f18696fdf0b` | `write: true` |
+| `push_files` | `63d80fecd0ff8d6b927f02faa499f858e13f79a008a6dfedaf04d8783194d51e` | `write: true` |
+| `sub_issue_write` | `8b4d8c72ba5b500c5fed41a86b4720f0bbb58eac1f58abf576fbc00d9a90a88b` | `write: true` |
+| `update_issue_comment` | `a4a9d37cda657866581bd1a8ca5eb7d6c1af6626d050361b1a3e4d1f63950441` | `write: true` |
+| `update_pull_request` | `f9ef3dae6c8d529fa50f1ebd23b6fe351c0def794deb20787d4b55a9503fb9e1` | `write: true` |
+| `update_pull_request_branch` | `48c3c0aa12992defea00c3727690442719367b1210187d5da589234bde3b62b6` | `write: true` |
+
+A use case that reads a forge binds a few reads - `get_file_contents`, `search_code`, `list_issues` - and one that
+files an issue or opens a pull request binds `issue_write` or `create_pull_request` with `write: true`, so the person
+sees the title and the body before anything is created (`issue_write` creates and updates by its `method`, so one row
+covers both). The token's scope is the first fence and the read-only header the second; the row's description names
+the repositories the use case works on, and the function pins `owner` and `repo` from configuration where the graph
+must not choose them. Several of the server's own descriptions instruct a chat assistant ("DO NOT use this tool",
+"check with the user") - the graph's row says what the use case needs instead. `list_branches` and `list_tags` share a
+schema and a digest, as do the two Neo4j queries; the row tells them apart.
+
+```json
+{ "name": "repo_file", "route": "repo.file",
+  "description": "The contents of one file of the project repository, by its path, at a branch, tag or commit (ref; the default branch when omitted).",
+  "input_schema": { "type": "object", "additionalProperties": false, "required": ["path"],
+    "properties": { "path": { "type": "string" }, "ref": { "type": "string" } } } }
+```
 
 ## Playwright's server
 
@@ -372,14 +426,16 @@ server's own description of the second says it is "RCE-equivalent". A reading us
 A recipe rots when the server it names changes a tool's schema, renames a tool or drops it. The binding catches that
 at boot, by refusing to start with the server and the tool named; the recipes are checked before that, by a gated test
 in each pack that starts every credential-free server from `mcp-recipes.yml` with `uvx` or `npx`, lists its tools
-through the binding's own client and compares the digests with the pinned ones:
+through the binding's own client and compares the digests with the pinned ones; GitHub's hosted server is listed the
+same way when a token is in the environment, once under the read-only header (exactly the pinned reads) and once
+without it (every pinned tool):
 
 ```bash
 # mercury-python
 MCP_RECIPES_LIVE=1 pytest tests/test_mcp_recipes.py
 # mercury-nodejs
 MCP_RECIPES_LIVE=1 node --test test/mcp-recipes.test.mjs
-# both: the Neo4j server also wants NEO4J_PASSWORD and a database at NEO4J_URI
+# both: the Neo4j server also wants NEO4J_PASSWORD and a database at NEO4J_URI; GitHub's wants GITHUB_MCP_TOKEN
 ```
 
 The pinned digests live in `tests/vectors/mcp-recipes.json` (`test/vectors/mcp-recipes.json` in the Node.js pack),
@@ -393,8 +449,8 @@ has an entry, so a broken entry fails the ordinary suite.
 
 - This page, the packs' `mcp-recipes.yml` and the gated digests test are step 5 of RFC-0013's build plan, the last
   step; the proposal's promotion to an architecture decision is the maintainer's call.
-- The GitHub recipe gets its pinned digests when a deployment runs `describe` with its own token; a reviewed set may
-  be added here.
+- The other toolsets of GitHub's server (actions, code security, discussions and the rest of its documentation) are
+  listed with the same `describe` run under a different `X-MCP-Toolsets` value; a reviewed set may be added here.
 
 ## See also
 
