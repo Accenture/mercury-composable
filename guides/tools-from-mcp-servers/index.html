@@ -3506,8 +3506,8 @@ tool.</em></p>
   changes anything is <code>write: true</code> on its row and waits for a person under the node's default mode; the binding
   refuses to boot when a server changes a tool's schema under the graph.</li>
 <li><strong>Kept honest</strong> — a gated test in each pack starts the servers from the recipes file and checks the digests
-  (<code>MCP_RECIPES_LIVE=1</code>). The digests here were read on 2026-11-18 from the versions the entries pin, through both
-  packs; a changed digest is the recipe rotting, caught at the test or at the boot.</li>
+  (<code>MCP_RECIPES_LIVE=1</code>; GitHub's with <code>GITHUB_MCP_TOKEN</code>). The 95 digests here were read on 2026-11-18 from the
+  versions the entries pin, through both packs; a changed digest is the recipe rotting, caught at the test or at the boot.</li>
 </ul>
 </blockquote>
 <h2 id="build-or-bind">Build or bind<a class="headerlink" href="#build-or-bind" title="Permanent link">&para;</a></h2>
@@ -3916,11 +3916,13 @@ the graph holds and that the statement must read, and the deployment adds <code>
 <h2 id="githubs-server">GitHub's server<a class="headerlink" href="#githubs-server" title="Permanent link">&para;</a></h2>
 <p>The vendor's hosted server over streamable HTTP, reached with a fine-grained personal access token of least privilege
 (or the deployment's GitHub App installation token). The <code>X-MCP-Toolsets</code> header selects the tool families the server
-offers - <code>repos</code>, <code>issues</code>, <code>pull_requests</code> and the others of its documentation - and <code>X-MCP-Readonly: true</code> hides
-every write. The listing needs the credential, so the digests are not pinned on this page: run <code>describe</code> with the
-token, review each schema and pin what it prints. A self-hosted alternative is the vendor's container image over
-stdio (<code>command: docker</code>, <code>args: ['run', '-i', '--rm', '-e', 'GITHUB_PERSONAL_ACCESS_TOKEN', 'ghcr.io/github/github-mcp-server']</code>,
-<code>env: { GITHUB_PERSONAL_ACCESS_TOKEN: '${GITHUB_MCP_TOKEN}' }</code>), with <code>--toolsets</code> and <code>--read-only</code> as arguments.</p>
+offers - the recipe's default, <code>repos,issues,pull_requests</code>, lists the 39 tools below; its documentation names the
+others - and <code>X-MCP-Readonly: true</code> hides the seventeen that write, leaving the 22 reads. The listing needs the
+credential: these digests were read on 2026-11-18 with a maintainer's fine-grained token through both packs'
+<code>describe</code>, identical, and the packs' test checks them whenever <code>GITHUB_MCP_TOKEN</code> is set, in both modes. A
+self-hosted alternative is the vendor's container image over stdio (<code>command: docker</code>, <code>args: ['run', '-i', '--rm',
+'-e', 'GITHUB_PERSONAL_ACCESS_TOKEN', 'ghcr.io/github/github-mcp-server']</code>, <code>env: { GITHUB_PERSONAL_ACCESS_TOKEN:
+'${GITHUB_MCP_TOKEN}' }</code>), with <code>--toolsets</code> and <code>--read-only</code> as arguments.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nt">github</span><span class="p">:</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="nt">transport</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'https://api.githubcopilot.com/mcp/'</span>
@@ -3930,21 +3932,235 @@ stdio (<code>command: docker</code>, <code>args: ['run', '-i', '--rm', '-e', 'GI
 <a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">    </span><span class="nt">X-MCP-Readonly</span><span class="p">:</span><span class="w"> </span><span class="s">'${GITHUB_MCP_READONLY:true}'</span>
 <a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">  </span><span class="nt">timeout_ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30000</span>
 </code></pre></div>
-<p>A use case that reads a forge binds a few reads - a file's contents, a code search, the issues of a repository - and
-one that files an issue or opens a pull request binds that one write with <code>write: true</code>, so the person sees the title
-and the body before anything is created. The token's scope is the first fence and the read-only header the second;
-the row's description names the repositories the use case works on, and the function pins <code>owner</code> and <code>repo</code> from
-configuration where the graph must not choose them.</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Digest (<code>schema_sha256</code>)</th>
+<th>On a graph</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_commit</code></td>
+<td><code>f084d5addb427982ea2cb3064e8c7faf23ef2117009b17707ca1f3dca2e08945</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>get_file_contents</code></td>
+<td><code>3e8fd49a5ed6d35c07b9b3d712312ffe317391a11f7fdd185fe7c86ed8a241bd</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>get_label</code></td>
+<td><code>cf89e3a5ff5d176d7be8375ae68fdde2bb90a85a524cb39037d0bf2d272fa474</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>get_latest_release</code></td>
+<td><code>6bd7211e72d2921f609892e467a7b293cc3ed176557cc391f736361ea718e021</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>get_release_by_tag</code></td>
+<td><code>9012396d62f53b04de455a466203e7c9ee6c56fa9f61063f28e08c147cb881f9</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>get_tag</code></td>
+<td><code>8b13651d5e7162c741afd862aa15fa2a1419c539ebcba092bfd07ef1ee88a82a</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>issue_read</code></td>
+<td><code>4129cf817f37afefbc65885a75ba37817ae95f46ab9658b0b9de8c37d6b26c2e</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>list_branches</code></td>
+<td><code>cc4d347261dd31b2df9f0a36d7bd49a5acb4dba8043c857f70a5dfb74c6b7804</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>list_commits</code></td>
+<td><code>591090af37df44793d29ce44be3afe0ec122e3ac2db6edc4e5db62d330b0a35c</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>list_issue_fields</code></td>
+<td><code>ae44b8d0eadc50902f62a7907ab1c45dfbf95a71ec87ec4aa836fece8477c002</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>list_issue_types</code></td>
+<td><code>fa18815229ec77ba88b9a249313ed41dd9e62382729cb72bc472587f1c06fb37</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>list_issues</code></td>
+<td><code>ae3a1945a49d3648618475385a0d3647f107f57e40720f1889e2360b40a98d37</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>list_pull_requests</code></td>
+<td><code>e1e093b013497fae6ca27152cc7d2ffed822ab389a5983e68773466bf83dc38b</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>list_releases</code></td>
+<td><code>4118d959bb3b13749813d74442a4d143f9a2a0fad7ac5e23880fc5d1f1aace03</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>list_repository_collaborators</code></td>
+<td><code>ee69edd2a4af5094260553c303fbc28db0a701ef28a9e93016aed005d6bc89a9</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>list_tags</code></td>
+<td><code>cc4d347261dd31b2df9f0a36d7bd49a5acb4dba8043c857f70a5dfb74c6b7804</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>pull_request_read</code></td>
+<td><code>380c0d04d38cb7ae46ac5862485e29277e353f7f7d868b558125e27be06017c1</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>search_code</code></td>
+<td><code>4ad473c9570e3a825e6d60c9869b87324e0a5d371cf293ffb70fd2b840358cf7</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>search_commits</code></td>
+<td><code>e477f9b9a99ce91db99e3380c7272485b0ee66cf06d9415674918bc6e8c159f7</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>search_issues</code></td>
+<td><code>a055d2bd8d73374c84787996a5dae3934ef1570fda9c0aa1ad7061038bc0e12e</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>search_pull_requests</code></td>
+<td><code>1d885a55314d8a1aff83ac5536600429ac3ae089d0f760335fa8ed559e99a9a1</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>search_repositories</code></td>
+<td><code>7b4cad1aba3867b93477594b3054d4e6a3b2fb2fa09ba9b7e11cb42b034a7902</code></td>
+<td>read</td>
+</tr>
+<tr>
+<td><code>add_comment_to_pending_review</code></td>
+<td><code>4db72d6ccc6cbf6c5a5a60db2269bdb78076bf2150838c932c4756fa16bc4667</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>add_issue_comment</code></td>
+<td><code>d93b8edaabd74e3c655651f4fcd84fcb30d30bbd9b648cf3194c410faed2f282</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>add_reply_to_pull_request_comment</code></td>
+<td><code>b3e21f358fb25d6e1e9b60c6b4133d50823f3401cb28a742b461b7f37bdc7951</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>create_branch</code></td>
+<td><code>e65b73ec25a45f23ce7371d5a18b7d2bb749388c330c01f592f1c288016fc385</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>create_or_update_file</code></td>
+<td><code>4bbfd9f8df3736e4897c2a0466b2131764d414c3075e3691711282eae7dc209e</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>create_pull_request</code></td>
+<td><code>e249ccd5a1f2364cbfc0a5d9e11bebdc298626351cc7e43fd59b851c3d520238</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>create_repository</code></td>
+<td><code>eb38a6e274e4b762d210740cdec57eacc9ebf0b5b87c013e32ee80406036f76b</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>delete_file</code></td>
+<td><code>af29cf413864c65dee4ac821b10d15f9bb0673e2977d2298918b1317d160d4ba</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>fork_repository</code></td>
+<td><code>ac52a51d95996c5af97cac680c7bc1b7dcc423061174a84c727dfd4a1d06b210</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>issue_write</code></td>
+<td><code>083aa952baecd960494979902818962438474a84f1985252f3024597e9442f5f</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>merge_pull_request</code></td>
+<td><code>d6b25b3006b7124dc4a1d775458febd3e802fe1dd9ff61347fc9bdb5e0176a02</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>pull_request_review_write</code></td>
+<td><code>250438d8197b381022f562f96943dfab18a397fafaada3fdca3d3f18696fdf0b</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>push_files</code></td>
+<td><code>63d80fecd0ff8d6b927f02faa499f858e13f79a008a6dfedaf04d8783194d51e</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>sub_issue_write</code></td>
+<td><code>8b4d8c72ba5b500c5fed41a86b4720f0bbb58eac1f58abf576fbc00d9a90a88b</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>update_issue_comment</code></td>
+<td><code>a4a9d37cda657866581bd1a8ca5eb7d6c1af6626d050361b1a3e4d1f63950441</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>update_pull_request</code></td>
+<td><code>f9ef3dae6c8d529fa50f1ebd23b6fe351c0def794deb20787d4b55a9503fb9e1</code></td>
+<td><code>write: true</code></td>
+</tr>
+<tr>
+<td><code>update_pull_request_branch</code></td>
+<td><code>48c3c0aa12992defea00c3727690442719367b1210187d5da589234bde3b62b6</code></td>
+<td><code>write: true</code></td>
+</tr>
+</tbody>
+</table>
+<p>A use case that reads a forge binds a few reads - <code>get_file_contents</code>, <code>search_code</code>, <code>list_issues</code> - and one that
+files an issue or opens a pull request binds <code>issue_write</code> or <code>create_pull_request</code> with <code>write: true</code>, so the person
+sees the title and the body before anything is created (<code>issue_write</code> creates and updates by its <code>method</code>, so one row
+covers both). The token's scope is the first fence and the read-only header the second; the row's description names
+the repositories the use case works on, and the function pins <code>owner</code> and <code>repo</code> from configuration where the graph
+must not choose them. Several of the server's own descriptions instruct a chat assistant ("DO NOT use this tool",
+"check with the user") - the graph's row says what the use case needs instead. <code>list_branches</code> and <code>list_tags</code> share a
+schema and a digest, as do the two Neo4j queries; the row tells them apart.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"repo_file"</span><span class="p">,</span><span class="w"> </span><span class="nt">"route"</span><span class="p">:</span><span class="w"> </span><span class="s2">"repo.file"</span><span class="p">,</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The contents of one file of the project repository, by its path, at a branch, tag or commit (ref; the default branch when omitted)."</span><span class="p">,</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nt">"input_schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w"> </span><span class="nt">"additionalProperties"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="nt">"required"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"path"</span><span class="p">],</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="nt">"ref"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
 <h2 id="playwrights-server">Playwright's server<a class="headerlink" href="#playwrights-server" title="Permanent link">&para;</a></h2>
 <p>The vendor's browser automation server (Node.js, <code>npx</code>): a headless browser with an in-memory profile, driven through
 accessibility snapshots. <code>--allowed-origins</code> is the allowlist of sites the browser may request (semicolon-separated
 origins), <code>--isolated</code> keeps no profile on disk, <code>--output-dir</code> collects screenshots, and a secrets file for logins
 stays with the server and never on a graph.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nt">playwright</span><span class="p">:</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">transport</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stdio</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">npx</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="nt">args</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'-y'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'@playwright/mcp@0.0.85'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'--headless'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'--isolated'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'--allowed-origins'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'${MCP_PLAYWRIGHT_ORIGINS:https://docs.example.com}'</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span><span class="nt">timeout_ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60000</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nt">playwright</span><span class="p">:</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="nt">transport</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stdio</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">npx</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span><span class="nt">args</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'-y'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'@playwright/mcp@0.0.85'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'--headless'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'--isolated'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'--allowed-origins'</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">'${MCP_PLAYWRIGHT_ORIGINS:https://docs.example.com}'</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span><span class="nt">timeout_ms</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60000</span>
 </code></pre></div>
 <table>
 <thead>
@@ -4087,21 +4303,23 @@ person under the default mode, with the target element and the value in view. <c
 <code>browser_run_code_unsafe</code> run arbitrary code in the browser or in the server's process and are never bound; the
 server's own description of the second says it is "RCE-equivalent". A reading use case binds <code>browser_navigate</code>,
 <code>browser_snapshot</code> and <code>browser_find</code>; a form-filling one adds <code>browser_fill_form</code> and <code>browser_click</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"site_snapshot"</span><span class="p">,</span><span class="w"> </span><span class="nt">"route"</span><span class="p">:</span><span class="w"> </span><span class="s2">"site.snapshot"</span><span class="p">,</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The accessibility snapshot of the page the browser is on: every element with its role, name and reference. Pass depth to limit the tree."</span><span class="p">,</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="nt">"input_schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w"> </span><span class="nt">"additionalProperties"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"depth"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w"> </span><span class="nt">"minimum"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"maximum"</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="p">{</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"site_snapshot"</span><span class="p">,</span><span class="w"> </span><span class="nt">"route"</span><span class="p">:</span><span class="w"> </span><span class="s2">"site.snapshot"</span><span class="p">,</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The accessibility snapshot of the page the browser is on: every element with its role, name and reference. Pass depth to limit the tree."</span><span class="p">,</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="nt">"input_schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w"> </span><span class="nt">"additionalProperties"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">    </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"depth"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w"> </span><span class="nt">"minimum"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"maximum"</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
 <h2 id="keeping-a-recipe-honest">Keeping a recipe honest<a class="headerlink" href="#keeping-a-recipe-honest" title="Permanent link">&para;</a></h2>
 <p>A recipe rots when the server it names changes a tool's schema, renames a tool or drops it. The binding catches that
 at boot, by refusing to start with the server and the tool named; the recipes are checked before that, by a gated test
 in each pack that starts every credential-free server from <code>mcp-recipes.yml</code> with <code>uvx</code> or <code>npx</code>, lists its tools
-through the binding's own client and compares the digests with the pinned ones:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># mercury-python</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="nv">MCP_RECIPES_LIVE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>pytest<span class="w"> </span>tests/test_mcp_recipes.py
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="c1"># mercury-nodejs</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="nv">MCP_RECIPES_LIVE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>node<span class="w"> </span>--test<span class="w"> </span>test/mcp-recipes.test.mjs
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="c1"># both: the Neo4j server also wants NEO4J_PASSWORD and a database at NEO4J_URI</span>
+through the binding's own client and compares the digests with the pinned ones; GitHub's hosted server is listed the
+same way when a token is in the environment, once under the read-only header (exactly the pinned reads) and once
+without it (every pinned tool):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># mercury-python</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="nv">MCP_RECIPES_LIVE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>pytest<span class="w"> </span>tests/test_mcp_recipes.py
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="c1"># mercury-nodejs</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="nv">MCP_RECIPES_LIVE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>node<span class="w"> </span>--test<span class="w"> </span>test/mcp-recipes.test.mjs
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="c1"># both: the Neo4j server also wants NEO4J_PASSWORD and a database at NEO4J_URI; GitHub's wants GITHUB_MCP_TOKEN</span>
 </code></pre></div>
 <p>The pinned digests live in <code>tests/vectors/mcp-recipes.json</code> (<code>test/vectors/mcp-recipes.json</code> in the Node.js pack),
 one file shared byte for byte, and the test fails by name: <code>the git recipe rotted - missing [...], changed [...]</code>. The
@@ -4113,8 +4331,8 @@ has an entry, so a broken entry fails the ordinary suite.</p>
 <ul>
 <li>This page, the packs' <code>mcp-recipes.yml</code> and the gated digests test are step 5 of RFC-0013's build plan, the last
   step; the proposal's promotion to an architecture decision is the maintainer's call.</li>
-<li>The GitHub recipe gets its pinned digests when a deployment runs <code>describe</code> with its own token; a reviewed set may
-  be added here.</li>
+<li>The other toolsets of GitHub's server (actions, code security, discussions and the rest of its documentation) are
+  listed with the same <code>describe</code> run under a different <code>X-MCP-Toolsets</code> value; a reviewed set may be added here.</li>
 </ul>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
