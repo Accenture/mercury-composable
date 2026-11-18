@@ -1,6 +1,7 @@
 # Essential built-in tools for agent loops — files, the web, a knowledge graph, a clock — design spec
 
-**Status:** DRAFT, round 2 (2026-11-17, Claude Code for Eric). Round 1 (2026-11-16) was raised as RFC-0013 in
+**Status:** ACCEPTED — promoted to [ADR-0036](../docs/arch-decisions/ADR.md#adr-0036) on 2026-11-18 (Eric), after the
+build of steps 1-5 (sections 13 to 16) and the live drives. Round 2 drafted 2026-11-17 (Claude Code for Eric); round 1 (2026-11-16) was raised as RFC-0013 in
 [`docs/arch-decisions/RFC.md`](../docs/arch-decisions/RFC.md). Eric's rulings of 2026-11-17 on R1-R7 are recorded in
 section 11 and applied: the set gains `file.search`. On his proposal the paper adds the knowledge-graph tools (section
 4.3) and a clock, answers his question on the reference MCP servers (section 8), and records the round-2 rulings

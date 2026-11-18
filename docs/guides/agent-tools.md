@@ -7,7 +7,7 @@ summary: The essential tools an agent loop names in its tool catalog - files ins
 layer: knowledge-graph
 audience: [developer, architect, ai-agent]
 keywords: [agent tools, built-in tools, llm.run, tool catalog, file.read, file.write, file.list, file.search,
-  web.fetch, web.crawl, time.now, tools.file.root, tools.web.allow, sandbox, RFC-0013]
+  web.fetch, web.crawl, time.now, tools.file.root, tools.web.allow, sandbox, RFC-0013, ADR-0036]
 related:
   - guides/knowledge-graph/skills-reference.md
   - guides/polyglot-functions.md
@@ -32,8 +32,9 @@ puts one on a graph.*
 >   configured does not register; every refusal is a 400 naming the rule; results are text, capped and untrusted.
 > - **Versions** — version 1: the file, web and clock tools (mercury-python #63) and the knowledge-graph tools with
 >   `file.extract` (mercury-python #64), and the Node.js twin (mercury-nodejs #130), all 2026-11-17; the two packs
->   serve the same routes from the same catalog files, byte for byte. Settled as RFC-0013 in the
->   [RFC register](../arch-decisions/RFC.md).
+>   serve the same routes from the same catalog files, byte for byte. Accepted as
+>   [ADR-0036](../arch-decisions/ADR.md#adr-0036) on 2026-11-18, after the live drives through both packs and the recipes for
+>   existing MCP servers (raised as RFC-0013 in the [RFC register](../arch-decisions/RFC.md)).
 
 ## A built-in tool is a composable function
 
