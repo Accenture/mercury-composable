@@ -2332,6 +2332,8 @@
       
         
       
+        
+      
     
     
     
@@ -2972,6 +2974,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../test-reports/ask-a-person-live-drive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — Ask a person, live through the Playground and both packs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../test-reports/minimalist-msgpack-benchmark/" class="md-nav__link">
         
   
@@ -3470,7 +3500,8 @@ graph's own knowledge of itself:</p>
 <li><code>POST /ask/reply</code> with <code>{"ticket": ..., "decisions": [...]}</code> - a person's browser, or a channel app on the person's
   behalf under its own bearer with <code>decided_by</code> - verifies the ticket, maps the graph id to the engine's entry through the
   pack's <code>ask.graphs</code> allowlist (never to an address a message told it), prefixes <code>[who at time]</code> to each tool call's
-  note so the <a href="../transcript-audit-schema/">transcript audit store</a> carries who decided, sends the resume
+  note - the <a href="../transcript-audit-schema/">transcript audit store</a> carries it when the note reaches the model, which the
+  loop does for a refused call - sends the resume
   (<code>{turn, decisions}</code> with the correlation id) and returns the engine's outcome to the invoker. An expired ticket is a
   410 without a call to the engine.</li>
 <li>Who may answer is the pack's <code>ask.reply.auth</code>: <code>none</code> in development, <code>proxy</code> (the installation's SSO: a trusted
@@ -3526,13 +3557,17 @@ run the graph from the start. The resume node's fresh path therefore gates on th
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>skill=graph.math
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>statement='''
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>MAPPING: text(={input.body.decisions}) -&gt; model.decisions_probe
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>IF: {model.decisions_probe} == '=null'
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>THEN: check-input
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>ELSE: nothing-waiting
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>'''
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>MAPPING: text(={input.body.turn}) -&gt; model.turn_probe
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>IF: {model.decisions_probe} == '=null' &amp;&amp; {model.turn_probe} == '=null'
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>THEN: check-input
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>ELSE: nothing-waiting
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>'''
 </code></pre></div>
 <p><code>nothing-waiting</code> is a mapper that answers HTTP 410 with <code>type: nothing-waiting</code>: the suspension expired or was decided
-already, and a conversation is never started by a late decision. The pack's reply endpoint shows it as expired.</p>
+already, and a conversation is never started by a late decision. The pack's reply endpoint shows it as expired. The
+<code>turn</code> probe is there for the reply page: its GET re-advises with the ticket's turn and no decisions, and a dead wait
+must meet the gate too, so the page says the wait has expired instead of showing the engine's input check (found in
+the live drive of 2026-11-19).</p>
 <p><strong>3. The advices.</strong> When <code>decide</code> accepts the decisions, an <code>acknowledge</code> node sends <code>kind: advice</code> - the decision was
 received, the assistant continues - before the loop node reruns, and <code>report-answer</code> and <code>report-stop</code> send the outcome
 after <code>respond</code> and <code>stopped</code>, because the person who decided may not be the caller. Each has its own handler, so a
@@ -3569,7 +3604,9 @@ not reachable, and hands the person the link or invokes it on the person's behal
 </code></pre></div>
 <p>The advice carries <code>link</code>; opening it shows the question with the options the model drafted, and the submit resumes
 the graph with <code>{"id": ..., "answer": ...}</code>. In the test scope <code>MockAskPerson</code> serves <code>person.ask</code>, so
-<code>OrderAssistantTest</code> and <code>PlanAssistantTest</code> run both shapes without a pack, a browser or a token.</p>
+<code>OrderAssistantTest</code> and <code>PlanAssistantTest</code> run both shapes without a pack, a browser or a token. The live drive of the
+whole chain, with a manual regression test at its end, is
+<a href="../../test-reports/ask-a-person-live-drive/"><code>docs/test-reports/ask-a-person-live-drive.md</code></a>.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../knowledge-graph/workflow-suspension/">Workflow Suspension</a> — the checkpoint, the resume node and the gate on its fresh path.</li>
