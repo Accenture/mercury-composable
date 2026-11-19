@@ -14,8 +14,8 @@
   hook, the hold node writes the texts, the reply page's identity by extension, nothing new in the approval block,
   `plan-assistant`, the page shows the wait as the engine returns it - and **R8:** `kind` gains `advice`, a
   notification with no decision (a status update of a long run, an acknowledgement after a response), appended in the
-  inbox where waits upsert. Spec `draft-design-specs/ask-a-person-channel.md` (round 3); the engines' loop changes
-  nothing in version 1. Next: the build plan's step 1, the Python pack's main flow with the shared vectors.
+  inbox where waits upsert. Spec `draft-design-specs/ask-a-person-channel.md` (round 3), raised as PR #653 on 2026-11-19; the
+  engines' loop changes nothing in version 1. Next: the build plan's step 1, the Python pack's main flow with the shared vectors.
   → proposal: RFC-0014
   → serves: vision-mercury-composable
   <!-- id: ask-a-person-channel | created: 2026-11-19 | last_used: 2026-11-19 | uses: 1 | tier: working | origin: 2026-11-19-023727 -->
