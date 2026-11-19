@@ -95,6 +95,20 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    engine refinement listed for a later increment. **Upgrade note:** none - the graphs are the example's; a graph of your
    own adopts the hold path by adding the nodes the page shows.
 
+6. **Ask a person driven live through the Playground and both language packs (RFC-0014 build plan step 5), and the
+   reference graphs' gate meets a re-advice of a dead wait.** `docs/test-reports/ask-a-person-live-drive.md` records the
+   whole chain on Claude Haiku 4.5 - `order-assistant` and `plan-assistant` behind the Python pack's `person.ask` and
+   agent-question app on PostgreSQL, then the Node.js twins - through negative controls, a pack that is down, the link in a
+   bare browser with no channel app, a device online, a device off and reconnecting, a decision after the suspension expired
+   and two devices on one ticket, with a manual regression test at its end. The drive found that the gate of both graphs
+   recognized only `decisions`: the pack's reply page re-advises a dead wait with the ticket's turn and no decisions, which
+   ran the fresh path and showed the engine's input check instead of *This wait has expired*. The gate now probes `turn`
+   too and answers `nothing-waiting` (410) to either; `OrderAssistantTest` and `PlanAssistantTest` gain the case, and the
+   guide and the graph README say so. The second defect, the packs' inbox taking whichever outcome of two devices landed
+   last, is fixed in mercury-python #71 and mercury-nodejs #136. The RFC's section 20 records the findings: who decided
+   reaches the audit store only through a refused call's note, and a wait decided elsewhere stays open on another device's
+   card until tried or expired. **Upgrade note:** a graph copied from the reference adds the `turn` probe to its gate.
+
 ### Changed
 
 1. **A `DECIMAL` result carries at most a configured number of decimal places: `big.decimal.precision` (default 6) for

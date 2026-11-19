@@ -226,9 +226,10 @@
         "skill": "graph.math",
         "statement": [
           "MAPPING: text(={input.body.decisions}) -> model.decisions_probe",
-          "IF: {model.decisions_probe} == '=null'\nTHEN: check-input\nELSE: nothing-waiting"
+          "MAPPING: text(={input.body.turn}) -> model.turn_probe",
+          "IF: {model.decisions_probe} == '=null' && {model.turn_probe} == '=null'\nTHEN: check-input\nELSE: nothing-waiting"
         ],
-        "purpose": "The resume node's fresh path (RFC-0014): a request that carries decisions while nothing is waiting - the suspension expired, or it was decided already - must never start a conversation. It answers nothing-waiting; a request without decisions is a new case"
+        "purpose": "The resume node's fresh path (RFC-0014): a request that carries decisions, or a turn, while nothing is waiting - the suspension expired, or it was decided already - must never start a conversation. It answers nothing-waiting, so a late decision and the reply page's re-advice of a dead wait both meet the gate; a request without either is a new case"
       }
     },
     {
@@ -241,7 +242,7 @@
         "mapping": [
           "int(410) -> output.status",
           "text(nothing-waiting) -> output.body.type",
-          "text(Nothing is waiting for these decisions - the suspension expired or was decided already. Start a new case instead) -> output.body.message",
+          "text(Nothing is waiting here - the suspension expired or was decided already. Start a new case instead) -> output.body.message",
           "model.cid -> output.body.cid",
           "model.run -> output.body.run"
         ],

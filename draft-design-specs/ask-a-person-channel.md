@@ -209,9 +209,9 @@ The link is `<ask.reply.url>/ask/<ticket>`, served by the main flow's extension 
 the engine: the engine's resume wants a body on the graph's entry, and the engine stays internal to the installation.
 
 - **GET shows and never resumes (P5).** The page renders the wait: the kind and the graph from the ticket, and the
-  current waiting calls from the engine by the reference graph's re-advice convention — a request without decisions
-  on the same entry and correlation id, which returns the waiting calls and suspends again (section 7 keeps the
-  original expiry on that re-suspend). The page then offers the decision form: approve or refuse with a note per
+  current waiting calls from the engine by the reference graph's re-advice convention — a request with the turn and no
+  decisions on the same entry and correlation id, which returns the waiting calls and suspends again (section 7: the
+  re-suspend renews the wait, and a dead wait answers `nothing-waiting`, so the page says it has expired). The page then offers the decision form: approve or refuse with a note per
   waiting call, or an answer for a question. Nothing is read from any store, because the main flow has none.
 - **POST resumes.** `POST /ask/reply` with `{ticket, decisions, decided_by?}`. A person's browser posts the page's
   form; a channel app posts the same shape on the person's behalf, which is how the agent-question app automates the
@@ -221,7 +221,8 @@ the engine: the engine's resume wants a body on the graph's entry, and the engin
   `{turn, decisions}` in the body. The decisions are the person's and nothing else: `{id, approved, note}` for a tool
   call, `{id, answer}` for a question, the shapes the loop accepts. The operator's identity — the signed-in person on a
   browser's request (none in development, section 8), or `decided_by` on a channel app's request made under the app's
-  own credential — and the time are prefixed to each note, so the audit store carries who decided without a new field.
+  own credential — and the time are prefixed to each note; the audit store carries it when the note reaches the model,
+  which the loop does for a refused call (section 20 narrows this: an approved call's note goes nowhere the audit sees).
 - **The outcome goes back to the invoker.** The engine's reply — an `answer`, a new `approval` (the model asked again),
   a `nothing waiting` from the gate (410), a refusal of the decisions (400, an unknown id or a call decided twice,
   turned into an advice by the reference graph) — is returned as the response of the POST, so a page shows it and a
@@ -233,10 +234,12 @@ the engine: the engine's resume wants a body on the graph's entry, and the engin
 - **`order-assistant`, the approval shape.** The `advise` checkpoint gains one call before it suspends: `person.ask`
   with the message of section 4, mapped from the loop's `approval` block, the node's constants (`graph_id`,
   `description`, `ttl`) and the correlation id; the advice returned to the caller carries the link. The `decide`
-  node's gate is extended by one rule (P6): a request that carries `decisions` while `model.run` is `fresh` — nothing
-  was waiting, the record expired or was resumed already — answers `{"type": "nothing-waiting"}` with HTTP 410 and
-  never starts a conversation. A request without decisions still re-advises and suspends again; a request for another
-  turn still re-advises.
+  node's gate is extended by one rule (P6): a request that carries `decisions`, or a `turn`, while `model.run` is
+  `fresh` — nothing was waiting, the record expired or was resumed already — answers `{"type": "nothing-waiting"}` with
+  HTTP 410 and never starts a conversation (the `turn` probe was added after the live drive of step 5: the reply page's
+  GET re-advises a dead wait with the ticket's turn and no decisions, and it must show as expired, not as the engine's
+  input check). On a live record, a request without decisions still re-advises and suspends again; a request for
+  another turn still re-advises.
 - **The re-suspend renews the wait (verified in step 2).** `graph.suspend` takes its `ttl` as written on the node - the
   compiler validates the literal - so a re-advice suspends again for a fresh period. A ticket keeps the expiry of the
   message that issued it; a suspension re-advised after that expiry still waits until its own period ends, and a late
@@ -565,8 +568,36 @@ Kept for the record with the proposals as agreed; none is open.
   `Last-Event-ID` on the stream is the same cursor, and a browser's reconnect resumes from it by itself.
 - **The automated click** posts to the link's own base plus `/ask/reply`, never to a configured address, under the
   app's bearer with `decided_by`; the state the outcome leaves is `state_after`, pinned by the shared vectors; the
-  engine's `nothing waiting` for a second device becomes `expired` on that device's row, which already records the first
-  decision.
+  engine's `nothing waiting` for a second device leaves the row as the first decision left it (section 20: an acceptance
+  always wins the row, and the losing device gets the row as it stands).
 - **Shared vectors** pin the row a message becomes, the state an outcome leaves, the click's request and the reference
   inbox on a scripted sequence with its ids and change sequence, so the Node twin must land on the same rows.
 
+## 20. Build notes (step 5, 2026-11-19 - the live drive, `docs/test-reports/ask-a-person-live-drive.md`)
+
+- **The chain held on every scenario, on both packs.** Negative controls first (malformed, tampered, expired and
+  foreign tickets, the decision shapes, the intake's refusals), then a pack that is down (the hold stands without a
+  link, a re-advice never re-notifies), the link in a bare browser with no channel app, a device online (the card 8 ms
+  after the engine staged the advice; the acknowledgement and the outcome advices following the decision), a device off
+  and reconnecting (every wait and advice since its cursor in one replay, the waits answered in the opposite order), a
+  decision after the suspension expired (the gate's 410, the card expired, no conversation started) and two devices on
+  one ticket (both reach the engine, exactly one resumes); the Node twins the same behind the same Playground. Haiku
+  4.5, 13 conversations, 35 turns.
+- **The gate probes `turn` as well as `decisions` (defect 1, fixed here).** The reply page's GET re-advises with the
+  ticket's turn and no decisions; on a dead wait that ran the fresh path and the page showed the engine's input check.
+  Section 7's rule now reads: a request that carries decisions, or a turn, while nothing is waiting answers
+  `nothing-waiting`; a request with neither is a new case.
+- **The first accepted decision stands (defect 2, fixed in both packs).** The inbox's decision write was unconditional,
+  so with two devices on one card the row took whichever outcome landed last. A decision's write now applies when the row
+  is still open or when the engine accepted the decision (`answered` always wins); the losing device is answered with the
+  row as it stands and nothing is broadcast for it. The shared vectors are version 2 with the two-devices transition.
+- **Who decided reaches the audit store only through a refused call's note.** The loop sends a refused call's note to
+  the model as the call's error, so the stamp is in the next turn's request; an approved call's note goes nowhere the
+  model or the audit sees. The decision and its operator are on the inbox row and in the pack's log. Follow-up for the
+  loop: carry the decisions into the resumed turn's audit facts (RFC-0012), an engine and helper change.
+- **A wait decided elsewhere stays `open` on another device's card** until that device tries it (410 → expired) or the
+  sweeper reaches the expiry; the acknowledgement advice for the same turn sits beside it. Closing the card from that
+  advice would need a state the schema does not have (answered elsewhere, the operator unknown to the app) - a question
+  for the review before promotion.
+- **At-most-once held under two concurrent resumes:** the engine restored the record once; the second request found
+  nothing and met the gate.

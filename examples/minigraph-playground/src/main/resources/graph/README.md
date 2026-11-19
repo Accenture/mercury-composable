@@ -43,7 +43,7 @@ A customer-support assistant built on the agent loop of RFC-0011 (`llm.run`, the
   (`notify-failed`: the advice shows the waiting calls without a link, and `notify_error` says why). Only a fresh
   approval notifies; a re-advice re-stages the advice and never re-delivers. After the decision, `acknowledge` sends an
   advice before the loop reruns, and `report-answer` or `report-stop` sends the outcome - notifications with nothing
-  to decide. The resume node's fresh path has a `gate`: a request with decisions and nothing waiting is answered
+  to decide. The resume node's fresh path has a `gate`: a request with decisions, or with a turn, and nothing waiting is answered
   `nothing-waiting` with HTTP 410 and never starts a conversation.
 - **A resumed run lands on `decide`.** A request without decisions, or for another turn than the one that waits,
   re-advises and pauses again. A request with the decisions for this turn resets the loop node and runs it again with
@@ -73,7 +73,8 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/order-assistant \
 
 The person's channels got the same wait with the same link; opening the link shows it in a browser, and the submit
 sends the decision below through the pack's reply endpoint. A decision that arrives after the suspension expired, or
-a second decision for a case already decided, is answered `{"type": "nothing-waiting"}` with HTTP 410.
+a second decision for a case already decided, is answered `{"type": "nothing-waiting"}` with HTTP 410 - as is the
+reply page's re-advice of a dead wait, since it carries the turn.
 
 ```bash
 # 2. the supervisor decides - the same correlation id, the advised turn, one decision per waiting call

@@ -98,7 +98,8 @@ graph's own knowledge of itself:
 - `POST /ask/reply` with `{"ticket": ..., "decisions": [...]}` - a person's browser, or a channel app on the person's
   behalf under its own bearer with `decided_by` - verifies the ticket, maps the graph id to the engine's entry through the
   pack's `ask.graphs` allowlist (never to an address a message told it), prefixes `[who at time]` to each tool call's
-  note so the [transcript audit store](transcript-audit-schema.md) carries who decided, sends the resume
+  note - the [transcript audit store](transcript-audit-schema.md) carries it when the note reaches the model, which the
+  loop does for a refused call - sends the resume
   (`{turn, decisions}` with the correlation id) and returns the engine's outcome to the invoker. An expired ticket is a
   410 without a call to the engine.
 - Who may answer is the pack's `ask.reply.auth`: `none` in development, `proxy` (the installation's SSO: a trusted
@@ -163,14 +164,18 @@ with properties
 skill=graph.math
 statement='''
 MAPPING: text(={input.body.decisions}) -> model.decisions_probe
-IF: {model.decisions_probe} == '=null'
+MAPPING: text(={input.body.turn}) -> model.turn_probe
+IF: {model.decisions_probe} == '=null' && {model.turn_probe} == '=null'
 THEN: check-input
 ELSE: nothing-waiting
 '''
 ```
 
 `nothing-waiting` is a mapper that answers HTTP 410 with `type: nothing-waiting`: the suspension expired or was decided
-already, and a conversation is never started by a late decision. The pack's reply endpoint shows it as expired.
+already, and a conversation is never started by a late decision. The pack's reply endpoint shows it as expired. The
+`turn` probe is there for the reply page: its GET re-advises with the ticket's turn and no decisions, and a dead wait
+must meet the gate too, so the page says the wait has expired instead of showing the engine's input check (found in
+the live drive of 2026-11-19).
 
 **3. The advices.** When `decide` accepts the decisions, an `acknowledge` node sends `kind: advice` - the decision was
 received, the assistant continues - before the loop node reruns, and `report-answer` and `report-stop` send the outcome
@@ -214,7 +219,9 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/plan-assistant -H 'content-type:
 
 The advice carries `link`; opening it shows the question with the options the model drafted, and the submit resumes
 the graph with `{"id": ..., "answer": ...}`. In the test scope `MockAskPerson` serves `person.ask`, so
-`OrderAssistantTest` and `PlanAssistantTest` run both shapes without a pack, a browser or a token.
+`OrderAssistantTest` and `PlanAssistantTest` run both shapes without a pack, a browser or a token. The live drive of the
+whole chain, with a manual regression test at its end, is
+[`docs/test-reports/ask-a-person-live-drive.md`](../test-reports/ask-a-person-live-drive.md).
 
 ## See also
 
