@@ -4,11 +4,12 @@ summary: Permanent record of the first live drive of RFC-0014 (ask a person) - t
   graphs of the Playground example on Claude Haiku 4.5 behind the Python pack's ask-person flow and agent-question app on
   PostgreSQL, then the Node.js twins, through negative controls, a pack that is down, the link in a bare browser with no
   channel app, a device online, a device off and reconnecting, a decision after the suspension expired, and two devices
-  on one ticket; two defects found and fixed.
+  on one ticket; two defects found and fixed. Extended the same day with the page's waiting section and history
+  panel, checked on the Node.js backend through an all-Node chain.
 layer: reference
 audience: [developer, architect]
 keywords: [ask a person, human in the loop, approval, question, resume link, ticket, agent-question app, store-and-forward,
-  suspend, resume, nothing-waiting, agent loop, claude, test report, RFC-0014]
+  history panel, suspend, resume, nothing-waiting, agent loop, claude, test report, RFC-0014]
 ---
 
 # Test Report — Ask a person driven live through the Playground and both language packs
@@ -50,6 +51,11 @@ test](#reproduce-by-hand-the-manual-regression-test) at the end.
 - **A wait decided elsewhere stays `open` on a device's card** until that device tries it (the engine's 410 turns it
   expired) or the sweeper reaches its expiry; the acknowledgement advice beside it tells the person. Marking it from
   the advice is a design question for the RFC, not done here.
+- **The page's waiting section and history panel (mercury-python #72, mercury-nodejs #137, the same day) hold on both
+  backends.** The maintainer's browser pass on the Python backend, and the all-Node chain below on the Node backend:
+  a case stays under *Waiting for you* while any of its cards is open, moves into the scrollable *History* panel when
+  the last one closes, the badges and the tab's title count the open cards, and the panel keeps its scroll position
+  across the re-render every event causes.
 - **13 conversations, 35 model turns, 42,951 input and 4,395 output tokens on Haiku 4.5**; the inbox ended with 29 rows
   (9 approvals, 2 questions, 18 advices) and a change sequence of 46; the Python flow served 27 `person.ask` calls and
   17 replies (8 answers, 8 `nothing-waiting`, one 502 from a negative control with no engine), the Node flow 8 calls and
@@ -65,6 +71,7 @@ test](#reproduce-by-hand-the-manual-regression-test) at the end.
 | mercury-python `extensions/ask-person` | main at `a6c5a15` | `person.ask`, the ticket, the link, `GET /ask/{ticket}`, `POST /ask/reply`; port 8091; first with no channel, then with the app |
 | mercury-python `extensions/agent-question` | main at `a6c5a15`, then the first-decision fix of this drive | the inbox on PostgreSQL, `/questions`, `/questions/events`, `/questions/{id}/decide`, `/questions/{id}/seen`; port 8092 |
 | mercury-nodejs `extensions/ask-person`, `extensions/agent-question` | main at `b671ae6` (after #135), the first-decision fix applied | the twins, on 8094 and 8093, behind the same Playground (`-Dask.peer.port=8094`) |
+| mercury-nodejs `extensions/llm-helper`, `extensions/ask-person`, `extensions/agent-question` (section H) | main at `d2fade2` (after #137) | the all-Node chain of the history-panel check: the Node helper on 8087 (Haiku, the transcript store in memory), the twins on 8094 and 8093, the Node inbox on a PostgreSQL of its own (5433) |
 | Redis 7 (container) | `redis:7-alpine` | the graph's suspend store (`graph:<graph>:<cid>`) and the helper's working store, 6379 |
 | PostgreSQL 17 (container) | `postgres:17-alpine`, the helper's `schema/postgres.sql` at first start, the app's `schema/postgres.sql` by `dev/schema-apply.sh` | the transcript audit store and the question inbox, one database; pgweb on 8081 |
 | Model | `claude-haiku-4-5-20251001` | the helper's `llm.model`; the graphs name none |
@@ -194,6 +201,33 @@ card (`node-race`): `device-2` 410 in 35 ms, `device-1` 200 in 1.38 s, the row `
 expired*, its endpoint 410 `nothing-waiting`, the card `expired`. The two twins wrote and read one inbox table through
 the drive, and every row the Node app read of the Python app's rows rendered the same.
 
+## H — The page's waiting section and history panel, on the Node.js backend
+
+After the drive the page gained a sticky header with the count of open cards, a *Waiting for you* section and a
+scrollable *History* panel (mercury-python #72, mercury-nodejs #137, the generated page byte-identical). The maintainer
+checked it in a browser on the Python backend; the Node backend was checked here through an all-Node chain - the Node
+helper on Haiku 4.5, the Node `person.ask` on 8094, the Node agent-question app on 8093 with its inbox on a PostgreSQL
+container of its own, the Playground pointed at both (`-Dllm.peer.port=8087 -Dask.peer.port=8094`). Still headless:
+after every step the page's own script, fetched from the Node backend, was run under a minimal DOM against the
+backend's live rows, and a device held the stream throughout. What it rendered:
+
+| Step | Waiting for you | History | Badges, title |
+| --- | --- | --- | --- |
+| the empty inbox | *Nothing waits for you.* | *Nothing yet.* | none, `Agent questions` |
+| H1 an approval arrives (4.7 s) | `h1-order` [approval open] | - | 1 / -, `(1) Agent questions` |
+| H1 decided through the app (1.5 s): two advices open | `h1-order` [advice open, advice open, approval answered] | - | 2 / - |
+| H1 both advices marked seen | *Nothing waits for you.* | `h1-order` | - / 1 |
+| H2 a question, H3 an approval refused through the Node reply link | `h3-order` [approval open, advice open, advice open], `h2-plan` [question open] | `h1-order` | 4 / 1 |
+| H3 card tried (410, expired), its advices seen | `h2-plan` | `h3-order`, `h1-order` | 1 / 2 |
+| H4 the record expired, decided late from the card (410) | `h2-plan` | `h4-order`, `h3-order`, `h1-order` | 1 / 3 |
+
+A case stays under *Waiting for you* while any of its cards is open, an unread advice included, and moves into the
+panel when the last one closes; the panel lists newest first; a case with nothing to read, such as H4's expired wait,
+goes straight to the history. With the panel scrolled to 150 before the last render it read 150 after it. Every form
+was in the waiting section and none in the panel. The device saw the fifteen changes in order (seq 1 to 15), and the replay from a mid-way cursor (`since=6`) returned exactly the
+five later changes with `next: 15`. The Node backend logged the three decisions with their outcomes and states
+(`200 -> answered`, `410 -> expired`, `410 -> expired`); the Node helper took the model turns.
+
 ## Defects found and fixed
 
 | # | Where | Defect | Fix |
@@ -240,9 +274,12 @@ at `mercury-python` with its virtual environment active, Colima or Docker runnin
 6. **Device online.** Post the question with a fresh correlation id:
    `curl -s -X POST http://127.0.0.1:8085/api/graph/order-assistant -H 'content-type: application/json'
    -H 'x-correlation-id: case-1' -d '{"question": "My order ORD-1002 never arrived. Can you help?"}'` - the reply carries
-   `link` and `delivered`. The card appears on the page without a reload: the refund call with its arguments. Approve
-   with a note and send: the card turns *answered · decided by <your name>*, and two advices appear under the same
-   case - the acknowledgement, then the outcome with the model's answer. Mark them *Seen*.
+   `link` and `delivered`. The card appears under *Waiting for you* without a reload - the refund call with its
+   arguments, the badge and the tab's title reading 1. Approve with a note and send: the card turns *answered ·
+   decided by <your name>*, and two advices appear under the same case - the acknowledgement, then the outcome with the
+   model's answer - so the badge reads 2. Mark them *Seen*: the whole case moves into the *History* panel, the badge
+   disappears and the history count grows by one. Scroll the panel, then post the next case: the panel keeps its place
+   while the waiting section updates.
 7. **Device off.** Close the page. Post two cases: ORD-1004 on `order-assistant` (`case-2`) and
    `curl … /api/graph/plan-assistant -H 'x-correlation-id: plan-1' -d '{"task": "Ship the payment-service migration"}'`.
    Reopen the page: both cards are there, the question with its options as radio buttons. Answer the plan first, then
