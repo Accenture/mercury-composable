@@ -1,6 +1,6 @@
 # Ask a person — an agent's question or approval delivered to a person over an occasionally connected channel, answered through a return link that resumes the graph — design spec
 
-**Status:** DRAFT, round 3 (2026-11-19, Claude Code for Eric), raised as RFC-0014 in
+**Status:** DRAFT, round 3 (2026-11-19, Claude Code for Eric), steps 1-3 of the build plan built the same day (sections 18 and 19), raised as RFC-0014 in
 [`docs/arch-decisions/RFC.md`](../docs/arch-decisions/RFC.md). Round 1 was written the same day from Eric's concept and
 the review that followed; Eric's review of round 1, one further generalization, is recorded in section 13 and applied
 throughout: the paper is now two parts — **the main flow** (suspend, send a message with the resume link, accept the
@@ -298,7 +298,7 @@ Kafka natively and the packs do not).
 A standalone application on the pack framework, `extensions/agent-question/`, run as any pack app is
 (`mercury-serve`), in its own process: it holds no part of the main flow and the main flow holds no knowledge of it.
 
-- **Intake.** `agent.question.inbox` is its composable route; the main flow's `person.ask` reaches it over the
+- **Intake (as built, step 3).** `agent.question.inbox` is its composable route; the main flow's `person.ask` reaches it over the
   Event-over-HTTP map like any peer function. A wait is upserted as a row of its PostgreSQL inbox on `(graph_id,
   correlation_id, turn)` — a re-advice for the same turn updates the row rather than adding a card; an advice is
   appended as a row of its own, since status updates accumulate (R8). Write first: the row is committed before any
@@ -314,12 +314,14 @@ A standalone application on the pack framework, `extensions/agent-question/`, ru
   decided_by}` to the main flow's reply endpoint under its own bearer (section 6) and records the outcome on the row.
   Advices appear in the same list, grouped with their transaction's cards by correlation id, so an acknowledgement
   follows the decision it answers and a status update tells the person whether to wait or to come back later.
-- **States.** `open` → `answered` (the engine accepted) | `expired` (the engine found nothing waiting, or `expires_at`
-  passed) | `superseded` (a later re-advice for the same turn replaced the ticket; the card updates in place). Decided
-  and expired cards stay visible with their outcome and who decided until `question.inbox.retention` (default `30d`),
-  because a person who was offline wants to see what happened without them. The app never deletes; a purge on
-  `expires_at + retention` is the installation's, as `purge.sql` is for the audit store.
-  An advice is `open` until the device marks it `seen`, and leaves by retention alone.
+- **States (as built).** A wait is `open` until the engine accepts the decision (`answered`) or finds nothing waiting
+  (`expired`); a decision the loop refused, or a reply endpoint that did not answer, leaves it `open` with the outcome
+  shown - the graph re-notifies with the reason anyway. An advice is `open` until the person marks it `seen`. A
+  re-advice for the same turn updates the row in place (a new ticket, the state back to `open`), so round 2's
+  `superseded` state was not needed. Open waits past their expiry are marked `expired` by a sweeper (`question.sweep`,
+  30 s) and before every replay. Decided, expired and seen cards stay visible with their outcome and who decided; the
+  app never deletes, and `schema/purge.sql` carries the installation's retention (30 days as shipped), as the audit
+  store's purge does.
 - **Two devices on one card.** Both posts reach the engine; one is accepted and the other gets `nothing waiting`; the
   row records the first with its operator, and the second device sees who answered and when. The app never arbitrates.
 - **Identity (R7).** In development the app runs open: no sign-in, `question.auth: none`, the default. In production it
@@ -331,44 +333,65 @@ The reference schema (`extensions/agent-question/schema/postgres.sql`, byte-iden
 pattern of ADR-0035 — the package stays persistence-free, the extension owns its schema):
 
 ```sql
+CREATE TABLE IF NOT EXISTS question_schema (
+  version     INTEGER PRIMARY KEY,
+  applied_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO question_schema (version) VALUES (1) ON CONFLICT DO NOTHING;
+
+CREATE SEQUENCE IF NOT EXISTS question_inbox_seq;
+
 CREATE TABLE IF NOT EXISTS question_inbox (
-  id              bigserial PRIMARY KEY,
-  ticket          text UNIQUE,                   -- null for an advice
-  graph_id        text NOT NULL,
-  correlation_id  text NOT NULL,
-  turn            integer,                       -- null for an advice that follows no turn
-  kind            text NOT NULL,                 -- approval | question | advice
-  description     text NOT NULL,
-  summary         text NOT NULL,
-  details         text,                          -- an advice's body (R8)
-  message         jsonb NOT NULL,                -- the message event as received (section 4)
-  link            text,                          -- null for an advice
-  state           text NOT NULL,                 -- open | answered | expired | superseded | seen (an advice)
-  requested_at    timestamptz NOT NULL,
-  expires_at      timestamptz,                   -- null for an advice
-  answered_at     timestamptz,
-  answered_by     text,
-  decisions       jsonb,
-  outcome         jsonb                          -- the reply endpoint's response, trimmed to type, turn, message
+  id              BIGSERIAL    PRIMARY KEY,
+  seq             BIGINT       NOT NULL,                 -- the change sequence a replay reads from
+  ticket          TEXT         UNIQUE,                   -- null for an advice
+  graph_id        TEXT         NOT NULL,
+  correlation_id  TEXT         NOT NULL,
+  turn            INTEGER,                               -- null for an advice that follows no turn
+  kind            TEXT         NOT NULL CHECK (kind IN ('approval','question','advice')),
+  description     TEXT         NOT NULL,
+  summary         TEXT         NOT NULL,
+  details         TEXT,                                  -- an advice's body
+  message         JSONB        NOT NULL,                 -- the message event as received
+  link            TEXT,                                  -- null for an advice
+  state           TEXT         NOT NULL CHECK (state IN ('open','answered','expired','seen')),
+  requested_at    TIMESTAMPTZ  NOT NULL,
+  expires_at      TIMESTAMPTZ,                           -- null for an advice
+  updated_at      TIMESTAMPTZ  NOT NULL,
+  answered_at     TIMESTAMPTZ,
+  answered_by     TEXT,
+  decisions       JSONB,
+  outcome         JSONB                                  -- the reply endpoint's answer: status and body
 );
 CREATE UNIQUE INDEX IF NOT EXISTS question_inbox_wait ON question_inbox (graph_id, correlation_id, turn)
-  WHERE kind <> 'advice';                        -- waits upsert; advices append
+  WHERE kind <> 'advice';
+CREATE INDEX IF NOT EXISTS question_inbox_seq_idx ON question_inbox (seq);
 CREATE INDEX IF NOT EXISTS question_inbox_open ON question_inbox (state, requested_at);
 CREATE INDEX IF NOT EXISTS question_inbox_case ON question_inbox (correlation_id, requested_at);
 ```
 
 JSON travels as text cast to `jsonb` and stamps as text cast to `timestamptz`, so the Node twin runs the same statements
-(the audit store's rule).
+(the audit store's rule). Every write takes the next value of `question_inbox_seq`, the change sequence a replay reads from;
+the partial unique index makes waits upsert and advices append.
 
 ```yaml
-# extensions/agent-question/resources/application.yml
-question.inbox.url: ${QUESTION_INBOX_URL}   # the PostgreSQL connection string, never logged
-question.inbox.retention: 30d
+# extensions/agent-question/resources/application.yml (as built)
+question.inbox: memory                      # memory (development; a restart forgets) | postgres (a deployment)
+question.inbox.postgres.host: ${POSTGRES_HOST:127.0.0.1}   # the audit store's connection keys; the password a reference
+question.inbox.postgres.port: ${POSTGRES_PORT:5432}
+question.inbox.postgres.database: ${POSTGRES_DB:mercury}
+question.inbox.postgres.username: ${POSTGRES_USER:mercury}
+question.inbox.postgres.password: ${POSTGRES_PASSWORD:}
+question.inbox.postgres.ssl: true
+question.inbox.postgres.timeout.ms: 5000    # the connect timeout and the server-side bound on a statement
+question.sweep: 30s                         # how often open waits past their expiry are marked expired
 question.auth: none                         # none (development) | proxy (SSO, a gateway header) | oauth2 (access token)
 question.auth.header: x-forwarded-user      # with proxy
 question.auth.oauth2.issuer: ${QUESTION_OIDC_ISSUER:}      # with oauth2
 question.auth.oauth2.audience: ${QUESTION_OIDC_AUDIENCE:}  # with oauth2
 question.reply.token: ${ASK_REPLY_TOKEN:}   # the bearer this app presents to the reply endpoint (production)
+question.reply.timeout: 10s
+question.page.title: 'Agent questions'
 ```
 
 ## 11. The host hook
@@ -525,4 +548,23 @@ Kept for the record with the proposals as agreed; none is open.
   outcome's `details` is the model's text or the stop status.
 - **`plan-assistant`** is `order-assistant` without the order tools: one ask row, the same gate, hold path and advices;
   the scripted model drafts three plans and writes the plan for the option the owner picked.
+
+## 19. Build notes (step 3, 2026-11-19 - the agent-question app, mercury-python #70)
+
+- **The inbox defaults to memory**, with a boot warning that a restart forgets every card; a deployment sets
+  `question.inbox: postgres`. The connection keys follow the transcript audit store's (`question.inbox.postgres.*`)
+  rather than one URL, so an installation configures both stores the same way.
+- **No retention key.** The app reads none; `schema/purge.sql` carries the installation's interval and the app never
+  deletes. Round 2's `question.inbox.retention` is withdrawn.
+- **States: open, answered, expired, seen.** A re-advice updates the row in place, so `superseded` was not needed; a
+  refused decision leaves the row open with the outcome shown.
+- **The replay cursor is a change sequence**, `question_inbox_seq`, bumped on every write - an insert, a re-advice, a
+  decision, a seen, an expiry - so a reconnecting device also sees the rows whose state changed while it was off;
+  `Last-Event-ID` on the stream is the same cursor, and a browser's reconnect resumes from it by itself.
+- **The automated click** posts to the link's own base plus `/ask/reply`, never to a configured address, under the
+  app's bearer with `decided_by`; the state the outcome leaves is `state_after`, pinned by the shared vectors; the
+  engine's `nothing waiting` for a second device becomes `expired` on that device's row, which already records the first
+  decision.
+- **Shared vectors** pin the row a message becomes, the state an outcome leaves, the click's request and the reference
+  inbox on a scripted sequence with its ids and change sequence, so the Node twin must land on the same rows.
 

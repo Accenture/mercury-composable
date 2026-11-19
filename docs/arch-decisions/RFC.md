@@ -88,7 +88,11 @@ signed stateless ticket (the first vector's MAC reproduced with openssl), the ev
 handlers for a pack that is down), `plan-assistant` on the ask row with its scripted model, `MockAskPerson`, the tests,
 the page `docs/guides/ask-a-person.md` and the ask row in the guides. Found: `graph.suspend` takes `ttl` as written, so a
 re-advice renews the wait (Q2's fallback, documented); the original expiry across a re-suspend is an engine refinement
-for a later increment. Next: step 3, the agent-question app.
+for a later increment. **Step 3 BUILT 2026-11-19:** mercury-python #70 (MERGED) - `extensions/agent-question`, the
+store-and-forward inbox: the intake upserting a wait and appending an advice (memory or PostgreSQL, the change sequence
+as the replay cursor), the page, the replay, the stream with `Last-Event-ID`, the automated click to the link's reply
+endpoint under the app's bearer, `seen`; 30 shared vectors, 48 tests; the spec's section 19 records the defaults set
+without a ruling. Next: step 4, the Node twins of both extensions.
 
 ---
 
