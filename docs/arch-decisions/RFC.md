@@ -39,6 +39,50 @@
 
 ---
 
+## RFC-0014 — Ask a person: an agent's question or approval delivered to a person over an occasionally connected channel, answered through a return link that resumes the graph
+**Status:** Open · **Raised:** 2026-11-19 · **Serves:** vision-mercury-composable · **Thread:** `ask-a-person-channel`
+<!-- id: rfc-0014 | status: open | thread: ask-a-person-channel -->
+
+**Proposal.** The loop can already wait for a person - a row marked `write: true` under the default mode, and the ask
+row of the loop spec's section 7.3, both built in both engines - and the graph suspends durably on the state store;
+what is missing is the person: nothing carries a waiting call to anyone, and nothing brings a decision back except a
+request a developer types. The proposal is in two parts. **The main flow:** a composable function in the packs,
+`person.ask` (Python first, Node in lockstep), that the graph's hold path calls before it suspends; it issues a signed,
+opaque, stateless ticket, builds the resume link and sends one message event - the graph id, a description, the
+correlation id, the turn, the waiting calls, the expiry and the link - to the routes the installation configures,
+knowing nothing of what they do with it; the link opens the wait on the pack's reply page (read from the engine by the
+reference graph's re-advice, which keeps the original expiry) and a deliberate submit, a person's or a channel app's on
+the person's behalf, resumes the graph through the pack, which maps the graph id to the engine's entry by an allowlist
+and prefixes who decided to the note the audit store keeps. The same function carries a third kind of message, `advice` - a status update of a
+long-running run, an acknowledgement after the person's response so the next steps can be anticipated - with no
+ticket and no link (Eric, round 3). **Delivery and collection:** every channel is a
+store-and-forward system of its own - a chat, a mail server, a topic - and the first is the agent-question app, a
+standalone application on the pack framework with a streaming HTTP server for an occasionally connected device and a
+PostgreSQL inbox: the message is committed before any push, a stream wakes a connected device, a reconnecting device
+replays everything open since its cursor and selects which card to answer, the card's button automates the click, and
+decided or expired cards keep their outcome. The engine stays the authority on an answer (at-most-once resume), and the
+reference graph's resume node refuses a decision that finds nothing waiting, so a reply never starts a fresh run. The
+engines' loop changes nothing in version 1. The design spec is `draft-design-specs/ask-a-person-channel.md`. What a
+decision would commit the project to: the engine waits and the pack delivers and collects; the tool sends an event and
+knows no channel; one reply path, the resume link, for every channel; a GET shows and only a submit resumes; the main
+flow keeps no store and every channel buffers in its own medium; who decided reaches the audit store.
+
+**Options.** (A) `person.ask` as a routed tool the loop blocks on until the person answers - rejected: bounded by the
+tool timeout, lost on a restart, a second suspension beside `graph.suspend`. (B) The loop sends the event by itself
+through an `llm.run` setting in both engines - deferred: the graph's checkpoint is that seam today. (C) The link as the
+engine's own resume URL - rejected: fetched by link unfurlers, the engine exposed to the device, nobody recorded. (D)
+Per-channel inbound paths (a chat's buttons, a mailbox poller, a reply topic) - optional later; the link makes them
+unnecessary for version 1. (E) A store inside the main flow so its page renders without the engine - rejected on
+Eric's generalization of 2026-11-19: the main flow would become a channel's buffer, and every channel is its own. The
+open questions for the review are the spec's section 14.
+
+**Resolution.** Open - round 1 drafted 2026-11-19; round 2 the same day applies Eric's generalization (the
+agent-question UI as one store-and-forward channel, a standalone app the tool knows nothing of; the main flow and
+delivery-and-collection as separate parts); round 3 the same day records Eric's agreement on every open question (Q2-Q9) and adds the
+`advice` kind for notifications - status updates and acknowledgements of a long-running run.
+
+---
+
 ## RFC-0013 — Essential built-in tools for agent loops: files inside a workspace, the web inside an allowlist and a knowledge graph inside one database, as pack functions with published catalog rows
 **Status:** Promoted → ADR-0036 · **Raised:** 2026-11-16 · **Serves:** vision-mercury-composable · **Thread:** `agent-essential-tools`
 <!-- id: rfc-0013 | status: promoted | thread: agent-essential-tools -->
