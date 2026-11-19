@@ -22,8 +22,12 @@
   for a pack that is down), `plan-assistant` on the ask row, `MockAskPerson`, 12 new or extended tests, the page
   `docs/guides/ask-a-person.md`. Found: `graph.suspend` takes `ttl` as written, so a re-advice renews the wait while
   the ticket keeps its expiry - documented; the original expiry across a re-suspend is the engine refinement for a
-  later increment. The Rust twin's Playground lags until its next increment. Next: step 3, the agent-question app in
-  the Python pack.
+  later increment. The Rust twin's Playground lags until its next increment. **Step 3 BUILT 2026-11-19 (mercury-python #70,
+  MERGED):** `extensions/agent-question` - the intake upserting a wait and appending an advice (memory or PostgreSQL,
+  `question_inbox_seq` as the replay cursor), the page, the replay, the stream with `Last-Event-ID`, the automated
+  click to the link's reply endpoint under the app's bearer, `seen`; 30 shared vectors, 48 tests; the spec's section
+  19 records the defaults (memory default, the audit store's connection keys, no retention key, states without
+  `superseded`). Next: step 4, the Node twins of both extensions.
   → proposal: RFC-0014
   → serves: vision-mercury-composable
   <!-- id: ask-a-person-channel | created: 2026-11-19 | last_used: 2026-11-19 | uses: 1 | tier: working | origin: 2026-11-19-023727 -->
