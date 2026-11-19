@@ -11,7 +11,8 @@ provider SDK. Run one helper with `ANTHROPIC_API_KEY` in its environment (its RE
 this application. `-Dllm.peer.port=8087` selects the Node.js helper. In the test scope the same route names resolve
 to a scripted mock (`MockLlmChat`), so the graphs are tested without tokens. The Rust port's Playground example
 (`examples/minigraph-playground` of mercury) ships these JSON models unchanged, compiled by that engine, and drove
-every one of them live (its `docs/test-reports/agent-graphs-live-drive.md`).
+every one of them live (its `docs/test-reports/agent-graphs-live-drive.md`); the hold path's call to a person and
+`plan-assistant` (2026-11-19) reach it in its next increment.
 
 ### `support-triage` - one AI node, the graph decides
 
@@ -32,8 +33,18 @@ A customer-support assistant built on the agent loop of RFC-0011 (`llm.run`, the
   gets the loop's events (`run.start`, `turn.start`, `tool.start`, `tool.end`, `turn.end`, `approval.wait`,
   `run.end`).
 - **The graph decides on the status.** `done` goes to `respond` (the answer, the call log, the usage and the model);
-  `approval` goes to the `advise` checkpoint, which stages the waiting calls with their arguments and pauses the run
-  with `graph.suspend` on the Redis state store; a refusal or a cap goes to `stopped` (HTTP 422).
+  `approval` goes to `notify`, then to the `advise` checkpoint, which stages the waiting calls with their arguments and
+  pauses the run with `graph.suspend` on the Redis state store; a refusal or a cap goes to `stopped` (HTTP 422).
+- **A person is told (RFC-0014).** `notify` calls `person.ask`, a function of a language pack's `extensions/ask-person`
+  (mercury-python on port 8091), with the graph's name and description, the correlation id, the turn, the waiting calls
+  and the suspension's `ttl`; the function issues a signed ticket, builds the resume link and sends one message event
+  to the installation's channels - the agent-question app, a chat, mail - and the graph knows no channel. The advice
+  to the caller carries the `link`, `expires_at` and what was `delivered`; a pack that is down never fails the hold
+  (`notify-failed`: the advice shows the waiting calls without a link, and `notify_error` says why). Only a fresh
+  approval notifies; a re-advice re-stages the advice and never re-delivers. After the decision, `acknowledge` sends an
+  advice before the loop reruns, and `report-answer` or `report-stop` sends the outcome - notifications with nothing
+  to decide. The resume node's fresh path has a `gate`: a request with decisions and nothing waiting is answered
+  `nothing-waiting` with HTTP 410 and never starts a conversation.
 - **A resumed run lands on `decide`.** A request without decisions, or for another turn than the one that waits,
   re-advises and pauses again. A request with the decisions for this turn resets the loop node and runs it again with
   the conversation, the turn and the approval block kept in the model - the loop runs the calls it showed, never calls
@@ -55,8 +66,14 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/order-assistant \
  "calls": [{"id": "toolu_01...", "name": "issue_refund", "route": "demo.refund.issue", "wait": true,
             "input": {"order_id": "ORD-1002", "amount": 174.0, "reason": "Shipment lost in transit"}}],
  "answered": [{"name": "order_lookup", "status": "ok"}, {"name": "shipment_status", "status": "ok"}],
+ "link": "http://127.0.0.1:8091/ask/v1.eyJj...", "expires_at": "2026-11-21T09:12:04.118Z",
+ "delivered": [{"route": "agent.question.inbox", "ok": true, "status": 200}],
  "message": "A tool call waits for a supervisor's decision. ...", "cid": "order-1002-case"}
 ```
+
+The person's channels got the same wait with the same link; opening the link shows it in a browser, and the submit
+sends the decision below through the pack's reply endpoint. A decision that arrives after the suspension expired, or
+a second decision for a case already decided, is answered `{"type": "nothing-waiting"}` with HTTP 410.
 
 ```bash
 # 2. the supervisor decides - the same correlation id, the advised turn, one decision per waiting call
@@ -75,10 +92,46 @@ curl -s -X POST http://127.0.0.1:8085/api/graph/order-assistant \
 `"approved": false` with a note sends the note back to the model as the call's error, and the model answers with it
 (it offers a replacement instead). A delivered order needs no approval: the answer comes back in one request.
 
+Run the pack's main flow for the person's side (the LLM helper, the tools and Redis as above):
+
+```bash
+export ASK_TICKET_KEY='a long random secret'
+mercury-serve extensions/ask-person/ask_person.py -Dask.ticket.key='${ASK_TICKET_KEY}' \
+  -Dask.graphs='order-assistant=http://127.0.0.1:8085/api/graph/order-assistant,plan-assistant=http://127.0.0.1:8085/api/graph/plan-assistant'
+```
+
+Without it the graphs still run: the advice shows the waiting calls, `notify_error` names the failure, and the decision
+is sent as above. In the test scope `MockAskPerson` serves `person.ask`.
+
 To watch a run, POST the question to `/api/stream/graph/order-assistant` with `accept: text/event-stream`, or start
 the application with `-Dgraph.websocket.enabled=true` and open `ws://127.0.0.1:8085/ws/graph-run/order-assistant`:
 the first text frame `{"header": {"X-Correlation-Id": "..."}, "body": {"question": "..."}}` starts the run, and each
 event comes back as a frame before the result closes the session.
+
+### `plan-assistant` - a question for the owner, the ask row
+
+The question shape of RFC-0014 on the same hold path. The catalog holds one row, `ask_owner`, marked `ask: true` and
+bound to no route: a question for a person. The model drafts two or three plans for the task and asks the owner which
+to follow; the call waits like a marked write - told through `person.ask` with `kind: question`, staged at the
+checkpoint, suspended - and the owner's answer comes back into the same conversation as the call's result, so the
+model writes the plan for the option the owner picked. The input schema of the row shapes the question and the
+options; the decision is `{"id": ..., "answer": ...}` - one of the options, or the owner's own words.
+
+```bash
+curl -s -X POST http://127.0.0.1:8085/api/graph/plan-assistant \
+  -H 'content-type: application/json' -H 'x-correlation-id: release-42' \
+  -d '{"task": "Ship the payment-service migration"}'
+# -> {"type": "approval", "turn": 1, "calls": [{"id": "toolu_01...", "name": "ask_owner", "ask": true, "wait": true,
+#     "input": {"question": "Which plan should ... follow?", "options": ["A: ...", "B: ...", "C: ..."]}}], "link": "..."}
+curl -s -X POST http://127.0.0.1:8085/api/graph/plan-assistant \
+  -H 'content-type: application/json' -H 'x-correlation-id: release-42' \
+  -d '{"turn": 1, "decisions": [{"id": "toolu_01...", "answer": "B: two releases, the data migration first"}]}'
+# -> {"type": "answer", "turn": 2, "message": "Plan for ... - the owner chose B ...", "calls": [{"name": "ask_owner", "status": "answered"}]}
+```
+
+`PlanAssistantTest` runs it token-free on the scripted model and `MockAskPerson`: the question asked, the owner told,
+a resume without an answer re-advising without telling the channels again, the answer written into the plan, and the
+acknowledgement and the outcome delivered as advices.
 
 ### `diagram-assistant` - an MCP server's tool in the catalog
 

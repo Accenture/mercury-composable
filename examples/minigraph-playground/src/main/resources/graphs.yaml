@@ -2,6 +2,7 @@ graphs:
   - 'tutorial-1'
   - 'support-triage'
   - 'order-assistant'
+  - 'plan-assistant'
   - 'diagram-assistant'
   - 'site-notes'
   - 'document-ingest'

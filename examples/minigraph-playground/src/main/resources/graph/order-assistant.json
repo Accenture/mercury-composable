@@ -117,10 +117,10 @@
       "properties": {
         "skill": "graph.math",
         "statement": [
-          "IF: {model.agent.status} == 'approval'\nTHEN: advise\nELSE: next",
+          "IF: {model.agent.status} == 'approval'\nTHEN: notify\nELSE: next",
           "IF: {model.agent.status} == 'done'\nTHEN: respond\nELSE: stopped"
         ],
-        "purpose": "The graph decides on the loop's status: an answer, a call that waits for a person, or a stop"
+        "purpose": "The graph decides on the loop's status: an answer, a call that waits for a person - told to the person through notify, then staged at the advise checkpoint - or a stop"
       }
     },
     {
@@ -173,14 +173,18 @@
         "skill": "graph.data.mapper",
         "mapping": [
           "text(approval) -> output.body.type",
-          "text(A tool call waits for a supervisor's decision. Decide each waiting call, then POST again with the same X-Correlation-Id and a body holding turn, this reply's turn number, and decisions, one per waiting call with its id, approved as true or false, and an optional note.) -> output.body.message",
+          "text(A tool call waits for a supervisor's decision. Decide each waiting call, then POST again with the same X-Correlation-Id and a body holding turn, this reply's turn number, and decisions, one per waiting call with its id, approved as true or false, and an optional note. The link in this reply opens the same wait in a browser; the person's channels got it too.) -> output.body.message",
           "model.agent.turn -> output.body.turn",
           "model.agent.approval.calls -> output.body.calls",
           "model.agent.calls -> output.body.answered",
           "model.cid -> output.body.cid",
-          "model.run -> output.body.run"
+          "model.run -> output.body.run",
+          "model.ask.link -> output.body.link",
+          "model.ask.expires_at -> output.body.expires_at",
+          "model.ask.delivered -> output.body.delivered",
+          "model.ask.error -> output.body.notify_error"
         ],
-        "purpose": "The checkpoint: stage the approval advice - the waiting calls with their arguments, and the calls already answered - then pause. A resumed run continues at decide, never here, unless decide sends it back to advise again"
+        "purpose": "The checkpoint: stage the approval advice - the waiting calls with their arguments, the calls already answered, and the resume link person.ask issued - then pause. A resumed run continues at decide, never here, unless decide sends it back to advise again"
       }
     },
     {
@@ -192,7 +196,7 @@
         "skill": "graph.suspend",
         "task": "v1.redis.persist.model",
         "ttl": "2d",
-        "purpose": "Persist the run under graph:order-assistant:{cid}: the model holds the conversation, the turn and the waiting calls"
+        "purpose": "Persist the run under graph:order-assistant:{cid} for 2d - the ttl person.ask was given, so the ticket's expiry is the suspension's: the model holds the conversation, the turn, the waiting calls and the resume link. A re-advice suspends again for a fresh 2d (the engine takes the ttl as written)"
       }
     },
     {
@@ -207,10 +211,218 @@
           "MAPPING: text(={input.body.decisions}) -> model.decisions_probe",
           "MAPPING: f:defaultValue(input.body.turn, int(-1)) -> model.turn_probe",
           "IF: {model.decisions_probe} == '=null' || {model.turn_probe} != {model.agent.turn}\nTHEN: advise\nELSE: next",
-          "RESET: assist, route",
-          "NEXT: assist"
+          "RESET: assist, route, acknowledge",
+          "NEXT: acknowledge"
         ],
-        "purpose": "A resumed run lands here. A request without decisions, or for another turn than the one that waits, re-advises and pauses again. A request with the decisions for this turn resets the loop node and runs it again: the loop takes the waiting calls from the restored model, never from the request, so the call that runs is the call the supervisor saw"
+        "purpose": "A resumed run lands here. A request without decisions, or for another turn than the one that waits, re-advises and pauses again - without telling the channels again. A request with the decisions for this turn acknowledges it to the person, resets the loop node and runs it again: the loop takes the waiting calls from the restored model, never from the request, so the call that runs is the call the supervisor saw"
+      }
+    },
+    {
+      "alias": "gate",
+      "types": [
+        "Decision"
+      ],
+      "properties": {
+        "skill": "graph.math",
+        "statement": [
+          "MAPPING: text(={input.body.decisions}) -> model.decisions_probe",
+          "IF: {model.decisions_probe} == '=null'\nTHEN: check-input\nELSE: nothing-waiting"
+        ],
+        "purpose": "The resume node's fresh path (RFC-0014): a request that carries decisions while nothing is waiting - the suspension expired, or it was decided already - must never start a conversation. It answers nothing-waiting; a request without decisions is a new case"
+      }
+    },
+    {
+      "alias": "nothing-waiting",
+      "types": [
+        "Mapper"
+      ],
+      "properties": {
+        "skill": "graph.data.mapper",
+        "mapping": [
+          "int(410) -> output.status",
+          "text(nothing-waiting) -> output.body.type",
+          "text(Nothing is waiting for these decisions - the suspension expired or was decided already. Start a new case instead) -> output.body.message",
+          "model.cid -> output.body.cid",
+          "model.run -> output.body.run"
+        ],
+        "purpose": "A late or repeated decision: 410, the transaction is not restarted, and the person's channel shows the wait as expired or already decided"
+      }
+    },
+    {
+      "alias": "notify",
+      "types": [
+        "Task"
+      ],
+      "properties": {
+        "skill": "graph.task",
+        "task": "person.ask",
+        "ttl": "10s",
+        "exception": "notify-failed",
+        "input": [
+          "text(approval) -> kind",
+          "text(order-assistant) -> graph_id",
+          "text(Customer-support assistant: a refund waits for a supervisor) -> description",
+          "model.cid -> correlation_id",
+          "model.agent.turn -> turn",
+          "text(assist) -> node",
+          "text(A refund waits for the supervisor's decision) -> summary",
+          "model.agent.approval.calls -> calls",
+          "text(2d) -> ttl"
+        ],
+        "output": [
+          "result.ticket -> model.ask.ticket",
+          "result.link -> model.ask.link",
+          "result.expires_at -> model.ask.expires_at",
+          "result.delivered -> model.ask.delivered"
+        ],
+        "purpose": "The hold path's call to a person (RFC-0014): the waiting calls as the loop returned them, the graph's name and description, the correlation id, the turn and the suspension's ttl - the same 2d as the suspend node - go to person.ask, a function of a language pack's ask-person extension. It issues the ticket, builds the resume link and sends one message event to the installation's channels - the agent-question app, a chat, mail; the graph knows no channel. Only a fresh approval notifies: a re-advice re-stages the advice and never re-delivers, so a page view or a poll cannot flood a channel. A pack that is down never fails the hold (notify-failed)"
+      }
+    },
+    {
+      "alias": "notify-again",
+      "types": [
+        "Task"
+      ],
+      "properties": {
+        "skill": "graph.task",
+        "task": "person.ask",
+        "ttl": "10s",
+        "exception": "notify-failed",
+        "input": [
+          "text(approval) -> kind",
+          "text(order-assistant) -> graph_id",
+          "text(Customer-support assistant: a refund waits for a supervisor) -> description",
+          "model.cid -> correlation_id",
+          "model.agent.turn -> turn",
+          "text(assist) -> node",
+          "f:concat(text(A refund still waits for the supervisor's decision - the last decision was refused: ), model.failure.message) -> summary",
+          "model.agent.approval.calls -> calls",
+          "text(2d) -> ttl"
+        ],
+        "output": [
+          "result.ticket -> model.ask.ticket",
+          "result.link -> model.ask.link",
+          "result.expires_at -> model.ask.expires_at",
+          "result.delivered -> model.ask.delivered"
+        ],
+        "purpose": "The loop refused a decision - an unknown call id, a call decided twice - so the person who sent it is told that the wait is still open and why, with a fresh ticket: the acknowledgement that preceded the refusal must not be the last word the channels hear. A page view or a poll never comes through here"
+      }
+    },
+    {
+      "alias": "notify-failed",
+      "types": [
+        "Handler"
+      ],
+      "properties": {
+        "skill": "graph.data.mapper",
+        "mapping": [
+          "error.message -> model.ask.error"
+        ],
+        "purpose": "person.ask could not be reached or refused the message: the hold goes on without a link - the advice still shows the waiting calls to the caller - and the error is kept for the response"
+      }
+    },
+    {
+      "alias": "acknowledge",
+      "types": [
+        "Task"
+      ],
+      "properties": {
+        "skill": "graph.task",
+        "task": "person.ask",
+        "ttl": "10s",
+        "exception": "ack-failed",
+        "input": [
+          "text(advice) -> kind",
+          "text(order-assistant) -> graph_id",
+          "text(Customer-support assistant: a refund waits for a supervisor) -> description",
+          "model.cid -> correlation_id",
+          "model.agent.turn -> turn",
+          "text(decide) -> node",
+          "text(The supervisor's decision was received; the assistant continues) -> summary",
+          "text(The assistant runs the decided call and answers the customer; a further question, if any, follows as a new wait) -> details"
+        ],
+        "output": [
+          "result.delivered -> model.ask.acknowledged"
+        ],
+        "purpose": "An advice (RFC-0014, R8): the decisions were accepted, so the person who answered learns that the assistant continues before the loop reruns - no ticket, no link, nothing to decide. A pack that is down never stops the resumed run (ack-failed)"
+      }
+    },
+    {
+      "alias": "ack-failed",
+      "types": [
+        "Handler"
+      ],
+      "properties": {
+        "skill": "graph.data.mapper",
+        "mapping": [
+          "error.message -> model.ask.error"
+        ],
+        "purpose": "The acknowledgement could not be delivered: the resumed run continues into the loop regardless"
+      }
+    },
+    {
+      "alias": "report-answer",
+      "types": [
+        "Task"
+      ],
+      "properties": {
+        "skill": "graph.task",
+        "task": "person.ask",
+        "ttl": "10s",
+        "exception": "report-failed",
+        "input": [
+          "text(advice) -> kind",
+          "text(order-assistant) -> graph_id",
+          "text(Customer-support assistant: a refund waits for a supervisor) -> description",
+          "model.cid -> correlation_id",
+          "model.agent.turn -> turn",
+          "text(respond) -> node",
+          "text(The order assistant answered the customer) -> summary",
+          "model.agent.text -> details"
+        ],
+        "output": [
+          "result.delivered -> model.ask.reported"
+        ],
+        "purpose": "An advice with the outcome: the model's answer reaches the person who decided, who may not be the caller; the response to the caller is already staged and this call never changes it"
+      }
+    },
+    {
+      "alias": "report-stop",
+      "types": [
+        "Task"
+      ],
+      "properties": {
+        "skill": "graph.task",
+        "task": "person.ask",
+        "ttl": "10s",
+        "exception": "report-failed",
+        "input": [
+          "text(advice) -> kind",
+          "text(order-assistant) -> graph_id",
+          "text(Customer-support assistant: a refund waits for a supervisor) -> description",
+          "model.cid -> correlation_id",
+          "model.agent.turn -> turn",
+          "text(stopped) -> node",
+          "text(The order assistant stopped without an answer) -> summary",
+          "model.agent.status -> details"
+        ],
+        "output": [
+          "result.delivered -> model.ask.reported"
+        ],
+        "purpose": "An advice with the outcome of a stop: the status says why the run ended without an answer"
+      }
+    },
+    {
+      "alias": "report-failed",
+      "types": [
+        "Handler"
+      ],
+      "properties": {
+        "skill": "graph.data.mapper",
+        "mapping": [
+          "error.message -> model.ask.error"
+        ],
+        "purpose": "An outcome advice could not be delivered: the run ends with its staged response regardless"
       }
     },
     {
@@ -239,13 +451,13 @@
       "properties": {
         "skill": "graph.math",
         "statement": [
-          "RESET: advise",
+          "RESET: advise, notify-again",
           "IF: {model.status_probe} != '=approval'\nTHEN: end\nELSE: next",
           "MAPPING: int(200) -> output.status",
           "MAPPING: model.failure.message -> output.body.error",
-          "NEXT: advise"
+          "NEXT: notify-again"
         ],
-        "purpose": "A failure while an approval was pending, such as a resume with a decision for an unknown call, must not lose the transaction: the run goes back to the advise checkpoint, which shows the waiting calls again with the error, and pauses. Any other failure ends the run with the error"
+        "purpose": "A failure while a decision was pending, such as a resume with a decision for an unknown call, must not lose the transaction: the run tells the person again, with the error, and goes back to the advise checkpoint, which shows the waiting calls again with the error, and pauses. Any other failure ends the run with the error"
       }
     },
     {
@@ -298,16 +510,6 @@
       ]
     },
     {
-      "source": "resume",
-      "target": "check-input",
-      "relations": [
-        {
-          "type": "then",
-          "properties": {}
-        }
-      ]
-    },
-    {
       "source": "check-input",
       "target": "assist",
       "relations": [
@@ -343,16 +545,6 @@
       "relations": [
         {
           "type": "done",
-          "properties": {}
-        }
-      ]
-    },
-    {
-      "source": "route",
-      "target": "advise",
-      "relations": [
-        {
-          "type": "approval",
           "properties": {}
         }
       ]
@@ -398,36 +590,6 @@
       ]
     },
     {
-      "source": "decide",
-      "target": "assist",
-      "relations": [
-        {
-          "type": "decided",
-          "properties": {}
-        }
-      ]
-    },
-    {
-      "source": "respond",
-      "target": "end",
-      "relations": [
-        {
-          "type": "then",
-          "properties": {}
-        }
-      ]
-    },
-    {
-      "source": "stopped",
-      "target": "end",
-      "relations": [
-        {
-          "type": "then",
-          "properties": {}
-        }
-      ]
-    },
-    {
       "source": "reject",
       "target": "end",
       "relations": [
@@ -459,7 +621,7 @@
     },
     {
       "source": "triage-failure",
-      "target": "advise",
+      "target": "notify-again",
       "relations": [
         {
           "type": "retry",
@@ -473,6 +635,196 @@
       "relations": [
         {
           "type": "reported",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "resume",
+      "target": "gate",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "gate",
+      "target": "check-input",
+      "relations": [
+        {
+          "type": "fresh",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "gate",
+      "target": "nothing-waiting",
+      "relations": [
+        {
+          "type": "late",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "nothing-waiting",
+      "target": "end",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "route",
+      "target": "notify",
+      "relations": [
+        {
+          "type": "approval",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "notify",
+      "target": "advise",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "knowledge",
+      "target": "notify-failed",
+      "relations": [
+        {
+          "type": "handler",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "notify-failed",
+      "target": "advise",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "decide",
+      "target": "acknowledge",
+      "relations": [
+        {
+          "type": "decided",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "acknowledge",
+      "target": "assist",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "knowledge",
+      "target": "ack-failed",
+      "relations": [
+        {
+          "type": "handler",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "ack-failed",
+      "target": "assist",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "respond",
+      "target": "report-answer",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "report-answer",
+      "target": "end",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "stopped",
+      "target": "report-stop",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "report-stop",
+      "target": "end",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "knowledge",
+      "target": "report-failed",
+      "relations": [
+        {
+          "type": "handler",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "report-failed",
+      "target": "end",
+      "relations": [
+        {
+          "type": "then",
+          "properties": {}
+        }
+      ]
+    },
+    {
+      "source": "notify-again",
+      "target": "advise",
+      "relations": [
+        {
+          "type": "then",
           "properties": {}
         }
       ]

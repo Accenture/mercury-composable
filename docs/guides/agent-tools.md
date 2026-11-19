@@ -184,6 +184,10 @@ use constrains them by grammar.
 - **Writes are marked.** `file.write`, `graph.write` and `graph.ingest` carry `write: true`; under the node's default
   mode a person approves each write, and only a node that declares `mode: auto` runs it unasked (ADR-0033). The other
   tools are reads, bounded by the root, the allowlist, the read transaction and the caps.
+- **A wait reaches a person through [Ask a Person](ask-a-person.md).** A marked write under the default mode and the
+  ask row (`ask: true`, no route - the model's question for a person) both hold the turn; the graph's hold path calls
+  `person.ask` before it suspends, and the person answers through the resume link. The loop spec's section 7.3 is the
+  ask row's contract.
 - **The root, the allowlist and the database are certification artifacts.** They answer "what can this agent reach?"
   without reading code, and they live with the pack's configuration, not in a prompt or a call. The graph has two
   gates: writing needs `tools.graph.write=true`, deleting `tools.graph.delete=true` as well.
@@ -247,6 +251,7 @@ belongs in the [transcript audit store](transcript-audit-schema.md).
 
 - [Built-in skills reference](knowledge-graph/skills-reference.md) — `graph.task` and the agent loop's node.
 - [Tools from MCP Servers](tools-from-mcp-servers.md) — binding an existing server's tool behind a route of your own.
+- [Ask a Person](ask-a-person.md) — how a marked write or an ask row reaches a person, and how the decision comes back.
 - [Polyglot Functions](polyglot-functions.md) — how the engines reach a pack's functions over Event-over-HTTP.
 - [Transcript Audit Schema](transcript-audit-schema.md) — the record of what the model was told and said.
 - The pack's own guide, `extensions/agent-tools/README.md` in mercury-python — the function contract, the
