@@ -108,6 +108,8 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    last, is fixed in mercury-python #71 and mercury-nodejs #136. The RFC's section 20 records the findings: who decided
    reaches the audit store only through a refused call's note, and a wait decided elsewhere stays open on another device's
    card until tried or expired. The AI contract provider's skill bundle carries the report, since the guide links it.
+   Extended the same day with section H: the page's waiting section and history panel (the packs' #72 and #137)
+   checked on the Node.js backend through an all-Node chain, and the regression test's step 6 says what to expect.
    **Upgrade note:** a graph copied from the reference adds the `turn` probe to its gate.
 
 ### Changed
