@@ -1,6 +1,7 @@
 # Ask a person — an agent's question or approval delivered to a person over an occasionally connected channel, answered through a return link that resumes the graph — design spec
 
-**Status:** DRAFT, round 3 (2026-11-19, Claude Code for Eric), steps 1-3 of the build plan built the same day (sections 18 and 19), raised as RFC-0014 in
+**Status:** DRAFT, round 3 (2026-11-19, Claude Code for Eric); steps 1-3 of the build plan were built the same day
+(sections 18 and 19). Raised as RFC-0014 in
 [`docs/arch-decisions/RFC.md`](../docs/arch-decisions/RFC.md). Round 1 was written the same day from Eric's concept and
 the review that followed; Eric's review of round 1, one further generalization, is recorded in section 13 and applied
 throughout: the paper is now two parts — **the main flow** (suspend, send a message with the resume link, accept the
@@ -298,11 +299,11 @@ Kafka natively and the packs do not).
 A standalone application on the pack framework, `extensions/agent-question/`, run as any pack app is
 (`mercury-serve`), in its own process: it holds no part of the main flow and the main flow holds no knowledge of it.
 
-- **Intake (as built, step 3).** `agent.question.inbox` is its composable route; the main flow's `person.ask` reaches it over the
-  Event-over-HTTP map like any peer function. A wait is upserted as a row of its PostgreSQL inbox on `(graph_id,
-  correlation_id, turn)` — a re-advice for the same turn updates the row rather than adding a card; an advice is
-  appended as a row of its own, since status updates accumulate (R8). Write first: the row is committed before any
-  push to a browser.
+- **Intake (as built, step 3).** `agent.question.inbox` is its composable route; the main flow's `person.ask` reaches
+  it over the Event-over-HTTP map like any peer function. A wait is upserted as a row of its PostgreSQL inbox on
+  `(graph_id, correlation_id, turn)` — a re-advice for the same turn updates the row rather than adding a card; an
+  advice is appended as a row of its own, since status updates accumulate (R8). Write first: the row is committed before
+  any push to a browser.
 - **The browser side.** A streaming HTTP server for the person's device, under the host's route hook (section 11):
   `GET /questions/events` is a `text/event-stream` the device holds while it is on, with the heartbeat the host already
   sends on its streaming replies; each event names a row and its state. `GET /questions?since=<cursor>&state=open` is
@@ -371,7 +372,8 @@ CREATE INDEX IF NOT EXISTS question_inbox_case ON question_inbox (correlation_id
 ```
 
 JSON travels as text cast to `jsonb` and stamps as text cast to `timestamptz`, so the Node twin runs the same statements
-(the audit store's rule). Every write takes the next value of `question_inbox_seq`, the change sequence a replay reads from;
+(the audit store's rule). Every write takes the next value of `question_inbox_seq`, the change sequence a replay reads
+from;
 the partial unique index makes waits upsert and advices append.
 
 ```yaml
@@ -462,10 +464,10 @@ person decides whether to wait for the next question or to take a break and come
 
 Kept for the record with the proposals as agreed; none is open.
 
-- **Q2 — The re-suspend's expiry.** Agreed as proposed; **verified in step 2: `graph.suspend` takes `ttl` as a literal**,
-  so the fallback applies - the renewal is documented (section 7) and the hold path notifies only on a fresh approval, so
-  a re-advice never re-delivers; the record's original expiry across a re-suspend is raised as an engine refinement for
-  a later increment.
+- **Q2 — The re-suspend's expiry.** Agreed as proposed; **verified in step 2: `graph.suspend` takes `ttl` as a
+  literal**, so the fallback applies - the renewal is documented (section 7) and the hold path notifies only on a fresh
+  approval, so a re-advice never re-delivers; the record's original expiry across a re-suspend is raised as an engine
+  refinement for a later increment.
 - **Q3 — The route names.** Proposed `person.ask` for the tool and `agent.question.inbox` for the app's intake, in the
   capability-then-verb form of `file.read` and `web.fetch`.
 - **Q4 — The host hook or a sidecar (section 11).** Proposed: the hook, now that two extensions need routes.
@@ -537,9 +539,9 @@ Kept for the record with the proposals as agreed; none is open.
 
 ## 18. Build notes (step 2, 2026-11-19 - the Playground's hold path)
 
-- **Only a fresh approval notifies.** The loop's `approval` outcome goes `route → notify → advise → suspend`; the resumed
-  run's `decide` re-advises through `advise` alone, as does `triage-failure`. A page view's re-advice therefore never
-  reaches a channel - the alternative, a `peek` marker on the re-advice request, was not needed.
+- **Only a fresh approval notifies.** The loop's `approval` outcome goes `route → notify → advise → suspend`; the
+  resumed run's `decide` re-advises through `advise` alone, as does `triage-failure`. A page view's re-advice therefore
+  never reaches a channel - the alternative, a `peek` marker on the re-advice request, was not needed.
 - **Handlers for a pack that is down.** `notify-failed`, `ack-failed` and `report-failed` are handlers under the island:
   the hold stands without a link (`notify_error` in the advice), a resumed run goes on into the loop, and an outcome
   advice never changes the staged response. The executor warns that the failed node may still be in flight when the
