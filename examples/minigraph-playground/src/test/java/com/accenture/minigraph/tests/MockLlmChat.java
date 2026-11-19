@@ -53,7 +53,9 @@ import java.util.regex.Pattern;
  *     catalog's one tool and answers with the validated code; for the three graphs on the built-in agent tools
  *     (RFC-0013) it plays a research assistant that crawls a documentation section and writes notes, an analyst
  *     that extracts a document's parties, obligations, rules and deadlines into the knowledge graph, and an
- *     answerer that reads the graph's schema, queries it and cites the sources.</li>
+ *     answerer that reads the graph's schema, queries it and cites the sources; for the plan-assistant graph it plays a
+ *     planning assistant that drafts the options and asks the owner through the ask row (RFC-0014), then writes the plan
+ *     for the option the owner picked.</li>
  * </ul>
  */
 @PreLoad(route = "llm.chat", instances = 10)
@@ -75,6 +77,10 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
     private static final String INGEST_CALL = "g2";
     private static final String SCHEMA_CALL = "q1";
     private static final String QUERY_CALL = "q2";
+    private static final String ASK_CALL = "p1";
+    private static final String ASK_TOOL = "ask_owner";
+    private static final List<String> PLANS = List.of("A: one release behind a feature flag",
+            "B: two releases, the data migration first", "C: a canary in one region before the rest");
     private static final Pattern FIELD = Pattern.compile("(Section|Topic|Document):\\s*([^;\\n]+)");
     private static final Pattern PARTIES = Pattern.compile("\\*\\*Parties:\\*\\*\\s*(.+)");
     private static final Pattern PARTY = Pattern.compile("([^,]+?)\\s*\\(([^)]+)\\)");
@@ -123,6 +129,9 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
         private String shipmentError;
         private Map<String, Object> refund;
         private String refundError;
+        private String task;
+        private Object answer;
+        private String answerError;
     }
 
     @Override
@@ -176,7 +185,8 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
                 conversation.diagram = hasTool(input.get("tools"), RENDER_TOOL);
                 conversation.kind = hasTool(input.get("tools"), "web_crawl") ? "notes"
                         : hasTool(input.get("tools"), "graph_ingest") ? "ingest"
-                        : hasTool(input.get("tools"), "graph_query") ? "query" : null;
+                        : hasTool(input.get("tools"), "graph_query") ? "query"
+                        : hasTool(input.get("tools"), ASK_TOOL) ? "plan" : null;
                 firstTurn(conversation, String.valueOf(input.get("prompt")), reply);
             } else if (conversation.diagram) {
                 laterDiagramTurn(conversation, reply);
@@ -186,6 +196,8 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
                 laterIngestTurn(conversation, reply);
             } else if ("query".equals(conversation.kind)) {
                 laterQueryTurn(conversation, reply);
+            } else if ("plan".equals(conversation.kind)) {
+                laterPlanTurn(conversation, reply);
             } else {
                 laterTurn(conversation, reply);
             }
@@ -249,6 +261,13 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
         if ("query".equals(conversation.kind)) {
             conversation.topic = prompt;
             calls(reply, List.of(call(SCHEMA_CALL, "graph_schema", Map.of())));
+            return;
+        }
+        if ("plan".equals(conversation.kind)) {
+            // the planning assistant drafts the options and asks the owner - the ask row waits like a marked write
+            conversation.task = prompt;
+            calls(reply, List.of(call(ASK_CALL, ASK_TOOL, Map.of(
+                    "question", "Which plan should '" + prompt + "' follow?", "options", PLANS))));
             return;
         }
         if (conversation.diagram) {
@@ -429,6 +448,17 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
         return relationship;
     }
 
+    /** The planning assistant: the owner's answer is the ask call's result, and the plan follows the option picked. */
+    private static void laterPlanTurn(Conversation conversation, Map<String, Object> reply) {
+        if (conversation.answerError != null) {
+            done(reply, "The owner did not answer: " + conversation.answerError + ". I will wait for the decision.");
+        } else {
+            done(reply, "Plan for '" + conversation.task + "' - the owner chose " + conversation.answer + ". Steps: "
+                    + "1. agree the cut-over window with the team; 2. prepare the rollback; 3. ship as chosen; "
+                    + "4. watch the error budget for a day; 5. close the task.");
+        }
+    }
+
     private static void laterDiagramTurn(Conversation conversation, Map<String, Object> reply) {
         if (conversation.renderError != null) {
             done(reply, "I could not validate the diagram: " + conversation.renderError + ".");
@@ -466,6 +496,7 @@ public class MockLlmChat implements TypedLambdaFunction<Map<String, Object>, Map
                     }
                     case INGEST_CALL -> { conversation.ingested = output; conversation.ingestError = error; }
                     case SCHEMA_CALL -> { conversation.schema = output; conversation.schemaError = error; }
+                    case ASK_CALL -> { conversation.answer = result.get(OUTPUT); conversation.answerError = error; }
                     case QUERY_CALL -> {
                         conversation.rows = output != null && output.get("rows") instanceof List<?> rows ?
                                 (List<List<Object>>) rows : List.of();

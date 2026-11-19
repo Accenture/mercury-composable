@@ -54,7 +54,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * tools, one write that waits for a supervisor through suspend and resume on a real (embedded) Redis,
  * and the run watched through the streaming REST entry and the WebSocket entry. The model turns are
  * scripted by {@link MockLlmChat}, so no token is spent; the loop, the tool routes, the graph's decisions
- * and the suspension are the real ones.
+ * and the suspension are the real ones. The hold path's call to a person (RFC-0014) goes to {@link MockAskPerson}:
+ * the advice carries the resume link, a re-advice never tells the channels again, a decision that finds nothing
+ * waiting is a 410, the decided run acknowledges and reports, and a channel that is down never fails the hold.
  */
 class OrderAssistantTest {
     private static final Logger log = LoggerFactory.getLogger(OrderAssistantTest.class);
@@ -116,9 +118,12 @@ class OrderAssistantTest {
         // run 1: the model checks the order and the shipment, then asks for the refund - a marked write waits
         var advice = body(runGraph(cid, Map.of(QUESTION, "My order ORD-1002 never arrived. Can you help?")));
         String callId = assertRefundWaits(advice);
-        // run 2: a resume without decisions keeps waiting and re-advises
+        assertNotified(advice, cid);
+        // run 2: a resume without decisions keeps waiting and re-advises - the link persists, the channels are not told again
         var again = body(runGraph(cid, Map.of("note", "just checking")));
         assertReadvised(again, callId);
+        assertEquals(advice.getElement("link"), again.getElement("link"), "the link persists in the model");
+        assertEquals(1, MockAskPerson.messagesFor(cid).size(), "a re-advice never tells the channels again");
         // run 3: decisions for another turn than the one that waits are not applied
         var stale = body(runGraph(cid, Map.of(TURN, 1, DECISIONS, List.of(decision(callId, true, "late")))));
         assertEquals(APPROVAL, stale.getElement(TYPE), String.valueOf(stale.getMap()));
@@ -129,6 +134,7 @@ class OrderAssistantTest {
         // run 5: the supervisor approves - the loop runs the call it showed and the model answers
         var answer = body(runGraph(cid, Map.of(TURN, 2, DECISIONS, List.of(decision(callId, true, "Checked with the carrier")))));
         assertRefundIssued(answer);
+        assertAcknowledgedAndReported(cid, "refund RF-");
         // a second transaction for the same order: the write fails with 409 and the model reads the error
         var second = Utility.getInstance().getUuid();
         var secondAdvice = body(runGraph(second, Map.of(QUESTION, "Please refund ORD-1002, it is lost.")));
@@ -160,6 +166,52 @@ class OrderAssistantTest {
                 "the advice also shows the calls the loop already answered");
         answered.forEach(c -> assertEquals("ok", c.get("status"), String.valueOf(c)));
         return String.valueOf(refund.get("id"));
+    }
+
+    /** Run 1's advice also carries what person.ask issued, and the channel got the message with the waiting call. */
+    private void assertNotified(MultiLevelMap advice, String cid) {
+        assertTrue(String.valueOf(advice.getElement("link")).startsWith(MockAskPerson.REPLY_URL + "/ask/t-"),
+                String.valueOf(advice.getElement("link")));
+        assertNotNull(advice.getElement("expires_at"));
+        var delivered = asList(advice.getElement("delivered"));
+        assertEquals(MockAskPerson.CHANNEL, delivered.getFirst().get("route"));
+        assertEquals(true, delivered.getFirst().get("ok"));
+        var messages = MockAskPerson.messagesFor(cid);
+        assertEquals(1, messages.size(), String.valueOf(messages));
+        var message = new MultiLevelMap(messages.getFirst());
+        assertEquals(APPROVAL, message.getElement("kind"));
+        assertEquals(GRAPH, message.getElement("graph_id"));
+        assertEquals(GRAPH, message.getElement("x-graph-id"), "the task node's graph context names the graph");
+        assertEquals("notify", message.getElement("x-node"));
+        assertEquals("assist", message.getElement("node"), "the loop node that waits");
+        assertEquals(2, message.getElement(TURN));
+        assertEquals("2d", message.getElement("ttl"), "the suspend node's own ttl");
+        assertTrue(String.valueOf(message.getElement("description")).contains("refund"));
+        assertTrue(String.valueOf(message.getElement("summary")).contains("supervisor"));
+        var calls = asList(message.getElement(CALLS));
+        assertEquals("issue_refund", calls.getFirst().get("name"), "the approval block as the loop returned it");
+    }
+
+    /**
+     * What the channels heard, in order: the wait; the acknowledgement of run 4's decision, then - because the loop refused
+     * it - the wait again with the error and a fresh ticket; the acknowledgement of run 5's decision; the outcome.
+     */
+    private void assertAcknowledgedAndReported(String cid, String outcomeText) {
+        var messages = MockAskPerson.messagesFor(cid);
+        assertEquals(List.of(APPROVAL, "advice", APPROVAL, "advice", "advice"),
+                messages.stream().map(m -> m.get("kind")).toList(), String.valueOf(messages));
+        var acknowledged = new MultiLevelMap(messages.get(1));
+        assertEquals("decide", acknowledged.getElement("node"));
+        assertTrue(String.valueOf(acknowledged.getElement("summary")).contains("received"), String.valueOf(acknowledged.getMap()));
+        assertNull(acknowledged.getElement("calls"), "an advice carries no calls");
+        var again = new MultiLevelMap(messages.get(2));
+        assertEquals("notify-again", again.getElement("x-node"));
+        assertTrue(String.valueOf(again.getElement("summary")).contains("not a call waiting for approval"),
+                "the refusal's reason reaches the person: " + again.getElement("summary"));
+        assertEquals("issue_refund", asList(again.getElement(CALLS)).getFirst().get("name"), "the same call still waits");
+        var reported = new MultiLevelMap(messages.get(4));
+        assertEquals("respond", reported.getElement("node"));
+        assertTrue(String.valueOf(reported.getElement("details")).contains(outcomeText), String.valueOf(reported.getMap()));
     }
 
     /** A resume without a decision: the graph advises again, and the same call still waits. */
@@ -197,6 +249,40 @@ class OrderAssistantTest {
         var reason = String.valueOf(declined.getElement(MESSAGE));
         assertTrue(reason.contains("could not issue") && reason.contains("already refunded"), reason);
         assertEquals("error", calls(declined).getLast().get("status"), String.valueOf(calls(declined)));
+    }
+
+    @Test
+    void aDecisionWithNothingWaitingIsRefusedWithoutAConversation() throws TimeoutException {
+        var cid = Utility.getInstance().getUuid();
+        var response = runGraph(cid, Map.of(TURN, 2, DECISIONS, List.of(decision("toolu_late", true, "too late"))));
+        assertEquals(410, response.getStatus(), String.valueOf(response.getBody()));
+        var body = body(response);
+        assertEquals("nothing-waiting", body.getElement(TYPE));
+        assertEquals("fresh", body.getElement("run"));
+        assertEquals(cid, body.getElement("cid"));
+        assertTrue(MockAskPerson.messagesFor(cid).isEmpty(), "no channel is told and no conversation is started");
+    }
+
+    @Test
+    void theHoldStandsWhenThePersonChannelIsDown() throws TimeoutException {
+        var cid = Utility.getInstance().getUuid();
+        MultiLevelMap advice;
+        MockAskPerson.DOWN.set(true);
+        try {
+            advice = body(runGraph(cid, Map.of(QUESTION, "Order ORD-1004 is lost; please refund it.")));
+        } finally {
+            MockAskPerson.DOWN.set(false);
+        }
+        assertEquals(APPROVAL, advice.getElement(TYPE), String.valueOf(advice.getMap()));
+        assertNull(advice.getElement("link"), "no link when the pack is down - the advice still shows the waiting call");
+        assertTrue(String.valueOf(advice.getElement("notify_error")).contains("down"), String.valueOf(advice.getMap()));
+        assertTrue(MockAskPerson.messagesFor(cid).isEmpty());
+        var callId = String.valueOf(calls(advice).getFirst().get("id"));
+        // the channel is back: the refusal is acknowledged and the outcome reported
+        var answer = body(runGraph(cid, Map.of(TURN, advice.getElement(TURN),
+                DECISIONS, List.of(decision(callId, false, "A replacement ships instead")))));
+        assertEquals(ANSWER, answer.getElement(TYPE), String.valueOf(answer.getMap()));
+        assertEquals(List.of("advice", "advice"), MockAskPerson.messagesFor(cid).stream().map(m -> m.get("kind")).toList());
     }
 
     @Test

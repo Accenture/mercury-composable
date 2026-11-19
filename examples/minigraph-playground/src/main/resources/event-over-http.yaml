@@ -69,3 +69,18 @@ event:
       target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
     - route: 'time.now'
       target: 'http://${tools.peer.host:127.0.0.1}:${tools.peer.port:8089}/api/event'
+    #
+    # Ask a person (RFC-0014): person.ask is a function of a language pack's extensions/ask-person (mercury-python on
+    # port 8091). The order-assistant and plan-assistant demo graphs call it on their hold path, before they suspend:
+    # it issues the ticket, builds the resume link and sends one message event to the installation's channels - the
+    # agent-question app, a chat, mail - and the graph knows no channel. Run it with the ticket key in its environment
+    # and this application's graph entries in its allowlist, for example:
+    #
+    #     mercury-serve extensions/ask-person/ask_person.py -Dask.ticket.key='${ASK_TICKET_KEY}' \
+    #       -Dask.graphs='order-assistant=http://127.0.0.1:8085/api/graph/order-assistant,plan-assistant=http://127.0.0.1:8085/api/graph/plan-assistant'
+    #
+    # Select another peer with -Dask.peer.host / -Dask.peer.port. A pack that is down never fails the hold: the graphs
+    # advise the caller without a link.
+    #
+    - route: 'person.ask'
+      target: 'http://${ask.peer.host:127.0.0.1}:${ask.peer.port:8091}/api/event'

@@ -80,6 +80,15 @@ open questions for the review are the spec's section 14.
 agent-question UI as one store-and-forward channel, a standalone app the tool knows nothing of; the main flow and
 delivery-and-collection as separate parts); round 3 the same day records Eric's agreement on every open question (Q2-Q9) and adds the
 `advice` kind for notifications - status updates and acknowledgements of a long-running run.
+**Step 1 BUILT 2026-11-19:** mercury-python #68 (MERGED) - `extensions/ask-person`: `person.ask` with the three kinds, the
+signed stateless ticket (the first vector's MAC reproduced with openssl), the event to the channel routes, the reply page
+(re-advice, never resuming) and endpoint (`none`, `proxy`, `oauth2`, a channel app's bearer; who decided on each note),
+`Platform.add_routes`; 72 shared vectors, 100 tests. **Step 2 BUILT 2026-11-19 (this repository):** the hold path in
+`order-assistant` (notify, the checkpoint with the link, the 410 gate, the acknowledgement and the outcome advices, the
+handlers for a pack that is down), `plan-assistant` on the ask row with its scripted model, `MockAskPerson`, the tests,
+the page `docs/guides/ask-a-person.md` and the ask row in the guides. Found: `graph.suspend` takes `ttl` as written, so a
+re-advice renews the wait (Q2's fallback, documented); the original expiry across a re-suspend is an engine refinement
+for a later increment. Next: step 3, the agent-question app.
 
 ---
 

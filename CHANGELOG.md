@@ -70,6 +70,31 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    in `docs/test-reports/agent-tools-live-drive.md`, whose findings shaped the prompts (a spelled-out key rule, a three-step
    research plan) and the packs' crawl (a relative `include`).
 
+5. **The Playground's agent graphs tell a person about a wait and take the decision back through a resume link (RFC-0014,
+   build plan step 2).** `order-assistant` gains the hold path of the ask-a-person design: when the loop waits, a `notify`
+   node calls `person.ask` - a function of a language pack's `extensions/ask-person` (mercury-python #68), reached like
+   any route over the Event-over-HTTP map (port 8091) - with the graph's name and description, the correlation id, the
+   turn, the waiting calls as the loop returned them and the suspend node's own `ttl`; the function issues a signed
+   ticket, builds the resume link and sends one message event to the installation's channels, and the graph knows no
+   channel. The advice to the caller carries the `link`, `expires_at` and what was `delivered`; a pack that is down never
+   fails the hold (`notify-failed`: the waiting calls are shown without a link, `notify_error` says why). Only a fresh
+   approval notifies - a re-advice re-stages the advice and never re-delivers, so a page view or a poll cannot flood a
+   channel. The resume node's fresh path has a `gate`: a request with decisions and nothing waiting is `nothing-waiting`,
+   HTTP 410, and never starts a conversation. After a decision, `acknowledge` sends an advice (`kind: advice`, no ticket,
+   no link) before the loop reruns, and `report-answer` or `report-stop` sends the outcome, each with a handler so a
+   channel that is down never stops a resumed run or changes the staged response. The new `plan-assistant` graph is the
+   question shape: one catalog row, `ask_owner`, marked `ask: true` with no route (the loop spec's section 7.3, built in
+   both engines); the model drafts the plans and asks the owner which to follow, the owner's answer comes back as the
+   call's result, and the model writes the plan for the option picked. `MockAskPerson` serves `person.ask` in the test
+   scope; `OrderAssistantTest` (the link in the advice, the channel told once, the 410 gate, the acknowledgement and the
+   outcome, a channel that is down) and `PlanAssistantTest` (the question asked and told, the answer written, a re-advice
+   without re-delivery, the gate) run both shapes without a pack or a token. The page `docs/guides/ask-a-person.md` is
+   the contract; the loop spec's ask row is now in the published guides. **What the build found:** `graph.suspend` takes
+   its `ttl` as written on the node, so a re-advice suspends again for a fresh period while the ticket keeps the expiry of
+   the message that issued it - documented on the page; keeping the record's original expiry across a re-suspend is an
+   engine refinement listed for a later increment. **Upgrade note:** none - the graphs are the example's; a graph of your
+   own adopts the hold path by adding the nodes the page shows.
+
 ### Changed
 
 1. **A `DECIMAL` result carries at most a configured number of decimal places: `big.decimal.precision` (default 6) for

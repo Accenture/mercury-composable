@@ -29,11 +29,15 @@ The deployed graphs reach an LLM through the LLM helper app of a language pack, 
 waits for a supervisor through suspend and resume), `diagram-assistant` (an MCP server's tool in the loop, below) and
 three graphs on the built-in agent tools of RFC-0013 - `site-notes` (a crawl of a documentation section, then a
 supervised write of the notes into the pack's workspace), `document-ingest` (a document of the synthetic corpus in
-`corpus/` extracted into the agent's knowledge graph by a node that declares `mode: auto`) and `document-query`
-(the graph read, the sources cited). See `src/main/resources/graph/README.md` for the setup and the protocols, and
-`OrderAssistantTest` and `AgentToolsGraphsTest` for the token-free end-to-end tests. The Rust port's Playground example
-(`examples/minigraph-playground` of mercury) ships the same six models unchanged, compiled by that engine and driven
-live there too (`docs/test-reports/agent-graphs-live-drive.md` in that repository).
+`corpus/` extracted into the agent's knowledge graph by a node that declares `mode: auto`), `document-query`
+(the graph read, the sources cited) and `plan-assistant` (a question for the owner through the ask row - the model
+drafts the plans and asks which to follow). Since RFC-0014, `order-assistant` and `plan-assistant` tell a person about
+the wait through `person.ask` before they suspend, and the advice carries the resume link. See
+`src/main/resources/graph/README.md` for the setup and the protocols, and `OrderAssistantTest`, `PlanAssistantTest`
+and `AgentToolsGraphsTest` for the token-free end-to-end tests. The Rust port's Playground example
+(`examples/minigraph-playground` of mercury) ships these models unchanged, compiled by that engine and driven live
+there too (`docs/test-reports/agent-graphs-live-drive.md` in that repository); the hold path's call to a person and
+`plan-assistant` reach it in its next increment.
 
 ## Demo: an MCP server's tool in an agent loop, watched from the Playground
 

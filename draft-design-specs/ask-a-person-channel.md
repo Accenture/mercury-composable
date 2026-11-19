@@ -236,16 +236,13 @@ the engine: the engine's resume wants a body on the graph's entry, and the engin
   was waiting, the record expired or was resumed already — answers `{"type": "nothing-waiting"}` with HTTP 410 and
   never starts a conversation. A request without decisions still re-advises and suspends again; a request for another
   turn still re-advises.
-- **The re-suspend keeps the original expiry.** The first `advise` stores `expires_at` in `model.*`; a re-advice maps
-  the suspend node's `ttl` from the remaining time, so opening the link (section 6) never extends the wait and a link
-  unfurler cannot keep a wait alive. Whether `graph.suspend` takes its `ttl` from a model reference is verified in
-  step 2 of the build; if it takes only a literal, the renewal is documented until the engines accept a reference
-  (section 14, Q2).
-- **Advices in `order-assistant` (R8).** When `decide` accepts the decisions, an `acknowledge` node sends `kind: advice`
-  — the decision was received, the assistant continues — before the loop node reruns; `respond` and `stopped` send the
-  outcome as an advice, because the approver may not be the caller. A long AI SDLC graph sends a status advice at each
-  milestone: the store-and-forward counterpart of the engine's progress events, which reach only a client watching the
-  run.
+- **The re-suspend renews the wait (verified in step 2).** `graph.suspend` takes its `ttl` as written on the node - the
+  compiler validates the literal - so a re-advice suspends again for a fresh period. A ticket keeps the expiry of the
+  message that issued it; a suspension re-advised after that expiry still waits until its own period ends, and a late
+  decision through a new request finds it. Only a fresh approval notifies the channels: a re-advice re-stages the advice
+  through the checkpoint alone, so a page view or a poll never re-delivers. Keeping the record's original expiry across
+  a re-suspend (a `ttl` from a model reference, or a re-suspend that keeps the record's expiry) is the engine refinement
+  listed for a later increment (section 14, Q2).
 - **A new graph on the ask row, the question shape**, `plan-assistant`: a planning agent drafts options for a task and
   asks the owner which to take (a catalog row `ask_owner` marked `ask: true`, no route), then carries on with the
   choice in the same conversation. The same hold path, the same gate, the kind `question`. Token-free tests on the
@@ -442,10 +439,10 @@ person decides whether to wait for the next question or to take a break and come
 
 Kept for the record with the proposals as agreed; none is open.
 
-- **Q2 — The re-suspend's expiry.** Proposed: the hold path keeps the original `expires_at` in `model.*` and maps the
-  suspend node's `ttl` from the remaining time, so opening a link never extends a wait. To verify in the build: whether
-  `graph.suspend` takes `ttl` from a model reference; if not, accept the renewal in version 1 and raise the reference
-  as a small engine change.
+- **Q2 — The re-suspend's expiry.** Agreed as proposed; **verified in step 2: `graph.suspend` takes `ttl` as a literal**,
+  so the fallback applies - the renewal is documented (section 7) and the hold path notifies only on a fresh approval, so
+  a re-advice never re-delivers; the record's original expiry across a re-suspend is raised as an engine refinement for
+  a later increment.
 - **Q3 — The route names.** Proposed `person.ask` for the tool and `agent.question.inbox` for the app's intake, in the
   capability-then-verb form of `file.read` and `web.fetch`.
 - **Q4 — The host hook or a sidecar (section 11).** Proposed: the hook, now that two extensions need routes.
@@ -514,3 +511,18 @@ Kept for the record with the proposals as agreed; none is open.
 6. **The chat, mail and topic examples** of section 12, each as a recipe-style page, when a server is available to
    drive.
 7. **Promotion** to an ADR after the drive, on Eric's call.
+
+## 18. Build notes (step 2, 2026-11-19 - the Playground's hold path)
+
+- **Only a fresh approval notifies.** The loop's `approval` outcome goes `route → notify → advise → suspend`; the resumed
+  run's `decide` re-advises through `advise` alone, as does `triage-failure`. A page view's re-advice therefore never
+  reaches a channel - the alternative, a `peek` marker on the re-advice request, was not needed.
+- **Handlers for a pack that is down.** `notify-failed`, `ack-failed` and `report-failed` are handlers under the island:
+  the hold stands without a link (`notify_error` in the advice), a resumed run goes on into the loop, and an outcome
+  advice never changes the staged response. The executor warns that the failed node may still be in flight when the
+  suspension follows a handler path - the same warning the loop's own failure path produces.
+- **The acknowledgement and the outcome advices** carry `node` (`decide`, `respond`, `stopped`) and the loop's turn; the
+  outcome's `details` is the model's text or the stop status.
+- **`plan-assistant`** is `order-assistant` without the order tools: one ask row, the same gate, hold path and advices;
+  the scripted model drafts three plans and writes the plan for the option the owner picked.
+

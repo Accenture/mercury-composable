@@ -17,9 +17,13 @@
   inbox where waits upsert. Spec `draft-design-specs/ask-a-person-channel.md` (round 3), raised as PR #653 and MERGED 2026-11-19 (squash `b739f3edd`); the
   engines' loop changes nothing in version 1. **Step 1 BUILT 2026-11-19 (mercury-python #68, MERGED):** `extensions/ask-person` - `person.ask` with the three kinds,
   the ticket, the event to the channel routes, the reply page and endpoint with `none`/`proxy`/`oauth2` and a channel
-  app's bearer, `Platform.add_routes`; 72 shared vectors (the HMAC cross-checked with openssl), 100 tests. Next: step 2
-  here - the `advise` call, `expires_at` in the model and the `decide` gate in `order-assistant`, `plan-assistant`, the
-  guide pages - then step 3, the agent-question app.
+  app's bearer, `Platform.add_routes`; 72 shared vectors (the HMAC cross-checked with openssl), 100 tests. **Step 2 BUILT 2026-11-19 (here):** `order-assistant`'s hold path (`notify` → `advise` → `suspend`; the `gate` answering
+  410 to a late decision; `acknowledge`, `report-answer`, `report-stop`; `notify-again` after a refused decision; handlers
+  for a pack that is down), `plan-assistant` on the ask row, `MockAskPerson`, 12 new or extended tests, the page
+  `docs/guides/ask-a-person.md`. Found: `graph.suspend` takes `ttl` as written, so a re-advice renews the wait while
+  the ticket keeps its expiry - documented; the original expiry across a re-suspend is the engine refinement for a
+  later increment. The Rust twin's Playground lags until its next increment. Next: step 3, the agent-question app in
+  the Python pack.
   → proposal: RFC-0014
   → serves: vision-mercury-composable
   <!-- id: ask-a-person-channel | created: 2026-11-19 | last_used: 2026-11-19 | uses: 1 | tier: working | origin: 2026-11-19-023727 -->
