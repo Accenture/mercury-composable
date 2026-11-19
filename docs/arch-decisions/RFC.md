@@ -92,7 +92,10 @@ for a later increment. **Step 3 BUILT 2026-11-19:** mercury-python #70 (MERGED) 
 store-and-forward inbox: the intake upserting a wait and appending an advice (memory or PostgreSQL, the change sequence
 as the replay cursor), the page, the replay, the stream with `Last-Event-ID`, the automated click to the link's reply
 endpoint under the app's bearer, `seen`; 30 shared vectors, 48 tests; the spec's section 19 records the defaults set
-without a ruling. Next: step 4, the Node twins of both extensions.
+without a ruling. **Step 4 BUILT 2026-11-19:** mercury-nodejs #134 (MERGED) - the Node twins of both extensions from the
+shared vector files byte for byte (the same ticket from the same file; the reference inbox landing on the same rows, ids
+and change sequence), the schema and purge files byte-identical, `Platform.addRoutes` in the Node host; 145 tests. Next:
+step 5, the live drive of the whole chain through the Playground, then promotion.
 
 ---
 
