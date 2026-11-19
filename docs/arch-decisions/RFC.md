@@ -94,7 +94,7 @@ as the replay cursor), the page, the replay, the stream with `Last-Event-ID`, th
 endpoint under the app's bearer, `seen`; 30 shared vectors, 48 tests; the spec's section 19 records the defaults set
 without a ruling. **Step 4 BUILT 2026-11-19:** mercury-nodejs #134 (MERGED) - the Node twins of both extensions from the
 shared vector files byte for byte (the same ticket from the same file; the reference inbox landing on the same rows, ids
-and change sequence), the schema and purge files byte-identical, `Platform.addRoutes` in the Node host; 145 tests. **Step 5 DRIVEN 2026-11-19 (this repository, the drive PR;
+and change sequence), the schema and purge files byte-identical, `Platform.addRoutes` in the Node host; 145 tests. **Step 5 DRIVEN 2026-11-19 (this repository, PR #657;
 mercury-python #71, mercury-nodejs #136):** the whole chain live through the Playground on Haiku 4.5 - negative controls, a
 pack that is down, the link in a bare browser with no channel, a device online, a device off and reconnecting, a decision
 after expiry, two devices on one ticket - on the Python pack and then the Node twins

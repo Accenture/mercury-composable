@@ -29,7 +29,7 @@
   19 records the defaults (memory default, the audit store's connection keys, no retention key, states without
   `superseded`). **Step 4 BUILT 2026-11-19 (mercury-nodejs #134, MERGED):** the Node twins of both extensions from the
   shared vectors byte for byte - the same ticket from the same file, the reference inbox on the same rows, ids and change
-  sequence - the schema files byte-identical, `Platform.addRoutes` in the Node host; 145 tests. **Step 5 DRIVEN 2026-11-19 (here, the drive PR with the gate fix;
+  sequence - the schema files byte-identical, `Platform.addRoutes` in the Node host; 145 tests. **Step 5 DRIVEN 2026-11-19 (here, PR #657 with the gate fix;
   mercury-python #71 and mercury-nodejs #136 with the first-decision fix):** the whole chain live through the Playground on
   Haiku 4.5 - negative controls, a pack down, the bare link, a device online, a device off and reconnecting, a decision after
   expiry, two devices on one ticket - on the Python pack and the Node twins (`docs/test-reports/ask-a-person-live-drive.md`,
