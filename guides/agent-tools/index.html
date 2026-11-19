@@ -1615,6 +1615,8 @@
       
         
       
+        
+      
     
     
     
@@ -2087,6 +2089,34 @@
     
   
     Tools from MCP Servers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ask-a-person/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ask a Person
   
 
     
@@ -3704,6 +3734,10 @@ use constrains them by grammar.</p>
 <li><strong>Writes are marked.</strong> <code>file.write</code>, <code>graph.write</code> and <code>graph.ingest</code> carry <code>write: true</code>; under the node's default
   mode a person approves each write, and only a node that declares <code>mode: auto</code> runs it unasked (ADR-0033). The other
   tools are reads, bounded by the root, the allowlist, the read transaction and the caps.</li>
+<li><strong>A wait reaches a person through <a href="../ask-a-person/">Ask a Person</a>.</strong> A marked write under the default mode and the
+  ask row (<code>ask: true</code>, no route - the model's question for a person) both hold the turn; the graph's hold path calls
+  <code>person.ask</code> before it suspends, and the person answers through the resume link. The loop spec's section 7.3 is the
+  ask row's contract.</li>
 <li><strong>The root, the allowlist and the database are certification artifacts.</strong> They answer "what can this agent reach?"
   without reading code, and they live with the pack's configuration, not in a prompt or a call. The graph has two
   gates: writing needs <code>tools.graph.write=true</code>, deleting <code>tools.graph.delete=true</code> as well.</li>
@@ -3856,6 +3890,7 @@ belongs in the <a href="../transcript-audit-schema/">transcript audit store</a>.
 <ul>
 <li><a href="../knowledge-graph/skills-reference/">Built-in skills reference</a> — <code>graph.task</code> and the agent loop's node.</li>
 <li><a href="../tools-from-mcp-servers/">Tools from MCP Servers</a> — binding an existing server's tool behind a route of your own.</li>
+<li><a href="../ask-a-person/">Ask a Person</a> — how a marked write or an ask row reaches a person, and how the decision comes back.</li>
 <li><a href="../polyglot-functions/">Polyglot Functions</a> — how the engines reach a pack's functions over Event-over-HTTP.</li>
 <li><a href="../transcript-audit-schema/">Transcript Audit Schema</a> — the record of what the model was told and said.</li>
 <li>The pack's own guide, <code>extensions/agent-tools/README.md</code> in mercury-python — the function contract, the
