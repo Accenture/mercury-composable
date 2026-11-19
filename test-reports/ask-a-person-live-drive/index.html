@@ -3031,6 +3031,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#h-the-pages-waiting-section-and-history-panel-on-the-nodejs-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H — The page's waiting section and history panel, on the Node.js backend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#defects-found-and-fixed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3507,6 +3518,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#h-the-pages-waiting-section-and-history-panel-on-the-nodejs-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        H — The page's waiting section and history panel, on the Node.js backend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#defects-found-and-fixed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3606,6 +3628,11 @@ test</a> at the end.</p>
 <li><strong>A wait decided elsewhere stays <code>open</code> on a device's card</strong> until that device tries it (the engine's 410 turns it
   expired) or the sweeper reaches its expiry; the acknowledgement advice beside it tells the person. Marking it from
   the advice is a design question for the RFC, not done here.</li>
+<li><strong>The page's waiting section and history panel (mercury-python #72, mercury-nodejs #137, the same day) hold on both
+  backends.</strong> The maintainer's browser pass on the Python backend, and the all-Node chain below on the Node backend:
+  a case stays under <em>Waiting for you</em> while any of its cards is open, moves into the scrollable <em>History</em> panel when
+  the last one closes, the badges and the tab's title count the open cards, and the panel keeps its scroll position
+  across the re-render every event causes.</li>
 <li><strong>13 conversations, 35 model turns, 42,951 input and 4,395 output tokens on Haiku 4.5</strong>; the inbox ended with 29 rows
   (9 approvals, 2 questions, 18 advices) and a change sequence of 46; the Python flow served 27 <code>person.ask</code> calls and
   17 replies (8 answers, 8 <code>nothing-waiting</code>, one 502 from a negative control with no engine), the Node flow 8 calls and
@@ -3650,6 +3677,11 @@ test</a> at the end.</p>
 <td>mercury-nodejs <code>extensions/ask-person</code>, <code>extensions/agent-question</code></td>
 <td>main at <code>b671ae6</code> (after #135), the first-decision fix applied</td>
 <td>the twins, on 8094 and 8093, behind the same Playground (<code>-Dask.peer.port=8094</code>)</td>
+</tr>
+<tr>
+<td>mercury-nodejs <code>extensions/llm-helper</code>, <code>extensions/ask-person</code>, <code>extensions/agent-question</code> (section H)</td>
+<td>main at <code>d2fade2</code> (after #137)</td>
+<td>the all-Node chain of the history-panel check: the Node helper on 8087 (Haiku, the transcript store in memory), the twins on 8094 and 8093, the Node inbox on a PostgreSQL of its own (5433)</td>
 </tr>
 <tr>
 <td>Redis 7 (container)</td>
@@ -3802,6 +3834,74 @@ card (<code>node-race</code>): <code>device-2</code> 410 in 35 ms, <code>device-
 409 <em>decided by device-1</em>. A dead wait (<code>node-dead</code>, the record expired): the Node reply page answered 410 <em>This wait has
 expired</em>, its endpoint 410 <code>nothing-waiting</code>, the card <code>expired</code>. The two twins wrote and read one inbox table through
 the drive, and every row the Node app read of the Python app's rows rendered the same.</p>
+<h2 id="h-the-pages-waiting-section-and-history-panel-on-the-nodejs-backend">H — The page's waiting section and history panel, on the Node.js backend<a class="headerlink" href="#h-the-pages-waiting-section-and-history-panel-on-the-nodejs-backend" title="Permanent link">&para;</a></h2>
+<p>After the drive the page gained a sticky header with the count of open cards, a <em>Waiting for you</em> section and a
+scrollable <em>History</em> panel (mercury-python #72, mercury-nodejs #137, the generated page byte-identical). The maintainer
+checked it in a browser on the Python backend; the Node backend was checked here through an all-Node chain - the Node
+helper on Haiku 4.5, the Node <code>person.ask</code> on 8094, the Node agent-question app on 8093 with its inbox on a PostgreSQL
+container of its own, the Playground pointed at both (<code>-Dllm.peer.port=8087 -Dask.peer.port=8094</code>). Still headless:
+after every step the page's own script, fetched from the Node backend, was run under a minimal DOM against the
+backend's live rows, and a device held the stream throughout. What it rendered:</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Waiting for you</th>
+<th>History</th>
+<th>Badges, title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the empty inbox</td>
+<td><em>Nothing waits for you.</em></td>
+<td><em>Nothing yet.</em></td>
+<td>none, <code>Agent questions</code></td>
+</tr>
+<tr>
+<td>H1 an approval arrives (4.7 s)</td>
+<td><code>h1-order</code> [approval open]</td>
+<td>-</td>
+<td>1 / -, <code>(1) Agent questions</code></td>
+</tr>
+<tr>
+<td>H1 decided through the app (1.5 s): two advices open</td>
+<td><code>h1-order</code> [advice open, advice open, approval answered]</td>
+<td>-</td>
+<td>2 / -</td>
+</tr>
+<tr>
+<td>H1 both advices marked seen</td>
+<td><em>Nothing waits for you.</em></td>
+<td><code>h1-order</code></td>
+<td>- / 1</td>
+</tr>
+<tr>
+<td>H2 a question, H3 an approval refused through the Node reply link</td>
+<td><code>h3-order</code> [approval open, advice open, advice open], <code>h2-plan</code> [question open]</td>
+<td><code>h1-order</code></td>
+<td>4 / 1</td>
+</tr>
+<tr>
+<td>H3 card tried (410, expired), its advices seen</td>
+<td><code>h2-plan</code></td>
+<td><code>h3-order</code>, <code>h1-order</code></td>
+<td>1 / 2</td>
+</tr>
+<tr>
+<td>H4 the record expired, decided late from the card (410)</td>
+<td><code>h2-plan</code></td>
+<td><code>h4-order</code>, <code>h3-order</code>, <code>h1-order</code></td>
+<td>1 / 3</td>
+</tr>
+</tbody>
+</table>
+<p>A case stays under <em>Waiting for you</em> while any of its cards is open, an unread advice included, and moves into the
+panel when the last one closes; the panel lists newest first; a case with nothing to read, such as H4's expired wait,
+goes straight to the history. With the panel scrolled to 150 before the last render it read 150 after it. Every form
+was in the waiting section and none in the panel. The device saw the fifteen changes in order (seq 1 to 15), and the replay from a mid-way cursor (<code>since=6</code>) returned exactly the
+five later changes with <code>next: 15</code>. The Node backend logged the three decisions with their outcomes and states
+(<code>200 -&gt; answered</code>, <code>410 -&gt; expired</code>, <code>410 -&gt; expired</code>); the Node helper took the model turns.</p>
 <h2 id="defects-found-and-fixed">Defects found and fixed<a class="headerlink" href="#defects-found-and-fixed" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3865,9 +3965,12 @@ at <code>mercury-python</code> with its virtual environment active, Colima or Do
 <li><strong>Device online.</strong> Post the question with a fresh correlation id:
    <code>curl -s -X POST http://127.0.0.1:8085/api/graph/order-assistant -H 'content-type: application/json'
    -H 'x-correlation-id: case-1' -d '{"question": "My order ORD-1002 never arrived. Can you help?"}'</code> - the reply carries
-   <code>link</code> and <code>delivered</code>. The card appears on the page without a reload: the refund call with its arguments. Approve
-   with a note and send: the card turns <em>answered · decided by <your name></em>, and two advices appear under the same
-   case - the acknowledgement, then the outcome with the model's answer. Mark them <em>Seen</em>.</li>
+   <code>link</code> and <code>delivered</code>. The card appears under <em>Waiting for you</em> without a reload - the refund call with its
+   arguments, the badge and the tab's title reading 1. Approve with a note and send: the card turns <em>answered ·
+   decided by <your name></em>, and two advices appear under the same case - the acknowledgement, then the outcome with the
+   model's answer - so the badge reads 2. Mark them <em>Seen</em>: the whole case moves into the <em>History</em> panel, the badge
+   disappears and the history count grows by one. Scroll the panel, then post the next case: the panel keeps its place
+   while the waiting section updates.</li>
 <li><strong>Device off.</strong> Close the page. Post two cases: ORD-1004 on <code>order-assistant</code> (<code>case-2</code>) and
    <code>curl … /api/graph/plan-assistant -H 'x-correlation-id: plan-1' -d '{"task": "Ship the payment-service migration"}'</code>.
    Reopen the page: both cards are there, the question with its options as radio buttons. Answer the plan first, then
