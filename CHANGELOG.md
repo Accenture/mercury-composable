@@ -107,7 +107,8 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    guide and the graph README say so. The second defect, the packs' inbox taking whichever outcome of two devices landed
    last, is fixed in mercury-python #71 and mercury-nodejs #136. The RFC's section 20 records the findings: who decided
    reaches the audit store only through a refused call's note, and a wait decided elsewhere stays open on another device's
-   card until tried or expired. **Upgrade note:** a graph copied from the reference adds the `turn` probe to its gate.
+   card until tried or expired. The AI contract provider's skill bundle carries the report, since the guide links it.
+   **Upgrade note:** a graph copied from the reference adds the `turn` probe to its gate.
 
 ### Changed
 
