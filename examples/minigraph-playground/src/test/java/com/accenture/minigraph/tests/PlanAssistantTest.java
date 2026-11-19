@@ -145,6 +145,16 @@ class PlanAssistantTest {
         assertTrue(MockAskPerson.messagesFor(cid).isEmpty());
     }
 
+    @Test
+    void aReadviceWithNothingWaitingIsRefused() throws TimeoutException {
+        var cid = Utility.getInstance().getUuid();
+        var response = runGraph(cid, Map.of(TURN, 1));
+        assertEquals(410, response.getStatus(), String.valueOf(response.getBody()));
+        assertEquals("nothing-waiting", body(response).getElement(TYPE));
+        assertEquals("fresh", body(response).getElement("run"));
+        assertTrue(MockAskPerson.messagesFor(cid).isEmpty());
+    }
+
     @SuppressWarnings("unchecked")
     private static MultiLevelMap body(EventEnvelope response) {
         assertInstanceOf(Map.class, response.getBody(), String.valueOf(response.getBody()));

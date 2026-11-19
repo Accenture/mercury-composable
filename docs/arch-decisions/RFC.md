@@ -94,8 +94,16 @@ as the replay cursor), the page, the replay, the stream with `Last-Event-ID`, th
 endpoint under the app's bearer, `seen`; 30 shared vectors, 48 tests; the spec's section 19 records the defaults set
 without a ruling. **Step 4 BUILT 2026-11-19:** mercury-nodejs #134 (MERGED) - the Node twins of both extensions from the
 shared vector files byte for byte (the same ticket from the same file; the reference inbox landing on the same rows, ids
-and change sequence), the schema and purge files byte-identical, `Platform.addRoutes` in the Node host; 145 tests. Next:
-step 5, the live drive of the whole chain through the Playground, then promotion.
+and change sequence), the schema and purge files byte-identical, `Platform.addRoutes` in the Node host; 145 tests. **Step 5 DRIVEN 2026-11-19 (this repository, PR #657;
+mercury-python #71, mercury-nodejs #136):** the whole chain live through the Playground on Haiku 4.5 - negative controls, a
+pack that is down, the link in a bare browser with no channel, a device online, a device off and reconnecting, a decision
+after expiry, two devices on one ticket - on the Python pack and then the Node twins
+(`docs/test-reports/ask-a-person-live-drive.md`). Two defects fixed: the gate meets a re-advice of a dead wait (a turn, no
+decisions) with 410, so the reply page says the wait has expired; the inbox keeps the first accepted decision when two
+devices decide one card at once (both packs, vectors version 2). Narrowed: who decided reaches the audit store only through
+a refused call's note - an approved call's note goes nowhere the audit sees; the loop carrying the decisions into the turn's
+facts is the follow-up, and a wait decided elsewhere staying open on another device's card is a question for the review.
+Next: step 6 (the chat, mail and topic examples) and the promotion to an ADR, on Eric's call.
 
 ---
 

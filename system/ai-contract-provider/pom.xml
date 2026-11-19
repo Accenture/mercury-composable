@@ -110,6 +110,7 @@
                     <include>arch-decisions/RFC.md</include>
                     <include>guides/**</include>
                     <include>test-reports/agent-loop-trace-lineage.md</include>
+                    <include>test-reports/ask-a-person-live-drive.md</include>
                     <include>test-reports/event-over-http-interop.md</include>
                     <include>test-reports/progressive-rendering-interop.md</include>
                     <include>test-reports/streaming-return-route-cross-pod.md</include>

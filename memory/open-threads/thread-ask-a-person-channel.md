@@ -29,9 +29,17 @@
   19 records the defaults (memory default, the audit store's connection keys, no retention key, states without
   `superseded`). **Step 4 BUILT 2026-11-19 (mercury-nodejs #134, MERGED):** the Node twins of both extensions from the
   shared vectors byte for byte - the same ticket from the same file, the reference inbox on the same rows, ids and change
-  sequence - the schema files byte-identical, `Platform.addRoutes` in the Node host; 145 tests. Next: step 5, the live
-  drive of the whole chain through the Playground (a device online, a device off and reconnecting, a late decision, two
-  devices on one ticket), then promotion.
+  sequence - the schema files byte-identical, `Platform.addRoutes` in the Node host; 145 tests. **Step 5 DRIVEN 2026-11-19 (here, PR #657 with the gate fix;
+  mercury-python #71 and mercury-nodejs #136 with the first-decision fix):** the whole chain live through the Playground on
+  Haiku 4.5 - negative controls, a pack down, the bare link, a device online, a device off and reconnecting, a decision after
+  expiry, two devices on one ticket - on the Python pack and the Node twins (`docs/test-reports/ask-a-person-live-drive.md`,
+  with the manual regression test at its end). Found and fixed: the gate recognized only `decisions`, so the reply page's
+  re-advice of a dead wait ran the fresh path (now a `turn` probe too, both graphs, two tests); the inbox's decision write was
+  unconditional, so two devices on one card could leave a late 410 over the accepted decision (an acceptance always wins the
+  row, vectors version 2). Narrowed: who decided reaches the audit store only through a refused call's note (the loop
+  carrying the decisions into the turn's facts is the follow-up); a wait decided elsewhere stays open on another device's
+  card until tried or expired (a question for the review). Next: step 6 (the chat, mail and topic examples) and promotion,
+  on Eric's call.
   → proposal: RFC-0014
   → serves: vision-mercury-composable
   <!-- id: ask-a-person-channel | created: 2026-11-19 | last_used: 2026-11-19 | uses: 1 | tier: working | origin: 2026-11-19-023727 -->

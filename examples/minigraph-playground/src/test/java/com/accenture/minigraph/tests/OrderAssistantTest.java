@@ -264,6 +264,18 @@ class OrderAssistantTest {
     }
 
     @Test
+    void aReadviceWithNothingWaitingIsRefusedWithoutAConversation() throws TimeoutException {
+        // the pack's reply page re-advises a dead wait with the ticket's turn and no decisions (the live drive of step 5)
+        var cid = Utility.getInstance().getUuid();
+        var response = runGraph(cid, Map.of(TURN, 2));
+        assertEquals(410, response.getStatus(), String.valueOf(response.getBody()));
+        var body = body(response);
+        assertEquals("nothing-waiting", body.getElement(TYPE));
+        assertEquals("fresh", body.getElement("run"));
+        assertTrue(MockAskPerson.messagesFor(cid).isEmpty(), "no channel is told and no conversation is started");
+    }
+
+    @Test
     void theHoldStandsWhenThePersonChannelIsDown() throws TimeoutException {
         var cid = Utility.getInstance().getUuid();
         MultiLevelMap advice;
