@@ -27,7 +27,11 @@
   `question_inbox_seq` as the replay cursor), the page, the replay, the stream with `Last-Event-ID`, the automated
   click to the link's reply endpoint under the app's bearer, `seen`; 30 shared vectors, 48 tests; the spec's section
   19 records the defaults (memory default, the audit store's connection keys, no retention key, states without
-  `superseded`). Next: step 4, the Node twins of both extensions.
+  `superseded`). **Step 4 BUILT 2026-11-19 (mercury-nodejs #134, MERGED):** the Node twins of both extensions from the
+  shared vectors byte for byte - the same ticket from the same file, the reference inbox on the same rows, ids and change
+  sequence - the schema files byte-identical, `Platform.addRoutes` in the Node host; 145 tests. Next: step 5, the live
+  drive of the whole chain through the Playground (a device online, a device off and reconnecting, a late decision, two
+  devices on one ticket), then promotion.
   → proposal: RFC-0014
   → serves: vision-mercury-composable
   <!-- id: ask-a-person-channel | created: 2026-11-19 | last_used: 2026-11-19 | uses: 1 | tier: working | origin: 2026-11-19-023727 -->
