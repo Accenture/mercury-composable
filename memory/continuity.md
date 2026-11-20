@@ -322,7 +322,11 @@
   retries), less than the job's period minus 9 s. `deferred.start` only spreads the questions. **How to apply:**
   before changing what the scheduler sends the state resolver or the environment store, ask whether a field
   installation would have to change a schema to accept it; an additive key in `parameters` is the shape. A resolver
-  for more than one instance needs one conditional write, so a second read in it is the smell.
+  for more than one instance needs one conditional write, so a second read in it is the smell. **The claim is the ONLY
+  instance picker since 4.12.31 (Eric, 2026-11-20, PR #659):** the older `leader.election` - lowest origin id among the
+  schedulers found over a service mesh - was retired because the claim answers the question with the database the
+  resolver already writes to, and a second switch beside it led an AI agent to read the two as combinable; the key is now
+  ignored with a startup warning. Two switches for one question: retire one, do not document the precedence.
   <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-17 | uses: 5 | tier: archive-candidate | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
 
 - **Essential tools for agent loops: built into the packs with published rows and sandboxes in configuration, or
