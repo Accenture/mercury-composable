@@ -326,7 +326,8 @@
   instance picker since 4.12.31 (Eric, 2026-11-20, PR #659):** the older `leader.election` - lowest origin id among the
   schedulers found over a service mesh - was retired because the claim answers the question with the database the
   resolver already writes to, and a second switch beside it led an AI agent to read the two as combinable; the key is now
-  ignored with a startup warning. Two switches for one question: retire one, do not document the precedence.
+  ignored with a startup warning. Two switches for one question: retire one, do not document the precedence. (ADR-0037,
+  which supersedes ADR-0030; the active environment's decision is carried in it unchanged.)
   <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-17 | uses: 5 | tier: archive-candidate | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
 
 - **Essential tools for agent loops: built into the packs with published rows and sandboxes in configuration, or
