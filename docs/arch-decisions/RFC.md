@@ -116,7 +116,7 @@ node's and a deterministic node's alike. The agent-question app becomes the back
 and deployed into both packs' `resources/public` (three panels: questions and answers, history with infinite scroll,
 transcript browsing - useful to inspect without answering, since a topic has no browser of its history); the pack hosts
 serve static content (`static.html.folder`, built 2026-11-20: mercury-python #73, mercury-nodejs #138); identity is
-`none` or `oauth2` alone, PKCE in the browser, `proxy` removed. Steps 8 to 11 of the build plan; promotion after them.
+`none` or `oauth2` alone, PKCE in the browser, `proxy` removed. Steps 8 to 11 of the build plan; promotion after them. **Built 2026-11-20** in both packs (static content #73/#138, the record #74/#139, the backend's reads #75/#140, the React UI mercury-nodejs #141 with the bundle in mercury-python #76) and driven live the same day (`docs/test-reports/agent-question-ui-live-drive.md`): one host defect fixed in both packs - a stopping backend held its streams, so the hosts gained `Platform.on_shutdown` / `onShutdown` and the app ends its streams there.
 
 ## RFC-0013 — Essential built-in tools for agent loops: files inside a workspace, the web inside an allowlist and a knowledge graph inside one database, as pack functions with published catalog rows
 **Status:** Promoted → ADR-0036 · **Raised:** 2026-11-16 · **Serves:** vision-mercury-composable · **Thread:** `agent-essential-tools`

@@ -580,16 +580,26 @@ Kept for the record with the proposals as agreed; none is open.
    drive.
 7. **Promotion** to an ADR after the drive, on Eric's call - after step 11 since round 4.
 8. **Static content in both hosts (round 4, section 21.1):** BUILT 2026-11-20 - mercury-python #73, mercury-nodejs #138.
-9. **The question record (section 21.2), Python first, Node in lockstep:** the recorder in `extensions/ask-person` with
-   the published contract and the order-independent writes, the schema moved and owned there, the shared vectors (the
-   transitions move from the inbox's file), `proxy` removed from the reply endpoint and the reply page's PKCE sign-in;
-   here, the schema page's question section and the guide.
-10. **The backend's reads and identity (section 21.3), both packs:** the agent-question app as a reader of the record
-    and the transcript tables - `before` pages, the transcript endpoints, the config endpoint, the feed by wake-up and
-    poll - `proxy` removed, `seen` gone, the vectors a new version.
-11. **The React UI (section 21.4), the Node pack:** the subproject, the three panels, PKCE, the release script deploying
-    into both packs' `resources/public`, a Keycloak development container and a mock issuer for the tests; the vanilla
-    page retired; a live drive through both backends with a report under `docs/test-reports/`.
+9. **The question record (section 21.2), Python first, Node in lockstep:** BUILT and MERGED 2026-11-20 - mercury-python
+   #74, mercury-nodejs #139: the recorder in `extensions/ask-person` with the published contract and the
+   order-independent writes, the schema moved and owned there, the shared vectors (the transitions moved from the
+   inbox's file), `proxy` removed from the reply endpoint and the reply page's PKCE sign-in; here, the schema page's
+   question section and the guide.
+10. **The backend's reads and identity (section 21.3), both packs:** BUILT and MERGED 2026-11-20 - mercury-python #75,
+    mercury-nodejs #140: the agent-question app as a reader of the record and the transcript tables - `before` pages,
+    the transcript endpoints, the config endpoint, the feed by wake-up and poll - `proxy` removed, `seen` gone, the
+    vectors a new version.
+11. **The React UI (section 21.4), the Node pack:** BUILT 2026-11-20 - mercury-nodejs #141 (the subproject
+    `extensions/agent-question-ui`: four panels - the question-and-answer panel, the history with infinite scroll,
+    the transcript browser, and an actuator menu over the host's `/info`, `/info/routes`, `/health`, `/env` and
+    `/livenessprobe`, which stay at their paths beside the bundle for a container manager's probes; PKCE with
+    `oidc-client-ts`; the release script deploying into both packs' `resources/public`; a Keycloak development
+    container with a committed realm and no credential; the device-side `seen` state) and mercury-python #76 (the
+    bundle committed, the vanilla page retired); the sign-in is tested against a fake `UserManager` rather than a
+    mock issuer, the Keycloak container being the live one. Driven live the same day through both backends and
+    Keycloak: `docs/test-reports/agent-question-ui-live-drive.md`. The drive found that a device holding the stream
+    kept a stopping backend alive, so both hosts gained `Platform.on_shutdown` / `onShutdown` and the app ends its
+    streams there (section 21.3, amended).
 
 ## 18. Build notes (step 2, 2026-11-19 - the Playground's hold path)
 
@@ -669,7 +679,7 @@ extension route or function claims is answered with the file it names, `index.ht
 shape. Not ported: the Java static-content filter, `no-cache-pages`, the `mime.types` section. mercury-python #73,
 mercury-nodejs #138.
 
-### 21.2 The question record (R9, R13)
+### 21.2 The question record (R9, R13) - BUILT 2026-11-20
 
 **The main flow records; the channels deliver.** Every question and advice passes `person.ask`, and every answer, from
 any channel, passes `POST /ask/reply` - so the record is written at those two points and never by a channel. A chat
@@ -741,7 +751,7 @@ inbox of rounds 2 and 3 was that record for one channel only; it moves.
   invisible to the UI: memory is for the tests and for a main flow run without an audit; the development chain uses
   the helper's Colima container, which the dev scripts already start.
 
-### 21.3 The agent-question app, the backend of the UI (R10)
+### 21.3 The agent-question app, the backend of the UI (R10) - BUILT 2026-11-20
 
 - **Intake.** `agent.question.inbox` stays the channel route the main flow delivers to - its `delivered` flag and the
   wake-up of connected devices - but writes nothing: the record is the recorder's.
@@ -757,7 +767,7 @@ inbox of rounds 2 and 3 was that record for one channel only; it moves.
   recorder. `POST /questions/{id}/seen` goes with the state.
 - **Identity (R12).** `none` in development, `oauth2` in production; `proxy` removed here and from the reply endpoint.
 
-### 21.4 The React UI (R10)
+### 21.4 The React UI (R10) - BUILT 2026-11-20
 
 `extensions/agent-question-ui/` in the Node pack - the one front-end, maintained in one place - a subproject with its
 own `package.json` on the engines' Playground web app's toolchain (Vite, React 19, TypeScript, vitest). One release

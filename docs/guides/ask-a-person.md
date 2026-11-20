@@ -196,11 +196,17 @@ topic - rendering at least the summary and the link, buffers in whatever that me
 not reachable, and hands the person the link or invokes it on the person's behalf. The main flow learns nothing beyond
 `delivered`.
 
-- **The agent-question app** (RFC-0014 build plan step 3) is the first channel: a standalone application on the pack
-  framework with an intake route, a PostgreSQL inbox written before any push, a stream that wakes a connected device and
-  a replay that gives a reconnecting device everything open since its cursor. The person selects which card to answer;
-  the card's button automates the click. Waits upsert and advices append, so an acknowledgement follows the decision it
-  answers and a status update tells the person whether to wait or come back later.
+- **The agent-question app** (RFC-0014 build plan steps 3, 10 and 11) is the first channel: a standalone application
+  on the pack framework whose intake route wakes the connected devices, and the backend of the **React UI** built in
+  the Node.js pack (`extensions/agent-question-ui`) and deployed into both packs' `resources/public`, served from the
+  backend's own origin. Since round 4 the app writes nothing: the main flow records every question, answer and
+  advice in the `question` table of the audit database (see the transcript audit schema guide), and the app reads
+  it - the newest page, older pages for an infinite scroll, a stream that carries every change and replays from a
+  device's last sequence - beside the transcripts the LLM helper writes. The UI shows what waits for the person,
+  the history, the transcripts a case led to, and the host's actuator endpoints; the person decides in any order and
+  the card's button automates the click. Waits upsert and advices append, so an acknowledgement follows the decision
+  it answers and a status update tells the person whether to wait or come back later; a device keeps its own `seen`
+  state. Sign-in is `none` in development or `oauth2` - Authorization Code with PKCE against the installation's issuer.
 - **A chat, mail, a topic** follow as recipe-style examples: a pack function bound to the vendor's MCP server posts the
   summary and the link, the chat keeps the message, the person clicks the link; a topic is an engine route over the
   Event-over-HTTP map. A reply by mail is never a decision; the link is.
@@ -222,6 +228,8 @@ the graph with `{"id": ..., "answer": ...}`. In the test scope `MockAskPerson` s
 `OrderAssistantTest` and `PlanAssistantTest` run both shapes without a pack, a browser or a token. The live drive of the
 whole chain, with a manual regression test at its end, is
 [`docs/test-reports/ask-a-person-live-drive.md`](../test-reports/ask-a-person-live-drive.md).
+The React UI's drive through both backends and a Keycloak issuer, with the graceful-stop finding, is
+[`docs/test-reports/agent-question-ui-live-drive.md`](../test-reports/agent-question-ui-live-drive.md).
 
 ## See also
 

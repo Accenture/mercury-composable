@@ -52,8 +52,13 @@
   mercury-python #73, mercury-nodejs #138); identity `none` or `oauth2` alone with PKCE in the browser, `proxy`
   removed (the field's installations use 3-legged SSO and OAuth 2.0 access tokens). Eric's question on relaxing the
   audit writer's single instance: viable with a per-conversation row lock, a monotonic guard and a forward-only mark -
-  `llm.transcript.audit.instances`, default 1, the follow-up. Build plan steps 8-11; next the record (step 9), then the
-  backend's reads and the UI, then step 6 and promotion.
+  `llm.transcript.audit.instances`, default 1, the follow-up. Build plan steps 8-11 BUILT 2026-11-20 in both packs (static content
+  mercury-python #73 / mercury-nodejs #138, the record #74 / #139, the backend's reads #75 / #140, the React UI
+  mercury-nodejs #141 with the bundle in mercury-python #76) and the UI driven live the same day through both backends
+  and a Keycloak issuer (`docs/test-reports/agent-question-ui-live-drive.md`): one host defect fixed in both packs - a
+  stopping backend held its streams, so the hosts gained `Platform.on_shutdown` / `onShutdown` and the app ends its
+  streams there; next step 6 (the chat, mail and topic examples) and promotion (step 7) on Eric's call, with the reply
+  page's own sign-in against an issuer as a follow-up.
   → proposal: RFC-0014
   → serves: vision-mercury-composable
   <!-- id: ask-a-person-channel | created: 2026-11-19 | last_used: 2026-11-19 | uses: 1 | tier: working | origin: 2026-11-19-023727 -->
