@@ -451,6 +451,7 @@ lowest origin id over a service mesh instead of asking the resolver `expires`. I
 answers the question with the database the resolver already writes to, so the mesh added a dependency without adding
 an answer, and a second switch invited mixing the two. The key is ignored with a warning at startup; remove it from
 the cron file. Quartz's own cluster mode, configured against a database, remains an alternative outside the scheduler.
+The decision is ADR-0037 in the [Architectural Decision Records](../arch-decisions/ADR.md).
 
 ## Active-active sites: the active environment {#active-environment}
 
@@ -572,4 +573,5 @@ Each is described in the [Configuration Reference](configuration-reference.md#sc
 - [The scheduler example](https://github.com/Accenture/mercury-composable/tree/main/examples/scheduler-example) - a
   runnable application with the state resolver, the environment store and the admin endpoints on MongoDB.
 - [Event Script](event-script/index.md) - the flows a job can start with `flow://`.
-- [Architectural Decision Records](../arch-decisions/ADR.md) - ADR-0030, the active environment.
+- [Architectural Decision Records](../arch-decisions/ADR.md) - ADR-0037, one instance by the claim and one site by the
+  environment store (it supersedes ADR-0030, the active environment).
