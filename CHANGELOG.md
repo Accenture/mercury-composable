@@ -204,6 +204,14 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    `skill/files.list` and the snapshot test's inventory, or drop the link (Eric, 2026-11-20, on the red build of #661,
    the third instance of the failure after #629). **Upgrade note:** none.
 
+6. **No `synchronized` in the Java sources: the last four users take a `ReentrantLock` (Eric's Java 21 rule, re-affirmed
+   2026-11-20).** A virtual thread that blocks inside a `synchronized` section pins its carrier on Java 21 (JEP 491 lifts
+   that in JDK 24, and the build stays on 21), so the Playground engine's `ReturnChannel` (its delivery, drain, relay
+   registration and close), the sync-over-async demo's `StreamProducer` (its shared clients) and the Redis state store's
+   `RedisStateConnection` (connect, the transactional consume, shutdown) now hold a `ReentrantLock` with try/finally,
+   as the AI contract provider's snapshot accessor does since #661. Test code keeps `synchronized` only where pinning
+   is the subject of the test. **Upgrade note:** none.
+
 ### Documentation
 
 1. **The mini-scheduler's MongoDB worked example says where the job's `_id` comes from.** An upsert builds the
