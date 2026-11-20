@@ -131,6 +131,9 @@
   **Re-confirmed 2026-09-16 (Eric, invariant re-verification):** Java 21 remains the **baseline**;
   Java 25 is now the LTS and therefore the **recommended runtime**; keep the toolchain on 21 until
   Java 25 is mainstream. Unchanged in substance — the trigger is still field adoption, not a date.
+  **Planned 2026-11-20 (Eric): the minimum moves to Java 25, approval pending.** Once approved, JEP 491 (JDK 24+) makes
+  `synchronized` non-pinning and the ReentrantLock rule is lifted ([[conv-reentrantlock-not-synchronized]] decays as it
+  says); the ReentrantLock code written under the rule stays valid. Tracked in [[java25-baseline]].
   <!-- id: stack-language-java21 | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
 - Build: Maven 3.9.7+ — the engine's multi-module reactor (`com.accenture.mercury:parent-mercury`)
   stays Maven by design. **Consumer applications choose Maven or Gradle**: the starter templates
@@ -468,6 +471,8 @@
   (`VirtualThreadPinningTest`). **How to apply:** a lazy init or a shared-state guard takes a `ReentrantLock`
   (`lock(); try { ... } finally { unlock(); }`), a wait takes a `Condition`; `grep -rn synchronized --include='*.java'`
   over `system`, `extensions` and `examples` main sources must find only comments.
+  **The lift is planned (Eric, 2026-11-20):** the minimum Java moves to 25 once approved ([[java25-baseline]]); until that
+  lands the rule holds, and the four refactors of 2026-11-20 (#661, #662) stay valid either way.
   <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-11-20 | uses: 7 | tier: active | origin: 2026-09-14-230259 -->
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
