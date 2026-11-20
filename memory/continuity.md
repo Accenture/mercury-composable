@@ -451,6 +451,25 @@
 
 ## Conventions
 
+- **Use `ReentrantLock`, not `synchronized`, for locks/critical sections while the build targets Java 21
+  (Eric's directive, 2026-09-14).** On Java 21 a virtual thread that blocks inside a `synchronized` block
+  PINS its carrier thread; JEP 491 lifts that only in JDK 24+, and the toolchain intentionally stays on 21
+  until the field runs Java 25 ([[stack-language-java21]]). So lazy-init and shared-state guards use a
+  `ReentrantLock` (try/finally) — it does not pin. Precedent: `RedisHealthProbe` (carries the explicit
+  comment) and the return-route coordinator; applied to the distributed cache's `CacheRuntime`. This
+  decays once the toolchain moves to Java 25 (JEP 491 makes `synchronized` non-pinning). Relates
+  [[virtual-threads-rpc]], [[kafka-clients-kernel-threads]]; applied in [[redis-connection-foundation]].
+  
+  **Re-affirmed 2026-11-20 (Eric), after the rule had faded from the live set:** new code had used `synchronized`
+  again - the snapshot accessor of `ai-contract-provider` (#661), the Playground engine's `ReturnChannel`
+  (2026-11-03), and older `StreamProducer` (sync-over-async demo) and `RedisStateConnection` (minigraph-state-redis);
+  all refactored to `ReentrantLock` with try/finally (the refactor PR). The rule is live again and applies to every
+  Java source, examples included; test code may use `synchronized` only where pinning is the subject of the test
+  (`VirtualThreadPinningTest`). **How to apply:** a lazy init or a shared-state guard takes a `ReentrantLock`
+  (`lock(); try { ... } finally { unlock(); }`), a wait takes a `Condition`; `grep -rn synchronized --include='*.java'`
+  over `system`, `extensions` and `examples` main sources must find only comments.
+  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-11-20 | uses: 7 | tier: active | origin: 2026-09-14-230259 -->
+
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
   (Eric's feedback, 2026-08-19).** GitHub pre-fills the dialog with title-plus-body text,
   and stray words can survive into the immutable commit title — PR #283's squash
