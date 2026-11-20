@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -2333,6 +2333,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0037" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0037 — The mini-scheduler picks one instance by the state resolver's conditional claim and one site by the environment store; leader.election over a service mesh is retired
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0036" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3287,6 +3298,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#adr-0037" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-0037 — The mini-scheduler picks one instance by the state resolver's conditional claim and one site by the environment store; leader.election over a service mesh is retired
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adr-0036" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3378,6 +3400,68 @@ governing the codebase — verified against the source (<code>platform-core</cod
 <code>event-script-engine</code>, <code>minigraph-playground-engine</code>) and the published guides, which are
 the source of truth in case of ambiguity. The narrative design reasoning behind each decision lives
 in that ADR's own <em>Rationale</em> section.</p>
+<hr />
+<h2 id="adr-0037">ADR-0037 — The mini-scheduler picks one instance by the state resolver's conditional claim and one site by the environment store; <code>leader.election</code> over a service mesh is retired<a class="headerlink" href="#adr-0037" title="Permanent link">&para;</a></h2>
+<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-11-20 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> scheduler-resolver-conditional-claim · <strong>Supersedes:</strong> <a href="#adr-0030">ADR-0030</a></p>
+<!-- id: adr-0037 | status: accepted | supersedes: adr-0030 -->
+
+<p><strong>Abstract.</strong> At every scheduled point the mini-scheduler answers two questions with two functions the application provides:
+which site runs the jobs - the environment store of ADR-0030, carried forward here unchanged - and which instance of that
+site runs this firing - the state resolver's <code>expires</code>, one conditional write that claims the job on its name. A third
+mechanism, <code>leader.election: true</code>, picked the instance with the lowest origin id among the schedulers found over a
+minimalist service mesh (<code>cloud.connector=kafka</code>) and left the resolver unasked. It is retired in 4.12.31: the key is
+ignored with a warning at startup, the <code>cron.scheduler</code> route is no longer registered, and the executor no longer searches
+the mesh. Eric's direction of 2026-11-20, delivered in PR #659. This entry supersedes ADR-0030 so that the decision about one
+site and the decision about one instance stand in one record, and because ADR-0030's context and decision name leader
+election as a mechanism the module still had.</p>
+<p><strong>Context.</strong> The mesh election predates the conditional claim. When the resolver's <code>expires</code> was a read of the previous
+run's time, two instances that fired in the same second both ran the job, and the mesh gave the scheduler a membership list
+to pick from - at the cost of a Kafka cluster, the kafka-connector dependency and the presence monitor, which ADR-0006
+reserves for cross-instance RPC and service discovery. 4.12.29 made <code>expires</code> a claim in one conditional write on a unique
+key on the job's name, with the asking instance's origin id as <code>_origin</code> in the parameters, which the module README's
+PostgreSQL and MongoDB examples implement; measured on 2026-11-04 with eight instances asking at the same instant, exactly
+one wins. From then on the mesh answered a question the database already answered. Kept "for backward compatibility", the
+switch sat beside <code>deferred.start</code> in the cron file, in the configuration reference and in the guide's section on picking one
+instance, and an AI agent preparing a deployment read the two as combinable - a service mesh mixed with a state resolver -
+although the resolver's <code>expires</code> was never asked when the mesh elected. Two switches for one question.</p>
+<p><strong>Decision.</strong></p>
+<ul>
+<li><strong>One instance: the claim.</strong> With more than one instance of a site, the state resolver's <code>expires</code> claims the job in ONE
+  conditional write on a unique key on the job's name, succeeding only when the window has passed or <code>_origin</code> already holds
+  the claim, so the database picks one winner and the loser is answered at once; <code>start</code> and <code>end</code> record the run. The
+  resolver is the application's, written against its own database; the module README's worked examples are the template.
+  <code>deferred.start</code> spreads the instances' questions over nine seconds and picks nothing. A slow resolver is retried with the
+  same <code>_origin</code>, not given a longer timeout.</li>
+<li><strong>One site: the environment store.</strong> ADR-0030 stands unchanged: <code>scheduler.environment.name</code> declares this instance's
+  environment, the active environment lives in the store named by <code>scheduler.environment.store</code> (<code>type=get</code> / <code>type=set</code>),
+  is read at every scheduled point before a job runs, and a standby instance skips the firing with one log line while an
+  operator's manual run is honoured; the switch is the application's REST endpoint, and an installation that configures
+  nothing runs as <code>prod</code>.</li>
+<li><strong>The order at a scheduled point.</strong> The environment first, then the claim, then the job; ADR-0030's "the job's normal path
+  (leader election or the state resolver, then the job)" now reads "the state resolver, then the job". An operator's manual
+  run bypasses both and is honoured, because it is explicit.</li>
+<li><strong><code>leader.election</code> is retired, not refused.</strong> A cron file that carries the key, with either value, loads with a warning
+  naming the key as retired and continues; the scheduler registers no <code>cron.scheduler</code> route (dropped from the reserved
+  names), makes no <code>EventEmitter.search</code>, and its documentation no longer points at the service mesh. A scheduler application
+  needs no mesh for any reason of its own.</li>
+<li><strong>The rule that generalizes.</strong> When two configuration switches answer the same question and one of them is sufficient, the
+  other is retired rather than documented around: a documented precedence is one more rule to learn, and the one an agent
+  gets wrong first.</li>
+</ul>
+<p><strong>Alternatives.</strong> (a) <em>Keep <code>leader.election</code> and document it as mutually exclusive with the claim:</em> the confusion came from
+a documented back-compatibility option; a precedence rule would be one more. (b) <em>Refuse a cron file that still carries
+<code>leader.election: true</code> at startup:</em> the examples shipped the key as <code>false</code>, so field cron files carry it, and failing
+them for a key that changed nothing is a worse upgrade than ignoring it with a warning. (c) <em>Keep the mesh election for
+installations that run a mesh anyway:</em> their resolver already receives <code>start</code> and <code>end</code>, and its <code>expires</code> is one
+conditional write away from the claim, so the mesh saves them nothing. (d) <em>Quartz's own cluster mode against a JDBC job
+store:</em> an alternative outside the scheduler's contract, still named in the guide.</p>
+<p><strong>Consequences.</strong> An application that set <code>leader.election: true</code> needs the conditional claim before it runs more than one
+instance (the CHANGELOG's upgrade note); one that left the key <code>false</code> or absent is unchanged. The module no longer
+registers a route conditionally or depends on mesh membership, so its behaviour with one instance and with many is the same
+code path. <code>scheduler-resolver-conditional-claim</code> is the fact this entry formalizes; ADR-0030's <code>scheduler-active-environment-store</code>
+is archived, its substance carried in the "one site" clause above. The Rust port and the language packs have no scheduler.
+Deferred, from ADR-0030: a built-in environment store over the framework's own data extensions, and a built-in state
+resolver beside it.</p>
 <hr />
 <h2 id="adr-0036">ADR-0036 — Essential tools for agent loops: files inside one workspace, the web inside an allowlist, a knowledge graph inside one database and a clock as language-pack functions with published catalog rows; a product's own front door bound from its MCP server, by recipe<a class="headerlink" href="#adr-0036" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-11-18 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> agent-tools-built-or-bound</p>
@@ -3807,8 +3891,8 @@ the state on every lookup), and aligning the two engines' brace scans outside <c
 this decision.</p>
 <hr />
 <h2 id="adr-0030">ADR-0030 — The mini-scheduler's active environment: one site of an active-active deployment runs the jobs, decided by a data store read at every scheduled point<a class="headerlink" href="#adr-0030" title="Permanent link">&para;</a></h2>
-<p><strong>Status:</strong> Accepted · <strong>Date:</strong> 2026-10-09 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> scheduler-active-environment-store</p>
-<!-- id: adr-0030 | status: accepted -->
+<p><strong>Status:</strong> Superseded by <a href="#adr-0037">ADR-0037</a> (2026-11-20: the active environment stands there unchanged; the leader election that this entry's context and decision name as a mechanism was retired) · <strong>Date:</strong> 2026-10-09 · <strong>Serves:</strong> vision-mercury-composable · <strong>Formalizes:</strong> scheduler-active-environment-store</p>
+<!-- id: adr-0030 | status: superseded | superseded-by: adr-0037 -->
 
 <p><strong>Abstract.</strong> A scheduler deployed in two sites, Production and DR, active-active, fires its jobs in one of them. The application
 property <code>scheduler.environment</code> names the instance's own environment (default <code>prod</code>); the <strong>active environment</strong> - the one whose

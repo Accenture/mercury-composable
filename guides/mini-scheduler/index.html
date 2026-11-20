@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
@@ -2235,10 +2235,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#leader-election" class="md-nav__link">
+  <a href="#one-mechanism" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Leader election instead
+        One mechanism, not two
       
     </span>
   </a>
@@ -3620,10 +3620,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#leader-election" class="md-nav__link">
+  <a href="#one-mechanism" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Leader election instead
+        One mechanism, not two
       
     </span>
   </a>
@@ -3838,7 +3838,6 @@ Only one file is read, so a mounted file lists every job. When no file is found,
 <a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">    </span><span class="nt">resolver</span><span class="p">:</span><span class="w"> </span><span class="s">"v1.state.resolver"</span>
 <a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
 <a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="nt">deferred.start</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="nt">leader.election</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 </code></pre></div>
 <table>
 <thead>
@@ -3886,8 +3885,9 @@ Only one file is read, so a mounted file lists every job. When no file is found,
 </tr>
 </tbody>
 </table>
-<p>Two keys belong to the file itself, not to a job: <code>deferred.start</code> (default <code>false</code>) and <code>leader.election</code> (default
-<code>false</code>, see <a href="#leader-election">Leader election</a>).</p>
+<p>One key belongs to the file itself, not to a job: <code>deferred.start</code> (default <code>false</code>, see
+<a href="#conditional-claim">Claim the job in one conditional write</a>). <code>leader.election</code>, a key of earlier releases, is
+retired: the scheduler ignores it with a warning at startup (<a href="#one-mechanism">One mechanism, not two</a>).</p>
 <p>The startup log lists each job it loaded:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Scheduled job: morning-report, service: morning.report, statement: 0 0 9 * * ?, time zone: America/New_York
 </code></pre></div>
@@ -4215,13 +4215,14 @@ The resolver answers <code>true</code> again to the instance that holds the clai
 examples. Without it, the retry finds the claim, answers "not expired", and nobody runs the job. When "not expired"
 follows a timed-out attempt, the scheduler logs a warning; on an instance that lost the claim to a peer, that warning
 is expected.</p>
-<h3 id="leader-election">Leader election instead<a class="headerlink" href="#leader-election" title="Permanent link">&para;</a></h3>
-<p>For backward compatibility, <code>leader.election: true</code> picks the instance by a service mesh instead of the state
-resolver: the application connects to the mesh (<code>cloud.connector=kafka</code>, see the
-<a href="../service-mesh/">Minimalist Service Mesh</a>), and the instance with the lowest origin id among the schedulers it finds
-runs every job. The resolver is not asked <code>expires</code>, but it still receives <code>start</code> and <code>end</code>. The mesh is an opt-in
-for applications that need it for other reasons; the claim needs only the database the resolver already writes to.
-Quartz's own cluster mode, configured against a database, is a third way.</p>
+<h3 id="one-mechanism">One mechanism, not two<a class="headerlink" href="#one-mechanism" title="Permanent link">&para;</a></h3>
+<p>The claim is the only way the scheduler picks an instance, and the <a href="#active-environment">active environment</a> the
+only way it picks a site. Earlier releases also offered <code>leader.election: true</code>, which chose the instance with the
+lowest origin id over a service mesh instead of asking the resolver <code>expires</code>. It was retired in 4.12.31: the claim
+answers the question with the database the resolver already writes to, so the mesh added a dependency without adding
+an answer, and a second switch invited mixing the two. The key is ignored with a warning at startup; remove it from
+the cron file. Quartz's own cluster mode, configured against a database, remains an alternative outside the scheduler.
+The decision is ADR-0037 in the <a href="../../arch-decisions/ADR/">Architectural Decision Records</a>.</p>
 <h2 id="active-environment">Active-active sites: the active environment<a class="headerlink" href="#active-environment" title="Permanent link">&para;</a></h2>
 <p>A scheduler deployed in two sites, Production and DR, active-active fires every job in both, and a job that publishes
 to its site's Kafka cluster wakes the DR applications that must stay idle while Production is up. One property names
@@ -4412,12 +4413,6 @@ which instance (<code>_origin</code>) ran it. The example reads them back as <co
 <td>a random 0-9 s delay per job per instance</td>
 </tr>
 <tr>
-<td><code>leader.election</code></td>
-<td>the cron file</td>
-<td><code>false</code></td>
-<td>pick the instance by a service mesh instead of the claim</td>
-</tr>
-<tr>
 <td><code>jobs[].timezone</code></td>
 <td>the cron file</td>
 <td>the JVM's time zone</td>
@@ -4444,8 +4439,8 @@ which instance (<code>_origin</code>) ran it. The example reads them back as <co
 <li><a href="https://github.com/Accenture/mercury-composable/tree/main/examples/scheduler-example">The scheduler example</a> - a
   runnable application with the state resolver, the environment store and the admin endpoints on MongoDB.</li>
 <li><a href="../event-script/">Event Script</a> - the flows a job can start with <code>flow://</code>.</li>
-<li><a href="../service-mesh/">Minimalist Service Mesh</a> - the mesh that <code>leader.election</code> relies on.</li>
-<li><a href="../../arch-decisions/ADR/">Architectural Decision Records</a> - ADR-0030, the active environment.</li>
+<li><a href="../../arch-decisions/ADR/">Architectural Decision Records</a> - ADR-0037, one instance by the claim and one site by the
+  environment store (it supersedes ADR-0030, the active environment).</li>
 </ul>
 
 
