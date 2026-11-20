@@ -9,4 +9,4 @@
   server's. Full narrative: the session logs from 2026-11-16-105602 to 2026-11-18-094338.
   → proposal: RFC-0013
   → serves: vision-mercury-composable
-  <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-18 | uses: 8 | tier: active | origin: 2026-11-16-105602 -->
+  <!-- id: agent-essential-tools | created: 2026-11-16 | last_used: 2026-11-18 | uses: 8 | tier: archive-candidate | origin: 2026-11-16-105602 -->

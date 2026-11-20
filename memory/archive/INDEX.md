@@ -300,3 +300,12 @@
 - ai-sdlc-document-ingestion — AI SDLC sprint 2 - document ingestion into executable rule graphs - CLOSED 2026-11-14 (Eri… — faded — 2026-Q4.md
 - close-stalled-threads-20261114 — Close stalled threads (due): ai-sdlc-document-ingestion (41 sessions) — for each, close it… — faded — 2026-Q4.md
 - reverify-invariants-20261104 — Re-verify invariants — COMPLETE 2026-11-13: Eric walked the 20 `core` facts and the Vision… — faded — 2026-Q4.md
+- playground-webapp-single-source — The Playground webapp has one source and two deploy targets, and the help pages are one co… — faded — 2026-Q4.md
+- pack-trace-records-engine-parity — The packs' trace records mirror the engines' callee and caller, so a span lineage is conti… — faded — 2026-Q4.md
+- decimal-result-precision-limit — A `DECIMAL` result carries at most a configured number of decimal places - the node's `pre… — faded — 2026-Q4.md
+- help-edit-needs-bundle-release — A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10… — faded — 2026-Q4.md
+- conv-config-key-not-value-and-parent — A configuration key is never both a value and the parent of other keys (2026-10-23). `Conf… — faded — 2026-Q4.md
+- conv-one-copy-of-shared-tooling — A tool that runs from the checkout lives once, in the starter template, and the examples p… — faded — 2026-Q4.md
+- conv-ports-adopt-java-release-number — Every port adopts the JAVA release number on catch-up — no downstream repo runs its own ve… — faded — 2026-Q4.md
+- d-override-substitution — A `-D` runtime override's value is resolved with the same `${ENV_VAR:default}` substitutio… — faded — 2026-Q4.md
+- decimal-precision-rust-twin — The decimal-places limit on both engines (ADR-0034): the Rust twin and the bundle and help… — faded — 2026-Q4.md
