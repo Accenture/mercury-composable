@@ -466,7 +466,7 @@
   **Re-affirmed 2026-11-20 (Eric), after the rule had faded from the live set:** new code had used `synchronized`
   again - the snapshot accessor of `ai-contract-provider` (#661), the Playground engine's `ReturnChannel`
   (2026-11-03), and older `StreamProducer` (sync-over-async demo) and `RedisStateConnection` (minigraph-state-redis);
-  all refactored to `ReentrantLock` with try/finally (the refactor PR). The rule is live again and applies to every
+  all refactored to `ReentrantLock` with try/finally (#661 and #662, both MERGED 2026-11-20). The rule is live again and applies to every
   Java source, examples included; test code may use `synchronized` only where pinning is the subject of the test
   (`VirtualThreadPinningTest`). **How to apply:** a lazy init or a shared-state guard takes a `ReentrantLock`
   (`lock(); try { ... } finally { unlock(); }`), a wait takes a `Condition`; `grep -rn synchronized --include='*.java'`
