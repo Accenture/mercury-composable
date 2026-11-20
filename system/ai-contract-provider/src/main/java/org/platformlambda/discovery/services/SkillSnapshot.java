@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 /**
@@ -69,7 +70,8 @@ public class SkillSnapshot {
 
     // built on first use, never in a static initializer: a snapshot that cannot be built fails every call with the
     // same explanation instead of an ExceptionInInitializerError once and a bare NoClassDefFoundError ever after
-    private static SkillSnapshot instance;
+    private static final ReentrantLock BUILD = new ReentrantLock();
+    private static volatile SkillSnapshot instance;
     private static IllegalStateException failure;
 
     private final Map<String, byte[]> rendered;
@@ -87,19 +89,30 @@ public class SkillSnapshot {
      * package, an include that does not expand or a dependency version that cannot be read stops the build, and the
      * same explanation is thrown on every call - at startup, and in every test that touches the class.
      */
-    public static synchronized SkillSnapshot getInstance() {
-        if (instance == null) {
-            if (failure != null) {
-                throw failure;
-            }
-            try {
-                instance = new SkillSnapshot();
-            } catch (RuntimeException e) {
-                failure = new IllegalStateException("The AI contract snapshot cannot be built: " + e.getMessage(), e);
-                throw failure;
-            }
+    public static SkillSnapshot getInstance() {
+        var ready = instance;
+        if (ready != null) {
+            return ready;
         }
-        return instance;
+        // a ReentrantLock, not synchronized: the build targets Java 21, where a virtual thread blocking in a
+        // synchronized section pins its carrier
+        BUILD.lock();
+        try {
+            if (instance == null) {
+                if (failure != null) {
+                    throw failure;
+                }
+                try {
+                    instance = new SkillSnapshot();
+                } catch (RuntimeException e) {
+                    failure = new IllegalStateException("The AI contract snapshot cannot be built: " + e.getMessage(), e);
+                    throw failure;
+                }
+            }
+            return instance;
+        } finally {
+            BUILD.unlock();
+        }
     }
 
     /** Mercury framework version, read from the platform-core dependency itself. */
