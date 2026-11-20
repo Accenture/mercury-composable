@@ -39,7 +39,20 @@
   row, vectors version 2). Narrowed: who decided reaches the audit store only through a refused call's note (the loop
   carrying the decisions into the turn's facts is the follow-up); a wait decided elsewhere stays open on another device's
   card until tried or expired (a question for the review). Next: step 6 (the chat, mail and topic examples) and promotion,
-  on Eric's call.
+  on Eric's call. **Round 4 (Eric's sprint of 2026-11-20 after the drive; spec section 21, R9-R13):** the questions,
+  answers and advices join the transcript audit log, decoupled from the channels - the main flow records (a recorder in
+  the ask-person process behind local events, order-independent writes so it may run several instances, a published
+  store contract with PostgreSQL out of the box and a memory implementation for tests, the `question` table moved from
+  the app's inbox and owned by the main flow's extension, `seen` dropped) and the channels only deliver, so the record
+  holds what every channel delivered, an AI node's and a deterministic node's alike; the agent-question app becomes the
+  backend of a React UI built in the Node pack and deployed into both packs' `resources/public` (questions and answers,
+  a history with infinite scroll, a transcript browser; same origin, no CORS; useful to inspect without answering since
+  a topic has no browser of its history); the pack hosts serve static content (`static.html.folder`, BUILT 2026-11-20:
+  mercury-python #73, mercury-nodejs #138); identity `none` or `oauth2` alone with PKCE in the browser, `proxy`
+  removed (the field's installations use 3-legged SSO and OAuth 2.0 access tokens). Eric's question on relaxing the
+  audit writer's single instance: viable with a per-conversation row lock, a monotonic guard and a forward-only mark -
+  `llm.transcript.audit.instances`, default 1, the follow-up. Build plan steps 8-11; next the record (step 9), then the
+  backend's reads and the UI, then step 6 and promotion.
   → proposal: RFC-0014
   → serves: vision-mercury-composable
   <!-- id: ask-a-person-channel | created: 2026-11-19 | last_used: 2026-11-19 | uses: 1 | tier: working | origin: 2026-11-19-023727 -->

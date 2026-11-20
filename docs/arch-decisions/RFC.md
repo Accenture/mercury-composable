@@ -107,6 +107,17 @@ Next: step 6 (the chat, mail and topic examples) and the promotion to an ADR, on
 
 ---
 
+
+**Round 4 (2026-11-20, Eric's sprint after the live drive; spec section 21).** The questions, answers and advices become
+part of the transcript audit log, decoupled from the channels: the main flow records - a recorder in the ask-person
+process behind local events, order-independent writes, a published store contract with PostgreSQL out of the box and a
+memory implementation for tests - and the channels only deliver, so the record holds what every channel delivered, an AI
+node's and a deterministic node's alike. The agent-question app becomes the backend of a React UI built in the Node pack
+and deployed into both packs' `resources/public` (three panels: questions and answers, history with infinite scroll,
+transcript browsing - useful to inspect without answering, since a topic has no browser of its history); the pack hosts
+serve static content (`static.html.folder`, built 2026-11-20: mercury-python #73, mercury-nodejs #138); identity is
+`none` or `oauth2` alone, PKCE in the browser, `proxy` removed. Steps 8 to 11 of the build plan; promotion after them.
+
 ## RFC-0013 — Essential built-in tools for agent loops: files inside a workspace, the web inside an allowlist and a knowledge graph inside one database, as pack functions with published catalog rows
 **Status:** Promoted → ADR-0036 · **Raised:** 2026-11-16 · **Serves:** vision-mercury-composable · **Thread:** `agent-essential-tools`
 <!-- id: rfc-0013 | status: promoted | thread: agent-essential-tools -->

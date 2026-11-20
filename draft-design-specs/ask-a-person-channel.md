@@ -1,7 +1,9 @@
 # Ask a person — an agent's question or approval delivered to a person over an occasionally connected channel, answered through a return link that resumes the graph — design spec
 
-**Status:** DRAFT, round 3 (2026-11-19, Claude Code for Eric); steps 1-3 of the build plan were built the same day
-(sections 18 and 19). Raised as RFC-0014 in
+**Status:** DRAFT, round 4 (2026-11-20, Claude Code for Eric); steps 1-5 of the build plan were built and driven on
+2026-11-19 (sections 18 to 20). Round 4 records Eric's sprint of 2026-11-20 - the question record as part of the
+transcript audit log, the React UI as the one front-end, static content in the pack hosts, identity by OAuth 2.0 alone
+(sections 13 and 21). Raised as RFC-0014 in
 [`docs/arch-decisions/RFC.md`](../docs/arch-decisions/RFC.md). Round 1 was written the same day from Eric's concept and
 the review that followed; Eric's review of round 1, one further generalization, is recorded in section 13 and applied
 throughout: the paper is now two parts — **the main flow** (suspend, send a message with the resume link, accept the
@@ -21,7 +23,9 @@ a waiting call to a person and the collection of the answer. It moves no waiting
 does today.
 **Repo scope:** the packs (mercury-python first, mercury-nodejs in lockstep): the main flow's extension — the function
 `person.ask`, the ticket, the resume link and its reply endpoint — and, as a separate standalone application on the pack
-framework, the agent-question app with its PostgreSQL inbox; a route hook in the host for both. Here: the Playground's
+framework, the agent-question app - since round 4 the backend of the React UI, reading the question record the main
+flow keeps in the audit database - and, in the Node pack only, the UI itself; a route hook and a static content service
+in the host. Here: the Playground's
 reference graph (the `advise` checkpoint calls the function; the resume node gains a gate), a second Playground graph on
 the ask row, and the guide pages. The engines' loop: no change in version 1.
 
@@ -212,7 +216,8 @@ the engine: the engine's resume wants a body on the graph's entry, and the engin
   current waiting calls from the engine by the reference graph's re-advice convention — a request with the turn and no
   decisions on the same entry and correlation id, which returns the waiting calls and suspends again (section 7: the
   re-suspend renews the wait, and a dead wait answers `nothing-waiting`, so the page says it has expired). The page then offers the decision form: approve or refuse with a note per
-  waiting call, or an answer for a question. Nothing is read from any store, because the main flow has none.
+  waiting call, or an answer for a question. Nothing is read from any store: the question record of round 4 (section 21) is an audit log, written and never
+  consulted to render a wait - the engine holds the truth of what waits.
 - **POST resumes.** `POST /ask/reply` with `{ticket, decisions, decided_by?}`. A person's browser posts the page's
   form; a channel app posts the same shape on the person's behalf, which is how the agent-question app automates the
   click (section 10). The endpoint verifies the ticket, maps `graph_id` to the engine's entry through
@@ -220,14 +225,18 @@ the engine: the engine's resume wants a body on the graph's entry, and the engin
   it — and sends the resume as the Playground documents it: the same entry, the correlation id in `x-correlation-id`,
   `{turn, decisions}` in the body. The decisions are the person's and nothing else: `{id, approved, note}` for a tool
   call, `{id, answer}` for a question, the shapes the loop accepts. The operator's identity — the signed-in person on a
-  browser's request (none in development, section 8), or `decided_by` on a channel app's request made under the app's
-  own credential — and the time are prefixed to each note; the audit store carries it when the note reaches the model,
-  which the loop does for a refused call (section 20 narrows this: an approved call's note goes nowhere the audit sees).
+  browser's request (none in development, an OAuth 2.0 access token in production - section 8; round 4 removed
+  `proxy`), or `decided_by` on a channel app's request made under the app's own credential — and the time are prefixed
+  to each note; the audit store carries it when the note reaches the model, which the loop does for a refused call
+  (section 20 narrows this: an approved call's note goes nowhere the audit sees; since round 4 the answer itself - the
+  decisions, who decided, when, the engine's outcome - is in the question record, section 21, so every decision is on
+  record whether or not a note reaches the model).
 - **The outcome goes back to the invoker.** The engine's reply — an `answer`, a new `approval` (the model asked again),
   a `nothing waiting` from the gate (410), a refusal of the decisions (400, an unknown id or a call decided twice,
   turned into an advice by the reference graph) — is returned as the response of the POST, so a page shows it and a
-  channel app records it in its own buffer. The main flow records nothing; the engine's transcript audit store already
-  holds the turn with the note (ADR-0035).
+  channel app shows it to its device. Round 4 (section 21): the main flow writes the answer - the decisions, who
+  decided, when, the engine's outcome - to the question record it keeps in the audit database, beside the engine's
+  transcript audit store, which holds the turn with the note (ADR-0035); a channel keeps no record of its own.
 
 ## 7. The reference graphs (the Playground)
 
@@ -261,11 +270,22 @@ ask.channel.timeout: 5s                  # per route; a slow or failed channel i
 ask.ticket.key: ${ASK_TICKET_KEY}        # HMAC key, required when ask.enabled
 ask.ticket.previous-key: ${ASK_TICKET_PREVIOUS_KEY:}   # verifies tickets issued before a rotation
 ask.reply.url: https://ask.example.test  # the public base of the resume link
-ask.reply.auth: none                     # none (development) | proxy (SSO, a trusted gateway header) | oauth2
-ask.reply.auth.header: x-forwarded-user  # with proxy: the header that names the signed-in person
+ask.reply.auth: none                     # none (development) | oauth2 (an access token; round 4 removed proxy, R12)
 ask.reply.auth.oauth2.issuer: ${ASK_OIDC_ISSUER:}      # with oauth2: the token's issuer; its keys are fetched from it
 ask.reply.auth.oauth2.audience: ${ASK_OIDC_AUDIENCE:}  # with oauth2: the audience the token must carry
+ask.reply.auth.oauth2.client-id: ${ASK_OIDC_CLIENT_ID:} # with oauth2: the public client the reply page signs in with (PKCE)
+ask.reply.auth.oauth2.scopes: openid profile email     # with oauth2: the scopes the page requests
 ask.reply.auth.token: ${ASK_REPLY_TOKEN:}   # the bearer a channel app presents when it invokes the link (production)
+ask.audit: memory                        # round 4: the question record (section 21) - memory (tests; a restart forgets) | postgres
+ask.audit.postgres.host: ${POSTGRES_HOST:127.0.0.1}   # the audit store's connection keys; the password a reference
+ask.audit.postgres.port: ${POSTGRES_PORT:5432}
+ask.audit.postgres.database: ${POSTGRES_DB:mercury}
+ask.audit.postgres.username: ${POSTGRES_USER:mercury}
+ask.audit.postgres.password: ${POSTGRES_PASSWORD:}
+ask.audit.postgres.ssl: true
+ask.audit.postgres.timeout.ms: 5000      # the connect timeout and the server-side bound on a statement
+ask.audit.sweep: 30s                     # how often open waits past their expiry are marked expired
+ask.audit.instances: 1                   # the recorder's workers; its writes are order-independent, so more is safe
 ask.graphs:                              # the allowlist: graph id -> the engine entry the pack may resume
   order-assistant:
     entry: http://127.0.0.1:8085/api/graph/order-assistant
@@ -297,103 +317,77 @@ function of this pack (the agent-question app's intake, a chat poster bound to a
 `mermaid.render` is bound), or a route of an engine over the Event-over-HTTP map (a topic publisher — the engines carry
 Kafka natively and the packs do not).
 
+Round 4 adds what a channel need not do: keep a record. The main flow writes every question, advice and answer to the
+question record (section 21), so a chat that keeps only its recent messages, a mailbox or a topic with no browser of
+its history loses nothing to the audit - and the UI of section 21.4 shows what any of them delivered.
+
 ## 10. The agent-question app — a store-and-forward channel for an occasionally connected device
 
 A standalone application on the pack framework, `extensions/agent-question/`, run as any pack app is
 (`mercury-serve`), in its own process: it holds no part of the main flow and the main flow holds no knowledge of it.
+**Round 4 (R10) makes it the backend of the React UI of section 21.4**, and the record it kept as its inbox moves to
+the main flow's question record (section 21.2); what follows is the design as amended, with step 3's build noted where
+it differs.
 
-- **Intake (as built, step 3).** `agent.question.inbox` is its composable route; the main flow's `person.ask` reaches
-  it over the Event-over-HTTP map like any peer function. A wait is upserted as a row of its PostgreSQL inbox on
-  `(graph_id, correlation_id, turn)` — a re-advice for the same turn updates the row rather than adding a card; an
-  advice is appended as a row of its own, since status updates accumulate (R8). Write first: the row is committed before
-  any push to a browser.
+- **Intake.** `agent.question.inbox` is its composable route; the main flow's `person.ask` reaches it over the
+  Event-over-HTTP map like any peer function. Until round 4 the intake upserted a wait and appended an advice in the
+  app's own PostgreSQL inbox (step 3, as built: `(graph_id, correlation_id, turn)`, `question_inbox_seq`, write first,
+  push second). Since round 4 the record is the recorder's: the intake acknowledges the delivery (`delivered` to the
+  main flow) and wakes the connected devices, which read the row from the record.
 - **The browser side.** A streaming HTTP server for the person's device, under the host's route hook (section 11):
-  `GET /questions/events` is a `text/event-stream` the device holds while it is on, with the heartbeat the host already
-  sends on its streaming replies; each event names a row and its state. `GET /questions?since=<cursor>&state=open` is
-  what a reconnecting device calls first — a device that was off for two days gets every open row and every outcome it
-  missed in one page, then listens; `Last-Event-ID` carries the same cursor. One static page, no build step.
-- **The person selects.** The page shows one card per open row — the use case, the summary, the kind, the age and the
+  `GET /questions/events` is a `text/event-stream` the device holds while it is on, each event a row whose sequence
+  passed the device's cursor - found by the intake's wake-up and by a poll of the record's sequence (`question.poll`);
+  `GET /questions?since=<cursor>` is what a reconnecting device calls first — a device that was off for two days gets
+  every row that changed since its cursor in one page, then listens; `Last-Event-ID` carries the same cursor. Round 4
+  adds the reads the UI needs, in both packs and in the shared vectors: `GET /questions?before=<seq>&limit=` (the
+  history's infinite scroll, older rows), `GET /transcripts?before=&limit=&correlation_id=&graph_id=` and
+  `GET /transcripts/{conversation}` over the transcript audit tables (the conversation row and its turns), and
+  `GET /questions/config`, unauthenticated, telling the UI the auth mode, the issuer, the client id, the scopes and the
+  title. The reads run under the store's read role; the backend writes nothing but the click's request.
+- **The person selects.** The UI shows one card per open row — the use case, the summary, the kind, the age and the
   expiry — and the person answers them in any order or skips any. A card renders the calls from the row, so the person
   sees the arguments or the options, and its button automates the click: the app posts `{ticket, decisions,
-  decided_by}` to the main flow's reply endpoint under its own bearer (section 6) and records the outcome on the row.
+  decided_by}` to the main flow's reply endpoint under its own bearer (section 6) and returns the outcome to the
+  device; the row's change - the answer, who decided, the outcome - arrives through the feed, written by the recorder.
   Advices appear in the same list, grouped with their transaction's cards by correlation id, so an acknowledgement
   follows the decision it answers and a status update tells the person whether to wait or to come back later.
-- **States (as built).** A wait is `open` until the engine accepts the decision (`answered`) or finds nothing waiting
-  (`expired`); a decision the loop refused, or a reply endpoint that did not answer, leaves it `open` with the outcome
-  shown - the graph re-notifies with the reason anyway. An advice is `open` until the person marks it `seen`. A
-  re-advice for the same turn updates the row in place (a new ticket, the state back to `open`), so round 2's
-  `superseded` state was not needed. Open waits past their expiry are marked `expired` by a sweeper (`question.sweep`,
-  30 s) and before every replay. Decided, expired and seen cards stay visible with their outcome and who decided; the
-  app never deletes, and `schema/purge.sql` carries the installation's retention (30 days as shipped), as the audit
-  store's purge does.
+- **States.** A wait is `open` until the engine accepts the decision (`answered`) or finds nothing waiting
+  (`expired`); a decision the loop refused leaves it `open` with the outcome shown - the graph re-notifies with the
+  reason anyway. A re-advice for the same turn updates the row in place (a new ticket, the state back to `open`), so
+  round 2's `superseded` state was not needed. Open waits past their expiry are marked `expired` by the recorder's
+  sweeper. An advice has no state of its own since round 4: `seen` was the device's acknowledgement, and the UI keeps
+  it per device (step 3's `POST /questions/{id}/seen` goes with it). Decided and expired cards stay visible with their
+  outcome and who decided; nothing is deleted, and the installation's retention purges the record.
 - **Two devices on one card.** Both posts reach the engine; one is accepted and the other gets `nothing waiting`; the
-  row records the first with its operator, and the second device sees who answered and when. The app never arbitrates.
-- **Identity (R7).** In development the app runs open: no sign-in, `question.auth: none`, the default. In production it
-  is deployed to the cloud behind proper user authentication — the installation's SSO through a gateway that sets a
-  trusted identity header (`proxy`), or an OAuth 2.0 access token the app validates against the issuer's published keys
-  (`oauth2`) — and passes the signed-in identity as `decided_by`. The app issues no sign-in of its own.
+  record keeps the first with its operator (the first-decision rule of step 5, applied by the recorder), and the
+  second device sees who answered and when. The app never arbitrates.
+- **Identity (R7, R12).** In development the app runs open: no sign-in, `question.auth: none`, the default. In
+  production it is deployed behind the installation's identity provider: `oauth2` - an OAuth 2.0 access token the
+  backend validates against the issuer's published keys, obtained by the UI through Authorization Code with PKCE
+  (section 21.4) - and the signed-in identity travels as `decided_by`. The app issues no sign-in of its own, and
+  round 4 removed the `proxy` mode (a gateway's trusted header): the field's installations use 3-legged SSO and OAuth
+  2.0 access tokens.
 
-The reference schema (`extensions/agent-question/schema/postgres.sql`, byte-identical across the packs; the deployment
-pattern of ADR-0035 — the package stays persistence-free, the extension owns its schema):
-
-```sql
-CREATE TABLE IF NOT EXISTS question_schema (
-  version     INTEGER PRIMARY KEY,
-  applied_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-INSERT INTO question_schema (version) VALUES (1) ON CONFLICT DO NOTHING;
-
-CREATE SEQUENCE IF NOT EXISTS question_inbox_seq;
-
-CREATE TABLE IF NOT EXISTS question_inbox (
-  id              BIGSERIAL    PRIMARY KEY,
-  seq             BIGINT       NOT NULL,                 -- the change sequence a replay reads from
-  ticket          TEXT         UNIQUE,                   -- null for an advice
-  graph_id        TEXT         NOT NULL,
-  correlation_id  TEXT         NOT NULL,
-  turn            INTEGER,                               -- null for an advice that follows no turn
-  kind            TEXT         NOT NULL CHECK (kind IN ('approval','question','advice')),
-  description     TEXT         NOT NULL,
-  summary         TEXT         NOT NULL,
-  details         TEXT,                                  -- an advice's body
-  message         JSONB        NOT NULL,                 -- the message event as received
-  link            TEXT,                                  -- null for an advice
-  state           TEXT         NOT NULL CHECK (state IN ('open','answered','expired','seen')),
-  requested_at    TIMESTAMPTZ  NOT NULL,
-  expires_at      TIMESTAMPTZ,                           -- null for an advice
-  updated_at      TIMESTAMPTZ  NOT NULL,
-  answered_at     TIMESTAMPTZ,
-  answered_by     TEXT,
-  decisions       JSONB,
-  outcome         JSONB                                  -- the reply endpoint's answer: status and body
-);
-CREATE UNIQUE INDEX IF NOT EXISTS question_inbox_wait ON question_inbox (graph_id, correlation_id, turn)
-  WHERE kind <> 'advice';
-CREATE INDEX IF NOT EXISTS question_inbox_seq_idx ON question_inbox (seq);
-CREATE INDEX IF NOT EXISTS question_inbox_open ON question_inbox (state, requested_at);
-CREATE INDEX IF NOT EXISTS question_inbox_case ON question_inbox (correlation_id, requested_at);
-```
-
-JSON travels as text cast to `jsonb` and stamps as text cast to `timestamptz`, so the Node twin runs the same statements
-(the audit store's rule). Every write takes the next value of `question_inbox_seq`, the change sequence a replay reads
-from;
-the partial unique index makes waits upsert and advices append.
+The schema of the step-3 inbox (`question_inbox`, `question_inbox_seq`, the states with `seen`) is recorded in the
+build notes of section 19 and in the merged step-3 and step-4 code; its successor, the question record owned by the
+main flow, is in section 21.2.
 
 ```yaml
-# extensions/agent-question/resources/application.yml (as built)
-question.inbox: memory                      # memory (development; a restart forgets) | postgres (a deployment)
-question.inbox.postgres.host: ${POSTGRES_HOST:127.0.0.1}   # the audit store's connection keys; the password a reference
-question.inbox.postgres.port: ${POSTGRES_PORT:5432}
-question.inbox.postgres.database: ${POSTGRES_DB:mercury}
-question.inbox.postgres.username: ${POSTGRES_USER:mercury}
-question.inbox.postgres.password: ${POSTGRES_PASSWORD:}
-question.inbox.postgres.ssl: true
-question.inbox.postgres.timeout.ms: 5000    # the connect timeout and the server-side bound on a statement
-question.sweep: 30s                         # how often open waits past their expiry are marked expired
-question.auth: none                         # none (development) | proxy (SSO, a gateway header) | oauth2 (access token)
-question.auth.header: x-forwarded-user      # with proxy
+# extensions/agent-question/resources/application.yml (round 4)
+question.store: memory                      # memory (tests; nothing is recorded here) | postgres: the record and the transcript tables this backend reads
+question.store.postgres.host: ${POSTGRES_HOST:127.0.0.1}   # the audit store's connection keys; a reader role suffices
+question.store.postgres.port: ${POSTGRES_PORT:5432}
+question.store.postgres.database: ${POSTGRES_DB:mercury}
+question.store.postgres.username: ${POSTGRES_USER:mercury}
+question.store.postgres.password: ${POSTGRES_PASSWORD:}
+question.store.postgres.ssl: true
+question.store.postgres.timeout.ms: 5000
+question.poll: 1s                           # how often the feed looks for rows beyond the intake's wake-up
+question.auth: none                         # none (development) | oauth2 (an access token; round 4 removed proxy)
 question.auth.oauth2.issuer: ${QUESTION_OIDC_ISSUER:}      # with oauth2
 question.auth.oauth2.audience: ${QUESTION_OIDC_AUDIENCE:}  # with oauth2
+question.auth.oauth2.client-id: ${QUESTION_OIDC_CLIENT_ID:} # with oauth2: the public client the UI signs in with (PKCE)
+question.auth.oauth2.scopes: openid profile email          # with oauth2: the scopes the UI requests
 question.reply.token: ${ASK_REPLY_TOKEN:}   # the bearer this app presents to the reply endpoint (production)
 question.reply.timeout: 10s
 question.page.title: 'Agent questions'
@@ -407,6 +401,13 @@ and page. `Platform.add_routes(callback)` in Python and its twin in Node hand an
 host listens, inside the same process and port, under the same logging and the same shutdown — a small, documented
 package change, released with the pack's next catch-up. The alternative, a sidecar server on its own port in each
 extension, needs no package change but a second port to secure and to document, twice (section 14, Q4).
+
+Round 4 (R11, built 2026-11-20): the hosts serve static content as the engines do - `static.html.folder`, the Java
+engine's key, with the Rust engine's location as its default, `resources/public` next to the application file; a GET or
+HEAD that no host path, extension route or function claims is answered with the file it names, `index.html` for a
+folder, the engines' content types, an ETag, `no-cache` for HTML (section 21.1; mercury-python #73, mercury-nodejs
+#138). The UI bundle of section 21.4 lives in the agent-question app's `resources/public`, so each backend serves it
+from its own origin and the UI calls relative paths: no CORS.
 
 ## 12. Chat, mail and topic channels (to be written with examples)
 
@@ -423,6 +424,9 @@ Each follows section 9 and will be documented as an example in a later round:
 
 An advice travels every channel as a plain message — the summary and the details, no link — so a chat or a mailbox
 shows the status of a long run the way the app does.
+
+Whatever the medium, every message a channel delivers and every answer that comes back is in the question record
+(section 21.2), written by the main flow: the UI of section 21.4 browses what a chat, a mailbox or a topic delivered.
 
 ---
 
@@ -463,6 +467,33 @@ approval block). One enhancement, **R8:** `kind` gains `advice`, a notification 
 long-running AI SDLC run, an acknowledgement after the person's response so the next steps can be anticipated; the
 person decides whether to wait for the next question or to take a break and come back (sections 3, 4, 7, 10 and 12).
 
+**Round 4 (2026-11-20, Eric's sprint after the live drive; reviewed against the code of the four repositories and
+agreed, with two refinements).** Recorded as rulings and applied (section 21):
+
+- **R9.** The questions, answers and advices are kept as part of the transcript audit log, decoupled from the
+  messaging channels - the recording is a module separate from the channels, so the record holds what every channel
+  delivered, not only the agent-question app's. Ask-a-person applies to an AI node (approve or reject, pick an option,
+  explain something for the agent's next turn) and to a deterministic node (a workflow with user inputs at its stages)
+  alike, so the record is not tied to a model conversation.
+- **R10.** The agent-question UI becomes a React application, a subproject of the Node pack
+  (`extensions/agent-question-ui`) with a deploy script that copies the bundle into both packs' agent-question
+  `resources/public`; three panels - the question-and-answer panel, the history with a viewport for infinite scroll,
+  the transcript browser - behind SSO and OAuth 2.0, so an authorized person inspects the questions, answers, advices
+  and transcripts even without answering: a typical topic has no convenient browser of its history. Served from the
+  backend's `resources/public`, the UI is same-origin and needs no CORS.
+- **R11.** The packs serve static HTML, JS and CSS as the engines do.
+- **R12.** No `proxy` mode: the field's installations use 3-legged SSO and OAuth 2.0 access tokens; identity is
+  `none` in development and `oauth2` in production, in the agent-question backend and the reply endpoint alike.
+- **R13.** The record's store contract is published: PostgreSQL out of the box; a memory implementation with the same
+  interface is the pattern for unit tests; a field that prefers another database implements the contract.
+
+Agreed with the review's recommendations: the main flow records and the channels deliver (the recorder in the
+ask-person process, the helper's pattern); `seen` leaves the record; the deterministic node is the generalized record
+only in this round; Authorization Code with PKCE in the browser; a Keycloak development container and a mock issuer
+for the tests; the vanilla page retired when the UI lands; no source maps; `static.html.folder` honoured with
+`resources/public` as its default; the order static content, the record, the UI. Eric's further question - may the
+audit writer run several instances, since every write is timestamped? - is answered in section 21.2.
+
 ## 14. Questions put to the review (all agreed by Eric on 2026-11-19, round 3)
 
 Kept for the record with the proposals as agreed; none is open.
@@ -480,7 +511,8 @@ Kept for the record with the proposals as agreed; none is open.
   an OAuth 2.0 access token in production. Proposed by extension: the same three settings for the reply page, since a
   chat link lands there; a channel app's automated invocation carries the app's bearer and `decided_by`. The packs carry
   no identity provider: `proxy` trusts the gateway's header and `oauth2` validates a token against the issuer's keys;
-  neither issues a sign-in.
+  neither issues a sign-in. Round 4 removed `proxy` (R12): `none` and `oauth2` remain, and the page signs in by PKCE
+  under `oauth2` (section 21.4).
 - **Q7 — Does the engine's approval block need anything new?** Proposed: no. The message is composed by the graph from
   what the loop already returns. The loop changes nothing in version 1; a later `llm.run` setting that lets the loop
   send the event by itself is alternative B.
@@ -494,8 +526,10 @@ Kept for the record with the proposals as agreed; none is open.
 
 - An advice has no ticket and no link; `person.ask` returns `delivered` alone for it.
 - An advice's `turn` is optional: the turn it follows, when there is one.
-- In the inbox, waits upsert and advices append; a partial unique index keeps the two rules apart.
-- An advice is `open` until the device marks it `seen`, and leaves by retention alone.
+- In the question record (the inbox until round 4), waits upsert and advices append; a partial unique index keeps the
+  two rules apart.
+- An advice is `open` until the device marks it `seen`, and leaves by retention alone (round 4: `seen` is the device's
+  own state, kept by the UI; the record knows `open`, `answered` and `expired` only).
 - The app groups cards and advices by correlation id, the transaction with the newest activity first.
 - `details` is plain text; each channel caps what it renders, a chat showing the summary and the first lines.
 - The Playground's `order-assistant` sends three advices: the acknowledgement, the outcome, and a stop.
@@ -516,6 +550,12 @@ Kept for the record with the proposals as agreed; none is open.
 - **E — The main flow keeps the messages.** A ticket registry or an inbox inside the main flow, so its page renders
   without the engine. Rejected by R1 to R4: the main flow would then be a channel's buffer, and every channel is its
   own; the engine already holds the truth of what waits.
+- **F — The channel records (rounds 2 and 3, superseded in round 4).** The agent-question app's inbox was the only
+  record of what was asked and answered; a chat or a topic kept nothing durable. Replaced by the question record the
+  main flow keeps (R9, section 21.2): the channels only deliver, and the record holds every channel's messages.
+- **G — The recorder in the helper.** The transcript audit function could take the question rows too, since the record
+  is part of the audit log. Rejected: a deterministic flow that asks a person has no helper in its path, and the main
+  flow is the one point every question and every answer passes.
 
 ## 17. Build plan
 
@@ -538,7 +578,18 @@ Kept for the record with the proposals as agreed; none is open.
    on one ticket (one accepted, one `nothing waiting`). Report under `docs/test-reports/`.
 6. **The chat, mail and topic examples** of section 12, each as a recipe-style page, when a server is available to
    drive.
-7. **Promotion** to an ADR after the drive, on Eric's call.
+7. **Promotion** to an ADR after the drive, on Eric's call - after step 11 since round 4.
+8. **Static content in both hosts (round 4, section 21.1):** BUILT 2026-11-20 - mercury-python #73, mercury-nodejs #138.
+9. **The question record (section 21.2), Python first, Node in lockstep:** the recorder in `extensions/ask-person` with
+   the published contract and the order-independent writes, the schema moved and owned there, the shared vectors (the
+   transitions move from the inbox's file), `proxy` removed from the reply endpoint and the reply page's PKCE sign-in;
+   here, the schema page's question section and the guide.
+10. **The backend's reads and identity (section 21.3), both packs:** the agent-question app as a reader of the record
+    and the transcript tables - `before` pages, the transcript endpoints, the config endpoint, the feed by wake-up and
+    poll - `proxy` removed, `seen` gone, the vectors a new version.
+11. **The React UI (section 21.4), the Node pack:** the subproject, the three panels, PKCE, the release script deploying
+    into both packs' `resources/public`, a Keycloak development container and a mock issuer for the tests; the vanilla
+    page retired; a live drive through both backends with a report under `docs/test-reports/`.
 
 ## 18. Build notes (step 2, 2026-11-19 - the Playground's hold path)
 
@@ -601,3 +652,133 @@ Kept for the record with the proposals as agreed; none is open.
   for the review before promotion.
 - **At-most-once held under two concurrent resumes:** the engine restored the record once; the second request found
   nothing and met the gate.
+
+## 21. Round 4 (2026-11-20) - the question record, the React UI, static content, identity
+
+Eric's sprint of 2026-11-20, reviewed against the code of the four repositories and agreed with two refinements
+(section 13, R9 to R13). In build order.
+
+### 21.1 Static content in the pack hosts (R11) - BUILT 2026-11-20
+
+Neither pack served a file (a 2026-08-24 note: "no static file service by design"), unlike both engines. Both hosts
+now honour `static.html.folder`, the Java engine's key, with the Rust engine's location as its default:
+`resources/public` next to the application file, under the packs' resources rule. A `GET` or `HEAD` that no host path,
+extension route or function claims is answered with the file it names, `index.html` for a folder (so a folder's
+`index.html` replaces the embedded landing page at `/`), the content type from the engines' table, an ETag with 304,
+`no-cache` for HTML; a hidden segment, a link out of the folder or a special file is not found, in the engines' error
+shape. Not ported: the Java static-content filter, `no-cache-pages`, the `mime.types` section. mercury-python #73,
+mercury-nodejs #138.
+
+### 21.2 The question record (R9, R13)
+
+**The main flow records; the channels deliver.** Every question and advice passes `person.ask`, and every answer, from
+any channel, passes `POST /ask/reply` - so the record is written at those two points and never by a channel. A chat
+that keeps only its recent messages, a mailbox, a topic with no browser: whatever delivered the message, the record
+holds what was asked, what was advised and what was decided, by whom and with what outcome. The agent-question app's
+inbox of rounds 2 and 3 was that record for one channel only; it moves.
+
+- **The recorder.** A private composable function of the ask-person process, `question.audit`, behind drop-n-forget
+  local events, the helper's `transcript.audit` pattern (ADR-0035): off the request path, a failure logged by type and
+  SQLSTATE, never failing a hold or a reply. Not the helper's function: a deterministic flow that asks a person has no
+  helper in its path (R9). `person.ask` sends the message event it built (a wait with its ticket, link and expiry, or
+  an advice); `POST /ask/reply` sends the answer - the ticket, the decisions as stamped, who decided, when, and the
+  engine's outcome (status and body). A sweeper marks open waits past their expiry `expired` (`ask.audit.sweep`, 30 s).
+- **The writes are order-independent** (Eric's question of 2026-11-20: may the audit writer run several instances,
+  since every write is timestamped?). A wait upserts on `(graph_id, correlation_id, turn)` and applies only when the
+  incoming `requested_at` is not older than the row's; an advice appends; the answer applies when the row is still
+  `open` or when the engine accepted the decision (`answered` always wins - the first-decision rule of step 5); the
+  row's own lock serializes two writers on one row inside the database. So `ask.audit.instances` may exceed 1 from the
+  start. The same relaxation is the follow-up for `transcript.audit`, whose single instance ordered a conversation's
+  writes and its closing check: a per-conversation row lock (the conversation upsert first in the transaction, so the
+  totals recompute sees every committed turn row), a monotonic guard on the conversation row (an older snapshot never
+  lowers the turn count or the status), a forward-only audited mark, and a write that finds the record released
+  treated as done; `llm.transcript.audit.instances`, default 1 - a local write costs 10 to 20 ms and one instance
+  sustains far more turns than a replica runs, so raising it pays only where the database is remote.
+- **The table** is the inbox row of section 10 moved into the audit database and owned by the ask-person extension
+  (`extensions/ask-person/schema/postgres.sql`, byte-identical across the packs; `question_schema` version 2):
+
+  ```sql
+  CREATE SEQUENCE IF NOT EXISTS question_seq;
+  CREATE TABLE IF NOT EXISTS question (
+    id              BIGSERIAL    PRIMARY KEY,
+    seq             BIGINT       NOT NULL,                 -- the change sequence a feed reads from
+    ticket          TEXT         UNIQUE,                   -- null for an advice
+    graph_id        TEXT         NOT NULL,                 -- a graph's id, or a flow's (R9)
+    correlation_id  TEXT         NOT NULL,                 -- the transaction: joins the transcript tables
+    turn            INTEGER,                               -- a graph's turn or a flow's stage; null for an advice that follows none
+    kind            TEXT         NOT NULL CHECK (kind IN ('approval','question','advice')),
+    description     TEXT         NOT NULL,
+    summary         TEXT         NOT NULL,
+    details         TEXT,                                  -- an advice's body
+    message         JSONB        NOT NULL,                 -- the message event as sent: the audit copy
+    link            TEXT,                                  -- null for an advice
+    state           TEXT         NOT NULL CHECK (state IN ('open','answered','expired')),
+    requested_at    TIMESTAMPTZ  NOT NULL,
+    expires_at      TIMESTAMPTZ,                           -- null for an advice
+    updated_at      TIMESTAMPTZ  NOT NULL,
+    answered_at     TIMESTAMPTZ,
+    answered_by     TEXT,
+    decisions       JSONB,
+    outcome         JSONB                                  -- the engine's answer to the resume: status and body
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS question_wait ON question (graph_id, correlation_id, turn) WHERE kind <> 'advice';
+  CREATE INDEX IF NOT EXISTS question_seq_idx ON question (seq);
+  CREATE INDEX IF NOT EXISTS question_open ON question (state, requested_at);
+  CREATE INDEX IF NOT EXISTS question_case ON question (correlation_id, requested_at);
+  ```
+
+  `seen` is gone: it was a device's acknowledgement, not a fact about the wait; the UI keeps it per device. A question
+  joins its transcript by `correlation_id` and `graph_id`, which `transcript` carries already, so the UI walks from a
+  case to its conversations with no new column. An AI node's record and a deterministic node's are one shape: a flow
+  that asks at a stage sends its id as `graph_id` and the stage as `turn`, and its continuation is an allowlisted entry
+  like a graph's - the record generalizes, and the engines change nothing for it in this round.
+- **The contract is published (R13).** PostgreSQL out of the box; a memory implementation with the same interface is
+  the pattern for unit tests; a field that keeps its record elsewhere implements the interface. The writer's half:
+  record a wait, record an advice, record an answer, expire what is past due; the reader's half: a row by id, the rows
+  since a sequence, the rows before one, a case's rows. The schema page `docs/guides/transcript-audit-schema.md`
+  (ADR-0035) gains a section on the question record, the way it publishes the transcript tables.
+- **Development without PostgreSQL.** The recorder and the UI's backend are two processes, so a memory record is
+  invisible to the UI: memory is for the tests and for a main flow run without an audit; the development chain uses
+  the helper's Colima container, which the dev scripts already start.
+
+### 21.3 The agent-question app, the backend of the UI (R10)
+
+- **Intake.** `agent.question.inbox` stays the channel route the main flow delivers to - its `delivered` flag and the
+  wake-up of connected devices - but writes nothing: the record is the recorder's.
+- **Reads**, under the store's read role, in both packs and in the shared vectors: `GET /questions?since=<seq>` (the
+  replay a reconnecting device calls first), `GET /questions?before=<seq>&limit=` (the history's infinite scroll, older
+  rows), `GET /questions/events` (the stream: every row whose sequence passes the cursor, found by the intake's wake-up
+  and a poll of the sequence), `GET /transcripts?before=&limit=&correlation_id=&graph_id=` and
+  `GET /transcripts/{conversation}` over the transcript audit tables (the conversation row and its turns), and
+  `GET /questions/config` - unauthenticated - telling the UI the auth mode, the issuer, the client id, the scopes and
+  the title.
+- **The click.** `POST /questions/{id}/decide` posts to the link's reply endpoint under the app's bearer with
+  `decided_by` and returns the outcome to the device; the row's change arrives through the feed, written by the
+  recorder. `POST /questions/{id}/seen` goes with the state.
+- **Identity (R12).** `none` in development, `oauth2` in production; `proxy` removed here and from the reply endpoint.
+
+### 21.4 The React UI (R10)
+
+`extensions/agent-question-ui/` in the Node pack - the one front-end, maintained in one place - a subproject with its
+own `package.json` on the engines' Playground web app's toolchain (Vite, React 19, TypeScript, vitest). One release
+script builds the bundle and deploys it into both packs' `extensions/agent-question/resources/public` (the Python
+checkout by its sibling path, an environment override); the bundle is committed in both repositories, without source
+maps; the published packages ship no extension. Each backend serves it from its own origin through the hosts' static
+content service (21.1), so the UI calls relative paths and no CORS is configured. Three panels: **the
+question-and-answer panel** (the cases with an open card, the decision form, the click), **the history** (a viewport
+with infinite scroll over `before` pages, newest first, search and filters by case, state, who decided and time) and
+**the transcript browser** (the conversations of the audit store, a case's turns as the model exchanged them). The UI
+is useful with nobody answering through it: an authorized person inspects the questions, answers and advices every
+channel delivered and the transcripts behind them, since a topic has no convenient browser of its history (R10).
+Sign-in: under `oauth2` the UI runs Authorization Code with PKCE against the issuer named by `GET /questions/config`,
+sends the token as a bearer on every call and reads the stream with `fetch` and `Last-Event-ID`, since `EventSource`
+carries no bearer - the vanilla page of step 3 could hold the stream only under `none`; under `none` the name field
+stays. The main flow's reply page signs in the same way under `oauth2`, so a chat link works without the UI. A
+Keycloak development container beside Redis and PostgreSQL drives it; a mock issuer fixture pins the tests. The brand
+mark is the Material Design `atom` icon the engine docs use as their logo (Apache-2.0). When the UI lands, the vanilla
+page of step 3 is retired in both packs.
+
+### 21.5 Order
+
+21.1 first (built), then 21.2 with 21.3's reads and identity change, then 21.4 with its deploy and a live drive; the
+guide and the schema page follow each step; promotion after the drive, on Eric's call.
