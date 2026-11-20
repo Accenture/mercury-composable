@@ -39,7 +39,8 @@
   row, vectors version 2). Narrowed: who decided reaches the audit store only through a refused call's note (the loop
   carrying the decisions into the turn's facts is the follow-up); a wait decided elsewhere stays open on another device's
   card until tried or expired (a question for the review). Next: step 6 (the chat, mail and topic examples) and promotion,
-  on Eric's call. **Round 4 (Eric's sprint of 2026-11-20 after the drive; spec section 21, R9-R13):** the questions,
+  on Eric's call. **Round 4 (Eric's sprint of 2026-11-20 after the drive; spec section 21, R9-R13; PR #660 MERGED 2026-11-20, squash
+  `0e2e6c1b9`):** the questions,
   answers and advices join the transcript audit log, decoupled from the channels - the main flow records (a recorder in
   the ask-person process behind local events, order-independent writes so it may run several instances, a published
   store contract with PostgreSQL out of the box and a memory implementation for tests, the `question` table moved from
