@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The way back to the caller of one graph run (RFC-0011 section 8.4): progress events while the run goes on, then
@@ -95,6 +96,9 @@ public final class ReturnChannel {
     private final AtomicInteger sequence = new AtomicInteger();
     private final Map<String, String> relays = new HashMap<>();
     private final AtomicReference<String> businessCid = new AtomicReference<>();
+    // a ReentrantLock, not synchronized: the build targets Java 21, where a virtual thread blocking in a synchronized
+    // section pins its carrier; this lock guards closed, streaming and relays, and serializes the writes
+    private final ReentrantLock lock = new ReentrantLock();
     private boolean streaming;
     private boolean closed;
     private boolean unavailable;
@@ -214,18 +218,23 @@ public final class ReturnChannel {
         deliver(copy);
     }
 
-    private synchronized void deliver(Map<String, Object> event) {
-        if (closed) {
-            return;
-        }
-        if (kind == Kind.STREAM) {
-            if (!streaming) {
-                writer.first(200, TEXT_EVENT_STREAM);
-                streaming = true;
+    private void deliver(Map<String, Object> event) {
+        lock.lock();
+        try {
+            if (closed) {
+                return;
             }
-            writer.write((String) event.get(TYPE), event);
-        } else {
-            send(event);
+            if (kind == Kind.STREAM) {
+                if (!streaming) {
+                    writer.first(200, TEXT_EVENT_STREAM);
+                    streaming = true;
+                }
+                writer.write((String) event.get(TYPE), event);
+            } else {
+                send(event);
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -241,26 +250,31 @@ public final class ReturnChannel {
         finishAfterDrain(response);
     }
 
-    private synchronized void finishAfterDrain(EventEnvelope response) {
-        if (closed) {
-            return;
-        }
-        closed = true;
-        var status = response.getStatus();
-        var terminal = engineEvent(status >= 400? ERROR : RESULT);
-        terminal.put(STATUS, status);
-        if (status >= 400) {
-            terminal.put(MESSAGE, messageOf(response.getBody()));
-        } else {
-            terminal.put(BODY, response.getBody());
-        }
-        switch (kind) {
-            case STREAM -> endStream(terminal);
-            case EVENT -> send(terminal);
-            case SOCKET -> {
-                send(terminal);
-                Utility.getInstance().closeConnection(target, 1000, "done");
+    private void finishAfterDrain(EventEnvelope response) {
+        lock.lock();
+        try {
+            if (closed) {
+                return;
             }
+            closed = true;
+            var status = response.getStatus();
+            var terminal = engineEvent(status >= 400? ERROR : RESULT);
+            terminal.put(STATUS, status);
+            if (status >= 400) {
+                terminal.put(MESSAGE, messageOf(response.getBody()));
+            } else {
+                terminal.put(BODY, response.getBody());
+            }
+            switch (kind) {
+                case STREAM -> endStream(terminal);
+                case EVENT -> send(terminal);
+                case SOCKET -> {
+                    send(terminal);
+                    Utility.getInstance().closeConnection(target, 1000, "done");
+                }
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -285,11 +299,14 @@ public final class ReturnChannel {
      */
     private void drainRelays() {
         List<String> routes;
-        synchronized (this) {
+        lock.lock();
+        try {
             if (closed || relays.isEmpty()) {
                 return;
             }
             routes = List.copyOf(relays.values());
+        } finally {
+            lock.unlock();
         }
         var emitter = EventEmitter.getInstance();
         var pending = new ArrayList<CompletableFuture<EventEnvelope>>();
@@ -333,24 +350,29 @@ public final class ReturnChannel {
      * @param node the node's alias
      * @return the relay route, or null when the run has ended
      */
-    public synchronized String relayFor(String node) {
-        if (closed) {
-            return null;
-        }
-        var existing = relays.get(node);
-        if (existing != null) {
-            return existing;
-        }
-        var route = RELAY_PREFIX + instanceId + "." + (relays.size() + 1);
+    public String relayFor(String node) {
+        lock.lock();
         try {
-            Platform.getInstance().registerPrivate(route, new ProgressRelay(this, node), 1);
-        } catch (RuntimeException e) {
-            log.warn("Unable to register progress relay {} for node {} - {}", route, node, e.getMessage());
-            return null;
+            if (closed) {
+                return null;
+            }
+            var existing = relays.get(node);
+            if (existing != null) {
+                return existing;
+            }
+            var route = RELAY_PREFIX + instanceId + "." + (relays.size() + 1);
+            try {
+                Platform.getInstance().registerPrivate(route, new ProgressRelay(this, node), 1);
+            } catch (RuntimeException e) {
+                log.warn("Unable to register progress relay {} for node {} - {}", route, node, e.getMessage());
+                return null;
+            }
+            LIVE_RELAYS.add(route);
+            relays.put(node, route);
+            return route;
+        } finally {
+            lock.unlock();
         }
-        LIVE_RELAYS.add(route);
-        relays.put(node, route);
-        return route;
     }
 
     /**
@@ -358,10 +380,13 @@ public final class ReturnChannel {
      */
     public void close() {
         Map<String, String> routes;
-        synchronized (this) {
+        lock.lock();
+        try {
             closed = true;
             routes = new HashMap<>(relays);
             relays.clear();
+        } finally {
+            lock.unlock();
         }
         var platform = Platform.getInstance();
         for (var route : routes.values()) {

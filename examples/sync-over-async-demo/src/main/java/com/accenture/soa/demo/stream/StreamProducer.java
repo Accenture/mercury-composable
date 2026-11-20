@@ -35,6 +35,7 @@ import org.platformlambda.sync.StreamSegment;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The stream-producer pod's backend service ({@code POST /api/produce}): posts segments into a streaming
@@ -72,6 +73,9 @@ public class StreamProducer implements TypedLambdaFunction<Map<String, Object>, 
     // @MainApplication bootstrap, so nothing configuration-derived is frozen in the constructor.
     // Plain fields guarded by the class monitor: every write happens inside a synchronized ensure
     // method, and every reader calls that method first on its own thread before touching the field.
+    // a ReentrantLock, not synchronized: the build targets Java 21, where a virtual thread blocking in a synchronized
+    // section pins its carrier; the lock guards the lazily created shared clients
+    private static final ReentrantLock SHARED = new ReentrantLock();
     private static StreamResponder responder;
     private static RedisClient chaosClient;
     private static StatefulRedisConnection<String, String> chaosConnection;
@@ -87,9 +91,14 @@ public class StreamProducer implements TypedLambdaFunction<Map<String, Object>, 
         return responder.post(cid, type, name, body);
     }
 
-    private static synchronized void ensureResponder() {
-        if (responder == null) {
-            responder = new StreamResponder(RedisConfig.from(AppConfigReader.getInstance()));
+    private static void ensureResponder() {
+        SHARED.lock();
+        try {
+            if (responder == null) {
+                responder = new StreamResponder(RedisConfig.from(AppConfigReader.getInstance()));
+            }
+        } finally {
+            SHARED.unlock();
         }
     }
 
@@ -99,26 +108,36 @@ public class StreamProducer implements TypedLambdaFunction<Map<String, Object>, 
         new ReturnRouteStore(chaosConnection).appendSegment(cid, segment.toJson(), CHAOS_TTL_SECONDS);
     }
 
-    private static synchronized void ensureChaosConnection() {
-        if (chaosConnection == null) {
-            chaosClient = RedisClient.create(RedisConfig.from(AppConfigReader.getInstance()).toUri());
-            chaosConnection = chaosClient.connect();
+    private static void ensureChaosConnection() {
+        SHARED.lock();
+        try {
+            if (chaosConnection == null) {
+                chaosClient = RedisClient.create(RedisConfig.from(AppConfigReader.getInstance()).toUri());
+                chaosConnection = chaosClient.connect();
+            }
+        } finally {
+            SHARED.unlock();
         }
     }
 
     /** Test-lifecycle hook: release the shared Redis clients at class teardown. */
-    public static synchronized void closeSharedClients() {
-        if (responder != null) {
-            responder.close();
-            responder = null;
-        }
-        if (chaosConnection != null) {
-            chaosConnection.close();
-            chaosConnection = null;
-        }
-        if (chaosClient != null) {
-            chaosClient.shutdown();
-            chaosClient = null;
+    public static void closeSharedClients() {
+        SHARED.lock();
+        try {
+            if (responder != null) {
+                responder.close();
+                responder = null;
+            }
+            if (chaosConnection != null) {
+                chaosConnection.close();
+                chaosConnection = null;
+            }
+            if (chaosClient != null) {
+                chaosClient.shutdown();
+                chaosClient = null;
+            }
+        } finally {
+            SHARED.unlock();
         }
     }
 

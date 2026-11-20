@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Lazily initialized, shared Redis connection for the graph state-store functions.
@@ -51,7 +52,9 @@ class RedisStateConnection {
     private static final String KEY_NAMESPACE = "graph:";
     private static final String REDIS_VERSION = "redis_version:";
     private static final String UNKNOWN = "unknown";
-    private static final Object SAFETY = new Object();
+    // a ReentrantLock, not synchronized: the build targets Java 21, where a virtual thread blocking in a synchronized
+    // section pins its carrier - and connecting and the transactional fallback block on the socket under this lock
+    private static final ReentrantLock SAFETY = new ReentrantLock();
     private static RedisClient client;
     private static StatefulRedisConnection<String, byte[]> connection;
     // Whether the connected server supports GETDEL (Redis 6.2+). Enterprise deployments rarely
@@ -85,11 +88,14 @@ class RedisStateConnection {
     }
 
     static RedisCommands<String, byte[]> commands() {
-        synchronized (SAFETY) {
+        SAFETY.lock();
+        try {
             if (connection == null || !connection.isOpen()) {
                 connect();
             }
             return connection.sync();
+        } finally {
+            SAFETY.unlock();
         }
     }
 
@@ -111,7 +117,8 @@ class RedisStateConnection {
         // the shared connection's MULTI state must not interleave with another thread's commands,
         // so the whole transaction runs under the connection lock (suspend/resume traffic is
         // human-checkpoint scale - serializing the fallback path costs nothing observable)
-        synchronized (SAFETY) {
+        SAFETY.lock();
+        try {
             cmd.multi();
             try {
                 cmd.get(key);
@@ -121,6 +128,8 @@ class RedisStateConnection {
                 throw e;
             }
             return cmd.exec().get(0);
+        } finally {
+            SAFETY.unlock();
         }
     }
 
@@ -194,13 +203,16 @@ class RedisStateConnection {
     }
 
     private static void shutdown() {
-        synchronized (SAFETY) {
+        SAFETY.lock();
+        try {
             if (connection != null && connection.isOpen()) {
                 connection.close();
             }
             if (client != null) {
                 client.shutdown();
             }
+        } finally {
+            SAFETY.unlock();
         }
     }
 }
