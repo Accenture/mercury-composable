@@ -57,7 +57,6 @@ to avoid breaking the system unintentionally.
 | completion.multiplex.*       | reserved for event stream clean up    | Connector        |
 | async.http.request           | HTTP request event handler            | REST automation  |
 | async.http.response          | HTTP response event handler           | REST automation  |
-| cron.scheduler               | Cron job scheduler                    | Simple Scheduler |
 | run.scheduled.job            | Scheduled job executor                | Simple Scheduler |
 | init.service.monitor.*       | reserved for event stream startup     | Service monitor  |
 | completion.service.monitor.* | reserved for event stream clean up    | Service monitor  |

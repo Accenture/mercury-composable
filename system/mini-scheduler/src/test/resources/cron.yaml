@@ -62,10 +62,7 @@ jobs:
 deferred.start: true
 
 #
-# For backward compatibility, set leader.election to true.
-# This enables the use of minimalist service mesh for leader election.
-# Your application must set cloud.connector to a service mesh (e.g. kafka)
-# and call the "platform.connectToCloud()" API in the main application.
-# You would need to add the kafka-connector dependency to turn on a service mesh.
+# leader.election was retired in 4.12.31: the loader warns and ignores it, and SchedulerTest still finds every
+# firing claimed through the state resolver. Kept here as that fixture; an application removes the key.
 #
-leader.election: false
+leader.election: true

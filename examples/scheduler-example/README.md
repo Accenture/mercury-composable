@@ -70,12 +70,6 @@ java -Dserver.port=8084 -jar target/scheduler-example-x.y.z.jar
 Setting "deferred.start" to true in cron.yaml defers a job from 0 to 9 seconds in each instance, which
 spreads the instances' questions to the resolver; the claim is what picks one instance.
 
-For backward compatibility, the mini-scheduler can perform a "leader election" to select an application
-instance using a minimalist service mesh (e.g. cloud.connector=kafka). To enable this feature,
-set "leader.election" to true.
-
-(Alternatively, you may also turn on Quartz's cluster mode and configure the database accordingly.)
-
 The scheduler waits 3 seconds for the state resolver and the environment store, and asks a question that
 times out again, up to 3 times, with the same `_origin`. `GET /api/schedule/{name}` filters the `_` keys out
 of the stored record when it reads it; see "Slow answers: retries" in the mini-scheduler README.
@@ -148,7 +142,6 @@ jobs:
     resolver: "v1.state.resolver"
     
 deferred.start: true
-leader.election: false    
 ```
 In this example, there are two scheduled jobs (demo-task and demo-flow). The scheduler executes
 the service "hello.world" every minute at second 0 and the flow "hello-flow" every minute at second 30.

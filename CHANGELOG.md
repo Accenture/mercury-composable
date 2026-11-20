@@ -141,6 +141,21 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    **Upgrade note:** a `-D` value that relied on a literal `${...}` is now resolved, as a file value always was; an
    unresolved reference without a default is no value, as in a file.
 
+### Removed
+
+1. **The mini-scheduler's `leader.election` over a service mesh is retired: the state resolver's conditional claim picks
+   the instance that runs a job, and the environment store the site.** The key chose the instance with the lowest
+   origin id among the schedulers found over `cloud.connector=kafka`, a second mechanism beside the claim that needed a
+   mesh the claim never needed, and its presence in the cron file and the reference read as if the two could be mixed.
+   The scheduler no longer registers the `cron.scheduler` route (dropped from the reserved names) and no longer searches
+   the mesh for peers; a cron file that still carries `leader.election` loads with a warning naming the key as retired,
+   and every firing goes through the resolver's `expires`. The module README, the example and the guide describe the one
+   mechanism and the retirement; the configuration reference drops the key; the decision is ADR-0037, which supersedes
+   ADR-0030. **Upgrade note:** an application that set
+   `leader.election: true` needs the state resolver's conditional claim (the README's PostgreSQL and MongoDB examples)
+   before it runs more than one instance, since the mesh no longer picks one; remove the key from the cron file to
+   silence the warning. An application that left it `false` is unchanged.
+
 ### Fixed
 
 1. **The field's Sonar scan of 4.12.30: five code smells closed; no behaviour change.** `SchedulerDatabase`'s

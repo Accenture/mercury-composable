@@ -158,13 +158,14 @@ store and a dashboard on the same database, and tests it against an embedded Mon
 eight instances asking at the same instant get one winner. For a test drive without Docker,
 [`helpers/mongodb-standalone`](../../helpers/mongodb-standalone) runs that server on `127.0.0.1:27017`.
 
-### Other ways to pick one instance
+### One mechanism, not two
 
-For backward compatibility, the mini-scheduler can perform a "leader election" to select an application
-instance using a minimalist service mesh (e.g. cloud.connector=kafka). To enable this feature,
-set "leader.election" to true.
-
-(Alternatively, you may also turn on Quartz's cluster mode and configure the database accordingly.)
+The claim is the only way the scheduler picks an instance, and the environment store (below) the only way it picks
+a site. Earlier releases also offered `leader.election: true`, which chose the instance with the lowest origin id
+over a minimalist service mesh (`cloud.connector=kafka`); it was retired in 4.12.31 because the claim already answers
+the question without a mesh, and a second switch invited mixing the two. The key is now ignored with a warning at
+startup; remove it from the cron file. (Quartz's own cluster mode, configured against a database, remains an
+alternative outside the scheduler.)
 
 ## Slow answers: retries
 
@@ -258,7 +259,6 @@ jobs:
     resolver: "v1.state.resolver"
     
 deferred.start: true
-leader.election: false    
 ```
 In this example, there are two scheduled jobs (demo-task and demo-flow). The scheduler executes
 the service "hello.world" and the flow "hello-flow" every 10 seconds.
