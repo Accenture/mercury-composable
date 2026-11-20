@@ -55,6 +55,7 @@ class SkillSnapshotTest {
         expected.add("references/arch-decisions/ADR.md");
         expected.add("references/arch-decisions/RFC.md");
         expected.add("references/test-reports/agent-loop-trace-lineage.md");
+        expected.add("references/test-reports/agent-question-ui-live-drive.md");
         expected.add("references/test-reports/ask-a-person-live-drive.md");
         expected.add("references/test-reports/dynatrace-one-agent-integration.md");
         expected.add("references/test-reports/event-over-http-interop.md");
