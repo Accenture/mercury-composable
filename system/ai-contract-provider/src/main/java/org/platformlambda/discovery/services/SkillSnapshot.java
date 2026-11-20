@@ -67,7 +67,10 @@ public class SkillSnapshot {
     private static final Pattern MARKDOWN_LINK = Pattern.compile("!?\\[[^]]*]\\(([^)]+)\\)");
     private static final Pattern URI_SCHEME = Pattern.compile("[a-zA-Z][a-zA-Z0-9+.-]*:.*");
 
-    private static final SkillSnapshot INSTANCE = new SkillSnapshot();
+    // built on first use, never in a static initializer: a snapshot that cannot be built fails every call with the
+    // same explanation instead of an ExceptionInInitializerError once and a bare NoClassDefFoundError ever after
+    private static SkillSnapshot instance;
+    private static IllegalStateException failure;
 
     private final Map<String, byte[]> rendered;
     private final Map<String, Object> snapshotManifest;
@@ -79,8 +82,24 @@ public class SkillSnapshot {
         this.snapshotManifest = buildManifest(rendered);
     }
 
-    public static SkillSnapshot getInstance() {
-        return INSTANCE;
+    /**
+     * The one snapshot, built on first use. It fails closed: a packaged page that links a file the skill does not
+     * package, an include that does not expand or a dependency version that cannot be read stops the build, and the
+     * same explanation is thrown on every call - at startup, and in every test that touches the class.
+     */
+    public static synchronized SkillSnapshot getInstance() {
+        if (instance == null) {
+            if (failure != null) {
+                throw failure;
+            }
+            try {
+                instance = new SkillSnapshot();
+            } catch (RuntimeException e) {
+                failure = new IllegalStateException("The AI contract snapshot cannot be built: " + e.getMessage(), e);
+                throw failure;
+            }
+        }
+        return instance;
     }
 
     /** Mercury framework version, read from the platform-core dependency itself. */
@@ -185,7 +204,8 @@ public class SkillSnapshot {
         return out.toString();
     }
 
-    private static void validateLinks(Map<String, byte[]> files) {
+    /** Every relative link of every packaged Markdown page must resolve inside the snapshot - the fail-closed check. */
+    static void validateLinks(Map<String, byte[]> files) {
         for (var entry : files.entrySet()) {
             if (entry.getKey().endsWith(".md")) {
                 var links = MARKDOWN_LINK.matcher(new String(entry.getValue(), StandardCharsets.UTF_8));
@@ -206,7 +226,9 @@ public class SkillSnapshot {
         var resolved = (parent == null ? Path.of(local) : parent.resolve(local)).normalize();
         if (resolved.isAbsolute() || resolved.startsWith("..")
                 || !files.containsKey(resolved.toString().replace('\\', '/'))) {
-            throw new IllegalArgumentException("Broken relative link in " + source + " -> " + target);
+            throw new IllegalArgumentException("Broken relative link in " + source + " -> " + target
+                    + " - the target is not a file of the skill. Package it (the pom's include set, skill/files.list"
+                    + " and SkillSnapshotTest's inventory) or drop the link.");
         }
     }
 

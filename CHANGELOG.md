@@ -196,6 +196,14 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    configuration reference still document how to switch them on while debugging. **Upgrade note:** an application that
    copied the example's configuration and relied on the DEBUG query log turns it back on with the two keys.
 
+5. **`system/ai-contract-provider` fails with a meaningful message when the snapshot cannot be built.** `SkillSnapshot`
+   was built in a static initializer, so a packaged page that linked an unpackaged file showed its cause once and every
+   later use - at startup, and in every test touching the class - reported a bare `NoClassDefFoundError`. The singleton
+   is now built on first use and remembers its failure, so every call throws `The AI contract snapshot cannot be built:
+   <cause>`, and the link check names the page, the target and the remedy - package the file in the pom's include set,
+   `skill/files.list` and the snapshot test's inventory, or drop the link (Eric, 2026-11-20, on the red build of #661,
+   the third instance of the failure after #629). **Upgrade note:** none.
+
 ### Documentation
 
 1. **The mini-scheduler's MongoDB worked example says where the job's `_id` comes from.** An upsert builds the
