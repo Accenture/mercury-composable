@@ -110,4 +110,4 @@
   #633); and design sprint 4 opened on two extensions of this loop: the transcript audit store (RFC-0012, section 3.3
   and 10 of the spec extended, [[transcript-audit-store]]) and the essential built-in tools (RFC-0013,
   [[agent-essential-tools]]).
-  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-16 | uses: 26 | tier: working | origin: 2026-10-28-233011 -->
+  <!-- id: agent-loop-llm-run | created: 2026-10-28 | last_used: 2026-11-19 | uses: 28 | tier: working | origin: 2026-10-28-233011 -->

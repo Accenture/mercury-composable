@@ -67,7 +67,16 @@
   #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the `soa.redis.health` route rename,
   `minimalist-kafka` no longer transitive).
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-11-18 | through 2026-11-18-094338.md (CADENCE — 12 sessions since 2026-11-17-055029: `refresh-metadata`
+- **last_review:** 2026-11-20 | through 2026-11-20-104438.md (CADENCE — 12 sessions since 2026-11-18-094338: `refresh-metadata`
+  refreshed 19 footers, tier changes 15; archived 7 faded facts (`playground-webapp-single-source`,
+  `pack-trace-records-engine-parity`, `decimal-result-precision-limit`, `help-edit-needs-bundle-release`,
+  `conv-config-key-not-value-and-parent`, `conv-one-copy-of-shared-tooling`, `conv-ports-adopt-java-release-number`) and swept 2
+  completed threads (`d-override-substitution`, `decimal-precision-rust-twin`) → 2026-Q4; kept 1 as a declaration gap
+  (`otel-optional-service-and-negative-control`: its negative-control method shaped the ask-a-person drive of 2026-11-19-085009);
+  `transcript-audit-store` condensed to its close stub; invariants not due (37 of 40 — due at the next review); stalled none;
+  contradictions none; the Vision's Track 2 status row refreshed (RFC-0014 built and driven). Live facts 46 → 37; continuity
+  860 → 738 lines. Smoke test not run.)
+  Prior: 2026-11-18 | through 2026-11-18-094338.md (CADENCE — 12 sessions since 2026-11-17-055029: `refresh-metadata`
   refreshed 17 footers; archived 3 faded facts (`playground-panel-name-meta`, `conv-test-fixed-port-outside-ephemeral`,
   `historical-releases-tags-and-pages`) and swept 3 completed threads (`ai-sdlc-document-ingestion`,
   `close-stalled-threads-20261114`, `reverify-invariants-20261104`) → 2026-Q4; kept 1 as a declaration gap
@@ -85,10 +94,9 @@
   Prior: 2026-11-14 | through 2026-11-14-074819.md (SIZE — continuity passed 1000 lines after the ADR work; 11 footers
   refreshed, tier changes 4; `otel-optional-service-and-negative-control` KEPT as a declaration gap; `ai-sdlc-document-ingestion`
   stalled → [[close-stalled-threads-20261114]] raised for Eric.)
-  Prior: 2026-11-13 | through 2026-11-13-030403.md (ON COMMAND — refreshed 11 footers, tier changes 6; archived 1 superseded
-  fact and 1 faded; declaration gaps none; live facts 47 → 45; then Eric promoted `clean-knowledge-design-over-engine-coverage`
-  to `core`, so it moved back from the archive: 46.)
-  Earlier reviews, each summarized in its own session log: 2026-11-10-015436 (on command + cadence; 23 footers, 10 tier
+  Earlier reviews, each summarized in its own session log: 2026-11-13 (through 2026-11-13-030403; on command: 11 footers,
+  6 tier changes, 1 superseded and 1 faded archived; `clean-knowledge-design-over-engine-coverage` promoted to `core` by
+  Eric and back from the archive), 2026-11-10-015436 (on command + cadence; 23 footers, 10 tier
   changes, 1 superseded archived, 2 threads swept), 2026-11-04-050444 (cadence; the invariant gate raised), 2026-11-03-010235,
   2026-10-29-012834, 2026-10-24-030134, 2026-10-22-180311 (10 faded facts archived; lines 879 → 655), 2026-10-22-012004,
   2026-10-14-000312, 2026-10-11-034330, 2026-10-09-032243, 2026-10-06-012541, 2026-10-05-230033 (the first step-6
@@ -207,7 +215,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-14 | uses: 39 | tier: archive-candidate | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-20 | uses: 40 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -290,21 +298,6 @@
   `hello.remote.relay`). Recorded in the progressive-rendering interop report.
   <!-- id: event-api-local-routes-only | created: 2026-08-30 | last_used: 2026-08-30 | uses: 1 | tier: core | origin: 2026-08-30-050040 -->
 
-- **The Playground webapp has one source and two deploy targets, and the help pages are one consolidated set (Eric, 2026-10-02; PR #496 squash `a6dc9ce5`, the Rust twin mercury #347 merge `781fae43`, both MERGED 2026-10-02).** The webapp "graduated": its scoped
-  memory bank, steering files and pre-graduation specs under `system/minigraph-playground-engine/webapp/` are retired, its technical documentation is regenerated from the code in `webapp/docs/` (README,
-  architecture, protocol, components, graph-view, hooks-and-state, build-test-deploy, extending; 1,336 lines), and its session memory and open threads live at this root. The Rust repo's verbatim copy
-  (`crates/knowledge-graph/webapp/`, K7 of the port spec) is retired: `npm run release:rust` in the webapp (or `release:all`, both engines from one build) deploys the bundle to
-  `../../../../mercury/crates/knowledge-graph/resources/` (`MERCURY_RUST_REPO` overrides; `scripts/targets.js` resolves the target and fails clearly when the repo is absent) and MIRRORS
-  `src/main/resources/help/` there, because the help is compiled into the bundle AND read by both engines at run time. `release` alone stays Java-only, so a contributor without the Rust checkout is
-  unaffected. **Why one help set (Eric's direction, my recommendation agreed):** the two sets had drifted on 38 of 42 pages (~3,700 lines) while only ONE fact was a real engine difference; the Rust
-  2026-07-19 rewrite (Syntax/Example/Notes) is the base, Java-only content kept, wording engine-neutral, differences stated in place (`graph.js` deprecated here, not registered in Rust). Three stale Java
-  claims fell out (`round()` "follows Math.round" — half up away from zero since #472; "an instance runs once" — `run` repeats and `model.*` persists; tutorial 12 titled "Tutorial 10") and one Rust claim
-  (`session reset` keeps the draft — both engines clear it). The bundles are byte-identical on both engines (`index-lxX8FQ68`). **Found there and fixed the same day (PR #497 squash `029e5a9f`, deployed to Rust by mercury #348 merge `67a31296`, both MERGED 2026-10-02):** the workspace clipboard paste wrote scalars as
-  `key[]=value`, which the engine stores as one-element lists (`skill` included); the paste now reuses the node editor's conversion and the authoring builder, the one serialization boundary, and a node
-  the grammar cannot carry is refused with "Paste failed" (bundle `index-CN-KsNrA`). Extends [[help-edit-needs-bundle-release]]; closed the three Rust-twin threads (a port twin of a UI change is a deploy
-  once the UI has one source). Applies [[conv-ports-adopt-java-release-number]] (the Java repo is the reference).
-  <!-- id: playground-webapp-single-source | created: 2026-10-02 | last_used: 2026-11-17 | uses: 28 | tier: archive-candidate | origin: 2026-10-02-175751 -->
-
 - **The mini-scheduler's state resolver picks one instance with a conditional claim in `expires`, and its contract
   changes only inside the existing `parameters`, where a key that starts with `_` is the system's (Eric, 2026-11-03 and
   2026-11-04).** The field stores the resolver's requests in a database whose schema follows the contract, so a new
@@ -331,7 +324,7 @@
   resolver already writes to, and a second switch beside it led an AI agent to read the two as combinable; the key is now
   ignored with a startup warning. Two switches for one question: retire one, do not document the precedence. (ADR-0037,
   which supersedes ADR-0030; the active environment's decision is carried in it unchanged.)
-  <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-17 | uses: 5 | tier: archive-candidate | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
+  <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-20 | uses: 6 | tier: active | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
 
 - **Essential tools for agent loops: built into the packs with published rows and sandboxes in configuration, or
   bound from a product's own MCP server by recipe (ADR-0036, accepted 2026-11-18 after the live drives and the recipes).**
@@ -351,7 +344,7 @@
   **How to apply:** a new capability is first a question of the rule - a pack function with a row, or a recipe for an
   existing server - never engine code, never a generic request tool, never a call argument as a boundary; an
   ingestion node declares `mode: auto` on the graph; a system of record gets a wrapper route. (ADR-0036)
-  <!-- id: agent-tools-built-or-bound | created: 2026-11-18 | last_used: 2026-11-18 | uses: 1 | tier: working | origin: 2026-11-18-094338 -->
+  <!-- id: agent-tools-built-or-bound | created: 2026-11-18 | last_used: 2026-11-19 | uses: 3 | tier: archive-candidate | origin: 2026-11-18-094338 -->
 
 - **The transcript audit store: every model turn of an agent loop recorded by the pack's helper, off the turn's path,
   in a governed store with a published schema (ADR-0035, accepted 2026-11-17 after the live drive through both packs).**
@@ -372,7 +365,7 @@
   audit must know at the end of a run travels in the working record, never in a second key or a second write; a new fact is
   a field of the turn's facts and a column in both packs' schema and the published page; the engine adds identity headers,
   never content; what a model extracts belongs in the agent's knowledge graph (RFC-0013), not here. (ADR-0035)
-  <!-- id: transcript-audit-published-contract | created: 2026-11-17 | last_used: 2026-11-18 | uses: 2 | tier: active | origin: 2026-11-17-094416 -->
+  <!-- id: transcript-audit-published-contract | created: 2026-11-17 | last_used: 2026-11-18 | uses: 2 | tier: archive-candidate | origin: 2026-11-17-094416 -->
 
 - **The agent loop: `llm.run` in the engines maps tool names to routes; the model turn and the MCP bindings live in the
   language packs (ADR-0033, accepted 2026-11-14 after the live drive through both packs).** A node whose model reasons with
@@ -396,7 +389,7 @@
   in the 2026-11-14 drive, capped at 8 KiB 4,300; better, a function of the application in front of the bound route stores the
   payload and returns a reference (the example's `diagram.render`, the SVG under `/tmp/rendered_diagrams/<reference>.svg`),
   which is the out-of-band shape the research rulings asked for. (ADR-0033)
-  <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-18 | uses: 14 | tier: active | origin: 2026-11-14-071025 -->
+  <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-18 | uses: 14 | tier: archive-candidate | origin: 2026-11-14-071025 -->
 
 - **A graph that resumes an agent loop re-advises on a failed resume, because `graph.resume` consumes the suspension record
   (2026-11-14, found live in sprint 3 WP1).** A resume request whose decisions the loop refuses - an unknown call id, a call
@@ -412,45 +405,7 @@
   moved, so a re-sent decision meets 409 and re-advises again; the operator then restarts the transaction. **How to
   apply:** every graph that suspends around `llm.run` needs a path from the loop's failure back to its advice while an
   approval is pending; design it on the graph, never by making the loop forgive a bad decision.
-  <!-- id: graph-failed-resume-readvises | created: 2026-11-14 | last_used: 2026-11-18 | uses: 3 | tier: active | origin: 2026-11-14-065413 -->
-
-- **The packs' trace records mirror the engines' callee and caller, so a span lineage is continuous from an engine into a
-  pack (2026-11-14; Eric's criterion: for OpenTelemetry to be certified, the span lineage ought to be continuous end to
-  end).** The first end-to-end lineage drive - the `diagram-assistant` graph on Haiku 4.5 through the Python and the Node
-  pack, negative control first - found every engine record chained and the pack legs absent: an RPC over Event-over-HTTP is
-  recorded by neither side by default, since `async.http.request` is in `skip.rpc.tracing` here and the packs suppressed the
-  worker-side record of an RPC-served execution without the callee-side records this engine leaves (`http.request` for
-  `POST /api/event`, `event.api.service`, the function's inbox record with the responder's span), and their replies carried no
-  span for an inbox to chain onto. mercury-python #53 and mercury-nodejs #120 made the packs leave the same three records
-  and carry the responder's span on the reply; the re-drive gave 20 records per run, all connected, the tree the same shape
-  as with a Java callee (`docs/test-reports/agent-loop-trace-lineage.md`; the earlier Dynatrace report carries an addendum).
-  Also settled there: an alias route (the MCP binding's `mcp.tool` shape) never appears in a trace - every trace field comes
-  from the service entry the event was addressed to. **How to apply:** a certification drive's lineage check parses every
-  record of the trace from every process and verifies each parent is a span some record owns - a tree without orphans can
-  still be missing hops; a hop into any runtime must leave the callee's edge record, the ingress record and the function's
-  record, or the backend shows the hop as time inside the caller; every traced execution leaves exactly one record, and the
-  question for a new path is which side emits it.
-  <!-- id: pack-trace-records-engine-parity | created: 2026-11-14 | last_used: 2026-11-14 | uses: 1 | tier: archive-candidate | origin: 2026-11-14-115548 -->
-
-- **A `DECIMAL` result carries at most a configured number of decimal places - the node's `precision`, else the
-  application's `big.decimal.precision` (default 6) - rounded HALF_UP beyond the limit and kept as computed within it
-  (ADR-0034, superseding ADR-0025's "no application default"; Eric, 2026-11-17, from a field request).** The field
-  computes financial rules from inputs of several sources, each with its own number of decimal places, so a product's
-  scale was the sum of the inputs' and a non-terminating quotient came back with 34 digits; one rounding policy needed a
-  `round()` on every statement, and a missed one was silently inconsistent. The limit is a CAP, not a fixed scale: a
-  result within it is exactly what ADR-0025 produced, so a graph whose results stay within 6 places is unchanged, and
-  the limit never pads (`1.5 * 2` stays `"3.0"`; a fixed scale is formatting, which `round()` gives). It applies once,
-  to the statement's result in `graph.math` (`DecimalEvaluator.evaluate(expression, maxScale)`), never inside the
-  arithmetic, so `1 / 3 * 3` rounds to `1.000000`; `evaluate(expression)` stays unbounded for the shared vectors, which
-  are unchanged. A `round()` to more places than the limit is rounded again - declared, and the node raises its
-  `precision` (0 to 1000). `GraphModelValidator` rejects a malformed node value at deploy; a malformed application value
-  fails the first statement naming the key. An `EXECUTE`'d module takes the calling node's limit. The name `precision`
-  is the field's word; the dialect's `round(x, scale, mode)` keeps `scale` for the same quantity. **How to apply:** a
-  policy the field wants everywhere goes in `application.properties` with the node as the override, two levels only; a
-  limit on a result is applied at the statement boundary so the arithmetic's exactness is untouched; before changing
-  what a canonical string looks like, ask whether a result within the old rules changes text - if it does, the shared
-  vectors and every field graph change with it. The Rust twin is [[decimal-precision-rust-twin]].
-  <!-- id: decimal-result-precision-limit | created: 2026-11-17 | last_used: 2026-11-17 | uses: 1 | tier: working | supersedes: decimal-statement-exact-arithmetic | origin: 2026-11-17-055029 -->
+  <!-- id: graph-failed-resume-readvises | created: 2026-11-14 | last_used: 2026-11-18 | uses: 3 | tier: archive-candidate | origin: 2026-11-14-065413 -->
 
 ## Conventions
 
@@ -473,7 +428,7 @@
   over `system`, `extensions` and `examples` main sources must find only comments.
   **The lift is planned (Eric, 2026-11-20):** the minimum Java moves to 25 once approved ([[java25-baseline]]); until that
   lands the rule holds, and the four refactors of 2026-11-20 (#661, #662) stay valid either way.
-  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-11-20 | uses: 7 | tier: active | origin: 2026-09-14-230259 -->
+  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-11-20 | uses: 8 | tier: active | origin: 2026-09-14-230259 -->
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
   (Eric's feedback, 2026-08-19).** GitHub pre-fills the dialog with title-plus-body text,
@@ -529,7 +484,7 @@
   ONE trailer (GitHub's own). The handoff was re-sent in the message that announced the second commit, with the
   `---------` rule for two commits; this is the shape that works, so keep sending it.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-17 | uses: 134 | tier: archive-candidate | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-20 | uses: 135 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -556,7 +511,7 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-17 | uses: 74 | tier: archive-candidate | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-20 | uses: 75 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -671,32 +626,7 @@
     constant another module reads (the IDE scans one module). IntelliJ reports a `try` holding only a comment as empty (a helper
     that uses the resource keeps S2095 and S5778 satisfied) and cannot see a non-null proved in another method.
   Relates [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-17 | uses: 34 | tier: archive-candidate | origin: 2026-10-13-001452 -->
-
-- **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
-  (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
-  `npm ci` (once) and `npm run release` in `system/minigraph-playground-engine/webapp` have written the bundle to `src/main/resources/public/` (under `assets/`) and the result is committed; only `index.html` goes
-  elsewhere, becoming `template/playground.html`. This repo tracks the source maps too, so the new `index-*.js.map` goes in the same commit (the Rust repo ignores its maps). **CI never builds the webapp**, so nothing
-  else catches drift: the bundle was last regenerated on 2026-09-23 (#456) while four `help graph-math.md` edits (#462 `CONDITION`, #467 the closed dialect, #471 `DECIMAL`, #480 the money loop) landed after it,
-  and the Playground listed five statement types until #491. **The build is reproducible** (Node 22.12 with one harmless `react-router` engines warning): a rebuild of the unchanged sources reproduced every other
-  committed file byte for byte, so a regenerated diff reads as the help text plus the `sourceMappingURL` comment (110 lines added, 8 removed in #491). The same PR added `DECIMAL` and `CONDITION` to the page's
-  property list (the Rust help lists them) and corrected the webapp's scoped instructions (that scoped memory bank was retired on 2026-10-02; the rule's home is this fact and `webapp/docs/build-test-deploy.md`). **Any webapp source edit needs the release, a comment included:** the map embeds every source file, so it changes while the
-  chunk and its hash stay put if only comments changed (#492: two comments in `helpContent.ts`, one map line). The regenerated bundle ships in the engine jar of the next release. NOT built: a CI step that
-  rebuilds the bundle and compares it with the committed one, feasible because the build is reproducible; Eric has not asked for it. **Since 2026-10-02 the release has two targets**
-  ([[playground-webapp-single-source]]): `npm run release:rust` or `release:all` also deploys the bundle and a mirror of the help pages into the sibling Rust repo, so a help edit is done when BOTH repos
-  carry the result. **A bundler bump changes the bundle too (2026-10-21, #572):** Vite 8.1.5 → 8.3.5 moved Rolldown 1.1 → 1.2
-  and changed every JavaScript chunk, its CommonJS interop helper included. A Dependabot PR cannot rebuild the bundle, so a
-  maintainer pushes the rebuilt bundle onto that PR, A/B-tests the two bundles in a browser (the unit tests run against the
-  source, never the bundle), and deploys the same files to Rust. **Run `npm ci` before a release when `node_modules` may be stale
-  (2026-10-22):** it held Vite 8.1.5 against the lockfile's 8.3.5 after #572 was rebuilt in a worktree, and a build from it would not
-  have reproduced the committed bundle; `npm ls vite` shows it. **A test-only dependency leaves the bundle alone, but its
-  tests are then run by hand (2026-10-24, #589):** happy-dom 20.11.1 → 21.0.4 is the tests' environment, and no source the
-  build reaches imports it, so no release was needed. No workflow runs the webapp tests, so a Dependabot merge of a test
-  dependency has run none of them; after `npm ci`, `npm test` passed 490 of 490 on 21.0.4. `npm run build` alone writes only
-  the ignored `dist/`, which compares with the committed bundle (`public/assets`, `template/playground.html`) and with the Rust
-  copy, maps excluded, without touching a tracked file; both were byte-identical. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
-  only the entry page moved out of `public/`).
-  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-17 | uses: 38 | tier: archive-candidate | origin: 2026-10-02-015208 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-20 | uses: 35 | tier: active | origin: 2026-10-13-001452 -->
 
 - **A reactor build rewrites every example's `target/*.jar` in place, so an app running from one fails at the next class it loads
   for the first time (2026-10-22).** `mvn verify` repackages `examples/*/target/<name>-<version>.jar`. A JVM running from that jar
@@ -709,59 +639,7 @@
   (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
   sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
-  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-17 | uses: 28 | tier: active | origin: 2026-10-22-232342 -->
-
-- **A configuration key is never both a value and the parent of other keys (2026-10-23).** `ConfigReader` loads a
-  properties file into a `MultiLevelMap`, where a node is either a value or a map. When `a.b=x` and `a.b.c=y` are both set,
-  in either order, the map wins: `getProperty("a.b")` answers the map's text (`{c=y}`), not null and not `x`. A switch then
-  silently stays off, and a validated value fails with a misleading message. Met twice:
-  - `dynatrace.oneagent` beside its settings (PR #583: the switch is now `dynatrace.oneagent.enabled`);
-  - `scheduler.environment` beside `scheduler.environment.store` (since 4.12.22: startup fails with "must be one word").
-
-  Both test configurations carried the collision, and no test read the leaf next to its children.
-  **How to apply:** a switch or a value whose feature has settings takes its own child name, `<prefix>.enabled` like
-  `redis.cache.enabled`, so the prefix stays a parent only. Before adding a key, check that no existing key is its parent
-  or its child. To audit the tree, collect the keys of every `.properties` file, every `getProperty` and `@OptionalService`
-  literal and every configuration-reference heading, then list each key that prefixes another. The 2026-10-23 log has the
-  scan; `cloud.connector.health` is a route, not a key. YAML cannot express the collision.
-  <!-- id: conv-config-key-not-value-and-parent | created: 2026-10-23 | last_used: 2026-11-17 | uses: 8 | tier: archive-candidate | origin: 2026-10-23-215957 -->
-
-- **A tool that runs from the checkout lives once, in the starter template, and the examples point to it (Eric,
-  2026-11-05: do not repeat ourselves).** The Playground session broker had three identical copies (the
-  `starter-graph` template, the `minigraph-playground` and `distributed-cache-example` examples); now only
-  `templates/starter-graph/scripts/ai-companion-broker.mjs` exists, and each example's `scripts/README.md` runs it as
-  `node ../../templates/starter-graph/scripts/ai-companion-broker.mjs --target <its port>`. The template keeps it
-  because a project copied from the template must carry its own. The same day Eric renamed it the **AI companion
-  broker** (`playground-session-broker.mjs` before), since "broker" alone also reads as a Kafka or message broker. **How
-  to apply:** before adding a script or tool to an example, look for it in the template and point to that copy; a
-  resource an application packages and loads (a flow such as `graph-executor.yml`) is copied, because the app's
-  build needs it on its own classpath.
-  <!-- id: conv-one-copy-of-shared-tooling | created: 2026-11-05 | last_used: 2026-11-17 | uses: 2 | tier: archive-candidate | origin: 2026-11-05-201925 -->
-
-- **Every port adopts the JAVA release number on catch-up — no downstream repo runs its own version
-  sequence (Eric, 2026-09-16).** The Java repo is the reference implementation, so a version number
-  identifies **content**, not "this engine's Nth release". This covers the Rust port AND the python
-  and node language packs alike: whenever one is next updated, it is tagged at the Java number it
-  caught up to — never at an intermediate number invented to represent partial catch-up. Consequence
-  to read correctly: a port sitting below Java (Rust at v4.12.7, the python/node packs at 4.12.1,
-  while Java shipped v4.12.9 — resolved 2026-09-21 when Rust caught up at v4.12.12 in one step) is **lag awaiting catch-up, not divergence**, and the gap is not a
-  compatibility signal. Corollary for release notes and continuity entries: state a port's number as
-  the content it currently carries, never as a separate cadence. The Java-is-reference principle this
-  rests on outlived `conv-telemetry-presentation-parity` (retired 2026-09-16): Eric restated it
-  directly when giving this convention, so it stands on its own. Governs the Rust half of
-  [[ot-distributed-cache]].
-  **When each port catches up (Eric, 2026-11-03):** the Rust port catches up closely once Java has a new release, because
-  Java is the reference implementation. The language packs catch up when functionality crosses from the engine to the
-  packs (telemetry, AI SDLC and the like), so their number may trail Java further than Rust's does. Both packs' Visions
-  were amended to say so the same day, settling the versioning threads the 2026-11-03 reviews raised there.
-  **No number without content (Eric, 2026-11-05):** the Rust port does catch up closely, and it takes a Java number only
-  when it carries that release's content. 4.12.28 and 4.12.29 are Java only because their work is the mini-scheduler,
-  which Rust does not have: there is nothing to catch up, so Rust stays at 4.12.27 rather than being raised
-  artificially. The AI SDLC epic's features (RFC-0011) were first to wait for the epic ([[bp-agent-orchestration]]);
-  the same day Eric brought every common feature since 4.12.27 across instead (the agent loop `llm.run`, the
-  asynchronous `graph.extension`, progress events, the abort record, `playground.panel.name`: mercury #403-#407,
-  Increments 196-200), so the epic does not gate a port's catch-up; only work the port has no counterpart for does.
-  <!-- id: conv-ports-adopt-java-release-number | created: 2026-09-16 | last_used: 2026-11-17 | uses: 55 | tier: archive-candidate | origin: 2026-09-16-003354 -->
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-17 | uses: 28 | tier: archive-candidate | origin: 2026-10-22-232342 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -821,7 +699,7 @@
   pattern is solved and inherited; the runtime posture is the open problem - and why the engine core stays vendor-free with
   adapters as functions ON the wrappers: the gateway/MCP edge is where vendor specifics live.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-18 | uses: 43 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-19 | uses: 44 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;

@@ -61,4 +61,4 @@
   page's own sign-in against an issuer as a follow-up.
   → proposal: RFC-0014
   → serves: vision-mercury-composable
-  <!-- id: ask-a-person-channel | created: 2026-11-19 | last_used: 2026-11-19 | uses: 1 | tier: working | origin: 2026-11-19-023727 -->
+  <!-- id: ask-a-person-channel | created: 2026-11-19 | last_used: 2026-11-20 | uses: 7 | tier: working | origin: 2026-11-19-023727 -->
