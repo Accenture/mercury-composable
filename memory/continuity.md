@@ -323,7 +323,7 @@
   before changing what the scheduler sends the state resolver or the environment store, ask whether a field
   installation would have to change a schema to accept it; an additive key in `parameters` is the shape. A resolver
   for more than one instance needs one conditional write, so a second read in it is the smell. **The claim is the ONLY
-  instance picker since 4.12.31 (Eric, 2026-11-20, PR #659):** the older `leader.election` - lowest origin id among the
+  instance picker since 4.12.31 (Eric, 2026-11-20, PR #659, squash `0c60caf7d`, MERGED):** the older `leader.election` - lowest origin id among the
   schedulers found over a service mesh - was retired because the claim answers the question with the database the
   resolver already writes to, and a second switch beside it led an AI agent to read the two as combinable; the key is now
   ignored with a startup warning. Two switches for one question: retire one, do not document the precedence. (ADR-0037,
@@ -501,6 +501,9 @@
   sent: the agent opened the PR itself with `gh pr create` and announced it without the squash handoff. Guard: a PR the
   agent opens with `gh` still gets the handoff in the message that announces it - the title on its own line and the trailer
   rule for the commit count - and a later commit on the branch re-sends it.
+  Twelfth instance, clean (2026-11-20): PR #659's squash `0c60caf7d`, a two-commit PR, carries the title as handed off and
+  ONE trailer (GitHub's own). The handoff was re-sent in the message that announced the second commit, with the
+  `---------` rule for two commits; this is the shape that works, so keep sending it.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-17 | uses: 134 | tier: archive-candidate | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
