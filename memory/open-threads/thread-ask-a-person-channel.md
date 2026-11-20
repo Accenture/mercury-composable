@@ -55,7 +55,7 @@
   `llm.transcript.audit.instances`, default 1, the follow-up. Build plan steps 8-11 BUILT 2026-11-20 in both packs (static content
   mercury-python #73 / mercury-nodejs #138, the record #74 / #139, the backend's reads #75 / #140, the React UI
   mercury-nodejs #141 with the bundle in mercury-python #76) and the UI driven live the same day through both backends
-  and a Keycloak issuer (`docs/test-reports/agent-question-ui-live-drive.md`): one host defect fixed in both packs - a
+  and a Keycloak issuer (`docs/test-reports/agent-question-ui-live-drive.md`, #661 MERGED 2026-11-20): one host defect fixed in both packs - a
   stopping backend held its streams, so the hosts gained `Platform.on_shutdown` / `onShutdown` and the app ends its
   streams there; next step 6 (the chat, mail and topic examples) and promotion (step 7) on Eric's call, with the reply
   page's own sign-in against an issuer as a follow-up.
