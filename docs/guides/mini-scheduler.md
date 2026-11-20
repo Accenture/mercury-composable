@@ -6,7 +6,7 @@ summary: The opt-in mini-scheduler - cron jobs declared in a YAML file, each run
 layer: operate
 audience: [developer, operator, ai-agent]
 keywords: [mini-scheduler, scheduler, cron, quartz, cron.yaml, yaml.cron, scheduled job, state resolver,
-  v1.state.resolver, expires, conditional claim, _origin, deferred.start, leader.election, timezone, daylight saving,
+  v1.state.resolver, expires, conditional claim, _origin, deferred.start, timezone, daylight saving,
   active environment, scheduler.environment.name, scheduler.environment.store, v1.environment.store, active-active,
   run.scheduled.job, manual run, operator]
 ---
@@ -125,7 +125,6 @@ jobs:
     resolver: "v1.state.resolver"
 
 deferred.start: true
-leader.election: false
 ```
 
 | Key | Required | Meaning |
@@ -138,8 +137,9 @@ leader.election: false
 | `parameters` | no | A map sent to the job as its input. A key that starts with `_` is reserved for the system. |
 | `description` | no | For people; the scheduler does not read it. |
 
-Two keys belong to the file itself, not to a job: `deferred.start` (default `false`) and `leader.election` (default
-`false`, see [Leader election](#leader-election)).
+One key belongs to the file itself, not to a job: `deferred.start` (default `false`, see
+[Claim the job in one conditional write](#conditional-claim)). `leader.election`, a key of earlier releases, is
+retired: the scheduler ignores it with a warning at startup ([One mechanism, not two](#one-mechanism)).
 
 The startup log lists each job it loaded:
 
@@ -443,14 +443,14 @@ examples. Without it, the retry finds the claim, answers "not expired", and nobo
 follows a timed-out attempt, the scheduler logs a warning; on an instance that lost the claim to a peer, that warning
 is expected.
 
-### Leader election instead {#leader-election}
+### One mechanism, not two {#one-mechanism}
 
-For backward compatibility, `leader.election: true` picks the instance by a service mesh instead of the state
-resolver: the application connects to the mesh (`cloud.connector=kafka`, see the
-[Minimalist Service Mesh](service-mesh.md)), and the instance with the lowest origin id among the schedulers it finds
-runs every job. The resolver is not asked `expires`, but it still receives `start` and `end`. The mesh is an opt-in
-for applications that need it for other reasons; the claim needs only the database the resolver already writes to.
-Quartz's own cluster mode, configured against a database, is a third way.
+The claim is the only way the scheduler picks an instance, and the [active environment](#active-environment) the
+only way it picks a site. Earlier releases also offered `leader.election: true`, which chose the instance with the
+lowest origin id over a service mesh instead of asking the resolver `expires`. It was retired in 4.12.31: the claim
+answers the question with the database the resolver already writes to, so the mesh added a dependency without adding
+an answer, and a second switch invited mixing the two. The key is ignored with a warning at startup; remove it from
+the cron file. Quartz's own cluster mode, configured against a database, remains an alternative outside the scheduler.
 
 ## Active-active sites: the active environment {#active-environment}
 
@@ -560,7 +560,6 @@ which instance (`_origin`) ran it. The example reads them back as `GET /api/sche
 |---------|-------|---------|---------|
 | `yaml.cron` | application properties | `file:/tmp/config/cron.yaml, classpath:/cron.yaml` | where the cron file is found |
 | `deferred.start` | the cron file | `false` | a random 0-9 s delay per job per instance |
-| `leader.election` | the cron file | `false` | pick the instance by a service mesh instead of the claim |
 | `jobs[].timezone` | the cron file | the JVM's time zone | the region a job's statement is read in |
 | `scheduler.environment.name` | application properties | `prod` | this instance's environment |
 | `scheduler.environment.store` | application properties | `v1.environment.store` | the route of the environment store |
@@ -573,5 +572,4 @@ Each is described in the [Configuration Reference](configuration-reference.md#sc
 - [The scheduler example](https://github.com/Accenture/mercury-composable/tree/main/examples/scheduler-example) - a
   runnable application with the state resolver, the environment store and the admin endpoints on MongoDB.
 - [Event Script](event-script/index.md) - the flows a job can start with `flow://`.
-- [Minimalist Service Mesh](service-mesh.md) - the mesh that `leader.election` relies on.
 - [Architectural Decision Records](../arch-decisions/ADR.md) - ADR-0030, the active environment.

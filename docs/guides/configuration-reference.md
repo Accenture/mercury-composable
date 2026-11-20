@@ -1121,8 +1121,11 @@ YAML file(s) defining topic substitution mappings.
 ## Scheduler
 
 These settings are used by the optional `mini-scheduler` module. `yaml.cron` and the `scheduler.environment.*` keys are
-application properties; `deferred.start`, `leader.election` and a job's `timezone` are keys of the cron file itself. The
+application properties; `deferred.start` and a job's `timezone` are keys of the cron file itself. The
 [Mini-Scheduler guide](mini-scheduler.md) describes the cron file, the state resolver and the active environment.
+`leader.election`, a cron-file key of releases before 4.12.31, is retired: the state resolver's conditional claim picks
+the instance that runs a job and the environment store the site, so the scheduler ignores the key with a warning at
+startup.
 
 ### `deferred.start`
 
@@ -1134,14 +1137,6 @@ A key of the cron file. Delay each scheduled run by a random 0 to 9 seconds in e
 questions to the state resolver over those seconds. It does not pick one instance: with more than one instance the state
 resolver's `expires` claims the job in one conditional write, which the mini-scheduler README's *Running more than one
 instance* shows for PostgreSQL and MongoDB. With the delay on, the resolver's window covers the 9 seconds as well.
-
-### `leader.election`
-
-| Type | Default |
-|------|---------|
-| `boolean` | `false` |
-
-A key of the cron file. Enable leader election so that only one instance in a cluster runs each scheduled job.
 
 ### `jobs[].timezone` {#scheduler-job-timezone}
 

@@ -23,7 +23,6 @@ import com.accenture.models.Flows;
 import org.platformlambda.core.annotations.PreLoad;
 import org.platformlambda.core.models.EventEnvelope;
 import org.platformlambda.core.models.TypedLambdaFunction;
-import org.platformlambda.core.system.EventEmitter;
 import org.platformlambda.core.system.Platform;
 import org.platformlambda.core.system.PostOffice;
 import org.platformlambda.core.util.Utility;
@@ -34,7 +33,6 @@ import org.platformlambda.scheduler.models.ScheduledJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -45,7 +43,6 @@ import static org.platformlambda.scheduler.services.JobExecutor.JOB_EXECUTOR;
 public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
     private static final Logger log = LoggerFactory.getLogger(JobExecutor.class);
     public static final String JOB_EXECUTOR = "run.scheduled.job";
-    private static final String SCHEDULER_SERVICE = "cron.scheduler";
     private static final String JOB = "job";
     private static final String TYPE = "type";
     private static final String START = "start";
@@ -113,26 +110,8 @@ public class JobExecutor implements TypedLambdaFunction<EventEnvelope, Void> {
 
     private void prepareJob(PostOffice po, ScheduledJob job)
             throws ExecutionException, InterruptedException {
-        // check if a job has already started by a peer
-        if (JobLoader.needLeaderElection()) {
-            String me = Platform.getInstance().getOrigin();
-            EventEmitter.getInstance().search(SCHEDULER_SERVICE, true)
-                    .onSuccess(peers -> {
-                        final String selected;
-                        if (peers.size() > 1) {
-                            peers.sort(Comparator.naturalOrder());
-                            selected = peers.getFirst();
-                        } else  {
-                            selected = String.valueOf(me);
-                        }
-                        if (me.equals(selected)) {
-                            log.info("Ready to run {}", job.name);
-                            executeJob(po, job);
-                        } else {
-                            log.info("Skip {} because peer {} is handling it", job.name, selected);
-                        }
-                    });
-        } else if (readyToExecute(po, job)) {
+        // the state resolver's conditional claim decides which instance runs this firing
+        if (readyToExecute(po, job)) {
             executeJob(po, job);
         }
     }
