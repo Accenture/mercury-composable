@@ -79,6 +79,8 @@ commands:
 
 ```bash
 docker start mercury-redis mercury-transcripts                                  # the previous drive's containers
+# a forgotten database password is reset from inside the container, which trusts its local socket:
+#   printf "ALTER USER mercury WITH PASSWORD '%s';" "$POSTGRES_PASSWORD" | docker exec -i mercury-transcripts psql -U mercury -d mercury
 extensions/ask-person/dev/schema-apply.sh                                        # mercury-python; the question record's schema
 mercury-serve extensions/llm-helper/llm_helper.py -Dllm.model=claude-haiku-4-5 \
   -Dllm.transcript.store=redis -Dllm.transcript.audit=postgres -Dllm.transcript.audit.postgres.ssl=false
