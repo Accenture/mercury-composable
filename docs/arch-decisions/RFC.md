@@ -89,11 +89,9 @@ of the field, is not taken. (F) Several roots searched in order, as the request'
 not proposed: the first match wins without a word, and the audit's `path` would not say which root it came from. The
 open questions for the review: whether the bound on source bytes is right for a long scanned document of which one
 page is sent, or belongs on the bytes sent, which needs the whole file read first; a page limit of the helper's own
-(the provider takes
-600 pages a request, 100 on a model whose context window is under 1M tokens, and counting pages needs the PDF library)
-or the provider's refusal passed through (proposed); `llm.stream`, left out because the uses return structured output
-and a stream carries none; the Node twin's PDF library, since two libraries do not write the same bytes and a shared
-vector must assert a cut document by its pages, not its bytes; the `documents` extra or one of the helper's own.
+(the provider takes 600 pages a request, 100 on a model whose context window is under 1M tokens, and counting pages
+needs the PDF library) or the provider's refusal passed through (proposed); `llm.stream`, left out because the uses
+return structured output and a stream carries none; the `documents` extra or one of the helper's own.
 
 **Resolution.** Open - round 1 drafted 2026-11-24 from the review of mercury-python #78 (the review is on the issue);
 nothing is ruled and no design spec is written yet. The request's reference implementation is not published, so a
@@ -119,7 +117,19 @@ six tests; thirty-one mutations of the code, the file and a fixture were each ca
 without a ruling are this entry's open questions as proposed, and three more: hidden entries refused with no switch,
 a whole PDF checked only where the PDF library is installed, an image's limit taken as 10 and 5 times 1,048,576 bytes
 base64-encoded. Not done in step 1: a live call (no token was spent) and the measurement of a PDF cut beside a running
-stream. Next: the Node twin.
+stream. **Step 2 BUILT 2026-11-24:** mercury-nodejs #145 (MERGED, on top of #144) - the Node twin, from the same
+vector file and the same eight fixture files, byte for byte, with no case, expected block or message changed: the two
+helpers answer the same statuses in the same words. What differs is the runtime's. The reading is a module of its own
+run in a worker thread, because a hash, base64 and a PDF's cut are CPU work on the one event loop that carries every
+call and every stream, where the Python helper uses a thread of its pool; one deadline covers the reading and the
+model, and the model's call gets what the reading left. **The Node twin's PDF library, an open question until now, is
+the maintainer's choice of 2026-11-24:** `@cantoo/pdf-lib` (MIT, the maintained fork of pdf-lib), asked beside pdf-lib
+itself and beside leaving `pages` out of that pack for now. It is an optional install, as pypdf is, and `pages`
+without it is the 503 that names the package. Two libraries do not write the same bytes, so the shared vectors assert
+a cut document by its pages, and both packs pass them. Seven tests; thirty-three mutations of the code, the file and a
+fixture were each caught by a test. Not done in step 2: a live call, and the measurement of a PDF cut beside a running
+stream, which the worker thread answers by construction and nothing has measured. Next: the schema page here, with
+RFC-0015's change; the measurement; a live drive on both backends.
 
 ---
 
@@ -197,7 +207,14 @@ reply not waiting and the shutdown draining the save, a working store that fails
 sweep, a loop turn untouched by the switch, the start without a working store - and sixteen mutations of the code and
 the file were each caught by a test. The defaults set without a ruling are this entry's open questions as proposed,
 and one more: the switch without a working store stops the application at start. Not done in step 1: PostgreSQL and
-Redis under a live drive, with the database stopped and stalled. Next: the Node twin, then the schema page here.
+Redis under a live drive, with the database stopped and stalled. **Step 2 BUILT 2026-11-24:** mercury-nodejs #144
+(MERGED) - the Node twin, from the same vector file byte for byte, with no case or expected row changed: the same
+switch, the same closed one-turn record saved by a promise the reply does not wait for, the same check event, and
+`transcriptAudit` untouched. Six tests pin what the Python pack's six pin, and sixteen mutations of the code and the
+file were each caught by a test. One of them first made a test hang instead of fail - with the reply waiting for the
+save, the test waited on a store only it could open - so that test now races the reply against a timer. Not done in
+step 2: PostgreSQL and Redis under a live drive. Next: the schema page here and the packs' schema file headers; the
+reader's filter in both packs and the UI; the live drive with the database stopped and stalled.
 
 ---
 

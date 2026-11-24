@@ -31,9 +31,9 @@
     that fills the folder.
   - **Step 2 BUILT 2026-11-24:** mercury-nodejs #145 (MERGED 2026-11-24, merge `d8713c0`) - the Node twin from the
     same vector file and fixtures with no case or message changed; it reads in a worker thread and cuts pages with
-    `@cantoo/pdf-lib`, the maintainer's choice; thirty-three mutations each caught. The entry does not record it
-    yet.
-  - **Next:** the entry's record of step 2, the schema page, the measurement and a live drive. No design spec is
+    `@cantoo/pdf-lib`, the maintainer's choice; thirty-three mutations each caught. The entry's resolution records
+    it, and the Node twin's PDF library leaves the entry's open questions.
+  - **Next:** the schema page, the measurement and a live drive. No design spec is
     written. The request's reference implementation is not published.
   → proposal: RFC-0016
   → serves: vision-mercury-composable
