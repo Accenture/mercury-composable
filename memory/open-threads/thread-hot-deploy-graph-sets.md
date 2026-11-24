@@ -31,6 +31,8 @@
     per-set records, the reconcile and the lock; WP2 the three endpoints and the `rest.yaml` entries (engine,
     example, starter-graph template); WP3 the docs and claims; WP4 the Rust twin; WP5 the live drive with negative
     controls first and a two-instance drive on one folder; WP7 promotion to an ADR.
+  - **Raised as PR #671, MERGED 2026-11-24** (squash `a37c4fc76`: the spec, the register entry, this thread, the
+    continuity line, the log). Next: the build, WP1 first.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
