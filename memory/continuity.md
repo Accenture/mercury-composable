@@ -641,6 +641,23 @@
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
   <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-17 | uses: 28 | tier: archive-candidate | origin: 2026-10-22-232342 -->
 
+- **A Node statement names the current Node.js LTS as the version to use and keeps the true minimum in brackets, and a CI
+  action's Node runtime is moved by the action's own release (the maintainer, 2026-11-23; the twin of mercury #418 and its
+  fact `node-version-statements-and-ci-runtime-rust`).** The six places that said "Node.js 18+" (the READMEs of
+  `kafka-demo`, `lambda-example`, `sync-over-async-demo` and `api-playground`, the headers of `lambda-example`'s
+  `sse-client.mjs` and of `fetch-swagger-ui.js`) say "Node.js 26 LTS (minimum 18)". A statement that names a maintained
+  line stays: the AI companion broker's ">= 22" (`templates/starter-graph/scripts/`, the file the Rust repository
+  carries byte for byte, so a change here is copied there) and the webapp build guide's "22.12 or newer". No script pins
+  a Node version, and the test reports keep the versions they ran with. In CI a workflow does not choose an action's
+  runtime: the action declares it, and `node24` is the newest GitHub offers (there is no `node26`), so a Node deprecation
+  warning is cleared by the release of the action that declares the newer runtime: `actions/checkout@v7`,
+  `actions/setup-python@v7`, `actions/upload-artifact@v7`, `actions/setup-java@v6`, `gradle/actions/setup-gradle@v5`.
+  **`setup-gradle` stays on v5 until the maintainer rules otherwise:** v6 moves the action's caching into a proprietary
+  component, and its release notes say that upgrading accepts Gradle's Terms of Use for it. **How to apply:** when a Node
+  line reaches end of life or a new LTS begins, update the stated version and keep the minimum the script's built-ins
+  need; `agent-memory.yml` is installed by the agent-memory tool, so check its `actions/checkout` line after an upgrade.
+  <!-- id: node-version-statements-and-ci-runtime | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-011921 -->
+
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
 - [ ] (blueprint) **AI agent orchestration ("graph engineering")** — the Active Knowledge Graph as the governed run-time for

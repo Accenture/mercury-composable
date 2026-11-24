@@ -30,7 +30,7 @@ ADR-0007).
 ## Prerequisites
 
 - Java 21 + Maven (to build this repo: `mvn clean install` at the root, or build the modules below).
-- Node.js 18+ (for the three helper programs).
+- Node.js 26 LTS (minimum 18), for the three helper programs.
 - The local Kafka broker from [`helpers/kafka-standalone`](../../helpers/kafka-standalone) — no Docker needed.
 
 Install the Node dependencies once:

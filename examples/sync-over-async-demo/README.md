@@ -37,7 +37,7 @@ business logic) and [`SyncErrorHandler`](src/main/java/com/accenture/soa/demo/su
   Silicon Mac, `redis-standalone` needs Homebrew's OpenSSL 3 (`brew install openssl@3`) — see its
   [platform prerequisites](../../helpers/redis-standalone/README.md#platform-prerequisites).
 - The `schema-registry-standalone` helper jar — only for the [JSON Schema](#json-schema-variant-confluent-wire-format) and [Avro](#avro-variant-confluent-wire-format) variants below (Protobuf is [not currently supported](#protobuf-not-currently-supported)).
-- Node.js 18+ — only for the one-time topic-creation helper in `node/` (the app client is `curl`).
+- Node.js 26 LTS (minimum 18) — only for the one-time topic-creation helper in `node/` (the app client is `curl`).
 
 ## Run it
 
