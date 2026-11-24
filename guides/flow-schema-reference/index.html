@@ -6995,8 +6995,10 @@ mapping statement at either boundary, no per-field mapping.</p>
 </table>
 <h3 id="date-arithmetic">Date arithmetic<a class="headerlink" href="#date-arithmetic" title="Permanent link">&para;</a></h3>
 <p>A date is an ISO-8601 calendar date written exactly as <code>YYYY-MM-DD</code>, with no time and no time zone. A date of another
-shape, a day the calendar lacks, a fractional number of days, a null argument and a result outside the years 0000 to
-9999 are errors naming the plugin.</p>
+shape, a day the calendar lacks, a fractional number of days, months or years, a null argument and a result outside the
+years 0000 to 9999 are errors naming the plugin. Calendar months and years keep the day of the month, and count a month
+when that day is reached; the three rules are in the <a href="../event-script/syntax/#simple-plugins">syntax page</a> (<em>Date
+arithmetic plugins</em>).</p>
 <table>
 <thead>
 <tr>
@@ -7015,6 +7017,26 @@ shape, a day the calendar lacks, a fractional number of days, a null argument an
 <td><code>f:daysBetween(from, to)</code></td>
 <td>The whole days between two dates as an integer, the earlier date excluded and the later one included: <code>(2027-04-10, 2027-05-11)</code> gives <code>31</code>, the same date twice <code>0</code>; the order of the arguments does not matter, so it is never negative</td>
 <td><code>f:daysBetween(model.due_date, input.body.paid_on) -&gt; days_apart</code></td>
+</tr>
+<tr>
+<td><code>f:addMonths(date, months)</code></td>
+<td>The date a whole number of calendar months later (earlier for a negative number), as <code>YYYY-MM-DD</code>, with the same day of the month; a day the resulting month lacks becomes its last day: <code>(2027-03-15, 12)</code> gives <code>2028-03-15</code>, <code>(2027-01-31, 1)</code> gives <code>2027-02-28</code></td>
+<td><code>f:addMonths(input.body.start_date, int(12)) -&gt; renewal_date</code></td>
+</tr>
+<tr>
+<td><code>f:monthsBetween(from, to)</code></td>
+<td>The whole months completed between two dates as an integer, a month being complete when the day of the month is reached: <code>(2026-06-01, 2027-05-31)</code> gives <code>11</code>, <code>(2027-01-31, 2027-02-28)</code> gives <code>0</code>; the order of the arguments does not matter, so it is never negative</td>
+<td><code>f:monthsBetween(input.body.start_date, input.body.as_of) -&gt; months_used</code></td>
+</tr>
+<tr>
+<td><code>f:addYears(date, years)</code></td>
+<td>The date a whole number of calendar years later (earlier for a negative number), as <code>YYYY-MM-DD</code>, with the same month and day; 29 February becomes 28 February in a year that lacks it: <code>(2028-02-29, 1)</code> gives <code>2029-02-28</code></td>
+<td><code>f:addYears(input.body.hired_on, int(5)) -&gt; vesting_date</code></td>
+</tr>
+<tr>
+<td><code>f:yearsBetween(from, to)</code></td>
+<td>The whole years completed between two dates as an integer, a year being complete when the month and day are reached: <code>(1990-07-04, 2027-07-03)</code> gives <code>36</code>; the order of the arguments does not matter, so it is never negative</td>
+<td><code>f:yearsBetween(input.body.born_on, input.body.as_of) -&gt; age</code></td>
 </tr>
 </tbody>
 </table>
