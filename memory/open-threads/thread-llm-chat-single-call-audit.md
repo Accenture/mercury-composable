@@ -12,9 +12,12 @@
   - **For the maintainer's review:** the switch's default (proposed off); `llm.stream` under the same switch (proposed
     yes); the model recorded after a server-side fallback (proposed: the one that answered); a stop reason outside the
     loop's table (proposed `done`); whether the reply may wait for the save; `llm.transcript.audit.instances`.
-  - **Build ordered 2026-11-24** (the maintainer: "proceed with implementation for RFC 0015 and 0016"): step 1 is the
-    Python pack, under the entry's defaults, which stay open to the review; then the Node twin, the schema page here,
-    the reader's filter and a live drive. No design spec is written. [[llm-chat-attachments]] depends on this for the
+  - **Raised as PR #668, MERGED 2026-11-24** (squash `cc16cfbc0`). **Build ordered the same day** (the maintainer:
+    "proceed with implementation for RFC 0015 and 0016"), under the entry's defaults, which stay open to the review.
+    **Step 1 BUILT 2026-11-24:** mercury-python #81 (open) - the switch, the one-turn record and the check event,
+    `transcript.audit` untouched; a new shared vector file of 25 cases through the real path, six tests, sixteen
+    mutations each caught. Next: the Node twin, the schema page here, the reader's filter and a live drive. No
+    design spec is written. [[llm-chat-attachments]] depends on this for the
     audit's part.
   → proposal: RFC-0015
   → serves: vision-mercury-composable

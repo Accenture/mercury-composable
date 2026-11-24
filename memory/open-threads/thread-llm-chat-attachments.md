@@ -15,10 +15,20 @@
   - **For the maintainer's review:** one root or several; the bound on source bytes or on bytes sent; a page limit of
     the helper's own; `llm.stream`; the Node twin's PDF library and what a shared vector can assert of a cut document;
     the `documents` extra or one of the helper's own.
-  - **Build ordered 2026-11-24** (the maintainer: "proceed with implementation for RFC 0015 and 0016"): step 1 is the
-    Python pack, after [[llm-chat-single-call-audit]] (the audit's part depends on it), under the entry's defaults,
-    which stay open to the review; then the Node twin, the READMEs and the schema page, the measurement and a live
-    drive. No design spec is written. The request's reference implementation is not published.
+  - **Raised as PR #668, MERGED 2026-11-24** (squash `cc16cfbc0`). **Build ordered the same day** (the maintainer:
+    "proceed with implementation for RFC 0015 and 0016"), under the entry's defaults, which stay open to the review.
+    **Step 1 BUILT 2026-11-24:** mercury-python #82 (open, stacked on #81 of [[llm-chat-single-call-audit]]) - the
+    field, the one root, the blocks, the limits by backend, the reference in the audit; a new shared vector file of
+    48 cases over eight fixture files, six tests, thirty-one mutations each caught. No live call was made, and the
+    measurement of a PDF cut beside a stream is not done.
+  - **The maintainer's direction (2026-11-24), which answers the first open question:** the shared folder is
+    configured in the helper and filled before a graph runs; a later iteration lets the helper download from an
+    object store into it, for PDFs, images, spreadsheets and other inputs, and until then an external script does.
+    The audit keeps a reference and the hash, never the file; an installation that must reconstruct an exchange
+    keeps its files unchanged for the audit's retention. A spreadsheet is not a kind a document block takes and is
+    converted first. To be written into the entry with the next change to the register.
+  - **Next:** the Node twin, the READMEs and the schema page, the measurement and a live drive. No design spec is
+    written. The request's reference implementation is not published.
   → proposal: RFC-0016
   → serves: vision-mercury-composable
   <!-- id: llm-chat-attachments | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-051753 -->
