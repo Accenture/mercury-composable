@@ -69,7 +69,7 @@ Start the application:
 java -jar target/lambda-example-4.12.0.jar
 ```
 
-Then consume the endpoint with the companion script (Node.js 18+) that prints each
+Then consume the endpoint with the companion script (Node.js 26 LTS; minimum 18) that prints each
 event with its arrival time:
 
 ```shell

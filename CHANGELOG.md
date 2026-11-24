@@ -226,6 +226,16 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    fails without it, that it applies to every downstream call, and that it was added in v4.3.61 for a third-party
    service with large headers. **Upgrade note:** none - a documentation move.
 
+3. **The example and extension scripts name Node.js 26 LTS, and the workflows' actions leave Node 20 (the twin of
+   mercury #418).** The READMEs and script headers that said "Node.js 18+" (`kafka-demo`, `lambda-example`,
+   `sync-over-async-demo` and `api-playground`) name Node.js 26 LTS as the version to use and keep 18 as the minimum;
+   Node 18 and 20 have reached end of life. The AI companion broker keeps "Node.js >= 22" and the webapp's build guide
+   "22.12 or newer", since both name a maintained line. In CI, `actions/checkout`, `actions/setup-python` and
+   `actions/upload-artifact` move to v7, `actions/setup-java` to v6 and `gradle/actions/setup-gradle` to v5, the releases
+   that declare the Node 24 runtime: GitHub's runners have retired Node 20 for actions, and Node 24 is the newest runtime
+   an action can declare. `setup-gradle` stops at v5 because v6 places the action's caching under Gradle's Terms of Use.
+   **Upgrade note:** none - documentation and CI only; no script changes behaviour.
+
 ---
 ## Version 4.12.30, 11/5/2026
 
