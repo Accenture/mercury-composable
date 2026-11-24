@@ -47,6 +47,8 @@
     controls first and a two-instance drive on one folder; WP7 promotion to an ADR.
   - **Raised as PR #671, MERGED 2026-11-24** (squash `a37c4fc76`: the spec, the register entry, this thread, the
     continuity line, the log). Next: the build, WP1 first.
+  - **Rounds 4 and 5 raised as PR #672, MERGED 2026-11-24** (squash `2985ee161`). The design is complete on `main`;
+    next: the build, WP1 first (the snapshot registry, the shared loader pieces, `HotDeployment`).
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
