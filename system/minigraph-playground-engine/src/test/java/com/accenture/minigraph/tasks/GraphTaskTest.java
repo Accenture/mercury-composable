@@ -428,6 +428,80 @@ class GraphTaskTest {
     }
 
     @Test
+    void datePluginsComputeTheEndOfATermAndTheMonthsUsed() throws TimeoutException {
+        // unit-test-date-arithmetic-2: f:addMonths(input.body.start_date, input.body.term_months) gives the end of the
+        // term and, with a negative number, the notice date before it. f:monthsBetween and f:yearsBetween count the
+        // whole months and years completed between two dates, with the same answer in either order
+        var response = runGraph("unit-test-date-arithmetic-2",
+                Map.of("start_date", "2026-06-01", "term_months", 24, "as_of", "2027-05-31"), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        var mm = bodyMap(response);
+        assertEquals("2028-06-01", mm.getElement("end_date"));
+        assertEquals("2028-03-01", mm.getElement("notice_date"));
+        assertEquals("2027-06-01", mm.getElement("first_anniversary"));
+        // the twelfth month and the first year are complete on 2027-06-01, a day after the date asked about
+        assertEquals(11, ((Number) mm.getElement("months_used")).intValue());
+        assertEquals(11, ((Number) mm.getElement("months_used_swapped")).intValue());
+        assertEquals(12, ((Number) mm.getElement("months_remaining")).intValue());
+        assertEquals(24, ((Number) mm.getElement("term_check")).intValue());
+        assertEquals(0, ((Number) mm.getElement("years_used")).intValue());
+        assertEquals(0, ((Number) mm.getElement("years_used_swapped")).intValue());
+        // a whole year later the same request counts 23 months and one year
+        response = runGraph("unit-test-date-arithmetic-2",
+                Map.of("start_date", "2026-06-01", "term_months", 24, "as_of", "2028-05-31"), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        mm = bodyMap(response);
+        assertEquals(23, ((Number) mm.getElement("months_used")).intValue());
+        assertEquals(0, ((Number) mm.getElement("months_remaining")).intValue());
+        assertEquals(1, ((Number) mm.getElement("years_used")).intValue());
+        assertEquals(1, ((Number) mm.getElement("years_used_swapped")).intValue());
+    }
+
+    @Test
+    void datePluginsEndATermOnTheLastDayOfAShorterMonth() throws TimeoutException {
+        // unit-test-date-arithmetic-2: 29 February plus 12 months is 28 February, the last day of a month that lacks
+        // day 29. The months may arrive as text. The day of the month is kept going back, so the notice date is the
+        // 28th. The end date does not reach day 29, so the term counts 11 whole months and no whole year
+        var response = runGraph("unit-test-date-arithmetic-2",
+                Map.of("start_date", "2028-02-29", "term_months", "12", "as_of", "2029-02-28"), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        var mm = bodyMap(response);
+        assertEquals("2029-02-28", mm.getElement("end_date"));
+        assertEquals("2028-11-28", mm.getElement("notice_date"));
+        assertEquals("2029-02-28", mm.getElement("first_anniversary"));
+        assertEquals(11, ((Number) mm.getElement("term_check")).intValue());
+        assertEquals(11, ((Number) mm.getElement("months_used")).intValue());
+        assertEquals(0, ((Number) mm.getElement("months_remaining")).intValue());
+        assertEquals(0, ((Number) mm.getElement("years_used")).intValue());
+    }
+
+    @Test
+    void monthAndYearPluginsRefuseWhatTheDayPluginsRefuse() throws TimeoutException {
+        // unit-test-date-arithmetic-2: a date-time, an absent request field, which reaches the plugin as null, and a
+        // fraction of a month each abort the run with the reason
+        var response = runGraph("unit-test-date-arithmetic-2",
+                Map.of("start_date", "2026-06-01T00:00:00Z", "term_months", 24, "as_of", "2027-05-31"), Map.of());
+        assertEquals(400, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("Expected a date written as YYYY-MM-DD"),
+                String.valueOf(response.getBody()));
+        response = runGraph("unit-test-date-arithmetic-2", Map.of("term_months", 24, "as_of", "2027-05-31"), Map.of());
+        assertEquals(400, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains(
+                "Expected a date written as YYYY-MM-DD, with no time and no time zone, in addMonths - got null"),
+                String.valueOf(response.getBody()));
+        response = runGraph("unit-test-date-arithmetic-2",
+                Map.of("start_date", "2026-06-01", "as_of", "2027-05-31"), Map.of());
+        assertEquals(400, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains(
+                "The months of addMonths must be a whole number - got null"), String.valueOf(response.getBody()));
+        response = runGraph("unit-test-date-arithmetic-2",
+                Map.of("start_date", "2026-06-01", "term_months", 1.5, "as_of", "2027-05-31"), Map.of());
+        assertEquals(400, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains(
+                "The months of addMonths must be a whole number - got 1.5"), String.valueOf(response.getBody()));
+    }
+
+    @Test
     void mappingSourceResolvesDynamicVariablesVerbatim() throws TimeoutException {
         // unit-test-mapping-1: a {namespace.key} reference inside a mapping source resolves before the
         // source is read - a key segment of a keyed table, a list index, text in a constant and a plugin
