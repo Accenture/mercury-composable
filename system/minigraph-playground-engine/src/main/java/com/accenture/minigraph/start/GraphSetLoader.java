@@ -60,6 +60,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * Precedence follows the manifest list: a manifest's sets compile right after its loose graphs and before the next
  * manifest, and a later graph owns a duplicate id. A duplicate that involves a set is logged as an error.
+ * <p>
+ * The pieces a set's deployment is made of - the SHA-256 of its bytes, the readable path of a file in a location,
+ * the gate over the unpacked files - are shared with {@link HotDeployment}, which deploys a set at run time
+ * (RFC-0017) through the same strict read, the same gate and the same all-or-none rule.
  */
 final class GraphSetLoader {
     private static final Logger log = LoggerFactory.getLogger(GraphSetLoader.class);
@@ -152,6 +156,10 @@ final class GraphSetLoader {
         if (folder.startsWith(temp)) {
             return "'unpack' must not be the Playground's temporary folder (location.graph.temp) or inside it";
         }
+        var hot = HotDeployment.folder();
+        if (hot != null && (folder.startsWith(hot) || hot.startsWith(folder))) {
+            return "'unpack' must not be the hot deployment folder (location.graph.deploy), inside it or above it";
+        }
         if (!UNPACK_FOLDERS.add(folder)) {
             return "'unpack' " + unpack + " is used by another manifest";
         }
@@ -159,7 +167,22 @@ final class GraphSetLoader {
         return problem == null ? null : "cannot write in " + unpack + " - " + problem;
     }
 
-    private static Path folderOf(String location) {
+    /**
+     * Whether a folder is, is inside, or is above a manifest's 'unpack' folder of this start.
+     *
+     * @param folder the folder to check, absolute and normalized
+     * @return true when it meets an unpack folder either way
+     */
+    static boolean meetsUnpackFolder(Path folder) {
+        for (var unpack : UNPACK_FOLDERS) {
+            if (folder.startsWith(unpack) || unpack.startsWith(folder)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static Path folderOf(String location) {
         var path = location.startsWith(FILE) ? location.substring(FILE.length()) : location;
         return Path.of(path).toAbsolutePath().normalize();
     }
@@ -282,7 +305,7 @@ final class GraphSetLoader {
      *
      * @return the models that pass, read the way a deployed graph is read
      */
-    private static Map<String, Map<String, Object>> gate(String unpack, List<String> ids, List<String> failures) {
+    static Map<String, Map<String, Object>> gate(String unpack, List<String> ids, List<String> failures) {
         Map<String, Map<String, Object>> models = new LinkedHashMap<>();
         for (var id : ids) {
             try {
@@ -357,7 +380,7 @@ final class GraphSetLoader {
         return Files.readAllBytes(file);
     }
 
-    private static String normalizedPath(String folder, String filename) {
+    static String normalizedPath(String folder, String filename) {
         var sb = new StringBuilder();
         for (String part : util.split(folder, "/")) {
             sb.append('/').append(part);
@@ -381,7 +404,7 @@ final class GraphSetLoader {
         return text == null ? "" : text.replace('\r', ' ').replace('\n', ' ');
     }
 
-    private static String sha256(byte[] bytes) {
+    static String sha256(byte[] bytes) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
         } catch (NoSuchAlgorithmException e) {
