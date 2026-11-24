@@ -702,7 +702,10 @@
   mercury-python #59, mercury-nodejs #126, #639, #641, mercury #414, the drive #642); **RFC-0013 BUILT 2026-11-17/18
   (steps 1-5, all three repositories) and PROMOTED to ADR-0036 on 2026-11-18** ([[agent-tools-built-or-bound]]: the drives
   `agent-tools-live-drive.md`, the recipes `tools-from-mcp-servers.md`); the promotion of an AI graph through the governance lifecycle, his first theme of the
-  day, stays queued behind them.
+  day, stays queued behind them. **Sprint 5 opened 2026-11-24 (Eric): hot deploy and undeploy of graph sets (RFC-0017,
+  [[hot-deploy-graph-sets]]) - the engine side of that promotion: a certified set uploaded to a running engine, gated and
+  registered on every instance on demand through the set's own record, named after its main graph, removed by that name;
+  design settled in three rounds the same day, the build next.**
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own
   confidence; not every block enters the graph and every later round reads the previous round's output; other formats need
