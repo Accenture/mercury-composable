@@ -705,7 +705,9 @@
   day, stays queued behind them. **Sprint 5 opened 2026-11-24 (Eric): hot deploy and undeploy of graph sets (RFC-0017,
   [[hot-deploy-graph-sets]]) - the engine side of that promotion: a certified set uploaded to a running engine, gated and
   registered on every instance on demand through the set's own record, named after its main graph, removed by that name;
-  design settled in three rounds the same day, the build next.**
+  design settled in five rounds the same day (the fourth: a task node
+  names its function's provider with `server.url`, since the Event-over-HTTP map is static; the fifth: a deployment
+  dialog in the Playground and two Node template scripts), the build next.**
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own
   confidence; not every block enters the graph and every later round reads the previous round's output; other formats need
