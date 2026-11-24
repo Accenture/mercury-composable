@@ -67,6 +67,10 @@
     sets at startup with a stray package ignored, another instance's deploy, replace and undeploy seen at the next
     lookup, a tampered package unregistered, the switches governing each side, the hot and unpack folders refusing
     each other, one swap. `GraphSetLoaderTest` and `CompileGraphTest` unchanged and green.
+  - **WP1 raised as PR #673, MERGED 2026-11-24** (squash `f054dc747`). Next: WP2 - the three REST entries behind
+    their switches, `rest.yaml` in the engine, the example and the starter-graph template, the digest header, the
+    main-graph check, subgraphs private at the REST edge, the OpenAPI endpoint and a cross-set extension, the route
+    and extension advisory, `server.url` and `server.header[]` on the task-consuming skills, the CHANGELOG entry.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
