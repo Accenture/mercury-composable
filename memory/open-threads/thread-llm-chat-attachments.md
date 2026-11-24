@@ -17,7 +17,8 @@
     the `documents` extra or one of the helper's own.
   - **Raised as PR #668, MERGED 2026-11-24** (squash `cc16cfbc0`). **Build ordered the same day** (the maintainer:
     "proceed with implementation for RFC 0015 and 0016"), under the entry's defaults, which stay open to the review.
-    **Step 1 BUILT 2026-11-24:** mercury-python #82 (open, stacked on #81 of [[llm-chat-single-call-audit]]) - the
+    **Step 1 BUILT 2026-11-24:** mercury-python #82 (MERGED 2026-11-24, merge `c367951`, on top of #81 of
+    [[llm-chat-single-call-audit]]) - the
     field, the one root, the blocks, the limits by backend, the reference in the audit; a new shared vector file of
     48 cases over eight fixture files, six tests, thirty-one mutations each caught. No live call was made, and the
     measurement of a PDF cut beside a stream is not done.
@@ -26,7 +27,8 @@
     object store into it, for PDFs, images, spreadsheets and other inputs, and until then an external script does.
     The audit keeps a reference and the hash, never the file; an installation that must reconstruct an exchange
     keeps its files unchanged for the audit's retention. A spreadsheet is not a kind a document block takes and is
-    converted first. To be written into the entry with the next change to the register.
+    converted first. Written into the entry as round 2, where option E now reads the object store as the source
+    that fills the folder.
   - **Next:** the Node twin, the READMEs and the schema page, the measurement and a live drive. No design spec is
     written. The request's reference implementation is not published.
   → proposal: RFC-0016

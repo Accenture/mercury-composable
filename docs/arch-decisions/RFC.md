@@ -81,12 +81,15 @@ Files API, upload once and name the file by its id: the reference would be the p
 helper's second backend, does not offer it, and an upload with a lifecycle of its own would sit outside the graph; a
 possible later source form of the same field. (D) Text extracted before the call, today's workaround, by a converter
 outside the graph or the agent tools' `file.extract`: the model never sees the layout, so a table's columns and a
-figure are lost or guessed. (E) A reference into a shared object store that the helper dereferences, for a helper on
-another host than the files: a second form of the same field, once a folder has proven the contract. (F) Several
-roots searched in order, as the request's reference implementation has them - not proposed: the first match wins
-without a word, and the audit's `path` would not say which root it came from. The open questions for the review: one
-root or several; whether the bound on source bytes is right for a long scanned document of which one page is sent, or
-belongs on the bytes sent, which needs the whole file read first; a page limit of the helper's own (the provider takes
+figure are lost or guessed. (E) An object store as the source of the files: by the maintainer's direction of
+2026-11-24 a later iteration, in which the helper downloads a file from the store into the shared folder before the
+call - PDFs, images, spreadsheets and other inputs - so the store fills the folder and the field keeps its one form;
+until then an external script does the download. A reference the helper dereferences on each request, a second form
+of the field, is not taken. (F) Several roots searched in order, as the request's reference implementation has them -
+not proposed: the first match wins without a word, and the audit's `path` would not say which root it came from. The
+open questions for the review: whether the bound on source bytes is right for a long scanned document of which one
+page is sent, or belongs on the bytes sent, which needs the whole file read first; a page limit of the helper's own
+(the provider takes
 600 pages a request, 100 on a model whose context window is under 1M tokens, and counting pages needs the PDF library)
 or the provider's refusal passed through (proposed); `llm.stream`, left out because the uses return structured output
 and a stream carries none; the Node twin's PDF library, since two libraries do not write the same bytes and a shared
@@ -99,7 +102,24 @@ pack with the shared refusal vectors and fixture files; the Node twin; the packs
 with RFC-0015's change; a measurement of a PDF cut beside a running stream, since the helper's token batches are pinned
 as never held back; a live drive on both backends. **Build ordered 2026-11-24** (the maintainer: "proceed with
 implementation for RFC 0015 and 0016"): step 1 is the Python pack, under this entry's defaults, each still open to
-the review.
+the review. **Round 2 (2026-11-24), the maintainer's direction on the first question, one root or several and a folder
+or a store:** the shared folder is configured in the helper and filled before a graph runs - an upload, a copy, a
+script - and the object store comes later, as option E now has it; read here as one root. Clarified in the same
+exchange and written into the pack's README: the helper reads the file and sends its bytes in the request, so the
+model reads nothing on the host and the path never reaches it; the content counts as input tokens in every call that
+names it, by what the model sees and not by the file's bytes - an image by its pixels up to its tier's cap, a PDF page
+by its text and its image - which makes `pages` the cost control; the audit keeps the reference and the hash and never
+the file, so an installation that must reconstruct an exchange keeps its files unchanged for the audit's retention,
+with versioned objects once a store is the source. A document block takes PDF and plain text; a spreadsheet or a
+word-processor file is converted first, which the later iteration has to provide. **Step 1 BUILT 2026-11-24:**
+mercury-python #82 (MERGED, on top of #81) - the field and its shape, the one root under the agent tools' workspace
+rules, the kind by the first bytes, the pages cut with pypdf, the limits by backend, the read off the event loop and
+inside the deadline, the reference in the audit; a new shared vector file of 48 cases over eight fixture files, and
+six tests; thirty-one mutations of the code, the file and a fixture were each caught by a test. The defaults set
+without a ruling are this entry's open questions as proposed, and three more: hidden entries refused with no switch,
+a whole PDF checked only where the PDF library is installed, an image's limit taken as 10 and 5 times 1,048,576 bytes
+base64-encoded. Not done in step 1: a live call (no token was spent) and the measurement of a PDF cut beside a running
+stream. Next: the Node twin.
 
 ---
 
@@ -168,7 +188,16 @@ decision the conversation did not take the turn, and the audit does not hold its
 Python pack with a shared vector for a single call's rows; the Node twin; the schema page here and the packs' schema
 file headers; the reader's filter in both packs and the UI; a live drive with the database stopped and stalled, as
 RFC-0012's was. **Build ordered 2026-11-24** (the maintainer: "proceed with implementation for RFC 0015 and 0016"):
-step 1 is the Python pack, under this entry's defaults, each still open to the review.
+step 1 is the Python pack, under this entry's defaults, each still open to the review. **Step 1 BUILT 2026-11-24:**
+mercury-python #81 (MERGED) - `llm.transcript.audit.single`, the closed one-turn record saved by a task the reply does
+not wait for, the check event, and `transcript.audit` untouched. What the probe showed now holds through the real
+path: 25 cases of a new shared vector file run the save, the event over the in-process bus and the function behind
+its mailbox, on the memory working store and the reference audit store. Six tests pin what a vector cannot - the
+reply not waiting and the shutdown draining the save, a working store that fails, a failed write repaired by the
+sweep, a loop turn untouched by the switch, the start without a working store - and sixteen mutations of the code and
+the file were each caught by a test. The defaults set without a ruling are this entry's open questions as proposed,
+and one more: the switch without a working store stops the application at start. Not done in step 1: PostgreSQL and
+Redis under a live drive, with the database stopped and stalled. Next: the Node twin, then the schema page here.
 
 ---
 
