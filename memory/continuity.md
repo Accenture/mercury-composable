@@ -483,6 +483,8 @@
   Twelfth instance, clean (2026-11-20): PR #659's squash `0c60caf7d`, a two-commit PR, carries the title as handed off and
   ONE trailer (GitHub's own). The handoff was re-sent in the message that announced the second commit, with the
   `---------` rule for two commits; this is the shape that works, so keep sending it.
+  Thirteenth instance, clean by construction (2026-11-24): PR #665's squash `5a08d7313`, a one-commit PR, carries the
+  title as handed off and ONE trailer, the commit's own; with one commit the dialog has nothing to trim.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-20 | uses: 135 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
@@ -642,8 +644,8 @@
   <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-17 | uses: 28 | tier: archive-candidate | origin: 2026-10-22-232342 -->
 
 - **A Node statement names the current Node.js LTS as the version to use and keeps the true minimum in brackets, and a CI
-  action's Node runtime is moved by the action's own release (the maintainer, 2026-11-23; the twin of mercury #418 and its
-  fact `node-version-statements-and-ci-runtime-rust`).** The six places that said "Node.js 18+" (the READMEs of
+  action's Node runtime is moved by the action's own release (the maintainer, 2026-11-23; #665, squash `5a08d7313`, the
+  twin of mercury #418 and its fact `node-version-statements-and-ci-runtime-rust`).** The six places that said "Node.js 18+" (the READMEs of
   `kafka-demo`, `lambda-example`, `sync-over-async-demo` and `api-playground`, the headers of `lambda-example`'s
   `sse-client.mjs` and of `fetch-swagger-ui.js`) say "Node.js 26 LTS (minimum 18)". A statement that names a maintained
   line stays: the AI companion broker's ">= 22" (`templates/starter-graph/scripts/`, the file the Rust repository
