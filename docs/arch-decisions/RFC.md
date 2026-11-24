@@ -39,6 +39,139 @@
 
 ---
 
+## RFC-0016 — Attachments on a single `llm.chat` call: images and PDF pages named by reference inside one configured root, read by the pack's helper
+**Status:** Open · **Raised:** 2026-11-24 · **Serves:** vision-mercury-composable · **Thread:** `llm-chat-attachments`
+<!-- id: rfc-0016 | status: open | thread: llm-chat-attachments -->
+
+**Proposal.** The helper's `llm.chat` takes text only, and its README records the exclusion of images and documents
+as deliberate. A bounded AI node whose job is to read a page - a scanned form, a table printed as an image, a chart, a
+screenshot, chosen pages of a long PDF - therefore cannot give the model what it has to read: text extracted outside
+the graph loses the layout, and a file's bytes in the request are too large for the event and would reach every log,
+trace and stored record the request reaches. A field request (mercury-python #78) asks for an optional `attachments`
+field; this entry is that request as its review amended it. A single `llm.chat` call - never a loop turn, and not
+`llm.stream` in version 1 - may carry `attachments`, a non-empty list whose entries are a path or `{path, pages}`: the
+request names a file and never carries one. The helper reads each file inside one configured root,
+`llm.attachments.root`, under the rules of the agent tools' workspace (ADR-0036): the root resolved once at start, a
+relative path only, the resolved path inside the root, a hidden entry refused, a regular file only. It decides a
+file's kind by its first bytes, never by its name - PNG, JPEG, GIF or WebP becomes an `image` block, a PDF a `document`
+block, both as base64 sources, the one form every backend accepts - and puts the blocks before the text of the last
+turn, which must be the user's. `pages` (`13`, `1-3,7`) sends a new PDF that holds only those pages in the order
+named, a page named once. The helper refuses what the provider would refuse, with a 400 that names the rule, before
+any model call: more files than `llm.attachments.max.count` (20, the most a request carries before the provider
+tightens each image's dimension limit), more source bytes than `llm.attachments.max.bytes` (taken from each file's
+size before it is read), an image over the backend's limit (10 MB base64-encoded on the Claude API, 5 MB on Amazon
+Bedrock), a PDF that is encrypted or cannot be read, `pages` on a file that is not a PDF or outside the document. A
+missing setting follows the helper's convention: no root is a 503 that names the key, a root that is not a folder
+stops the application at start, and `pages` without the PDF library is a 503 that names the extra. Reading and cutting
+run off the event loop and inside the call's deadline (`params.timeout_ms`); a log line carries the count and the
+bytes, never a path or a file's content. With RFC-0015 the audit keeps each attachment as a reference in the last
+turn's content - `{type: attachment, path, pages, media_type, bytes, sha256}`, the hash taken from the source file's
+bytes as they are read - and the schema page names it as the one block that is not the provider's format: a call with
+attachments is reconstructed from the record and the files, by hash. The engines change nothing; the guide shows the
+node with a guard, because a null source supplies no parameter, and a call that lost its attachment is a text-only
+call that still answers. What a decision would commit the project to: a request names a file and never carries one;
+one root, with one definition of "inside" across the pack's extensions; the root is readable through the model by
+every caller that can reach the helper, and its files are sent to the provider, so it is deployment configuration,
+certified with the deployment; the helper checks before the provider does; the audit holds a reference and a hash,
+never the bytes; a loop turn takes no attachment until a transcript can keep one by reference.
+
+**Options.** (A) By reference inside one configured root - proposed. (B) The file's bytes in the request - rejected:
+an event of megabytes, and the bytes in every log, trace and stored record the request reaches. (C) The provider's
+Files API, upload once and name the file by its id: the reference would be the provider's, but Amazon Bedrock, the
+helper's second backend, does not offer it, and an upload with a lifecycle of its own would sit outside the graph; a
+possible later source form of the same field. (D) Text extracted before the call, today's workaround, by a converter
+outside the graph or the agent tools' `file.extract`: the model never sees the layout, so a table's columns and a
+figure are lost or guessed. (E) A reference into a shared object store that the helper dereferences, for a helper on
+another host than the files: a second form of the same field, once a folder has proven the contract. (F) Several
+roots searched in order, as the request's reference implementation has them - not proposed: the first match wins
+without a word, and the audit's `path` would not say which root it came from. The open questions for the review: one
+root or several; whether the bound on source bytes is right for a long scanned document of which one page is sent, or
+belongs on the bytes sent, which needs the whole file read first; a page limit of the helper's own (the provider takes
+600 pages a request, 100 on a model whose context window is under 1M tokens, and counting pages needs the PDF library)
+or the provider's refusal passed through (proposed); `llm.stream`, left out because the uses return structured output
+and a stream carries none; the Node twin's PDF library, since two libraries do not write the same bytes and a shared
+vector must assert a cut document by its pages, not its bytes; the `documents` extra or one of the helper's own.
+
+**Resolution.** Open - round 1 drafted 2026-11-24 from the review of mercury-python #78 (the review is on the issue);
+nothing is ruled and no design spec is written yet. The request's reference implementation is not published, so a
+build starts from this entry. It depends on RFC-0015 for the audit's part only. Build order when ruled: the Python
+pack with the shared refusal vectors and fixture files; the Node twin; the packs' READMEs and the schema page here,
+with RFC-0015's change; a measurement of a PDF cut beside a running stream, since the helper's token batches are pinned
+as never held back; a live drive on both backends. **Build ordered 2026-11-24** (the maintainer: "proceed with
+implementation for RFC 0015 and 0016"): step 1 is the Python pack, under this entry's defaults, each still open to
+the review.
+
+---
+
+## RFC-0015 — A single `llm.chat` call in the transcript audit store: a conversation of one turn, carried by the working record as a loop's turns are
+**Status:** Open · **Raised:** 2026-11-24 · **Serves:** vision-mercury-composable · **Thread:** `llm-chat-single-call-audit`
+<!-- id: rfc-0015 | status: open | thread: llm-chat-single-call-audit -->
+
+**Proposal.** The audit store of ADR-0035 records every model turn of an agent loop. A single `llm.chat` call, one
+without `tools`, leaves no row, so a graph whose model calls are bounded AI nodes - a classification, an extraction
+against a schema, a review step - has no audit of its model use even with an audit store configured: the working
+store keeps nothing for a single call, and telemetry holds no content. A field request (mercury-python #77) asks for
+one conversation row and one turn row per single call, in the published schema. This entry proposes that, by the
+carrier ADR-0035 already has. With an audit store configured and `llm.transcript.audit.single` switched on, after the
+model answered `llm.chat` saves a closed record of one turn to the working store under a new conversation reference -
+version 2 as a loop's, with the request's messages and the assistant's content blocks as returned, the system prompt,
+no tools, the turn's facts (the trace id and path, the correlation id, the graph and the node from `x-graph-id` and
+`x-node`, the UTC bounds, the stop reason, the status, the provider's request id, the usage), retention zero, and the
+audit's grace as its time to live - and sends the one event a closed record needs, `{conversation, check: true}`.
+`transcript.audit` is unchanged: the check finds no row, writes the conversation row and the turn row from the record
+with the statements a loop's turns use, and releases the record, which deletes it; a check that fails leaves the
+record waiting, and the sweep sends the check again. The reply does not wait for the save, and neither a failed save
+nor a failed event refuses the call: each is logged by type. The rows: `turns` 1; `tools` null, which a loop's row
+never is, so `tools IS NULL` tells a single call from a loop with no change to the tables; `status` by the loop's
+table (`done`; `refusal`; `cap` for a reply cut off at `max_tokens` or at the context window); `response` the array of
+content blocks, never a text. A call the model answered is recorded whatever the caller then received, so a refusal,
+a cut-off reply and a reply the helper judged unusable (its 422) are in the store with their cost; a call that failed
+before the model answered leaves no row. The schema page gains what a single call's rows mean - the reference is not
+returned to the caller, `model` is the model that answered, `status` is the model's outcome and the trace holds the
+reply's - and the headers of the packs' `schema/postgres.sql` follow; the agent-question reader and its UI gain a
+filter on the kind of row, since one call per page would bury the loops' conversations. The engines change nothing:
+`graph.task` sends both headers on every request. What a decision would commit the project to: a single call is a
+conversation of one turn; one carrier (the record), one writer, the two events of ADR-0035 and none that holds
+content; the schema's tables unchanged and the page's meanings extended; single calls recorded only where an
+installation switched them on.
+
+**Options.** (A) The record as the carrier - proposed: none of ADR-0035's seven decisions changes, only its scope
+widens; a failed write is repaired by the sweep; no content crosses the bus; an outage's backlog waits in the working
+store, bounded by the grace, where a loop's already waits. Its cost is a working-store write per single call (on
+Redis a record written, read once and deleted) and the working store as a requirement, which the audit function and
+the sweep already have. (B) The rows carried in the event to `transcript.audit` and written by a second case of the
+function, as the request's reference implementation does: no store write, but it departs from decision 1 (the
+function reads nothing but the record) and decision 3 (two events); a failed write is not repaired, so an outage of
+the database is a gap in the audit known only from log lines; and the content waits in the one worker's mailbox, an
+unbounded in-memory queue, which a stalled database frees once per statement timeout while a loop's writes and checks
+wait behind. (C) A `kind` column and schema version 2: clearer to a reader than `tools IS NULL`, at the price of a
+migration in every installation that implemented the schema on its own database. (D) A table of its own for single
+calls: the question "what did this graph's model calls cost" would span two tables. (E) Nothing: usage already rides
+the trace (`llm_input_tokens`, `llm_output_tokens`), so the cost is answerable from telemetry today; what was asked
+and what came back is not. The open questions for the review: the switch's default (proposed off: on would multiply
+the personal data an installation's audit store holds, on an upgrade, with nobody having decided it); `llm.stream`
+under the same switch (proposed yes: the mechanism is the same and a streamed call is a model call) or left out by
+name; the model recorded when a server-side fallback answered (proposed: the one that answered); a stop reason outside
+the loop's table (proposed `done`, the provider's word kept in `stop_reason`); whether the reply may wait for the save
+after all, bounded by a short timeout, which is simpler and puts the audit on the call's path; and
+`llm.transcript.audit.instances`, the follow-up recorded with RFC-0014's round 4, which a high rate of single calls
+makes more likely to be needed.
+
+**Resolution.** Open - round 1 drafted 2026-11-24 from the review of mercury-python #77 (the review is on the issue);
+nothing is ruled and no design spec is written yet. A probe on the Python pack's helper as it stands (its `main` at
+`89aff42`, the in-memory stores, no change to the function) wrote both rows from such a record on the check alone,
+kept the record through a failed write, wrote the rows on the check sent again, released the record and duplicated
+nothing on a third check; PostgreSQL, Redis and the Node twin are the build's to prove. Promotion would be a successor
+to ADR-0035 that widens its scope and keeps its decisions. Noted for the review and left out of the proposal: a loop
+turn whose reply the helper judges unusable (its 422) is raised before the record is saved, so by ADR-0035's first
+decision the conversation did not take the turn, and the audit does not hold its usage. Build order when ruled: the
+Python pack with a shared vector for a single call's rows; the Node twin; the schema page here and the packs' schema
+file headers; the reader's filter in both packs and the UI; a live drive with the database stopped and stalled, as
+RFC-0012's was. **Build ordered 2026-11-24** (the maintainer: "proceed with implementation for RFC 0015 and 0016"):
+step 1 is the Python pack, under this entry's defaults, each still open to the review.
+
+---
+
 ## RFC-0014 — Ask a person: an agent's question or approval delivered to a person over an occasionally connected channel, answered through a return link that resumes the graph
 **Status:** Open · **Raised:** 2026-11-19 · **Serves:** vision-mercury-composable · **Thread:** `ask-a-person-channel`
 <!-- id: rfc-0014 | status: open | thread: ask-a-person-channel -->
