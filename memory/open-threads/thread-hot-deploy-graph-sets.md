@@ -49,6 +49,24 @@
     continuity line, the log). Next: the build, WP1 first.
   - **Rounds 4 and 5 raised as PR #672, MERGED 2026-11-24** (squash `2985ee161`). The design is complete on `main`;
     next: the build, WP1 first (the snapshot registry, the shared loader pieces, `HotDeployment`).
+  - **WP1 BUILT 2026-11-24 (Java engine, no endpoint yet; branch `feat/hot-deploy-wp1`, for a pull request):**
+    `CompiledGraphs` is one immutable snapshot behind an `AtomicReference` with a `Refresh` hook on every lookup and
+    `replaceGraphs` for one swap; `GraphSetLoader` shares `gate`, `sha256`, `normalizedPath` and `folderOf`, and
+    `checkUnpack` refuses the hot folder (inside or above); the new `HotDeployment` holds the three keys and the
+    throttle, the per-set record `<id>.deployed.yaml` (set, version, sha256, deployed_at, graphs, files), the
+    reconcile (no record → unregister; record and package disagree → one re-read, then unregister with an ERROR;
+    else load, stage, gate, move into place, one swap), the hook (a hot id reads its set's record bytes, an unknown
+    id checks for a record of its name), `deploy` (the digest header, the strict read, the main-graph rule, `graph_id`
+    agreement, ownership 409, staging in `.staging-*`, the gate, the move, the record last; the same bytes again
+    change nothing), `undeploy` (404 for a set the folder lacks; the record deleted first, then the files it named),
+    `list` (every record reconciled, a status per set) and `isPrivateSubgraph` for WP2's edge; `CompileGraph`
+    configures it before the manifests and reconciles after them, so the bundled folder stays the primary location.
+    Properties in the engine's and the example's `application.properties`, both switches off. `HotDeploymentTest`,
+    12 tests: deploy and serve, the same bytes then a replacement as a unit, the naming rule, a bundled id and
+    another set's id refused with the owner named, a refused upload leaving no file, undeploy, the records restoring
+    sets at startup with a stray package ignored, another instance's deploy, replace and undeploy seen at the next
+    lookup, a tampered package unregistered, the switches governing each side, the hot and unpack folders refusing
+    each other, one swap. `GraphSetLoaderTest` and `CompileGraphTest` unchanged and green.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->

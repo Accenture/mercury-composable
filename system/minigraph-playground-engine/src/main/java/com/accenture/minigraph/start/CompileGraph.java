@@ -74,6 +74,11 @@ import java.util.Map;
  * A manifest may also list packaged graph sets (ADR-0027): 'sets' names packages read from its location as
  * '{set}.pack', and 'unpack' names a file:/ folder the application can write. GraphSetLoader unpacks each set
  * there and deploys it all or none, right after the manifest's own graphs.
+ * A graph set may also be deployed to the running engine (RFC-0017): {@link HotDeployment} is configured before
+ * the manifests compile, so a manifest's 'unpack' folder and the hot folder refuse each other, and reads its
+ * folder after them, so a set it holds registers through the same gate and a configured manifest keeps owning
+ * its ids. Both of its switches are off by default.
+ * <p>
  * Ad-hoc graphs created interactively through the dev playground are intentionally out of scope since
  * they are not known ahead of time (the playground dry-run runs from its own temp workspace).
  */
@@ -93,6 +98,7 @@ public class CompileGraph implements EntryPoint {
         // the declared return paths are read once here, so a refused entry is logged at startup, by name
         ReturnPaths.getInstance();
         GraphSetLoader.reset();
+        HotDeployment.configure();
         AppConfigReader config = AppConfigReader.getInstance();
         if (!config.getProperty("location.graph.deployed", "").isBlank()) {
             log.warn("location.graph.deployed is obsolete - " +
@@ -102,6 +108,7 @@ public class CompileGraph implements EntryPoint {
         if (manifests.isBlank()) {
             log.warn("No graph manifest configured (graph.model.automation) - " +
                     "no deployed graph models will be executable");
+            HotDeployment.reconcileAll();
             return;
         }
         // Since 4.12.19 the property may name several manifests, comma-separated (the
@@ -112,6 +119,8 @@ public class CompileGraph implements EntryPoint {
         for (String manifest : util.split(manifests, ", ")) {
             compileManifest(manifest);
         }
+        // the hot folder's sets register after every manifest, so a configured manifest keeps owning its ids
+        HotDeployment.reconcileAll();
         log.info("Graph models compiled: {}", CompiledGraphs.getAllGraphs().size());
     }
 
