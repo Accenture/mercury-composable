@@ -1,5 +1,5 @@
-- [ ] **The Rust engine gains `f:addMonths`, `f:monthsBetween`, `f:addYears` and `f:yearsBetween`** (the twin of branch
-  `feat/date-month-year-plugins`, issue #664; Java only so far).
+- [ ] **The Rust engine gains `f:addMonths`, `f:monthsBetween`, `f:addYears` and `f:yearsBetween`** (the twin of #667,
+  squash `df358e62e`, merged 2026-11-24, issue #664; Java only so far).
   - **Scope:** four `#[simple_plugin]` functions in `crates/event-script/src/plugins_date.rs`; `date-plugin-vectors.json`
     (175 vectors) and the graph fixture `unit-test-date-arithmetic-2` copied byte-identical, with `graphs.yaml`, the twin
     of the three `GraphTaskTest` methods in `graph_runtime.rs` and the fixture count in `compiler.rs`; the vector runner's
