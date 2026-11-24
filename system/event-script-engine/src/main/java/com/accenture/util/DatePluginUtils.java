@@ -40,6 +40,9 @@ public class DatePluginUtils {
     private static final LocalDate MAX_DATE = LocalDate.of(9999, 12, 31);
     /** The widest span between two writable dates; a larger number of days never lands on one. */
     private static final long MAX_DAYS = ChronoUnit.DAYS.between(MIN_DATE, MAX_DATE);
+    /** The same span in whole months and in whole years. */
+    private static final long MAX_MONTHS = ChronoUnit.MONTHS.between(MIN_DATE, MAX_DATE);
+    private static final long MAX_YEARS = ChronoUnit.YEARS.between(MIN_DATE, MAX_DATE);
 
     private DatePluginUtils() {
         // utility class
@@ -87,16 +90,44 @@ public class DatePluginUtils {
      * @throws IllegalArgumentException when it is not a whole number, or too large to land on a writable date
      */
     public static long days(Object value, String context) {
+        return count(value, context, "days", MAX_DAYS);
+    }
+
+    /**
+     * Reads a number of months, by the rule that reads a number of days.
+     *
+     * @param value a plugin argument
+     * @param context the plugin name, for the error message
+     * @return the number of months, at most the whole months between 0000-01-01 and 9999-12-31 either way
+     * @throws IllegalArgumentException when it is not a whole number, or too large to land on a writable date
+     */
+    public static long months(Object value, String context) {
+        return count(value, context, "months", MAX_MONTHS);
+    }
+
+    /**
+     * Reads a number of years, by the rule that reads a number of days.
+     *
+     * @param value a plugin argument
+     * @param context the plugin name, for the error message
+     * @return the number of years, at most the whole years between 0000-01-01 and 9999-12-31 either way
+     * @throws IllegalArgumentException when it is not a whole number, or too large to land on a writable date
+     */
+    public static long years(Object value, String context) {
+        return count(value, context, "years", MAX_YEARS);
+    }
+
+    private static long count(Object value, String context, String unit, long max) {
         final BigDecimal number;
         try {
             number = DecimalPluginUtils.operand(value, context).stripTrailingZeros();
         } catch (IllegalArgumentException e) {
-            throw daysError(value, context);
+            throw countError(value, context, unit);
         }
         if (number.scale() > 0) {
-            throw daysError(value, context);
+            throw countError(value, context, unit);
         }
-        if (number.abs().compareTo(BigDecimal.valueOf(MAX_DAYS)) > 0) {
+        if (number.abs().compareTo(BigDecimal.valueOf(max)) > 0) {
             throw outOfRange(context);
         }
         return number.longValueExact();
@@ -128,8 +159,33 @@ public class DatePluginUtils {
         return Math.toIntExact(Math.abs(ChronoUnit.DAYS.between(a, b)));
     }
 
-    private static IllegalArgumentException daysError(Object value, String context) {
-        return new IllegalArgumentException("The days of " + context + " must be a whole number - got " +
+    /**
+     * Counts the whole months between two dates, in either order.
+     * <p>
+     * A month is complete when the later date reaches the earlier date's day of the month, so 31 January to
+     * 28 February is no whole month and 28 January to 28 February is one.
+     *
+     * @param a one date
+     * @param b the other date
+     * @return the whole months completed from the earlier date to the later date; 0 for the same date
+     */
+    public static int monthsBetween(LocalDate a, LocalDate b) {
+        return Math.toIntExact(Math.abs(ChronoUnit.MONTHS.between(a, b)));
+    }
+
+    /**
+     * Counts the whole years between two dates, in either order: every twelve whole months.
+     *
+     * @param a one date
+     * @param b the other date
+     * @return the whole years completed from the earlier date to the later date; 0 for the same date
+     */
+    public static int yearsBetween(LocalDate a, LocalDate b) {
+        return Math.toIntExact(Math.abs(ChronoUnit.YEARS.between(a, b)));
+    }
+
+    private static IllegalArgumentException countError(Object value, String context, String unit) {
+        return new IllegalArgumentException("The " + unit + " of " + context + " must be a whole number - got " +
                 describe(value));
     }
 

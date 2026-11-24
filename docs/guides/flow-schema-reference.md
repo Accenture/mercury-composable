@@ -1088,13 +1088,19 @@ mapping statement at either boundary, no per-field mapping.
 ### Date arithmetic
 
 A date is an ISO-8601 calendar date written exactly as `YYYY-MM-DD`, with no time and no time zone. A date of another
-shape, a day the calendar lacks, a fractional number of days, a null argument and a result outside the years 0000 to
-9999 are errors naming the plugin.
+shape, a day the calendar lacks, a fractional number of days, months or years, a null argument and a result outside the
+years 0000 to 9999 are errors naming the plugin. Calendar months and years keep the day of the month, and count a month
+when that day is reached; the three rules are in the [syntax page](event-script/syntax.md#simple-plugins) (*Date
+arithmetic plugins*).
 
 | Function | Description | Example |
 |----------|-------------|---------|
 | `f:addDays(date, days)` | The date a whole number of days later (earlier for a negative number), as `YYYY-MM-DD`: `(2027-01-15, 15)` gives `2027-01-30`; the days may be numeric text | `f:addDays(input.body.invoice_date, int(30)) -> due_date` |
 | `f:daysBetween(from, to)` | The whole days between two dates as an integer, the earlier date excluded and the later one included: `(2027-04-10, 2027-05-11)` gives `31`, the same date twice `0`; the order of the arguments does not matter, so it is never negative | `f:daysBetween(model.due_date, input.body.paid_on) -> days_apart` |
+| `f:addMonths(date, months)` | The date a whole number of calendar months later (earlier for a negative number), as `YYYY-MM-DD`, with the same day of the month; a day the resulting month lacks becomes its last day: `(2027-03-15, 12)` gives `2028-03-15`, `(2027-01-31, 1)` gives `2027-02-28` | `f:addMonths(input.body.start_date, int(12)) -> renewal_date` |
+| `f:monthsBetween(from, to)` | The whole months completed between two dates as an integer, a month being complete when the day of the month is reached: `(2026-06-01, 2027-05-31)` gives `11`, `(2027-01-31, 2027-02-28)` gives `0`; the order of the arguments does not matter, so it is never negative | `f:monthsBetween(input.body.start_date, input.body.as_of) -> months_used` |
+| `f:addYears(date, years)` | The date a whole number of calendar years later (earlier for a negative number), as `YYYY-MM-DD`, with the same month and day; 29 February becomes 28 February in a year that lacks it: `(2028-02-29, 1)` gives `2029-02-28` | `f:addYears(input.body.hired_on, int(5)) -> vesting_date` |
+| `f:yearsBetween(from, to)` | The whole years completed between two dates as an integer, a year being complete when the month and day are reached: `(1990-07-04, 2027-07-03)` gives `36`; the order of the arguments does not matter, so it is never negative | `f:yearsBetween(input.body.born_on, input.body.as_of) -> age` |
 
 ### Configuration
 

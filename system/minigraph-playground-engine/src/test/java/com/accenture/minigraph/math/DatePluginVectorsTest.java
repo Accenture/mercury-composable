@@ -19,7 +19,11 @@ package com.accenture.minigraph.math;
 
 import com.accenture.models.PluginFunction;
 import com.accenture.services.plugins.date.AddDays;
+import com.accenture.services.plugins.date.AddMonths;
+import com.accenture.services.plugins.date.AddYears;
 import com.accenture.services.plugins.date.DaysBetween;
+import com.accenture.services.plugins.date.MonthsBetween;
+import com.accenture.services.plugins.date.YearsBetween;
 import com.google.gson.Gson;
 import org.junit.jupiter.api.Test;
 
@@ -38,12 +42,18 @@ import static org.junit.jupiter.api.Assertions.*;
 class DatePluginVectorsTest {
     private static final Map<String, PluginFunction> PLUGINS = Map.of(
             "addDays", new AddDays(),
-            "daysBetween", new DaysBetween());
+            "daysBetween", new DaysBetween(),
+            "addMonths", new AddMonths(),
+            "monthsBetween", new MonthsBetween(),
+            "addYears", new AddYears(),
+            "yearsBetween", new YearsBetween());
     private static final Map<String, String> ERRORS = Map.of(
             "arity", "Expected two input values",
             "not-a-date", "Expected a date written as YYYY-MM-DD",
             "not-a-calendar-date", "Not a calendar date",
-            "bad-days", "must be a whole number",
+            "bad-days", "The days of \\w+ must be a whole number",
+            "bad-months", "The months of \\w+ must be a whole number",
+            "bad-years", "The years of \\w+ must be a whole number",
             "out-of-range", "falls outside 0000-01-01 to 9999-12-31");
 
     @SuppressWarnings("unchecked")
@@ -72,7 +82,10 @@ class DatePluginVectorsTest {
     @Test
     void everyVectorHoldsInThePlugins() throws IOException {
         var all = vectors();
-        assertTrue(all.size() > 50, "the vector file looks truncated: " + all.size());
+        assertTrue(all.size() > 170, "the vector file looks truncated: " + all.size());
+        var covered = new HashSet<String>();
+        all.forEach(v -> covered.add((String) v.get("plugin")));
+        assertEquals(PLUGINS.keySet(), covered, "every date plugin has vectors");
         var ids = new HashSet<String>();
         for (var v : all) {
             var id = (String) v.get("id");

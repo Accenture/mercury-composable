@@ -103,6 +103,7 @@ public final class GraphContract {
     private static final Map<String, String> PLUGIN_TYPES = Map.ofEntries(
             Map.entry(INT, INTEGER), Map.entry(LONG, INTEGER), Map.entry("length", INTEGER),
             Map.entry("decimalCompare", INTEGER), Map.entry("daysBetween", INTEGER),
+            Map.entry("monthsBetween", INTEGER), Map.entry("yearsBetween", INTEGER),
             Map.entry(FLOAT, NUMBER), Map.entry(DOUBLE, NUMBER), Map.entry("add", NUMBER),
             Map.entry("subtract", NUMBER), Map.entry("multiply", NUMBER), Map.entry("div", NUMBER),
             Map.entry("mod", NUMBER), Map.entry("increment", NUMBER), Map.entry("decrement", NUMBER),
@@ -112,7 +113,7 @@ public final class GraphContract {
             Map.entry("notNull", BOOLEAN),
             Map.entry(TEXT, STRING), Map.entry("concat", STRING), Map.entry("substring", STRING),
             Map.entry("now", STRING), Map.entry("uuid", STRING), Map.entry("dateTime", STRING),
-            Map.entry("addDays", STRING),
+            Map.entry("addDays", STRING), Map.entry("addMonths", STRING), Map.entry("addYears", STRING),
             Map.entry("b64", STRING), Map.entry("lookup", STRING), Map.entry("rangeLookup", STRING),
             Map.entry("decimalAdd", STRING),
             Map.entry("decimalSubtract", STRING), Map.entry("decimalMultiply", STRING),
