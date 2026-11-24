@@ -5,7 +5,7 @@
   `graph.hot.deploy` and `graph.hot.undeploy`, both off; a set uploaded to `POST /api/graph-set/deploy` is gated and
   registered at once, `POST /api/graph-set/undeploy/{set}` removes it, `GET /api/graph-set/deployed` lists the
   folder's record; user-defined functions belong in language-pack sidecars so the engine's artifact stops changing.
-  Spec `draft-design-specs/hot-deploy-undeploy-graph-sets.md`, two rounds the same day.
+  Spec `draft-design-specs/hot-deploy-undeploy-graph-sets.md`, five rounds the same day.
   - **Rulings (the maintainer, 2026-11-24):** every recommendation accepted as the default - the set as the unit,
     switches off, manifests own their ids (a bundled id is 409, never shadowed), a re-upload replaces its set all or
     none, the optional `X-Graph-Set-SHA256` header, one registry snapshot swapped per deployment, the record as the
@@ -24,6 +24,20 @@
     undeploy path is the main graph id, `graph_id` when present must equal the set name, and a hot-deployed set's
     subgraphs are private at REST, at OpenAPI and to another set's `graph.extension` - enforceable at both edges, so a
     whole gate. A startup-lane set keeps its free name and public graphs.
+  - **Round 4 (Eric, after #671 merged):** a task node names its function's provider - `server.url`, the provider's
+    Event-over-HTTP endpoint with `${...}` substitution and `/api/event` supplied when the URL has no path, and
+    `server.header[]` for a gateway's token - because the static map is loaded once at startup and a new function in
+    a sidecar would otherwise need a restart. Reviewed and accepted with the recommendations (D16): resolved per
+    instance at registration, wins over local and the map, the reachability check skipped, `for_each` per element,
+    refused by the gate unless an absolute URL, accepted wherever `task` is consumed. Eric named the property: node
+    properties are a multi-level map, so `server` is the parent and the endpoint is `server.url`.
+  - **Round 5 (Eric):** "for easy prototyping", a deployment dialog in the Playground's packaging panel for dev
+    mode - pack and deploy the assembled set or a dropped package, the digest shown, the deployed sets listed, an
+    undeploy behind a confirmation, the switches' state when off - and, when dev mode is disabled, two Node template
+    scripts in `templates/starter-graph/scripts` (`deploy-graph-set.mjs`, `undeploy-graph-set.mjs`; zero
+    dependencies, the folder's only copy) to upload a set and to undeploy. D17; reverses Q8. The engine changes
+    nothing for either; the webapp is one source for both engines, so the Java bundle releases first and both once
+    the Rust twin's endpoints exist.
   - **Impact:** ADR-0011 amended (explicit and gated, no longer restart-scoped; registration may happen at first
     use, still through the record and the gate), ADR-0027 extended (the set as the run-time unit; the loader's
     pieces shared).

@@ -4,9 +4,12 @@
 the same day, the maintainer accepted every recommendation of sections 5 and 6 as the default and replaced the polling
 option for several instances with on-demand registration, refined here into a revision marker (3.8); in round 3, still
 the same day, he keyed that reference on the set's main graph: a hot-deployable set is named after its main graph,
-exposes it alone at the endpoint, and its own record is the marker (3.3, 3.7, 3.8). Raised as RFC-0017 in
-`docs/arch-decisions/RFC.md`; next: the build in both engines, the live drive, then promotion to an ADR. It amends
-ADR-0011 and extends ADR-0027 (section 4).
+exposes it alone at the endpoint, and its own record is the marker (3.3, 3.7, 3.8). Round 4, after the merge of
+the register entry: a task node names its function's provider with `server.url` and `server.header[]`, so a
+hot-deployed graph reaches a function the static Event-over-HTTP map has never heard of (3.10, D16). Round 5: the
+developer's two surfaces - a deployment dialog in the Playground for dev mode, and two Node template scripts for an
+engine without the UI (3.11, D17), which reverses Q8. Raised as RFC-0017 in `docs/arch-decisions/RFC.md`; next: the
+build in both engines, the live drive, then promotion to an ADR. It amends ADR-0011 and extends ADR-0027 (section 4).
 **Concept:** the maintainer's future-state draft of 2026-11-24 - bundled graphs and the prototyping workspace unchanged;
 a third folder, `/tmp/deploy`, where a graph set uploaded to a deployment endpoint is registered without a restart and
 removed by an undeployment endpoint; two feature switches, off for field installations that have not adopted the AI
@@ -37,8 +40,8 @@ they are off (3.2).
 | Deploy: prototype, certify the set, export, upload to a REST endpoint, a function compiles and registers it, the id is live at once | Correct | The set is the unit (one graph is packed alone, as ADR-0027 already says). The endpoint is a production function behind the switch, not a dev-mode one. An optional `X-Graph-Set-SHA256` header lets the ledger check happen in the engine without the engine owning the ledger (D5). |
 | Undeploy by set through a POST endpoint; bundled graphs cannot be undeployed | Correct | Undeploy acts on the hot folder's record only; a set name the record does not hold is 404 (3.4). |
 | Persistence: mount the folder as a persistent volume | Correct, with one addition | The folder holds the packages, the unpacked graphs and one engine-written record per set, named after the set's main graph; at startup the engine re-registers what the records list, so the volume is enough to survive a restart (3.7). The record is also the marker every other instance reads, on demand, at its next request (3.8). |
-| Architecture: user-defined functions in language-pack sidecars, the engine free of them | Correct, and outside the engine's code | The engine's part is a deploy-time advisory, never a refusal, listing the routes a set names that this instance does not know (D9), and a guide section. |
-| Operational dashboard through an API gateway | Correct, out of scope | The endpoints carry no authentication of their own; the gateway does (Q4). A read endpoint for the dashboard is in scope (3.4). |
+| Architecture: user-defined functions in language-pack sidecars, the engine free of them | Correct, with one enabling property | The engine's part is a deploy-time advisory, never a refusal, listing the routes a set names that this instance does not know (D9), a guide section, and since round 4 `server.url` on a task node, so a hot-deployed graph names the provider of a function the static Event-over-HTTP map has never heard of (3.10, D16). |
+| Operational dashboard through an API gateway | Correct, out of scope | The endpoints carry no authentication of their own; the gateway does (Q4). A read endpoint for the dashboard is in scope (3.4). Since round 5 the developer's own surfaces are in scope too: a deployment dialog in the Playground for dev mode, and two Node template scripts for an engine without the UI (3.11, D17); the field's dashboard stays theirs. |
 
 Two properties fall out of the design that the draft did not state and that are worth having:
 
@@ -451,8 +454,120 @@ scales, because the engine's deployable artifact stops changing. The engine's pa
 - **A guide section** (the knowledge-graph AI agent guide, beside *Deploy without a rebuild*): the three folders, the
   lifecycle table of 3.3, the ownership rules, the two declared consequences of 3.6, and the recommendation as design
   guidance for an installation that adopts hot deploy.
+- **A task's provider on the node** (round 4, 3.10): `server.url` and `server.header[]`, because the Event-over-HTTP
+  map is loaded once at startup and a new function in a sidecar would otherwise need the restart this sprint removes.
 
-### 3.10 Out of scope, with the seams left for it
+### 3.10 A task's provider on the node: `server.url`
+
+The recommendation of 3.9 has a consequence the draft of round 4 names (the maintainer, 2026-11-24): with no
+user-defined function in the engine, a hot-deployed graph that needs more than `graph.math` and `graph.data.mapper`
+calls a custom composable function in a language-pack sidecar or container, and the engine's way to reach a remote
+route - the Event-over-HTTP map, `yaml.event.over.http` - is loaded once at startup. A function the map has never
+heard of cannot resolve a provider address without the restart this sprint removes. So the node names its provider:
+
+```text
+skill=graph.task
+task=my.custom.function
+server.url=${TARGET_UTIL_SERVER}/api/event
+server.header[]=authorization: Bearer ${UTIL_TOKEN}
+```
+
+- **`server.url`** is the provider's Event-over-HTTP endpoint, with the usual `${...}` substitution. A URL without a
+  path gets `/api/event`; a URL with a path is used as written, which is how an API gateway's own path reaches the
+  target (the gateway reformats it before the provider sees it). Node properties are a multi-level map, so `server` is
+  the parent label and the endpoint is its `url` leaf - the maintainer's adjustment, since a label cannot be both a
+  value and a parent.
+- **`server.header[]`** (optional) adds transport headers to the HTTP call, `name: value` with substitution, the
+  shape the static map's `headers` have: a gateway's bearer token travels here, and the graph holds the variable's
+  name, never the secret. The event's own headers from `header.*` input mapping are unaffected: they travel inside the
+  envelope to the function, as they do today.
+- **Resolved per instance at registration.** The gate reads the graph back through `ConfigReader`, so the references
+  resolve from each pod's own environment when the set is registered, once, not per call. One variable per provider
+  serves every function it hosts.
+- **Precedence.** `server.url` wins over a local function and over the static map, as the map wins over a local
+  function today: explicit beats implicit. A developer who wants a local mock leaves `server.url` unset. The static
+  map is unchanged and remains the installation-wide binding; the node's binding is the graph's own, and the two
+  coexist.
+- **The call.** The skill already issues a single task through `PostOffice.eRequest` on the worker thread so the
+  outbound event carries the node's span; the same method takes the headers and the endpoint, so the change is one
+  argument, and the trace flows into the pack as every Event-over-HTTP call's does. The skill's reachability check -
+  a route must be local or in the map - is skipped when `server.url` is set: the provider decides, and a wrong route
+  comes back as its 404, the node's error, which `exception=` handles like any failure. The deadline travels as
+  `X-TTL`, as today. `for_each` has no endpoint form of the batch request, so it becomes one call per element under
+  the existing concurrency window: the same semantics, different plumbing.
+- **The gate.** `server.url`, when present, is an absolute `http` or `https` URL after resolution, else the graph is
+  refused: an unset variable leaves `/api/event` with no host, which would fail at the first run. The
+  `${TARGET_UTIL_SERVER:http://127.0.0.1:8086}` default form covers a developer's machine at pack time. Each
+  `server.header[]` entry is `name: value`. Both properties are accepted wherever `task` is consumed - `graph.task`,
+  and by the same rule `graph.suspend` and `graph.resume`, so a pack can host a state store - and refused on any
+  other skill, as `ttl` placement is.
+- **The advisory.** The deploy answer reports a task with `server.url` as remote, with its resolved endpoint, in place
+  of known or unknown: the provider decides, and the advisory says where.
+- **Declared.** A certified graph is trusted content, as the fetcher's `url` is: no allowlist of providers. A
+  provider that is down fails the node as any task failure does.
+
+Recorded as D16; the Rust twin's `graph.task` takes the same two properties over its Event API client, whose endpoint
+split already supplies `/api/event` for a URL without a path.
+
+### 3.11 The developer's two surfaces: a deployment panel in dev mode, two scripts without it
+
+The field's dashboard stays the field's (3.12), but a developer prototyping on a single engine, and an operator of an
+engine that has no Playground, each need a way to use the three endpoints without hand-writing an HTTP call. Round 5
+(the maintainer, 2026-11-24) adds one surface for each case; both are clients of the same endpoints, and the engine
+changes nothing for them.
+
+**In dev mode: a deployment dialog in the Playground.** The packaging panel (`GraphSetPanel`, its hook
+`useGraphSetPanel`) already assembles a set from dropped or imported graph files with manifest key-values, has the
+engine pack it (`POST /api/graph-set/pack`, the gate running there) and downloads `<set>.pack`, and inspects a
+dropped package through the unpack endpoint. It gains a **Deploy** dialog with three parts:
+
+- **Deploy a set.** Either the assembled set in one step - pack on the engine, then post the bytes to
+  `POST /api/graph-set/deploy`, the download optional - or a dropped `.pack`. The panel computes the package's
+  SHA-256 in the browser (Web Crypto) and shows it, so the digest can be written to the field's ledger from the same
+  screen; an optional *expected digest* field, pasted from the ledger, is sent as `X-Graph-Set-SHA256`. The answer is
+  shown as the endpoint gives it: the set, its version, its graphs, what was replaced, the route and extension
+  advisory; a refusal shows every reason (400), the owner of a colliding id (409), or the hint that hot deploy is off
+  on this engine with the two property names (503).
+- **Deployed sets.** `GET /api/graph-set/deployed` as a table - set, version, digest, deployed at, graphs, status -
+  with a refresh and an **Undeploy** action per row behind a confirmation that names the set and its graphs, calling
+  `POST /api/graph-set/undeploy/{graph-id}`.
+- **The hint when the switches are off.** The panel's first read of the list tells it whether this engine hot
+  deploys; off, the dialog says so and names `graph.hot.deploy` and `graph.hot.undeploy`, and nothing else is
+  offered.
+
+Dev mode only by construction: the Playground's web app is served only under `app.env=dev` (2.3), while the three
+endpoints are production entries the panel calls like any client, same origin, no CORS. The help browser gains
+`help deploy.md`, and `help package.md` points at it from its *Deploying a set* section. The webapp is one source for
+both engines, so the Java bundle is released first (`npm run release`) and both bundles once the Rust twin's
+endpoints exist (`npm run release:all`), as the day plugins did. Tests follow the panel's own: the hook against a
+mocked `fetch` (deploy, replace, refuse, 503, list, undeploy), the component's rendering of each answer.
+
+**Without dev mode: two Node template scripts.** In `templates/starter-graph/scripts`, beside the AI companion
+broker and under the same rules - zero dependencies, Node.js 26 LTS (minimum 22, the folder's floor), this folder the
+only copy, which the Rust repository carries byte for byte:
+
+```bash
+node scripts/deploy-graph-set.mjs --engine https://gateway.example.com/engine --file settlement.pack \
+     --sha256 9f2c... --header "authorization: Bearer $DEPLOY_TOKEN"
+node scripts/undeploy-graph-set.mjs --engine https://gateway.example.com/engine --graph settlement
+node scripts/undeploy-graph-set.mjs --engine https://gateway.example.com/engine --list
+node scripts/deploy-graph-set.mjs --file settlement.pack --digest
+```
+
+- `--engine` is the engine's base URL, or the gateway's path in front of it, to which the script appends the entry's
+  path; `--file` the package; `--sha256` the ledger's digest, sent as the header; `--header` a transport header,
+  repeatable, the token taken from the shell's environment so it never sits in a command history as a literal;
+  `--digest` prints the package's SHA-256 and exits, the ledger step without an upload; `--list` prints the deployed
+  sets; `--graph` the main graph id to undeploy.
+- The answer is printed as the engine gives it, one JSON document; the exit code is 0 on 200, 1 on a refusal with the
+  engine's reasons on stderr, 2 on a usage error. No prompt: a script in a pipeline runs unattended.
+- The scripts' README section states what the folder's does for the broker: the command, the flags, the exit codes,
+  and that the gateway's authentication is the installation's.
+
+Recorded as D17; the live drive (WP5) uses both surfaces - the panel against the example engine in dev mode, the
+scripts against an engine started with `app.env` unset.
+
+### 3.12 Out of scope, with the seams left for it
 
 - **The certification means.** The ledger or the signature is the field's; the engine records and compares a SHA-256
   when asked (3.4 step 2). A **verifier route** - `graph.hot.deploy.verifier=<route>`, a composable function the field
@@ -461,8 +576,8 @@ scales, because the engine's deployable artifact stops changing. The engine's pa
 - **Authentication.** The gateway's. `rest.yaml`'s `authentication` option is available to an installation that wants
   an in-engine check on these entries, unchanged.
 - **The operational dashboard.** The field's; the list endpoint is its read, the two POSTs its writes.
-- **A Playground button.** The Playground is dev mode and the endpoints are production; a "deploy to this engine"
-  action in the packaging panel would be a convenience for a developer's single engine only (Q8).
+- **A Playground button** was out of scope in rounds 1 to 4 (Q8); round 5 brought it in as the deployment dialog of
+  3.11, with the two scripts for an engine that has no Playground.
 - **Identity in the log.** The log line carries the remote address; who approved is the dashboard's record.
 
 ---
@@ -474,19 +589,26 @@ scales, because the engine's deployable artifact stops changing. The engine's pa
 | **ADR-0011** - CompileGraph is the mandatory gate; "hot-dropping a JSON file into the deploy folder no longer works (deployment is an explicit, restart-scoped act)"; the lazy per-request loading of models removed | **Amended.** Deployment stays explicit and gated - the only doors are the manifest at startup and the deploy endpoint at run time, both through `GraphModelGate` - but it is no longer restart-scoped for a graph set uploaded under the switch, and a set may register at first use on an instance that did not receive the upload (3.8), still only through the record and the gate. Hot-dropping a file still does nothing: the record is the allowlist. Compiled-or-404 stands unchanged. | the new ADR's status line names ADR-0011 as amended; ADR-0011's status line gains `amended by ADR-NNNN`, as ADR-0010's did for ADR-0012 |
 | **ADR-0027** - graph sets, gated when packed and deployed all or none | **Extended.** The set becomes the unit of run-time deployment too; a hot-deployable set is named after its main graph and exposes it alone (D14, D15), two rules a startup-lane set is not asked to follow - its name stays free and its graphs public, so nothing bundled changes; the loader's pieces are shared. No decision of ADR-0027's D1 to D9 changes. | the new ADR's status line names ADR-0027 as extended |
 | **ADR-0006** - the service mesh is opt-in | **Respected.** Option C of 3.8 cannot be the default path. | none |
+| **`event-api-local-routes-only`** (invariant) - an instance's `/api/event` serves the routes it reaches itself and never relays | **Respected.** `server.url` is caller-side knowledge on the node, as the static map is; the provider still serves its local routes only. | none |
+| **The Event-over-HTTP map** (`yaml.event.over.http`, loaded once at startup) | **Unchanged, with a sibling.** The map stays the installation-wide binding; a task node's `server.url` is the graph's own binding and wins where both exist (3.10). | the new ADR, and the skills reference |
 | **ADR-0033, ADR-0035, ADR-0036** - the agent loop, the audit store, the tools | **None.** An agent graph hot-deploys like any set; its catalog rows travel in the graph; the packs' routes are the routes it names. | none |
 | **ADR-0023** - the claims fixture | **A claim per rule.** `graph-manifest-list-later-wins` has a claim on both engines; the ownership rule and the one-swap rule get theirs. | `claims-registry.json` in WP3 |
 | **The Vision** - graph models promote through dry-run, certify, stage, approve, production | **Served.** The production step gains its mechanism without a rebuild; the Blueprint's queued item, the promotion of an AI graph through the governance lifecycle, is what this sprint builds the engine side of. | the Blueprint thread, at the sprint's close |
 
 ---
 
-## 5. Decisions - accepted by the maintainer on 2026-11-24 as recommended, D13 to D15 from his direction
+## 5. Decisions - accepted by the maintainer on 2026-11-24 as recommended, D13 to D17 from his direction
 
 The maintainer's words in round 2: "The defaults are fine except: several instances - instead of polling, we should
 allow on-demand graph registration." In round 3: "a graph set must have at least one main graph and zero to more
 subgraphs. Only the main graph ID is used at the /api/graph/{graphId} service endpoint. Therefore, the revision marker
 can use this main graphId as the reference. The main graphId must be unique", then "or we can enforce the name of the
-graph set to be the same as the main graph ID?" D1 to D12 stand as written; D13 to D15 record the directions and
+graph set to be the same as the main graph ID?" In round 4, after PR #671 merged: "please add a feature update in the
+graph.task node to support a new property that holds the provider URL", then, on the review, "Yes, fold it in" with
+the name `server.url`, since node properties are a multi-level map. In round 5: "for easy prototyping, please update
+the react UI to support hot deploy into the minigraph-playground and hot undeploy from a dialog panel. when dev mode
+is disabled, please provide a template command line script (e.g. node mjs) to upload a graph set into a target engine
+and another one to undeploy from the target engine." D1 to D12 stand as written; D13 to D17 record the directions and
 their refinement.
 
 - **D1. The unit is a graph set.** `.pack` only; a single graph is packed alone. A loose JSON upload is not offered.
@@ -525,6 +647,22 @@ their refinement.
   and only the set's own graphs reach them. Enforced at both edges, since both are in the engine (the executor already
   tells an HTTP entry from an extension's dataset), so it is a whole gate, not a partial one. A startup-lane set keeps
   every graph public, as today.
+- **D16. A task node names its function's provider with `server.url`, and its transport headers with
+  `server.header[]` (3.10):** an absolute `http` or `https` URL after `${...}` resolution, `/api/event` supplied when
+  the URL has no path, resolved per instance at registration; it wins over a local function and the static map; the
+  reachability check is skipped and the provider's 404 is the node's error; `for_each` calls per element; accepted
+  wherever `task` is consumed and refused elsewhere; a certified graph is trusted content, so no allowlist. The
+  maintainer named the property: `server` is the parent label of the node's multi-level map, so the endpoint is
+  `server.url`. The alternative, a configured server alias with URL and headers, keeps the URL out of the graph but
+  needs an engine configuration change per server; a reloadable map would be a second artifact to coordinate with
+  each set. Neither is taken.
+- **D17. Two developer surfaces for the same three endpoints (3.11):** in dev mode a **Deploy** dialog in the
+  Playground's packaging panel - pack and deploy the assembled set or a dropped package, the digest shown and an
+  expected digest sent as the header, the deployed sets listed with an undeploy behind a confirmation, the switches'
+  state told when they are off - and, for an engine without the UI, `deploy-graph-set.mjs` and
+  `undeploy-graph-set.mjs` in `templates/starter-graph/scripts`, zero dependencies, the folder's Node floor, the
+  only copy, with `--engine`, `--file`, `--sha256`, `--header`, `--digest`, `--list` and `--graph`, the answer as the
+  engine gives it and exit codes a pipeline can read. The engine changes nothing for either. Reverses Q8.
 
 ## 6. Open questions - answered by the maintainer on 2026-11-24
 
@@ -546,7 +684,9 @@ on-demand direction that became D13. The questions stay as asked, with the answe
   segment is the main graph id, which is the set name.
 - **Q7. The verifier route:** a seam only (D5), or built in this sprint for the signature case? **Answer:** a seam only.
 - **Q8. A Playground action** "deploy to this engine" in the packaging panel, for a developer's single engine in dev
-  mode with the switch on: this sprint, later, or never? **Answer:** not this sprint (the recommendation was to leave it out; nothing was ruled for later).
+  mode with the switch on: this sprint, later, or never? **Answer:** not this sprint (the recommendation was to leave it out; nothing was ruled for later). **Reversed in
+  round 5 (the maintainer):** in this sprint, as the deployment dialog of 3.11 for dev mode, with the two Node template
+  scripts for an engine without the UI (D17).
 - **Q9. The live drive's set.** The example bundles every tutorial (`tutorial-1` loose, `tutorial-2` to `-14` as the
   `tutorials` set), so a hot-deployed copy of any of them is a 409 by D4 - which is itself a good negative control. The
   positive case needs a set the example does not bundle: a `hot-demo` set built in the Playground from a renamed
@@ -557,6 +697,9 @@ on-demand direction that became D13. The questions stay as asked, with the answe
   the two lanes have one rule? Not in this sprint: bundled graphs are unchanged by the maintainer's draft, and the
   change would need an upgrade note for any field pack whose subgraphs are called at REST. Left open for a later
   release.
+- **Q11. The transport headers' form (round 4):** a list property on the node, or a configured server alias with URL
+  and headers? Recommendation: the list property, so the graph holds the variable's name and the engine's configuration
+  does not change per server. **Answer:** the list property, as `server.header[]` beside `server.url`.
 
 ## 7. Implementation plan
 
@@ -564,10 +707,12 @@ on-demand direction that became D13. The questions stay as asked, with the answe
 |---|---|---|
 | WP0 | The RFC entry in `docs/arch-decisions/RFC.md` from this spec after the rulings; the open thread. **Done 2026-11-24:** RFC-0017, thread `hot-deploy-graph-sets`. | the AI contract provider's tests (`RFC.md` is packaged) |
 | WP1 | Java engine, no endpoint yet: the three keys; `CompiledGraphs` as one snapshot behind an `AtomicReference` (startup semantics unchanged); the loader's `load`, `gate`, `register` and manifest writer shared; a `HotDeployment` class with the folder checks, the per-set records, the reconcile, the lock and the record check the registry's lookup calls; `CompileGraph` calls the reconcile when either switch is on; `checkUnpack` refuses the hot folder. | `CompileGraphTest` and `GraphSetLoaderTest` green unchanged; new tests: a record restores its sets at startup, a changed package is unregistered, a stray package is ignored, a bundled id refuses a set, one swap is observed by a reader, a second registry over the same folder (two instances in one test) sees a deploy, a replace and an undeploy at its next lookup and never half a set |
-| WP2 | Java endpoints: `deploy.graph.set`, `undeploy.graph.set`, `list.deployed.sets`, `@OptionalService` on their switches; `rest.yaml` entries in the engine, the example and the starter-graph template; the main-graph naming check (D14); subgraphs private at the REST edge, the OpenAPI endpoint and a cross-set `graph.extension` (D15); the digest header; the route and extension advisory. | tests through the REST lane as `GraphSetLoaderTest` drives it: deploy then call the main graph, 404 for a subgraph at REST and at OpenAPI, a cross-set extension refused and an in-set one served, 400 for a set not named after its main graph, 400 with reasons and no files left, 409 on each ownership case, replace, undeploy then 404, list; 503 with the switches off |
-| WP3 | Docs: the configuration reference (three keys), the AI agent guide's new section and the deploy-without-rebuild section's cross-reference, `build-your-first-graph.md` step 4, the Playground help `package.md`, the reserved names page (the record file), the claims for the two rules, CHANGELOG Unreleased with an upgrade note (off by default, no action). | `python3 scripts/check-doc-canon.py`; the AI contract provider's tests; the pull request's `docs` run |
-| WP4 | The Rust twin: `graphs.rs` as one struct under one lock, `graph_set_loader.rs` shared pieces, the reconcile, the three handlers in `rest.rs`, the same keys and messages. | the twin tests of WP1 and WP2 |
-| WP5 | The live drive on the example engine (Q9): negative controls first (switch off is 503, a bundled id is 409, a tampered body is 400), then the positive path through the Playground's pack, `curl`, REST calls, a replace, an undeploy and a restart. Record: `docs/test-reports/hot-deploy-live-drive.md`. | the record |
+| WP2 | Java endpoints: `deploy.graph.set`, `undeploy.graph.set`, `list.deployed.sets`, `@OptionalService` on their switches; `rest.yaml` entries in the engine, the example and the starter-graph template; the main-graph naming check (D14); subgraphs private at the REST edge, the OpenAPI endpoint and a cross-set `graph.extension` (D15); the digest header; the route and extension advisory; `server.url` and `server.header[]` on the task-consuming skills (D16) - the endpoint call, the per-element fan-out for `for_each`, the validator's placement and URL rules, the advisory's remote entry. | tests through the REST lane as `GraphSetLoaderTest` drives it: deploy then call the main graph, 404 for a subgraph at REST and at OpenAPI, a cross-set extension refused and an in-set one served, 400 for a set not named after its main graph, 400 with reasons and no files left, 409 on each ownership case, replace, undeploy then 404, list; 503 with the switches off; a task with `server.url` served by a test peer over Event-over-HTTP, with a header, with `for_each`, a wrong route's 404 as the node's error, an unresolved URL refused by the gate, the property refused on another skill |
+| WP2c | The Playground's **Deploy** dialog (3.11): the hook and the component beside `GraphSetPanel`, the digest in the browser, the deployed-sets table with undeploy, the switches-off hint; `help deploy.md` and the pointer in `help package.md`; the Java bundle released (`npm run release`), both bundles once WP4 lands. | the hook against a mocked `fetch` (deploy, one-step pack-and-deploy, replace, refusal with reasons, 409, 503, list, undeploy), the component's rendering of each answer; `npm test` |
+| WP2d | The two scripts in `templates/starter-graph/scripts` with their README section (3.11): `deploy-graph-set.mjs` and `undeploy-graph-set.mjs`, zero dependencies, the folder's Node floor. | run against the example engine with the switches on: a deploy, a refused upload, `--digest`, `--list`, an undeploy, and each exit code |
+| WP3 | Docs: the configuration reference (three keys), the AI agent guide's new section and the deploy-without-rebuild section's cross-reference, `build-your-first-graph.md` step 4, the Playground help `package.md`, `graph-task.md` and the new `deploy.md` (a help edit releases the bundle), the scripts README, the skills reference's `graph.task` section and the command reference for `server.url` and `server.header[]`, the reserved names page (the record file), the claims for the two rules, CHANGELOG Unreleased with an upgrade note (off by default, no action). | `python3 scripts/check-doc-canon.py`; the AI contract provider's tests; the pull request's `docs` run |
+| WP4 | The Rust twin: `graphs.rs` as one struct under one lock, `graph_set_loader.rs` shared pieces, the reconcile, the three handlers in `rest.rs`, `server.url` and `server.header[]` in `skills.rs` over the Event API client, the same keys and messages. | the twin tests of WP1 and WP2 |
+| WP5 | The live drive on the example engine (Q9): negative controls first (switch off is 503, a bundled id is 409, a tampered body is 400), then the positive path through the Playground's **Deploy** dialog in dev mode, the two scripts against an engine started with `app.env` unset, `curl`, REST calls, a replace, an undeploy and a restart. Record: `docs/test-reports/hot-deploy-live-drive.md`. | the record |
 | WP6 | The two-instance live drive of 3.8: two example engines on one folder, a deploy on one called on the other at once, a replace, an undeploy, a hand-copied package ignored. Part of WP5's record. | the record |
 | WP7 | Promotion: the ADR from this spec and the drive, ADR-0011 marked amended, ADR-0027 marked extended, the RFC entry marked promoted. | the maintainer's acceptance |
 
@@ -578,6 +723,11 @@ on-demand direction that became D13. The questions stay as asked, with the answe
 - `.../models/CompiledGraphs.java` - the registry
 - `.../rest/PackGraphSet.java`, `.../rest/UnpackGraphSet.java` - the dev-mode pack endpoints and the raw-body read
 - `.../services/GraphExecutor.java` - compiled or 404; the deep copy at run start
+- `.../skills/GraphTask.java` - the task call (`eRequest` on the worker thread), the reachability check, the `for_each` batch
+- `system/platform-core/src/main/java/org/platformlambda/core/system/PostOffice.java` - `asyncRequest`, `request` and `eRequest` with an `eventEndpoint`
+- `system/platform-core/src/main/java/org/platformlambda/core/system/EventEmitter.java` - the Event-over-HTTP map, consulted before local discovery
+- `system/minigraph-playground-engine/webapp/src/components/GraphSetPanel/`, `.../hooks/useGraphSetPanel.ts`, `.../utils/graphSet.ts` - the packaging panel the deployment dialog extends
+- `templates/starter-graph/scripts/` - the AI companion broker and its README, the home of the two scripts
 - `.../services/GraphCommandService.java` - the temp folder; discovery over the deployed locations
 - `system/platform-core/src/main/java/org/platformlambda/automation/services/HttpRouter.java` - 503 for an unregistered route
 - `docs/arch-decisions/ADR.md` - ADR-0011, ADR-0027, ADR-0006
