@@ -16,7 +16,10 @@
     "proceed with implementation for RFC 0015 and 0016"), under the entry's defaults, which stay open to the review.
     **Step 1 BUILT 2026-11-24:** mercury-python #81 (MERGED 2026-11-24, merge `5a4a0be`) - the switch, the one-turn record and the check event,
     `transcript.audit` untouched; a new shared vector file of 25 cases through the real path, six tests, sixteen
-    mutations each caught; the entry's resolution records it. Next: the Node twin, the schema page here, the reader's filter and a live drive. No
+    mutations each caught; the entry's resolution records it.
+    **Step 2 BUILT 2026-11-24:** mercury-nodejs #144 (MERGED 2026-11-24, merge `c533dd0`) - the Node twin from the
+    same vector file with no case changed, sixteen mutations each caught; the entry does not record it yet.
+    Next: the entry's record of step 2, the schema page here, the reader's filter and a live drive. No
     design spec is written. [[llm-chat-attachments]] depends on this for the
     audit's part.
   → proposal: RFC-0015

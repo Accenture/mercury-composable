@@ -29,7 +29,11 @@
     keeps its files unchanged for the audit's retention. A spreadsheet is not a kind a document block takes and is
     converted first. Written into the entry as round 2, where option E now reads the object store as the source
     that fills the folder.
-  - **Next:** the Node twin, the READMEs and the schema page, the measurement and a live drive. No design spec is
+  - **Step 2 BUILT 2026-11-24:** mercury-nodejs #145 (MERGED 2026-11-24, merge `d8713c0`) - the Node twin from the
+    same vector file and fixtures with no case or message changed; it reads in a worker thread and cuts pages with
+    `@cantoo/pdf-lib`, the maintainer's choice; thirty-three mutations each caught. The entry does not record it
+    yet.
+  - **Next:** the entry's record of step 2, the schema page, the measurement and a live drive. No design spec is
     written. The request's reference implementation is not published.
   → proposal: RFC-0016
   → serves: vision-mercury-composable
