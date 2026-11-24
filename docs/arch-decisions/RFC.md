@@ -39,6 +39,89 @@
 
 ---
 
+## RFC-0017 — Hot deploy and undeploy of knowledge graphs: a certified graph set uploaded to a running engine, registered through the gate on every instance on demand, and removed by name
+**Status:** Open · **Raised:** 2026-11-24 · **Serves:** vision-mercury-composable · **Thread:** `hot-deploy-graph-sets`
+<!-- id: rfc-0017 | status: open | thread: hot-deploy-graph-sets -->
+
+**Proposal.** A graph deploys today in one of two ways, both at startup: bundled in the artifact and listed in the
+manifest (`graph.model.automation`, ADR-0011), or packaged as a graph set the manifest names (ADR-0027); the
+rapid-prototyping lane of 4.12.19 adds an external manifest and still needs a restart, and nothing removes a graph
+after startup. The maintainer's draft of 2026-11-24 adds a third folder and two switches, and this entry is that draft
+as its review refined it (the design spec is `draft-design-specs/hot-deploy-undeploy-graph-sets.md`). Bundled graphs
+and the prototyping workspace (`location.graph.temp`, dev mode under `app.env=dev`) do not change. A new folder,
+`location.graph.deploy` (default `file:/tmp/deploy`, a `file:/` folder the application can write, outside the temp
+folder and every manifest's `unpack` folder), holds what two switches govern, both off by default: `graph.hot.deploy`
+registers `POST /api/graph-set/deploy`, which takes a graph set (`<set>.pack`, the certified unit of ADR-0027, one
+graph packed alone when it is the whole deployment) as an `application/octet-stream` body, checks an optional
+`X-Graph-Set-SHA256` header against the bytes, reads the set strictly, writes its files, runs the deployment gate on
+every graph and registers the set all or none, in one swap of the registry, so the ids are executable at once;
+`graph.hot.undeploy` registers `POST /api/graph-set/undeploy/{graph-id}`, which removes the set named by its main
+graph, its graphs leaving the registry in one swap. `GET /api/graph-set/deployed` answers the folder's record under either switch. A
+configured manifest owns its ids: a set that holds a bundled id is refused (409) rather than shadowing it, since
+undeploying a bundled graph is a rebuild, as the draft says; one hot set owns an id; a re-upload of the same set name
+replaces it. A hot-deployable set has exactly one main graph and is named after it, by the maintainer's direction: the set
+name is the main graph's id (the set-name rule already uses the graph-id character set), `graph_id` when present must
+equal it, and one string is the handle at every surface - the pack file, the record, the deploy answer, the undeploy
+path and the REST path; its subgraphs are private, 404 at `/api/graph/{graph-id}` and `/api/openapi/{graph-id}` and
+refused to a `graph.extension` from another set, reached only from their own set's graphs. The folder keeps, per set,
+the package, the unpacked graphs and one engine-written record named after the main graph, `<id>.deployed.yaml` (set,
+version, SHA-256, time, graphs, files), written last; at startup an engine re-registers every set whose record the
+folder holds, from the bytes the SHA-256 vouches for, through the same gate, so a mounted volume survives a restart.
+Several instances converge on demand, by the maintainer's direction: a registry lookup for a hot-deployed id reads its
+set's record and reconciles that set under a lock when the record changed or is gone, and a lookup for an unknown id
+checks whether a record of that name exists and loads the set if it does - a set appears, is replaced or disappears as
+a unit on every instance, with no poll, no thread, no broadcast and no global file; bundled ids never read anything. A
+package copied into the folder by hand is ignored with a warning: the records are the allowlist, so the endpoint is the
+only door at run time as the manifest is at startup. The deploy
+answer lists the task routes the set names, and the `graph.extension` targets it names outside itself, each known or
+unknown to this instance - an advisory and never a refusal. A graph id is unique across the engine, so two sets cannot
+carry one (enforced); a set is recommended to be self-contained, its main graph and subgraphs under ids of its own,
+and reuse across sets is by reference to a set of its own, never by containment, since a graph with two owners would
+leave undeploy, replace and the certified-artifact question without one answer; a composable function, by contrast,
+is reused by every graph that names its route (ADR-0001), which is where the shared utilities of graphs live.
+Suspended runs and asynchronous extensions across a replace or an undeploy are declared in the guide, not drained.
+Signing, the ledger, authentication and the operational dashboard stay outside the engine, with the gateway in front
+of the endpoints. What a decision would commit the project to: ADR-0011 amended - deployment stays explicit
+and gated through `GraphModelGate`, no longer restart-scoped, and a set may register at first use on an instance that
+did not receive it, still only through the record and the gate, while hot-dropping a file still does nothing and
+compiled-or-404 stands; ADR-0027 extended - the set is the unit of run-time deployment too, and the loader's strict
+read, SHA-256, `${...}` resolution and all-or-none rule are one code path for startup and the endpoint, while a
+startup-lane set keeps its free name and public graphs; the registry as one immutable snapshot swapped once per
+deployment in both engines; a user-defined function belongs in a language
+pack beside the engine, so the engine's artifact stops changing when graphs do.
+
+**Options.** (A) The design above - proposed, every default accepted by the maintainer on 2026-11-24. (B) Per-graph
+on-demand registration on `file.exists()`, the maintainer's first form of the direction: a miss on an unknown id looks
+for `<graph-id>.json` in the folder, a hit on a registered graph checks its file is still there - refined into (A)
+because a re-upload keeps every file in place, so a replaced set would go unnoticed until a restart, a per-file
+timestamp would refresh a set one graph at a time and lose all or none, and the folder would become the allowlist.
+(C) A periodic check of the record on a shared volume, round 1's recommendation: a thread and an interval to tune,
+and a latency of its own - not taken. (C2) One global revision marker for the whole folder, round 2's form: every
+instance re-read the whole record on any change, and two administrators deploying different sets wrote one file -
+replaced in round 3 by the set's own record, named after its main graph. (D) A broadcast over the service mesh: works where `cloud.connector=kafka` is
+on, which is opt-in (ADR-0006) and absent in most installations - not the default path. (E) The gateway or the
+dashboard calling every instance: nothing to build, impractical behind a round-robin service - stays possible. (F) A
+loose JSON upload beside the set - not offered; one graph is packed alone. (G) Later wins at run time, as across
+manifests at startup - rejected, since an upload would replace a pipeline-certified bundled graph and undeploying it
+would have to bring the bundled copy back. (H) The switches on by default with the field setting them off - rejected
+for the project's precedent on an operational choice: one artifact ships off, the installation decides per
+environment. Open for the review: the real-time claim is the volume's (a network volume with attribute caching shows a
+change after its cache window); two instances deploying the same set at the same moment can leave a record and a
+package from different uploads, which the reconcile's second read catches in the ordinary case and otherwise reports;
+a verifier route for a signature check inside the engine is a named seam, not built.
+
+**Resolution.** Open - round 1 (the review of the draft), round 2 (the maintainer's rulings: every default
+accepted, on-demand registration in place of a poll, refined into a revision marker and confirmed as keeping all or
+none per set) and round 3 (the maintainer: a set has exactly one main graph, only the main graph is used at the
+endpoint, the reference is the main graph id, and the set is named after it; the record of each set is its marker),
+all on 2026-11-24; the design spec carries the three rounds. No code is written. Build order: the Java
+engine's registry snapshot, shared loader pieces and reconcile, then the three endpoints, then the Rust twin, the
+docs and the claims, then the live drive on the example engine with negative controls first (switch off is 503, a
+bundled id is 409, a tampered body is 400) and a two-instance drive on one folder; promotion to an ADR after the
+drive, with ADR-0011 marked amended and ADR-0027 extended.
+
+---
+
 ## RFC-0016 — Attachments on a single `llm.chat` call: images and PDF pages named by reference inside one configured root, read by the pack's helper
 **Status:** Open · **Raised:** 2026-11-24 · **Serves:** vision-mercury-composable · **Thread:** `llm-chat-attachments`
 <!-- id: rfc-0016 | status: open | thread: llm-chat-attachments -->
