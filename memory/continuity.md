@@ -326,6 +326,30 @@
   which supersedes ADR-0030; the active environment's decision is carried in it unchanged.)
   <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-20 | uses: 6 | tier: active | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
 
+- **Hot deployment of graph sets: a certified set uploaded to a running engine, registered through the gate on every
+  instance on demand through its own record, and removed by name (ADR-0038, accepted 2026-11-25 after the live drive of
+  both engines; RFC-0017, Eric's sprint of 2026-11-24).** The unit is the set, named after its one main graph; its
+  subgraphs are private (404 at REST and OpenAPI, refused from another set's `graph.extension`); manifests own their ids
+  and one hot set owns an id (409 with the owner named - a bundled id is never shadowed); one registry snapshot swapped
+  per deployment, so a set is registered, replaced or removed as a unit and the same bytes again change nothing; the
+  record `<id>.deployed.yaml` is the allowlist and the revision marker - a lookup for a hot-deployed or unknown id reads
+  it, reconciles the set when it moved, answers 404 when it is gone; a restart re-registers from the records; a
+  hand-copied package is ignored. Two switches off by default (`graph.hot.deploy`, `graph.hot.undeploy`), the folder
+  `location.graph.deploy` (default `file:/tmp/deploy`, a persistent volume in the field); the functions are
+  `@OptionalService`, so with a switch off the entry is not served and the URL answers 404 (Eric's ruling, 2026-11-25),
+  while 503 names the key when a switch is on and the folder was refused. `server.url` and `server.header[]` on a
+  task-consuming node name the function's provider and win over the static map; the provider's function must be public
+  (the Event API serves public functions only; the engines publish none, a pack's extensions do). The Playground's
+  **Tools → Graph set deployment** in dev mode and the two starter-template scripts are clients of the same three
+  entries. Built #673/#675/#676/#677 and mercury #424; driven live 2026-11-25 (`docs/test-reports/hot-deploy-live-drive.md`:
+  the Java and the Rust engine on one folder, each converging on the other's deployments within the request). **How to
+  apply:** a new way for a graph to reach the engine goes through the record and the gate, never a file drop; a
+  pipeline sends the digest header, since the strict read catches a malformed package and not an altered one; a
+  provider named on a node must publish the function; the open follow-ups are operational polish - an INFO line when the
+  on-demand reconcile registers another instance's deploy, the list entry under off-for-this-run, a stray `.json` WARN,
+  the caller address in the deploy line. (ADR-0038)
+  <!-- id: hot-deploy-set-record-on-demand | created: 2026-11-25 | last_used: 2026-11-25 | uses: 1 | tier: working | origin: 2026-11-25-052834 -->
+
 - **Essential tools for agent loops: built into the packs with published rows and sandboxes in configuration, or
   bound from a product's own MCP server by recipe (ADR-0036, accepted 2026-11-18 after the live drives and the recipes).**
   Twelve built-in tools are composable functions of `extensions/agent-tools/` in both packs - `file.read`, `file.write`,
@@ -485,6 +509,8 @@
   `---------` rule for two commits; this is the shape that works, so keep sending it.
   Thirteenth instance, clean by construction (2026-11-24): PR #665's squash `5a08d7313`, a one-commit PR, carries the
   title as handed off and ONE trailer, the commit's own; with one commit the dialog has nothing to trim.
+  Fourteenth instance, clean (2026-11-25): PR #680's squash `0d6bbecc6`, a one-commit PR, carries the title as handed
+  off and ONE trailer; the handoff gave the title on its own line and said nothing needed trimming.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-20 | uses: 135 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session

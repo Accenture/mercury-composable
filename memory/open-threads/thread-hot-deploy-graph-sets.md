@@ -185,6 +185,14 @@
     2026-11-25 on Eric's word. Eric's ruling the same day: the `@OptionalService` shape stands - a switch that is off
     leaves the function unregistered and the entry unserved, and the 404 is the right answer; 503 keeps its meaning (a
     switch on with the folder refused).** Left: the merges, then WP7 the ADR.
+  - **WP5 MERGED 2026-11-25 as #680 (squash `0d6bbecc6`, the title held, one trailer) and the Rust twin as mercury
+    #425 (merge `0227c3c6`).** Both engines carry the corrected guides and the Tools menu's deployment entry.
+  - **WP7 BUILT 2026-11-25 (branch `docs/adr-0038-hot-deploy`, for a pull request):** ADR-0038 in the ledger, formalizing
+    the new Key Decisions fact `hot-deploy-set-record-on-demand`; ADR-0011 marked amended (explicit and gated, no longer
+    restart-scoped; registration at first use through the record and the gate), ADR-0027 marked extended (the set as
+    the run-time unit, the loader's pieces shared); RFC-0017 `Promoted → ADR-0038`; the spec's header and WP7 row; the
+    CHANGELOG's Documentation 6. The Rust repository keeps its own ledger of port decisions, so nothing twins there.
+    Once the ADR merges this thread closes - the sprint's seven work packages are done.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
