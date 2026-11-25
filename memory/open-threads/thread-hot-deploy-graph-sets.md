@@ -92,6 +92,9 @@
     `GraphTaskTest` methods on the stub peer (the provider wins over the local function and the URL gets its path,
     the headers travel once per element, the engine's own 404 as the node's error), `CompileGraphTest` on two
     rejected fixtures; the test application turns both switches on in `file:/tmp/hot-deploy-unit-test`.
+  - **WP2 raised as PR #675, MERGED 2026-11-24** (squash `2c2cd5255`). Next: WP2c the Playground's Deploy dialog,
+    WP2d the two Node scripts in `templates/starter-graph/scripts`, WP3 the guides and the help pages, WP4 the Rust
+    twin, WP5 the live drive, WP7 the ADR.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
