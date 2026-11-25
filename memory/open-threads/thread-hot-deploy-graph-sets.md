@@ -113,6 +113,9 @@
     (checked against the file before the upload, then sent as the header), `--header` repeatable, `--digest`, `--list`,
     `--graph`; exit 0, 1 (refusal, reasons on stderr, a 503 naming the switches), 2 (usage). The Java bundle released
     (`npm run release`); the Rust bundle waits for WP4.
+  - **WP2c and WP2d raised as PR #676, MERGED 2026-11-24** (squash `8fd081e5a`). Left: WP3 the guides and the
+    configuration reference, WP4 the Rust twin with `npm run release:rust`, WP5 the live drive (the Playground in dev
+    mode, the scripts against an engine without it, two engines on one folder), WP7 the ADR.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
