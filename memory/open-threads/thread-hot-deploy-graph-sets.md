@@ -128,6 +128,9 @@
     claims (`hot-deploy-set-owns-its-ids`, `hot-deploy-one-swap-per-set`, `task-provider-on-the-node`, each quoted on
     two pages and pinned to a test); the starter template's `application.properties` gains the three keys, off; the
     CHANGELOG entry now describes the Deploy view, the scripts and the guides, with the Rust twin to follow.
+  - **WP3 raised as PR #677, MERGED 2026-11-24** (squash `0aac0dabc`). The Java side is complete on `main`. Left:
+    WP4 the Rust twin (`crates/knowledge-graph`: the snapshot registry, the shared loader pieces, the reconcile, the
+    three handlers, `server.url`; then `npm run release:rust`), WP5 the live drive, WP7 the ADR.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
