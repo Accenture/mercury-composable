@@ -2503,6 +2503,8 @@
       
         
       
+        
+      
     
     
     
@@ -3179,6 +3181,34 @@
     
   
     Test Report — The agent-question React UI, live through both packs and Keycloak
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../test-reports/hot-deploy-live-drive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — Hot deployment of graph sets, live on both engines
   
 
     
@@ -4515,7 +4545,9 @@ names the provider: <code>server.url=${TARGET_UTIL_SERVER}/api/event</code> is t
 <code>${...}</code> substitution so the graph holds the variable's name and never the secret. the provider named on the node wins over a local function and over the Event-over-HTTP map — explicit beats
 implicit; a URL without a path gets <code>/api/event</code>, and a URL with a path is used as written, which is how an API
 gateway's own path reaches the target. The request's own <code>header.*</code> entries still travel inside the envelope to the
-function. The reachability check is skipped (the provider decides, and its 404 is the node's error), <code>for_each</code> calls
+function. The reachability check is skipped (the provider decides, and its answer is the node's error: a 404 for a route it lacks,
+a 403 for a function it does not publish - the Event API serves public functions only, so the provider's function must
+be public, as a language pack's extension functions are), <code>for_each</code> calls
 one element at a time under the same concurrency window, and the deadline travels as <code>X-TTL</code> as always. The same two
 properties are accepted on <a href="#suspend"><code>graph.suspend</code></a> and <a href="#resume"><code>graph.resume</code></a>, whose <code>task</code> names the state-store
 function, so a language pack can host a state store. The gate refuses the property on any other skill, a header without

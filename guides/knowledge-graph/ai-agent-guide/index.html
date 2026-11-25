@@ -2425,6 +2425,8 @@
       
         
       
+        
+      
     
     
     
@@ -3101,6 +3103,34 @@
     
   
     Test Report — The agent-question React UI, live through both packs and Keycloak
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../test-reports/hot-deploy-live-drive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — Hot deployment of graph sets, live on both engines
   
 
     
@@ -4052,15 +4082,17 @@ function, by contrast, is reused by every graph that names its route.</p>
 </tr>
 </tbody>
 </table>
-<p>A re-upload of the same set name replaces the set all or none; the same bytes again change nothing. The folder holds,
+<p>A re-upload of the same set name replaces the set all or none; the same bytes again change nothing. The strict read
+refuses a <em>malformed</em> package, not an altered one - bytes changed inside a string value still read as a well-formed set
+and pass the gate - so send the digest: <code>X-Graph-Set-SHA256</code> is the check that the bytes are the ledger's. The folder holds,
 per set, the package, one file per graph and the engine-written record <code>&lt;id&gt;.deployed.yaml</code>; the records are the
 allowlist, so a package copied into the folder by hand is ignored with a WARN and the deploy entry is the only door at
 run time, as the manifest is at startup. Every instance over the same folder converges <strong>on demand</strong>: a registry lookup
 for a hot-deployed graph reads its set's record and reconciles the set when the record changed or is gone, a lookup for
 an unknown id checks whether a record of that name exists, and a restart re-registers every recorded set — no poll, no
 broadcast. Mount the folder as a persistent volume; real time is the volume's.</p>
-<p><strong>Two surfaces, both clients of the same entries.</strong> In dev mode the Playground's packaging panel has a <strong>Deploy</strong> view
-(<code>help deploy</code>): pack and deploy the assembled set in one step or a dropped <code>.pack</code>, the package's SHA-256 computed in
+<p><strong>Two surfaces, both clients of the same entries.</strong> In dev mode the Playground's <strong>Tools → Graph set deployment</strong> opens
+the packaging panel's <strong>Deploy</strong> view (<code>help deploy</code>): pack and deploy the assembled set in one step or a dropped <code>.pack</code>, the package's SHA-256 computed in
 the browser so the digest can go to the ledger from the same screen, an expected digest sent as the header, the
 deployed sets listed with an undeploy behind a confirmation, and the two switches named when the engine has them off.
 For an engine without the Playground, the starter template's <code>scripts/deploy-graph-set.mjs</code> and
@@ -4078,7 +4110,10 @@ reached without the restart this path removes. A node that consumes a <code>task
 </code></pre></div>
 <p>the provider named on the node wins over a local function and over the Event-over-HTTP map; a URL without a path gets <code>/api/event</code>, and a URL with a path is used as written (an API gateway's
 own path reaches the target); <code>${...}</code> resolves when the graph is registered, once per instance from its own
-environment; the skill's reachability check is skipped and the provider's 404 is the node's error; <code>for_each</code> calls one
+environment; the skill's reachability check is skipped and the provider's answer is the node's error - its 404 for a route it lacks,
+and 403 for a function it does not publish: <strong>the Event API serves public functions only, so the provider's function
+must be public</strong> (a language pack's extension publishes its functions; the engines' built-in functions and an
+application's <code>@PreLoad</code> functions are private by default); <code>for_each</code> calls one
 element at a time; the gate refuses the property on another skill, and a URL that does not resolve to an absolute
 <code>http</code>/<code>https</code> URL — an unset variable leaves a path with no host. The posture this serves: <strong>keep user-defined
 functions out of the engine</strong>, in sidecars reached through <code>server.url</code> or the static map, so the engine's artifact

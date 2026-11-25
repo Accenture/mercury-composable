@@ -2220,6 +2220,8 @@
       
         
       
+        
+      
     
     
     
@@ -5289,6 +5291,34 @@
     
   
     Test Report — The agent-question React UI, live through both packs and Keycloak
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../test-reports/hot-deploy-live-drive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Report — Hot deployment of graph sets, live on both engines
   
 
     
@@ -8627,7 +8657,10 @@ rejected with an error and the default is used instead.</p>
 <p>The hot deployment folder (RFC-0017): where a graph set deployed to the <em>running</em> engine lives — per set, the package
 <code>&lt;id&gt;.pack</code>, one <code>&lt;graph-id&gt;.json</code> per graph, and the engine-written record <code>&lt;id&gt;.deployed.yaml</code> (set, version, SHA-256,
 time, graphs, files). It must be a <code>file:/</code> folder the application can write, outside the Playground's temp folder
-(<code>location.graph.temp</code>) and outside every manifest's <code>unpack</code> folder; mount it as a persistent volume to survive a
+(<code>location.graph.temp</code>) and outside every manifest's <code>unpack</code> folder - a folder that meets the temp folder, or that the
+application cannot write, turns hot deployment off for the run with an ERROR and the entries answer 503, while one that
+meets a manifest's <code>unpack</code> folder refuses that manifest's sets at startup with an ERROR, since the hot folder is
+configured first; mount it as a persistent volume to survive a
 restart, since at startup the engine re-registers every set whose record the folder holds, from the bytes the record's
 digest vouches for, through the same gate as a bundled graph. The records are the allowlist: a package copied into the
 folder by hand is ignored with a WARN, so the deploy entry is the only door at run time as the manifest is at startup.
@@ -8655,8 +8688,11 @@ volume with attribute caching shows a change after its cache window.</p>
 <p>Registers <code>POST /api/graph-set/deploy</code> — a certified graph set (<code>&lt;set&gt;.pack</code>, named after its one main graph) sent as
 <code>application/octet-stream</code>, an optional <code>X-Graph-Set-SHA256</code> header checked against the bytes, the set read strictly,
 every graph through the deployment gate, registered all or none in one swap — and <code>GET /api/graph-set/deployed</code>. Either
-switch on makes the engine read the hot folder at startup and on demand. Off, the entries answer 503 as every entry for
-an unregistered route does, and the engine behaves exactly as before. One artifact ships; the installation decides per
+switch on makes the engine read the hot folder at startup and on demand. Off, the function does not register, REST automation
+skips its entry at startup (<code>Skip [POST] /api/graph-set/deploy - Service deploy.graph.set not available</code> in the log)
+and the URL answers 404 as any unknown path does, and the engine behaves exactly as before; 503 naming the key is the
+answer when a switch is on but the engine turned hot deployment off for the run because its folder is refused
+(<code>location.graph.deploy</code>, below). One artifact ships; the installation decides per
 environment (<code>-Dgraph.hot.deploy=true</code>). The Playground's packaging panel has a Deploy view for dev mode, and the starter
 template's <code>scripts/deploy-graph-set.mjs</code> and <code>undeploy-graph-set.mjs</code> serve an engine without the Playground.</p>
 <h3 id="graphhotundeploy"><code>graph.hot.undeploy</code><a class="headerlink" href="#graphhotundeploy" title="Permanent link">&para;</a></h3>
