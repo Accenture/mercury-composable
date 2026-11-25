@@ -116,6 +116,18 @@
   - **WP2c and WP2d raised as PR #676, MERGED 2026-11-24** (squash `8fd081e5a`). Left: WP3 the guides and the
     configuration reference, WP4 the Rust twin with `npm run release:rust`, WP5 the live drive (the Playground in dev
     mode, the scripts against an engine without it, two engines on one folder), WP7 the ADR.
+  - **WP3 BUILT 2026-11-24 (the guides; branch `docs/hot-deploy-wp3`, for a pull request):** the configuration
+    reference's `location.graph.deploy`, `graph.hot.deploy`, `graph.hot.undeploy` and `graph.hot.deploy.throttle`, and
+    the hot folder in the `graph.model.automation` entry's `unpack` rule; the AI agent guide's *Hot deployment - deploy
+    without a restart* section (`#hot-deploy`: the three folders, the set named after its main graph with private
+    subgraphs, the ownership rule, the three entries with the advisory, the record as the allowlist, on-demand
+    convergence, the Deploy view and the scripts, `server.url` with the sidecar posture, the two declared
+    consequences) with the rapid-prototyping rule reworded to "through a manifest"; `server.url` and `server.header[]`
+    in the skills reference's `graph.task` section (and accepted on suspend and resume) and the command reference's
+    skills table; the first-graph tutorial's hot path; `X-Graph-Set-SHA256` in the reserved HTTP headers; three
+    claims (`hot-deploy-set-owns-its-ids`, `hot-deploy-one-swap-per-set`, `task-provider-on-the-node`, each quoted on
+    two pages and pinned to a test); the starter template's `application.properties` gains the three keys, off; the
+    CHANGELOG entry now describes the Deploy view, the scripts and the guides, with the Rust twin to follow.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->

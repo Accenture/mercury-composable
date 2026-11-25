@@ -440,6 +440,39 @@
       "quote": "The \"ok\" flag is the engine's own verdict, never read from the wording of a line",
       "test": "system/minigraph-playground-engine::CompanionSyncTest#everyRefusalIsAFailureWhateverItsWording",
       "since": "4.12.26+"
+    },
+    {
+      "id": "hot-deploy-set-owns-its-ids",
+      "claim": "A configured manifest owns its graph ids and one hot-deployed set owns an id: a set deployed to the running engine that carries a bundled graph's id, or an id another hot-deployed set holds, is refused with 409 and the owner named, never registered.",
+      "pages": [
+        "docs/guides/configuration-reference.md",
+        "docs/guides/knowledge-graph/ai-agent-guide.md"
+      ],
+      "quote": "a configured manifest owns its ids and one hot-deployed set owns an id",
+      "test": "system/minigraph-playground-engine::HotDeploymentTest#aBundledIdAndAnotherSetsIdAreRefusedWithTheOwnerNamed",
+      "since": "4.12.31+"
+    },
+    {
+      "id": "hot-deploy-one-swap-per-set",
+      "claim": "A hot-deployed graph set is registered, replaced or removed as a unit in one swap of the compiled registry, so a run never sees half of a set; a re-upload of the same set name replaces it all or none and the same bytes again change nothing.",
+      "pages": [
+        "docs/guides/configuration-reference.md",
+        "docs/guides/knowledge-graph/ai-agent-guide.md"
+      ],
+      "quote": "a set is registered, replaced or removed as a unit, in one swap",
+      "test": "system/minigraph-playground-engine::HotDeploymentTest#theSameBytesChangeNothingAndANewVersionReplacesTheSetAsAUnit",
+      "since": "4.12.31+"
+    },
+    {
+      "id": "task-provider-on-the-node",
+      "claim": "A task-consuming node's server.url names its function's Event-over-HTTP provider: the provider wins over a local function and over the static Event-over-HTTP map, and a URL without a path is given /api/event.",
+      "pages": [
+        "docs/guides/knowledge-graph/skills-reference.md",
+        "docs/guides/knowledge-graph/ai-agent-guide.md"
+      ],
+      "quote": "the provider named on the node wins over a local function and over the Event-over-HTTP map",
+      "test": "system/minigraph-playground-engine::GraphTaskTest#theProviderNamedOnTheNodeWinsAndGetsTheDefaultPath",
+      "since": "4.12.31+"
     }
   ]
 }

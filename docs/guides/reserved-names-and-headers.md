@@ -175,6 +175,7 @@ trace path still names the entry that started the transaction.
 | X-Raw-Xml                | This header, if set to true, tells to system to skip XML rendering          |
 | X-Flow-Id                | This tells the event manager to select a flow configuration by ID           |
 | X-App-Instance           | This header is used by some protected actuator REST endpoints               |
+| X-Graph-Set-SHA256       | On `POST /api/graph-set/deploy`: the digest the caller expects (the field's ledger); the engine refuses a body whose SHA-256 differs |
 
 ### Trace ID (X-Trace-Id and W3C traceparent)
 
