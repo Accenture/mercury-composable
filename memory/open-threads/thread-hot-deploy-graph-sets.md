@@ -131,6 +131,28 @@
   - **WP3 raised as PR #677, MERGED 2026-11-24** (squash `0aac0dabc`). The Java side is complete on `main`. Left:
     WP4 the Rust twin (`crates/knowledge-graph`: the snapshot registry, the shared loader pieces, the reconcile, the
     three handlers, `server.url`; then `npm run release:rust`), WP5 the live drive, WP7 the ADR.
+  - **WP4 BUILT 2026-11-24 (the Rust twin, in the Rust repository on branch `feat/hot-deploy-graph-sets`, for a pull
+    request there):** `graphs.rs` rewritten as one immutable snapshot with the `Refresh` hook on `get_graph` and
+    `graph_exists` and `replace_graphs` for one swap; `graph_set_loader.rs` shares `gate`, `sha256_hex`,
+    `normalized_path`, `folder_of` and `meets_unpack_folder`, and `check_unpack` refuses the hot folder; the new
+    `hot_deployment.rs` (the keys, the record, the reconcile, the hook, deploy, undeploy, list, `is_private_subgraph`)
+    and `task_server.rs`; `compiler.rs` configures before the manifests and reconciles after them; `rest.rs` gains the
+    three handlers with the advisory and the OpenAPI entry's 404; the three functions in `lib.rs` behind their switches;
+    `extension.rs` puts `parent_graph` in the forward, `executor.rs` admits a private subgraph from its own set only;
+    `skills.rs` and `suspend.rs` call the provider; `model_validator.rs` checks the property. Fixtures, the three REST
+    entries and the keys in the test, example and template resources; the Rust bundle released (`index-Bq3Wgo4j`, `help
+    deploy.md` mirrored); the two scripts and their README section copied into the Rust template; the guide text of
+    WP3 ported to the Rust pages with the three claims pinned on Rust tests; CHANGELOG Unreleased Added 4. One
+    difference found in the port: the Rust state lock is a plain `Mutex`, so no registry read that runs the refresh
+    hook may be called while it is held - the gate path was checked and calls none. Tests: `tests/hot_deployment.rs`
+    (the 12 engine steps and the 4 REST steps in one runtime), three fixtures in `graph_runtime.rs`, two refused
+    fixtures in `compiler.rs`; the compiler test's deployed locations gain the hot folder.
+  - **WP4 raised as mercury PR #424 (one commit, `838060f3`; the Rust repository's Increment 214, its log
+    2026-11-25-023528), OPENED 2026-11-25 on the maintainer's word.** Left: WP5 the live drive (the Playground in dev
+    mode, the scripts against an engine without it, both engines on one folder), WP7 the ADR.
+  - **WP5 waits (Eric, 2026-11-25):** another session is moving the hand-mounted routes of `agent-question` and
+    `ask-person` (the person-in-the-loop lane) into `rest.yaml` configuration; the live drive starts once that has
+    landed, so it runs on an engine whose REST surface is all configuration.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
