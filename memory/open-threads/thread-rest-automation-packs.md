@@ -37,4 +37,4 @@
     to an ADR.
   → proposal: RFC-0018
   → serves: vision-mercury-composable
-  <!-- id: rest-automation-packs | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-235243 -->
+  <!-- id: rest-automation-packs | created: 2026-11-24 | last_used: 2026-11-25 | uses: 4 | tier: working | origin: 2026-11-24-235243 -->

@@ -309,3 +309,6 @@
 - conv-ports-adopt-java-release-number — Every port adopts the JAVA release number on catch-up — no downstream repo runs its own ve… — faded — 2026-Q4.md
 - d-override-substitution — A `-D` runtime override's value is resolved with the same `${ENV_VAR:default}` substitutio… — faded — 2026-Q4.md
 - decimal-precision-rust-twin — The decimal-places limit on both engines (ADR-0034): the Rust twin and the bundle and help… — faded — 2026-Q4.md
+- agent-loop-tool-names-map-to-routes — The agent loop: `llm.run` in the engines maps tool names to routes; the model turn and the… — faded — 2026-Q4.md
+- graph-failed-resume-readvises — A graph that resumes an agent loop re-advises on a failed resume, because `graph.resume` c… — faded — 2026-Q4.md
+- agent-essential-tools — Essential built-in tools for agent loops (RFC-0013 → ADR-0036) - CLOSED 2026-11-18 (Eric:… — faded — 2026-Q4.md

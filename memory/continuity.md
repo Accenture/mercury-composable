@@ -67,7 +67,17 @@
   #400) · v4.12.9 (2026-09-16, the distributed-Redis release, #364–#397; ACTION: the `soa.redis.health` route rename,
   `minimalist-kafka` no longer transitive).
 - **last_enabled:** 2026-06-20
-- **last_review:** 2026-11-20 | through 2026-11-20-104438.md (CADENCE — 12 sessions since 2026-11-18-094338: `refresh-metadata`
+- **last_review:** 2026-11-25 | through 2026-11-25-053648.md (ON COMMAND + CADENCE — 12 sessions since 2026-11-20-104438:
+  `refresh-metadata` refreshed 13 footers then 5 at a second pass once the review log existed, tier changes 8; archived 2 faded facts (`agent-loop-tool-names-map-to-routes`,
+  `graph-failed-resume-readvises` - the window's commits and logs showed no reliance on either; their substance lives in
+  ADR-0033 and in the order-assistant graph's own failure handler) and swept 1 completed thread (`agent-essential-tools`)
+  → 2026-Q4; kept 1 as a declaration gap (`agent-tools-built-or-bound`: the drive of 2026-11-25-050603 relied on the pack's
+  built-in tools as the `server.url` provider without declaring it - re-affirmed); `hot-deploy-graph-sets` closed with its stub
+  (ADR-0038 merged); invariants DUE (49 sessions since 2026-11-13-031614
+  ≥ 40) - the gate [[reverify-invariants-20261125]] raised for Eric; stalled none; contradictions none; the Vision's Track 2
+  status row refreshed (hot deployment decided). Live facts 44 → 42 (one gate thread created); continuity 791 → 764
+  lines. Smoke test not run.)
+  Prior: 2026-11-20 | through 2026-11-20-104438.md (CADENCE — 12 sessions since 2026-11-18-094338: `refresh-metadata`
   refreshed 19 footers, tier changes 15; archived 7 faded facts (`playground-webapp-single-source`,
   `pack-trace-records-engine-parity`, `decimal-result-precision-limit`, `help-edit-needs-bundle-release`,
   `conv-config-key-not-value-and-parent`, `conv-one-copy-of-shared-tooling`, `conv-ports-adopt-java-release-number`) and swept 2
@@ -109,7 +119,10 @@
   in the nature of the work and where execution goes; AI gains a **run-time participant** role. **The north star MOVED: the
   next invariant re-verify must check the 2026-09-17 text, not the 2026-06-20 one.** [[bp-agent-orchestration]] is Track 2's
   Blueprint gap; Track 1 and the collaboration foundation are delivered.
-- **last_invariant_check:** 2026-11-13 | 2026-11-13-031614.md (COMPLETE — Eric walked the 20 `core` facts and the Vision (the
+- **last_invariant_check:** 2026-11-25 | 2026-11-25-053648.md (GATE RAISED — 49 sessions since the 2026-11-13 walk, cadence 40:
+  [[reverify-invariants-20261125]] lists the 20 `core` facts and the Vision for Eric to re-confirm or supersede; the walk is his,
+  and this line records COMPLETE once he has walked it.)
+  Prior: 2026-11-13 | 2026-11-13-031614.md (COMPLETE — Eric walked the 20 `core` facts and the Vision (the
   2026-09-17 two-track text) against live-tree evidence at `aaac2370`, the gate [[reverify-invariants-20261104]]; ALL
   CONFIRMED. Java 21 stays the toolchain until most field installations run Java 25; `trace-thread-keyed-mono-gotcha`
   gains its second instance (#609, async fan-out); the Vision's Track 2 status refreshed (the agent loop shipped in both
@@ -215,7 +228,7 @@
   cross-application lineage, 0 export failures). Lesson: the LLM provider, not the pipeline, decided which calls succeeded —
   probe and pin the model per drive. Eric's Dynatrace review then found the trees broken at the root; the fix is
   [[connected-edge-spans]].
-  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-20 | uses: 40 | tier: active | origin: 2026-09-16-193203 -->
+  <!-- id: otel-optional-service-and-negative-control | created: 2026-09-16 | last_used: 2026-11-24 | uses: 41 | tier: active | origin: 2026-09-16-193203 -->
 
 - **Every edge case has edge cases — clean knowledge design beats engine coverage, and avoiding
   over-engineering is a PRODUCT-OWNER responsibility (Eric, 2026-09-18).** When a graph composition
@@ -324,7 +337,7 @@
   resolver already writes to, and a second switch beside it led an AI agent to read the two as combinable; the key is now
   ignored with a startup warning. Two switches for one question: retire one, do not document the precedence. (ADR-0037,
   which supersedes ADR-0030; the active environment's decision is carried in it unchanged.)
-  <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-20 | uses: 6 | tier: active | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
+  <!-- id: scheduler-resolver-conditional-claim | created: 2026-11-04 | last_used: 2026-11-20 | uses: 6 | tier: archive-candidate | supersedes: scheduler-resolver-contract-in-parameters | origin: 2026-11-04-234824 -->
 
 - **Hot deployment of graph sets: a certified set uploaded to a running engine, registered through the gate on every
   instance on demand through its own record, and removed by name (ADR-0038, accepted 2026-11-25 after the live drive of
@@ -368,7 +381,7 @@
   **How to apply:** a new capability is first a question of the rule - a pack function with a row, or a recipe for an
   existing server - never engine code, never a generic request tool, never a call argument as a boundary; an
   ingestion node declares `mode: auto` on the graph; a system of record gets a wrapper route. (ADR-0036)
-  <!-- id: agent-tools-built-or-bound | created: 2026-11-18 | last_used: 2026-11-19 | uses: 3 | tier: archive-candidate | origin: 2026-11-18-094338 -->
+  <!-- id: agent-tools-built-or-bound | created: 2026-11-18 | last_used: 2026-11-25 | uses: 4 | tier: active | origin: 2026-11-18-094338 -->
 
 - **The transcript audit store: every model turn of an agent loop recorded by the pack's helper, off the turn's path,
   in a governed store with a published schema (ADR-0035, accepted 2026-11-17 after the live drive through both packs).**
@@ -389,47 +402,7 @@
   audit must know at the end of a run travels in the working record, never in a second key or a second write; a new fact is
   a field of the turn's facts and a column in both packs' schema and the published page; the engine adds identity headers,
   never content; what a model extracts belongs in the agent's knowledge graph (RFC-0013), not here. (ADR-0035)
-  <!-- id: transcript-audit-published-contract | created: 2026-11-17 | last_used: 2026-11-18 | uses: 2 | tier: archive-candidate | origin: 2026-11-17-094416 -->
-
-- **The agent loop: `llm.run` in the engines maps tool names to routes; the model turn and the MCP bindings live in the
-  language packs (ADR-0033, accepted 2026-11-14 after the live drive through both packs).** A node whose model reasons with
-  tools is `llm.run`, engine-side function code in the opt-in `extensions/agent-loop` (Rust: `mercury-agent-loop`), not core,
-  linking no provider SDK, MCP client or store client. The tool catalog is graph data certified with the graph: each row maps
-  an API-safe name to a composable route with a description written on the graph, a closed-subset input schema, `strict`,
-  `write: true` or `ask: true`; the loop checks it and every route before the first turn and validates each input before
-  dispatch. The model turn stays `llm.chat` in the packs with the loop contract (the append-only transcript in the pack's
-  store, the model pinned at the first turn, a stale turn 409). The node's mode governs the use of tools (`write` default,
-  `auto`, `manual`, `unattended`); a waiting turn runs none of its calls, the graph suspends, and the resume runs the calls
-  from the restored state. Agent graphs are asynchronous (async `graph.extension`; progress events to the caller's return
-  route). MCP bindings are pack routes, one per allowlisted remote tool, failing at boot on a missing tool or a changed
-  schema digest - since the 2026-11-16 review each declared in the pack's code as a `preload` function that calls the
-  tool through the encapsulated client (`bind(server, tool, schema_sha256)`), the server file keeping servers only, and
-  named by capability, never by transport (`draft-design-specs/agent-tool-use.md`). Design spec
-  `draft-design-specs/llm-helper-agent-loop.md`; the runnable example is the Playground's
-  `order-assistant` ([[graph-failed-resume-readvises]]). **How to apply:** a new tool for an agent is a route and a catalog
-  row, never engine code; a new provider or MCP server is pack configuration; the hold on a write comes from the row's mark,
-  so design safety on the catalog and the mode, not on the prompt; a tool whose reply carries a payload the model does not
-  need (a rendered image beside its verdict) gets `result_limit` on its node - uncapped it cost 36,000 to 43,000 tokens a turn
-  in the 2026-11-14 drive, capped at 8 KiB 4,300; better, a function of the application in front of the bound route stores the
-  payload and returns a reference (the example's `diagram.render`, the SVG under `/tmp/rendered_diagrams/<reference>.svg`),
-  which is the out-of-band shape the research rulings asked for. (ADR-0033)
-  <!-- id: agent-loop-tool-names-map-to-routes | created: 2026-11-14 | last_used: 2026-11-18 | uses: 14 | tier: archive-candidate | origin: 2026-11-14-071025 -->
-
-- **A graph that resumes an agent loop re-advises on a failed resume, because `graph.resume` consumes the suspension record
-  (2026-11-14, found live in sprint 3 WP1).** A resume request whose decisions the loop refuses - an unknown call id, a call
-  decided twice, a decision for a call that did not wait - raises 400 before any token is spent, which is right; but the
-  record was consumed on retrieval, so when the handler simply reports the error the run ends and the transaction is gone,
-  while the pack still holds the conversation until its TTL. The `order-assistant` example's shape: the loop node's
-  `exception=` handler notes whether an approval was pending (`text(={model.agent.status})` probe), and a decision after it
-  sends such a failure back to the advice checkpoint (`RESET: advise` then `NEXT: advise`), which stages the waiting calls
-  with the error and pauses again; any other failure ends the run with the error. Also in that graph: a resume without
-  decisions, or naming another turn than the one that waits (`input.body.turn` against `model.agent.turn`), re-advises
-  without a model call, and the turn is the idempotency key a supervisor's client echoes. **Declared, not engineered:** a
-  loop that fails after the pack appended the results but before the model answered leaves the record's turn count
-  moved, so a re-sent decision meets 409 and re-advises again; the operator then restarts the transaction. **How to
-  apply:** every graph that suspends around `llm.run` needs a path from the loop's failure back to its advice while an
-  approval is pending; design it on the graph, never by making the loop forgive a bad decision.
-  <!-- id: graph-failed-resume-readvises | created: 2026-11-14 | last_used: 2026-11-18 | uses: 3 | tier: archive-candidate | origin: 2026-11-14-065413 -->
+  <!-- id: transcript-audit-published-contract | created: 2026-11-17 | last_used: 2026-11-24 | uses: 3 | tier: active | origin: 2026-11-17-094416 -->
 
 ## Conventions
 
@@ -452,7 +425,7 @@
   over `system`, `extensions` and `examples` main sources must find only comments.
   **The lift is planned (Eric, 2026-11-20):** the minimum Java moves to 25 once approved ([[java25-baseline]]); until that
   lands the rule holds, and the four refactors of 2026-11-20 (#661, #662) stay valid either way.
-  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-11-20 | uses: 8 | tier: active | origin: 2026-09-14-230259 -->
+  <!-- id: conv-reentrantlock-not-synchronized | created: 2026-09-14 | last_used: 2026-11-24 | uses: 9 | tier: active | origin: 2026-09-14-230259 -->
 
 - **Glance at GitHub's pre-filled squash-dialog title before confirming a squash-merge
   (Eric's feedback, 2026-08-19).** GitHub pre-fills the dialog with title-plus-body text,
@@ -512,7 +485,7 @@
   Fourteenth instance, clean (2026-11-25): PR #680's squash `0d6bbecc6`, a one-commit PR, carries the title as handed
   off and ONE trailer; the handoff gave the title on its own line and said nothing needed trimming.
   Relates [[thread-otlp-export-retry]].
-  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-20 | uses: 135 | tier: active | origin: 2026-08-19-195244 -->
+  <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-25 | uses: 141 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
   did — and re-verify any COUNT before restating it (2026-09-17, Eric caught the gap).** The v4.12.12
   CHANGELOG shipped describing one fix, because that is what the release session had worked on. PR
@@ -539,7 +512,7 @@
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
   Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
-  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-20 | uses: 75 | tier: active | origin: 2026-09-17-183008 -->
+  <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-25 | uses: 78 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
   register in `flows.yaml` → `rest.yaml` mapping if HTTP-facing.
   <!-- id: conv-add-capability | created: 2026-06-20 | last_used: 2026-06-24 | uses: 2 | tier: core -->
@@ -654,7 +627,7 @@
     constant another module reads (the IDE scans one module). IntelliJ reports a `try` holding only a comment as empty (a helper
     that uses the resource keeps S2095 and S5778 satisfied) and cannot see a non-null proved in another method.
   Relates [[conv-library-pins-are-direct-dependencies]] (the Snyk half of the same gate).
-  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-20 | uses: 35 | tier: active | origin: 2026-10-13-001452 -->
+  <!-- id: conv-sonar-gate-heuristics | created: 2026-10-12 | last_used: 2026-11-24 | uses: 36 | tier: archive-candidate | origin: 2026-10-13-001452 -->
 
 - **A reactor build rewrites every example's `target/*.jar` in place, so an app running from one fails at the next class it loads
   for the first time (2026-10-22).** `mvn verify` repackages `examples/*/target/<name>-<version>.jar`. A JVM running from that jar
@@ -667,7 +640,7 @@
   (`stat -f %Sc`) with the error; the modification time is the reproducible-build timestamp, 1980. Normal close detection is
   sound (`Session ... closed (1000, ok)`, `SessionManagementTest`), and the idle check expires an unclosed session after 60
   seconds. Since 4.12.26 the WebSocket warning names the exception type.
-  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-17 | uses: 28 | tier: archive-candidate | origin: 2026-10-22-232342 -->
+  <!-- id: example-jar-rewritten-by-reactor-build | created: 2026-10-22 | last_used: 2026-11-25 | uses: 30 | tier: active | origin: 2026-10-22-232342 -->
 
 - **A Node statement names the current Node.js LTS as the version to use and keeps the true minimum in brackets, and a CI
   action's Node runtime is moved by the action's own release (the maintainer, 2026-11-23; #665, squash `5a08d7313`, the
@@ -684,7 +657,7 @@
   component, and its release notes say that upgrading accepts Gradle's Terms of Use for it. **How to apply:** when a Node
   line reaches end of life or a new LTS begins, update the stated version and keep the minimum the script's built-ins
   need; `agent-memory.yml` is installed by the agent-memory tool, so check its `actions/checkout` line after an upgrade.
-  <!-- id: node-version-statements-and-ci-runtime | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-011921 -->
+  <!-- id: node-version-statements-and-ci-runtime | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: archive-candidate | origin: 2026-11-24-011921 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
@@ -735,7 +708,8 @@
   names its function's provider with `server.url`, since the Event-over-HTTP map is static; the fifth: a deployment
   dialog in the Playground and two Node template scripts); BUILT on both engines (#673 to #677, mercury #424) and DRIVEN
   LIVE 2026-11-25 on one hot folder (`docs/test-reports/hot-deploy-live-drive.md`: every scenario held, three wording
-  corrections, four follow-ups); the ADR next.**
+  corrections, four follow-ups); PROMOTED to ADR-0038 on 2026-11-25 (#681) - the sprint's engine side is complete, and the
+  promotion of an AI graph through the governance lifecycle has its mechanism.**
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own
   confidence; not every block enters the graph and every later round reads the previous round's output; other formats need
@@ -751,7 +725,7 @@
   pattern is solved and inherited; the runtime posture is the open problem - and why the engine core stays vendor-free with
   adapters as functions ON the wrappers: the gateway/MCP edge is where vendor specifics live.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-19 | uses: 44 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-25 | uses: 48 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;

@@ -7,4 +7,4 @@
   2026-11-16-105602 (origin) to 2026-11-17-113917.
   → proposal: RFC-0012
   → serves: vision-mercury-composable
-  <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-20 | uses: 9 | tier: active | origin: 2026-11-16-105602 -->
+  <!-- id: transcript-audit-store | created: 2026-11-16 | last_used: 2026-11-20 | uses: 9 | tier: archive-candidate | origin: 2026-11-16-105602 -->
