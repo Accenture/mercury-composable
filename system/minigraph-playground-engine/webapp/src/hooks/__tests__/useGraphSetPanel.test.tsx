@@ -328,6 +328,25 @@ describe('useGraphSetPanel - deploy mode (RFC-0017)', () => {
     expect(calls.filter(call => call.url === '/api/graph-set/deployed')).toHaveLength(2);
   });
 
+  it('opens the panel straight in the deploy view from the Tools menu entry and reads the list', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url === '/api/graph-set/deployed') return json(LIST);
+      throw new Error(`unexpected ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { result } = setup();
+    expect(result.current.isOpen).toBe(false);
+    act(() => result.current.openInDeploy());
+    expect(result.current.isOpen).toBe(true);
+    expect(result.current.mode).toBe('deploy');
+    await waitFor(() => expect(result.current.deployed?.sets).toHaveLength(1));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // closing returns the panel to assemble mode, as from any view
+    act(() => result.current.close());
+    expect(result.current.isOpen).toBe(false);
+    expect(result.current.mode).toBe('assemble');
+  });
+
   it('says that hot deployment is off when the engine answers 503, and reports a refusal in place', async () => {
     const fetchMock = vi.fn(async (url: string) => {
       if (url === '/api/graph-set/deployed') return json({ status: 503, message: 'Service list.deployed.sets not reachable' }, 503);

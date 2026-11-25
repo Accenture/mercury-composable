@@ -325,8 +325,9 @@ export function isDeployed(row: DeployedSetRow): boolean {
 }
 
 /**
- * The engine's answer when hot deployment is off: its REST automation answers 503 for an entry whose
- * function is not registered (the switch is off), and an application older than the entries answers 404.
+ * The engine's answer when hot deployment is off: with the switch off the function never registers and REST
+ * automation skips the entry at startup, so the URL answers 404 like any unknown path (as does an application
+ * older than the entries); 503 is a switch on with the hot folder refused for this run (the live drive, 2026-11-25).
  */
 export function isHotDeployOff(status: number): boolean {
   return status === 503 || status === 404;

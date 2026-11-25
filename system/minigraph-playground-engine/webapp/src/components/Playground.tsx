@@ -839,6 +839,21 @@ export default function Playground({ config }: PlaygroundProps) {
     graphSet.open();
   }, [nodeEditSession, uploadPanelPath, handleCloseUploadPanel, graphSet.open, schemaPanel, addToast]);
 
+  // The Tools menu's "Graph set deployment": the same panel, opened straight in its Deploy view (RFC-0017).
+  const handleOpenDeployPanel = useCallback(() => {
+    if (nodeEditSession !== null) {
+      addToast('Close the node editor first.', 'info');
+      return;
+    }
+    if (uploadPanelPath !== null) {
+      handleCloseUploadPanel();
+    }
+    if (schemaPanel.isOpen) {
+      schemaPanel.close();
+    }
+    graphSet.openInDeploy();
+  }, [nodeEditSession, uploadPanelPath, handleCloseUploadPanel, graphSet.openInDeploy, schemaPanel, addToast]);
+
   // The Tools menu's "Graph schema" opens the schema panel in the console's
   // slot on the Input tab; the root or end node editor opens it on its own
   // side and closes itself first (the user chose the panel over the editor).
@@ -1001,6 +1016,7 @@ export default function Playground({ config }: PlaygroundProps) {
             addToast={addToast}
             sessionCollaboration={supportsSessionCollaboration ? sessionCollaboration : null}
             onPackageGraphs={supportsAuthoring ? handleOpenPackagePanel : undefined}
+            onDeployGraphs={supportsAuthoring ? handleOpenDeployPanel : undefined}
             onEditSchema={supportsAuthoring ? handleOpenSchemaPanelFromMenu : undefined}
           />
           {supportsHelp && (

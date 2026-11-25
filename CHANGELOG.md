@@ -312,6 +312,19 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    engines' catalog is not loaded as a fixture in the packs; the shared vector file is the drift guard).
    **Upgrade note:** none.
 
+5. **Hot deployment driven live on both engines, and the guides corrected from the drive (RFC-0017, WP5 and WP6).**
+   `docs/test-reports/hot-deploy-live-drive.md` records the Java and the Rust Playground engines on one hot folder:
+   negative controls first, the Deploy view, the two scripts, a replace, an undeploy, a restart, a set reaching a
+   language-pack sidecar through `server.url`, and each engine converging on the other's deployments with no poll.
+   Three corrections: a switch that is off leaves the function unregistered and REST automation skips its entry, so the
+   URL answers 404 (the 503 the guides promised is a switch on with the folder refused - the configuration reference,
+   the AI agent guide, `help deploy`, the scripts' README and the scripts' hints now say so); bytes altered inside a
+   well-formed package pass the strict read, so the digest header is the check (the AI agent guide); the provider
+   named by `server.url` must publish the function, since the Event API serves public functions only and a private one
+   answers 403 (the skills reference and the AI agent guide). The Playground's **Tools** menu gains **Graph set
+   deployment**, which opens the packaging panel straight in its Deploy view, so deploy and undeploy are one click from
+   the menu like the other tools. **Upgrade note:** none - documentation, the scripts' messages and a menu entry.
+
 ## Version 4.12.30, 11/5/2026
 
 Lock-step with the Rust port, which catches up from 4.12.27 to this release with every common feature since: the agent

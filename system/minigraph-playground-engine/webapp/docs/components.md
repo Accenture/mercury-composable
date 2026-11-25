@@ -157,7 +157,9 @@ Props: `addToast`, `sessionCollaboration?` (null hides the Session menu). Render
   connecting ones) and, per playground, a `NavLink` with its dot plus a Start / Stop button whose
   title is the socket URL. The button is separate from the link so it never navigates. With
   `onPackageGraphs` set (the Minigraph playground), the menu ends with **📦 Graph set packaging**,
-  which closes the menu and opens the graph-set panel in the left slot.
+  which closes the menu and opens the graph-set panel in the left slot, and with `onDeployGraphs` set
+  **🚀 Graph set deployment**, which opens the same panel straight in its Deploy view (RFC-0017) - deploy
+  and undeploy one click from the menu, as the other tools are.
 - **Quick Links** (new tab): `/info`, `/info/lib`, `/info/routes`, `/health`, `/env`, and the two
   legacy pages `http://localhost:8085/api/ws/json` and `…/api/ws/graph` (hard-coded host).
 
@@ -285,7 +287,8 @@ at a time; a further open request queues FIFO in `useMockUploadPanel`.
 ### `GraphSetPanel` (`components/GraphSetPanel/GraphSetPanel.tsx`)
 
 Props: `controller` (the `useGraphSetPanel` return value, which owns the state and the transport)
-and `supportsFolderPicker`. Opened from the Tools menu's **Graph set packaging**; the panel for graph
+and `supportsFolderPicker`. Opened from the Tools menu's **Graph set packaging** (assemble mode) or
+**Graph set deployment** (the Deploy view, `openInDeploy`); the panel for graph
 sets (ADR-0027): graph models packed together as one `<set>.pack`, checked by the deployment gate
 as they are packed on the engine.
 
@@ -316,8 +319,8 @@ as they are packed on the engine.
   with the answer or the refusal; the last deployment card shows the set, version, digest, graphs, outcome and
   the advisory rows (task routes known, unknown or remote; extension targets known, unknown or private); the
   **Deployed sets** table lists the engine's records with a status per set, **Refresh**, and **Undeploy**
-  behind an inline confirmation. When the engine's switches are off (its entries answer 503), the view says
-  so and names `graph.hot.deploy` and `graph.hot.undeploy`. Escape goes back to the editor.
+  behind an inline confirmation. When the engine's switches are off (its entries are not served, 404; a 503 is a
+  switch on with the folder refused), the view says so and names `graph.hot.deploy` and `graph.hot.undeploy`. Escape goes back to the editor.
 
 ### `SchemaPanel` (`components/SchemaPanel/SchemaPanel.tsx`)
 

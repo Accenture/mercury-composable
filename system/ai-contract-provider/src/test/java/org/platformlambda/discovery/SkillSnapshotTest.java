@@ -59,6 +59,7 @@ class SkillSnapshotTest {
         expected.add("references/test-reports/ask-a-person-live-drive.md");
         expected.add("references/test-reports/dynatrace-one-agent-integration.md");
         expected.add("references/test-reports/event-over-http-interop.md");
+        expected.add("references/test-reports/hot-deploy-live-drive.md");
         expected.add("references/test-reports/llm-helper-certification.md");
         expected.add("references/test-reports/otel-dynatrace-certification.md");
         expected.add("references/test-reports/progressive-rendering-interop.md");
