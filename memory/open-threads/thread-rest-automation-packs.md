@@ -15,6 +15,11 @@
     hand-mounted routes afterwards.
   - **Next:** the shape ruled; then the shared vector file, the Python pack, the Node twin, the polyglot guide here,
     a live drive through a browser and an engine; promotion after the drive. No design spec and no code.
+  - **Agreed and built 2026-11-25:** the Python pack's step 1 MERGED as mercury-python #83 (the three modules, the
+    shared vector file of 126 cases, 45 tests) and upload the same day as #84 (the bounded form, the vector file at
+    version 2, the LLM helper's `llm.upload` as the first intake - the maintainer's AI SDLC use case); the open
+    questions on `/api/event`'s default timeout and on `upload` answered, the extensions' migration still open.
+  - **Next:** the Node twin from the same vector file; `polyglot-functions.md` here; the live drive; promotion.
   → proposal: RFC-0018
   → serves: vision-mercury-composable
   <!-- id: rest-automation-packs | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-235243 -->

@@ -117,7 +117,25 @@ utility functions run in the language packs - so the investigation's first quest
 answered, and the Blueprint gap is open in each pack (`bp-rest-automation-python`, `bp-rest-automation-nodejs`). No
 design spec and no code. Build order when the shape is ruled: the shared vector file written from the grammar and the
 Rust test list; the Python pack; the Node twin; the packs' READMEs and this repository's polyglot guide; the live
-drive; promotion to an ADR after the drive.
+drive; promotion to an ADR after the drive. **Agreed and built 2026-11-25** (the maintainer: "agree with RFC-0018. Please proceed with implementation"):
+**step 1 BUILT and MERGED** as mercury-python #83 - `rest_routing.py` (the parser with the engines' messages and the
+pack's refusals, the matching, the transforms, the body dispatch, the negotiation, the response mapping),
+`async_http_request.py` (the engines' request model, exported), `rest_automation.py` (the edge as a middleware ahead of
+the host's routes: the trace and correlation ids, authentication, the RPC and the interceptor sink, SSE and chunked
+streaming, the default entries, the static-content filter and no-cache pages), the shared vector file
+`tests/vectors/rest-automation-vectors.json` written from the contract (126 cases), 45 tests over the Rust port's
+checklist, the demo's entry; the defaults set without a ruling are listed on the pack's thread
+`bp-rest-automation-python` (`keep` over `drop`, the engines' bare 404 for an unclaimed path, one file location, the
+service check at the end of the boot, no reply-lane pool, a filter failure serving the file). **Upload BUILT and
+MERGED** the same day as mercury-python #84, on the maintainer's word ("Please add upload feature after this PR"; the
+use case: documents uploaded to the LLM helper for a model to read them): the bounded form of the engines' streaming
+upload - the files' bytes in the request map under the engines' keys plus `contents`, together within
+`rest.upload.max.bytes`, `AsyncHttpRequest.files()` - and the helper's `llm.upload` behind `POST /api/llm/upload`
+saving the files into the attachments root and returning the references a later `llm.chat` call names; the vector
+file at version 2 (129 cases). Of the open questions: `/api/event` is a default entry with the engines' 60 s, as
+proposed; `upload` is in version 1 in the bounded form; the extensions' migration stays open. Next: the Node twin
+(step 2) from the same vector file, this repository's `polyglot-functions.md`, the live drive through an engine's
+`async.http.request` with the trace lineage checked, then promotion.
 
 ---
 
