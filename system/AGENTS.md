@@ -62,3 +62,7 @@ or PR against the upstream OSS project (github.com/Accenture/mercury-composable)
 
 A `rest.yaml` flow binding requires **both** `service: 'http.flow.adapter'` and
 `flow: '<flow-id>'` — an entry with `flow:` alone is skipped as invalid at startup.
+
+And its twin for the language packs: a `rest.yaml` served by the Python or Node.js pack
+binds **functions only** — a `flow:`, an `http(s)://` relay or a dual service fails the
+load by name (RFC-0018); orchestration stays in the engines.

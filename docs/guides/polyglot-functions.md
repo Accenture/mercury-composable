@@ -5,7 +5,7 @@ summary: Write functions in Python or Node.js and let Event Script flows and Min
 layer: operate
 audience: [developer, architect]
 keywords: [polyglot, python, node.js, event over http, wrapper, yaml.event.over.http,
-  graph.task, interop]
+  graph.task, interop, rest automation, rest.yaml, application server]
 ---
 
 # Polyglot Functions
@@ -21,6 +21,10 @@ and knowledge graphs.*
 >   foreign language.
 > - **For** teams whose unit of work lives in another ecosystem — Python ML inference and
 >   data tooling, Node.js services — while flows and graphs stay on the engine.
+> - **And an application server** — with the engines' REST automation in the packs
+>   (RFC-0018), `rest.yaml` is the router in front of the functions, so a Python or Node.js
+>   utility application is built and deployed as an engine application is; see
+>   [REST automation in the packs](#rest-automation-in-the-packs).
 > - **Versions** — Event Script flows call polyglot functions on any engine that speaks
 >   the standard wire format; MiniGraph `graph.task` requires engine **v4.11.11+**.
 
@@ -51,7 +55,10 @@ Just as important is what the wrappers deliberately **do not** contain: no flows
 graphs, no persistence, no pub/sub. Orchestration — sequencing, branching, retries,
 compensation — stays in Event Script and MiniGraph on the engine, where it is
 declarative, inspectable, and governed. A polyglot function is a **unit of work**; the
-architecture keeps it that way.
+architecture keeps it that way. The HTTP edge *is* in scope: since RFC-0018 a pack serves
+the engines' REST automation — ingress configuration in front of its functions, never a
+flow (a `flow` binding is refused by name); see
+[REST automation in the packs](#rest-automation-in-the-packs).
 
 > Why not subprocesses? A child-process design was investigated and shelved: it binds the
 > engine to foreign runtime lifecycles (kernel-thread pinning, process-tree cleanup,
@@ -156,6 +163,72 @@ The function contract is the engines' own, restated in each wrapper's documentat
   engines' default for Event over HTTP); the classic compact format is rejected with a
   teaching error.
 
+## REST automation in the packs
+
+Since RFC-0018 (2026-11-25) a pack is also a **full-service application server** for the
+field's utility applications. With `rest.automation: true` the host serves the entries of
+`rest.yaml` — the engines' [REST automation](rest-automation/index.md), in the engines'
+[grammar](rest-automation/rest-grammar.md) — in front of its functions, on the one server
+and port, so a Python or Node.js utility application is designed, configured and deployed as
+an engine application is: functions, a `rest.yaml` and a web bundle, no web framework of its
+own. The file is read from `yaml.rest.automation` (one location; the default
+`classpath:/rest.yaml` is `resources/rest.yaml` next to the application file, under the
+packs' resources convention) and a misconfigured entry fails the start with the engines'
+message.
+
+```yaml
+rest:
+  - service: "hello.rest"
+    methods: ['GET']
+    url: "/api/hello/{name}"
+    timeout: 10s
+    cors: cors_1
+    tracing: true
+```
+
+```python
+@preload(route="hello.rest", instances=10)
+async def hello_rest(headers: dict[str, str], body: Body):
+    request = AsyncHttpRequest(body)                      # the engines' request map, never the bare body
+    return {"greeting": f"Hello, {request.path_parameter('name')}"}
+```
+
+**What a pack serves** — version 1 is the Rust engine's subset, with Java parity where the
+Rust engine has it: the function binding; `{param}` and a trailing `*`, the most specific
+route winning; `timeout` (1 s to 5 min, an inbound `x-ttl` winning); `cors` with the
+preflight; `headers` keep, drop and add; `authentication` — a function whose `true` verdict
+lets the request through and whose reply headers ride as the `session` map; `tracing` with
+`traceparent` first, then the trace-id header, else a fresh id, the correlation id always
+ensured and echoed, and the three per-endpoint header-name overrides; `stream: true`
+rendered as Server-Sent Events or chunked text on the pack's reply sink; the content-type
+dispatch and the `Accept` negotiation; the standard error body; `static-content` with its
+`no-cache-pages` and `filter`; `POST /api/event` and the actuators as the default entries,
+so a user entry can attach `authentication`, CORS or a timeout to the Event API itself.
+`upload: true` is the packs' **bounded form** of the engines' streaming upload: the files of
+a `multipart/form-data` body arrive in the request map under the engines' keys with their
+bytes in `contents`, all together within `rest.upload.max.bytes` (16 MiB). The function
+receives the engines' `AsyncHttpRequest` map and replies with a value, an envelope or an
+exception, exactly as a function behind REST automation does on the engine; a traced call
+leaves the `http.request` record and the function's round trip, so the OpenTelemetry
+forwarder exports the request as a SERVER span.
+
+**What a pack refuses**, by name at load, so the grammar itself shows the scope fence: a
+`flow` binding (flows run in the engines), the HTTP relay (an `http(s)://` service) and the
+A/B dual service. Deferred until a field request, as in the Rust engine: `custom.content.types`,
+`mime.types`, XML bodies, request-body streaming and several file locations. No framework and
+no new dependency: aiohttp in Python, `node:http` in Node.js.
+
+The packs' own applications are the worked examples: the LLM helper's document intake
+(`POST /api/llm/upload`), the ask-person reply page and endpoint, and the agent-question
+app's feed, history, transcripts and click — a device's Server-Sent Events stream as a
+`stream: true` entry and the sign-in as an authentication function among them. The two
+packs build it in lockstep from one vector file (`rest-automation-vectors.json`,
+byte-identical), so a `rest.yaml` loads and answers the same in either. The full guides:
+[REST Automation for Python](https://accenture.github.io/mercury-python/guides/rest-automation/)
+and [for Node.js](https://accenture.github.io/mercury-nodejs/guides/rest-automation/); an
+agent authoring an entry starts at the
+[REST AI agent guide](rest-automation/ai-agent-guide.md#language-packs).
+
 ## Operating a polyglot installation
 
 The wrappers serve the engines' actuator endpoints on the same port as `/api/event` —
@@ -174,6 +247,10 @@ extended to the wrapper family.
 - [Composable for Python](https://accenture.github.io/mercury-python/) and
   [Composable for Node.js](https://accenture.github.io/mercury-nodejs/) — write the
   functions: handler styles, local composition, testing, AI agent guides.
+- [REST Automation](rest-automation/index.md) — the engines' `rest.yaml`, which the packs
+  serve too (RFC-0018); the packs' guides:
+  [Python](https://accenture.github.io/mercury-python/guides/rest-automation/) ·
+  [Node.js](https://accenture.github.io/mercury-nodejs/guides/rest-automation/).
 - [Interop Test Report](../test-reports/event-over-http-interop.md) — the conformance
   evidence, including the polyglot wrapper round.
 - [Built-in Agent Tools](agent-tools.md) — the packs' agent-tools extension: the file, web and clock

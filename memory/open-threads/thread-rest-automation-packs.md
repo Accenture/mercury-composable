@@ -19,7 +19,22 @@
     shared vector file of 126 cases, 45 tests) and upload the same day as #84 (the bounded form, the vector file at
     version 2, the LLM helper's `llm.upload` as the first intake - the maintainer's AI SDLC use case); the open
     questions on `/api/event`'s default timeout and on `upload` answered, the extensions' migration still open.
-  - **Next:** the Node twin from the same vector file; `polyglot-functions.md` here; the live drive; promotion.
+  - **Step 2 MERGED 2026-11-25:** the Node twin as mercury-nodejs #146, the vector file byte-identical across the packs.
+  - **The last open question answered 2026-11-25 (the maintainer: "for python, please refactor the hand-mounted
+    routes with rest.yaml"):** the extensions' routes are `rest.yaml` entries in both packs - mercury-python #87 and
+    mercury-nodejs #148 - behind private functions, with authentication functions resolving the identity into the
+    `session` map and the device stream as a streaming entry; `Platform.add_routes` / `addRoutes` the escape hatch.
+    One departure from the proposal: the engines' `rest-automation.json` is not loaded as a fixture in the packs; the
+    shared vector file is the drift guard.
+  - **Documented 2026-11-25 (the maintainer: "please update RFC-0018 and the polyglot guide ... add REST automation
+    documentation for python and node"), branch `docs/rest-automation-language-packs`:** RFC-0018's resolution
+    records step 2, the adopters and the departure; the polyglot guide gains "REST automation in the packs"; the REST
+    automation guide, the grammar and the REST AI agent guide say what a pack serves and refuses (a section, a note
+    under the binding modes, a pack checklist); `llms.txt` and `system/AGENTS.md` point at them; each pack's
+    documentation site gains its REST Automation guide in the same change set. The doc canon and the grammar drift
+    checks are clean.
+  - **Next:** the live drive through an engine's `async.http.request` with the trace lineage checked; then promotion
+    to an ADR.
   → proposal: RFC-0018
   → serves: vision-mercury-composable
   <!-- id: rest-automation-packs | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-235243 -->

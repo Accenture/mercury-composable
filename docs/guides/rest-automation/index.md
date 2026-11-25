@@ -4,7 +4,7 @@ summary: Define REST API endpoints declaratively in rest.yaml — no controllers
   composable functions or Event Script flows.
 layer: platform-core
 audience: [developer]
-keywords: [rest automation, rest.yaml, http endpoint, cors, flow adapter]
+keywords: [rest automation, rest.yaml, http endpoint, cors, flow adapter, language packs, python, node.js]
 ---
 
 # REST Automation
@@ -17,6 +17,9 @@ keywords: [rest automation, rest.yaml, http endpoint, cors, flow adapter]
 >   Script flow in `rest.yaml`, with CORS, headers, auth, and timeouts.
 > - **For** developers building HTTP-facing services. The [REST grammar](rest-grammar.md) is the
 >   exact schema; the [AI agent guide](ai-agent-guide.md) is for agents.
+> - **Also in the language packs** — the same `rest.yaml` is the router of a Python or Node.js
+>   application (RFC-0018); see
+>   [REST automation in the language packs](#rest-automation-in-the-language-packs).
 
 The platform-core foundation library contains a built-in non-blocking HTTP server that you can use to create REST
 endpoints. Behind the curtain, it is using the vertx web client and server libraries.
@@ -413,9 +416,47 @@ HTTP redirection loop.
 
 Similarly, you can throw exception and the HTTP request will be rejected with the given status
 code and error message accordingly.
+
+## REST automation in the language packs
+
+The same `rest.yaml` is the router of a Python or Node.js application: the language packs serve the engines'
+REST automation in front of their functions (RFC-0018, 2026-11-25), so a utility application in either language
+is designed, configured and deployed as an engine application is - functions, a `rest.yaml` and a web bundle, no
+web framework of its own. Turn it on the same way - `rest.automation: true` in the pack's `application.yml`, the
+file at `resources/rest.yaml` next to the application file (`yaml.rest.automation` names one location;
+`classpath:` is the resources folder, `file:` an absolute path) - and write the entries in this grammar; a
+misconfigured entry fails the start with the same messages. What differs, and why:
+
+- **Bindings.** A pack binds **functions only**. A flow binding (`flow:` or `service: http.flow.adapter`), the
+  HTTP relay (an `http(s)://` service) and the A/B dual service fail the load **by name** - flows run in the
+  engines, and the packs are ingress in front of functions, never orchestration. Nothing is silently ignored.
+- **The request.** The function receives the whole request as the `AsyncHttpRequest` map, as a Java function
+  behind REST automation does, and reads it with the pack's accessors (`request.path_parameter("id")` in Python,
+  `request.pathParameter('id')` in Node.js); a returned envelope sets the status and the headers, an exception is
+  the standard error body.
+- **Upload** is the packs' **bounded form** of the streaming upload: the files of a `multipart/form-data` body
+  arrive in the request map under the engines' keys with their bytes in `contents`, all together within
+  `rest.upload.max.bytes` (16 MiB by default, 413 beyond it); the form's text fields become query parameters.
+- **Not ported**, until a field request: `custom.content.types`, `mime.types`, XML bodies, request-body
+  streaming and several configuration files (the first location is read, with a warning). Everything else above
+  applies - CORS and the preflight, the header transforms, the authentication function and the `session` map,
+  the timeout and `x-ttl`, tracing with the per-endpoint header names, `stream: true`, the `static-content`
+  block's `no-cache-pages` and `filter`.
+- **The default entries.** `POST /api/event` (the packs' Event API, with the engines' 60 s) and the actuators
+  are merged when the file does not claim their URLs, so a user entry can attach `authentication`, CORS or
+  another timeout to the Event API itself.
+
+The two packs build the edge in lockstep from one vector file, byte-identical across them, so a `rest.yaml`
+loads and answers the same in either. The full guides, with the function contract, the streaming and upload
+forms and the shipped examples: [REST Automation for Python](https://accenture.github.io/mercury-python/guides/rest-automation/)
+and [for Node.js](https://accenture.github.io/mercury-nodejs/guides/rest-automation/).
+
 ## See also
 
 - [REST automation grammar](rest-grammar.md) — the exact `rest.yaml` schema (rule-based).
 - [AI agent guide](ai-agent-guide.md) — author `rest.yaml` deterministically with an agent.
 - [Event Script Syntax](../event-script/syntax.md) — the flows that endpoints route to.
 - [Function Execution Strategies](../event-driven/function-execution.md) — the functions endpoints invoke.
+- [Polyglot Functions](../polyglot-functions.md#rest-automation-in-the-packs) — the language packs as application
+  servers on the same `rest.yaml`; their guides for [Python](https://accenture.github.io/mercury-python/guides/rest-automation/)
+  and [Node.js](https://accenture.github.io/mercury-nodejs/guides/rest-automation/).

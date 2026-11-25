@@ -4,7 +4,7 @@ summary: The authoritative context an AI agent needs to author REST automation (
   deterministically — the structure, binding modes, a pre-write checklist, and a worked example.
 layer: platform-core
 audience: [ai-agent, developer]
-keywords: [rest automation, rest.yaml, authoring, context engineering, deterministic, http endpoint]
+keywords: [rest automation, rest.yaml, authoring, context engineering, deterministic, http endpoint, language packs, python, node.js]
 related:
   - guides/rest-automation/rest-grammar.md
   - guides/rest-automation/index.md
@@ -27,6 +27,8 @@ Pick how the endpoint reaches its backend, then fill the entry:
 - **Function** → `service: <function.route>`.
 - **Flow** → `service: http.flow.adapter` **and** `flow: <flow-id>`.
 - **HTTP relay** → `service: https://host` (single URL; `url_rewrite`/`trust_all_cert` allowed).
+- **In a language pack** (Python, Node.js) only the **Function** binding exists — see
+  [Authoring for a language pack](#language-packs).
 
 ## Generate deterministically {#deterministic}
 
@@ -72,7 +74,44 @@ rest:
     correlation.id.header: 'X-Legacy-Cid'
 ```
 
+## Authoring for a language pack {#language-packs}
+
+A `rest.yaml` served by the Python or Node.js pack (RFC-0018) follows this grammar with one binding and a few
+boundaries; the file lives at `resources/rest.yaml` next to the application file and is read when the pack's
+`application.yml` sets `rest.automation: true`.
+
+> **Pre-write checklist (pack)**
+> - [ ] `service` is a **function route of the pack application** — never `flow:` or
+>       `service: http.flow.adapter`, never an `http(s)://` relay, never a list (each fails the load by name).
+> - [ ] The function reads the `AsyncHttpRequest` map (`AsyncHttpRequest(body)` in Python,
+>       `new AsyncHttpRequest(body)` in Node.js), never the bare HTTP body, and replies with a value, an
+>       envelope (status, headers) or an exception (the standard error body).
+> - [ ] `authentication:` names a function that returns `true` — its reply headers become the request's
+>       `session` map — or raises a 401.
+> - [ ] `stream: true` → an interceptor writing through the pack's `EventStreamWriter`; `upload: true` → a
+>       `POST` entry whose files arrive in the request map within `rest.upload.max.bytes`.
+> - [ ] No `custom.content.types`, `mime.types` or XML (deferred); `static-content`'s `no-cache-pages` and
+>       `filter` apply; `POST /api/event` and the actuators are the default entries.
+
+```yaml
+rest:
+  - service: 'profile.lookup'
+    methods: ['GET']
+    url: '/api/profile/{id}'
+    timeout: 10s
+    authentication: 'api.key.check'
+    tracing: true
+```
+
+The function code for each language is in the packs' AI agent guides:
+[Python](https://accenture.github.io/mercury-python/guides/ai-agent-guide/) ·
+[Node.js](https://accenture.github.io/mercury-nodejs/guides/ai-agent-guide/).
+
 ## See also {#see-also}
 
 - [REST automation grammar](rest-grammar.md) + [`rest-automation.json`](rest-automation.json) — the source of truth.
-- [REST Automation](index.md) — worked examples and the full feature set.
+- [REST Automation](index.md) — worked examples and the full feature set;
+  [in the language packs](index.md#rest-automation-in-the-language-packs).
+- The packs' REST Automation guides:
+  [Python](https://accenture.github.io/mercury-python/guides/rest-automation/) ·
+  [Node.js](https://accenture.github.io/mercury-nodejs/guides/rest-automation/).
