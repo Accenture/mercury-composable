@@ -4507,6 +4507,21 @@ with an error that names the entry. Optional <code>for_each[]</code> with <code>
 same generic <code>error.source</code>/<code>code</code>/<code>message</code>/<code>stack</code> context as
 <a href="#api-fetcher"><code>graph.api.fetcher</code></a>, so one handler serves them all
 (<a href="../command-reference/#failure-routing">failure routing</a>).</p>
+<p><strong>A task's provider on the node — <code>server.url</code> and <code>server.header[]</code> (RFC-0017).</strong> When the function lives in a
+language-pack sidecar or a container the engine's Event-over-HTTP map (<code>yaml.event.over.http</code>, loaded once at startup)
+has never heard of — the shape of a hot-deployed graph on an engine that holds no user-defined function — the node
+names the provider: <code>server.url=${TARGET_UTIL_SERVER}/api/event</code> is the provider's Event-over-HTTP endpoint, and each
+<code>server.header[]=name: value</code> entry is a transport header on the call, such as a gateway's token, with the usual
+<code>${...}</code> substitution so the graph holds the variable's name and never the secret. the provider named on the node wins over a local function and over the Event-over-HTTP map — explicit beats
+implicit; a URL without a path gets <code>/api/event</code>, and a URL with a path is used as written, which is how an API
+gateway's own path reaches the target. The request's own <code>header.*</code> entries still travel inside the envelope to the
+function. The reachability check is skipped (the provider decides, and its 404 is the node's error), <code>for_each</code> calls
+one element at a time under the same concurrency window, and the deadline travels as <code>X-TTL</code> as always. The same two
+properties are accepted on <a href="#suspend"><code>graph.suspend</code></a> and <a href="#resume"><code>graph.resume</code></a>, whose <code>task</code> names the state-store
+function, so a language pack can host a state store. The gate refuses the property on any other skill, a header without
+a URL, a URL that does not resolve to an absolute <code>http</code>/<code>https</code> URL (an unset variable leaves a path with no host; use
+<code>${VAR:default}</code> on a developer's machine), and a header entry that is not <code>name: value</code>. Deployment:
+<a href="../ai-agent-guide/#hot-deploy">Hot deployment</a>.</p>
 <p><strong>A static decision table is graph data, not function code.</strong> A lookup table that changes with
 legislation rather than with each request — a restriction rule by state, a rate by band — belongs on
 a <strong>skill-less node</strong>. At instantiation the engine copies every node's properties into the state

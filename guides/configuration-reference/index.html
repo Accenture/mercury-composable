@@ -2879,6 +2879,50 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#locationgraphdeploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        location.graph.deploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphhotdeploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.hot.deploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphhotundeploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.hot.undeploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphhotdeploythrottle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.hot.deploy.throttle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#graphtraversallog" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6004,6 +6048,50 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#locationgraphdeploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        location.graph.deploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphhotdeploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.hot.deploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphhotundeploy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.hot.undeploy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graphhotdeploythrottle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        graph.hot.deploy.throttle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#graphtraversallog" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -8424,9 +8512,12 @@ Only the ids the listed manifests name are executable.</p>
 <code>&lt;set&gt;.pack</code> (<a href="../canonical-package-format/#graph-sets">the canonical package</a>), read from the manifest's
 <code>location</code> — and must then name an <code>unpack</code> folder: a <code>file:/</code> location the application can write, where the
 loader writes every graph of a set as <code>&lt;unpack&gt;/&lt;graph-id&gt;.json</code> before the gate reads it. A <code>classpath:</code> value,
-the Playground's temp folder (<code>location.graph.temp</code>) or a folder inside it, and a folder another manifest already uses
-are refused: <code>sets</code> need a writable <code>unpack</code> folder of their own, and without one the manifest's sets are skipped with
-an ERROR while its loose graphs still compile.</p>
+the Playground's temp folder (<code>location.graph.temp</code>) or a folder inside it, the hot deployment folder
+(<code>location.graph.deploy</code>, below) or a folder inside or above it, and a folder another manifest already uses are refused:
+<code>sets</code> need a writable <code>unpack</code> folder of their own, and without one the manifest's sets are skipped with an ERROR while
+its loose graphs still compile. A graph set deployed to the running engine (hot deployment, <code>graph.hot.deploy</code>) is not
+listed in any manifest: the hot folder's own records are its allowlist, and a configured manifest owns its ids and one hot-deployed set owns an id — a set that carries a
+bundled graph's id, or an id another hot-deployed set holds, is refused with 409 and the owner named.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">graphs</span><span class="p">:</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">'tutorial-1'</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="s">'classpath:/graph'</span><span class="w">          </span><span class="c1"># where &lt;graph-id&gt;.json AND &lt;set&gt;.pack are read from</span>
@@ -8518,6 +8609,94 @@ the range or not a whole number fails the first <code>DECIMAL</code> statement w
 path (read/write requirement): either a plain path (<code>/tmp/graph</code>) or the <code>file:</code> form the tutorials
 use (<code>location.graph.temp=file:/tmp/graph</code> — the prefix is stripped). A <code>classpath:</code> location is
 rejected with an error and the default is used instead.</p>
+<h3 id="locationgraphdeploy"><code>location.graph.deploy</code><a class="headerlink" href="#locationgraphdeploy" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>String</code> (<code>file:/</code> path)</td>
+<td><code>file:/tmp/deploy</code></td>
+</tr>
+</tbody>
+</table>
+<p>The hot deployment folder (RFC-0017): where a graph set deployed to the <em>running</em> engine lives — per set, the package
+<code>&lt;id&gt;.pack</code>, one <code>&lt;graph-id&gt;.json</code> per graph, and the engine-written record <code>&lt;id&gt;.deployed.yaml</code> (set, version, SHA-256,
+time, graphs, files). It must be a <code>file:/</code> folder the application can write, outside the Playground's temp folder
+(<code>location.graph.temp</code>) and outside every manifest's <code>unpack</code> folder; mount it as a persistent volume to survive a
+restart, since at startup the engine re-registers every set whose record the folder holds, from the bytes the record's
+digest vouches for, through the same gate as a bundled graph. The records are the allowlist: a package copied into the
+folder by hand is ignored with a WARN, so the deploy entry is the only door at run time as the manifest is at startup.
+Read only when <code>graph.hot.deploy</code> or <code>graph.hot.undeploy</code> is on. On a developer's machine <code>/tmp</code> is cleared at reboot,
+so point the key at a folder under the home directory when a deployment should outlive one.</p>
+<p>Every instance over the same folder converges on demand, with no poll: a registry lookup for a hot-deployed graph reads
+its set's record and reconciles the set when the record changed or is gone, and a lookup for an unknown id checks whether
+a record of that name exists — a set is registered, replaced or removed as a unit, in one swap, so a run never sees half of it. Real time is the volume's: a network
+volume with attribute caching shows a change after its cache window.</p>
+<h3 id="graphhotdeploy"><code>graph.hot.deploy</code><a class="headerlink" href="#graphhotdeploy" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Registers <code>POST /api/graph-set/deploy</code> — a certified graph set (<code>&lt;set&gt;.pack</code>, named after its one main graph) sent as
+<code>application/octet-stream</code>, an optional <code>X-Graph-Set-SHA256</code> header checked against the bytes, the set read strictly,
+every graph through the deployment gate, registered all or none in one swap — and <code>GET /api/graph-set/deployed</code>. Either
+switch on makes the engine read the hot folder at startup and on demand. Off, the entries answer 503 as every entry for
+an unregistered route does, and the engine behaves exactly as before. One artifact ships; the installation decides per
+environment (<code>-Dgraph.hot.deploy=true</code>). The Playground's packaging panel has a Deploy view for dev mode, and the starter
+template's <code>scripts/deploy-graph-set.mjs</code> and <code>undeploy-graph-set.mjs</code> serve an engine without the Playground.</p>
+<h3 id="graphhotundeploy"><code>graph.hot.undeploy</code><a class="headerlink" href="#graphhotundeploy" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boolean</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p>Registers <code>POST /api/graph-set/undeploy/{graph-id}</code> — the set named by its main graph leaves the registry in one swap,
+its record is deleted first and then its files — and <code>GET /api/graph-set/deployed</code>. The two switches are two questions,
+may add and may remove: deploy off and undeploy on is a frozen release with an emergency exit. A bundled graph is never
+undeployed this way (404): removing one is a rebuild.</p>
+<h3 id="graphhotdeploythrottle"><code>graph.hot.deploy.throttle</code><a class="headerlink" href="#graphhotdeploythrottle" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>long</code> (milliseconds)</td>
+<td><code>0</code></td>
+</tr>
+</tbody>
+</table>
+<p>The least time between two reads of one set's record on the lookup path. At the default the record is read at every
+lookup for a hot-deployed or unknown id (one small read; a manifest's graph pays nothing); on a volume where a metadata
+read is a network round trip and a hot-deployed graph is busy, a few hundred milliseconds bounds the cost, at the price
+of seeing another instance's change that much later.</p>
 <h3 id="graphtraversallog"><code>graph.traversal.log</code><a class="headerlink" href="#graphtraversallog" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

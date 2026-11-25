@@ -3977,6 +3977,10 @@ trace path still names the entry that started the transaction.</p>
 <td style="text-align: left;">X-App-Instance</td>
 <td style="text-align: left;">This header is used by some protected actuator REST endpoints</td>
 </tr>
+<tr>
+<td style="text-align: left;">X-Graph-Set-SHA256</td>
+<td style="text-align: left;">On <code>POST /api/graph-set/deploy</code>: the digest the caller expects (the field's ledger); the engine refuses a body whose SHA-256 differs</td>
+</tr>
 </tbody>
 </table>
 <h3 id="trace-id-x-trace-id-and-w3c-traceparent">Trace ID (X-Trace-Id and W3C traceparent)<a class="headerlink" href="#trace-id-x-trace-id-and-w3c-traceparent" title="Permanent link">&para;</a></h3>
