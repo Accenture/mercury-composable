@@ -150,6 +150,8 @@
   - **WP4 raised as mercury PR #424 (one commit, `838060f3`; the Rust repository's Increment 214, its log
     2026-11-25-023528), OPENED 2026-11-25 on the maintainer's word.** Left: WP5 the live drive (the Playground in dev
     mode, the scripts against an engine without it, both engines on one folder), WP7 the ADR.
+  - **WP4 MERGED 2026-11-25 as mercury #424** (merge `8d5580f2`; its checks `test`, `audit`, the strict docs `build` and
+    `memory` passed). Both engines now carry the hot-deployment lane; the Rust repository's record is its Increment 214.
   - **WP5 waits (Eric, 2026-11-25):** another session is moving the hand-mounted routes of `agent-question` and
     `ask-person` (the person-in-the-loop lane) into `rest.yaml` configuration; the live drive starts once that has
     landed, so it runs on an engine whose REST surface is all configuration.
