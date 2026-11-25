@@ -309,6 +309,16 @@ as they are packed on the engine.
   new set** (the set's graphs and caller fields replace the editor's list, to pack it again). `Escape`
   goes back to the editor.
 
+- **Deploy view** (`🚀 Deploy to this engine`, RFC-0017 D17), from the **Deploy…** button of the assemble
+  footer or **Deploy to this engine** in the inspect view: the drop zone takes one `.pack` and deploys it;
+  **Pack and deploy** packs the assembled set on the engine and deploys the bytes in one step; an optional
+  **Expected SHA-256** is sent as `X-Graph-Set-SHA256`; the package's digest, computed in the browser, is shown
+  with the answer or the refusal; the last deployment card shows the set, version, digest, graphs, outcome and
+  the advisory rows (task routes known, unknown or remote; extension targets known, unknown or private); the
+  **Deployed sets** table lists the engine's records with a status per set, **Refresh**, and **Undeploy**
+  behind an inline confirmation. When the engine's switches are off (its entries answer 503), the view says
+  so and names `graph.hot.deploy` and `graph.hot.undeploy`. Escape goes back to the editor.
+
 ### `SchemaPanel` (`components/SchemaPanel/SchemaPanel.tsx`)
 
 Props: `controller` (the `useSchemaPanel` return value, which owns the state and the transport),

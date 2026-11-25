@@ -273,3 +273,139 @@ describe('useGraphSetPanel - inspect mode', () => {
     expect(result.current.fileErrors).toEqual(['"demo.pack" was not read - Not a graph set - the package holds no graph']);
   });
 });
+
+describe('useGraphSetPanel - deploy mode (RFC-0017)', () => {
+  const LIST = {
+    location: 'file:/tmp/deploy',
+    sets: [{ set: 'settlement', version: '1.0', sha256: 'ab'.repeat(32), deployed_at: '2026-11-24T18:00:00.000Z',
+             graphs: ['settlement', 'settlement-review'], status: 'deployed' }],
+  };
+  const DEPLOYED = {
+    set: 'pricing', version: '2', sha256: 'cd'.repeat(32), graphs: ['pricing', 'pricing-quote'],
+    deployed_at: '2026-11-24T18:05:00.000Z', changed: true,
+    replaced: { version: '1', sha256: 'ef'.repeat(32) },
+    advisory: { routes: [{ graph: 'pricing', route: 'v1.rate', status: 'remote', server: 'http://util:8086/api/event' }],
+                extensions: [{ graph: 'pricing', target: 'settlement-review', status: 'private' }] },
+  };
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+    status, headers: { 'Content-Type': 'application/json' },
+  });
+  function packFile(name = 'pricing.pack'): File {
+    return new File([new Uint8Array([1, 2, 3, 4])], name, { type: 'application/octet-stream' });
+  }
+
+  it('opens the deploy view, lists the deployed sets, and deploys a dropped .pack with the expected digest as the header', async () => {
+    const calls: { url: string; method: string; headers: Record<string, string> }[] = [];
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, method: init?.method ?? 'GET', headers: (init?.headers as Record<string, string>) ?? {} });
+      if (url === '/api/graph-set/deployed') return json(LIST);
+      if (url === '/api/graph-set/deploy') return json(DEPLOYED);
+      throw new Error(`unexpected ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { result, addToast } = setup();
+    act(() => { result.current.open(); result.current.openDeploy(); });
+    expect(result.current.mode).toBe('deploy');
+    await waitFor(() => expect(result.current.deployed?.sets).toHaveLength(1));
+    expect(result.current.hotDeployOff).toBe(false);
+    expect(result.current.deployed?.location).toBe('file:/tmp/deploy');
+
+    act(() => result.current.setExpectedDigest('cd'.repeat(32)));
+    await act(async () => { await result.current.addFiles([packFile()]); });
+
+    const deploy = calls.find(call => call.url === '/api/graph-set/deploy');
+    expect(deploy?.method).toBe('POST');
+    expect(deploy?.headers['Content-Type']).toBe('application/octet-stream');
+    expect(deploy?.headers['X-Graph-Set-SHA256']).toBe('cd'.repeat(32));
+    expect(result.current.lastDigest).toMatch(/^[0-9a-f]{64}$/);
+    expect(result.current.lastDeployment).toMatchObject({ set: 'pricing', version: '2', changed: true });
+    expect(result.current.lastDeployment?.replaced).toEqual({ version: '1', sha256: 'ef'.repeat(32) });
+    expect(result.current.lastDeployment?.routes).toEqual([{ graph: 'pricing', route: 'v1.rate', status: 'remote', server: 'http://util:8086/api/event' }]);
+    expect(result.current.lastDeployment?.extensions).toEqual([{ graph: 'pricing', target: 'settlement-review', status: 'private' }]);
+    expect(result.current.deployError).toBeNull();
+    expect(addToast).toHaveBeenCalledWith('Deployed pricing 2', 'success');
+    // the list is read again after a deploy
+    expect(calls.filter(call => call.url === '/api/graph-set/deployed')).toHaveLength(2);
+  });
+
+  it('says that hot deployment is off when the engine answers 503, and reports a refusal in place', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url === '/api/graph-set/deployed') return json({ status: 503, message: 'Service list.deployed.sets not reachable' }, 503);
+      return json({ status: 409, message: 'graph id tutorial-1 is owned by classpath:/graph' }, 409);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { result } = setup();
+    act(() => { result.current.open(); result.current.openDeploy(); });
+    await waitFor(() => expect(result.current.hotDeployOff).toBe(true));
+    expect(result.current.deployed).toBeNull();
+    expect(result.current.listError).toBeNull();
+
+    // another engine answers 409 to the upload: the reason stays in place, nothing else changes
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url === '/api/graph-set/deployed') return json({ location: 'file:/tmp/deploy', sets: [] });
+      return json({ status: 409, message: 'graph id tutorial-1 is owned by classpath:/graph' }, 409);
+    }));
+    await act(async () => { await result.current.refreshDeployed(); });
+    expect(result.current.hotDeployOff).toBe(false);
+    await act(async () => { await result.current.deployFile(packFile('shadow.pack')); });
+    expect(result.current.deployError).toContain('"shadow.pack" was not deployed');
+    expect(result.current.deployError).toContain('tutorial-1 is owned by classpath:/graph');
+    expect(result.current.lastDeployment).toBeNull();
+    expect(result.current.lastDigest).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('asks before an undeploy, posts it to the set\'s path, and refreshes the list', async () => {
+    const calls: string[] = [];
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push(`${init?.method ?? 'GET'} ${url}`);
+      if (url === '/api/graph-set/deployed') {
+        return json(calls.filter(call => call.startsWith('POST')).length > 0 ? { location: 'file:/tmp/deploy', sets: [] } : LIST);
+      }
+      return json({ set: 'settlement', graphs: ['settlement', 'settlement-review'], undeployed: true });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { result, addToast } = setup();
+    act(() => { result.current.open(); result.current.openDeploy(); });
+    await waitFor(() => expect(result.current.deployed?.sets).toHaveLength(1));
+
+    act(() => result.current.requestUndeploy('settlement'));
+    expect(result.current.pendingUndeploy).toBe('settlement');
+    act(() => result.current.cancelUndeploy());
+    expect(result.current.pendingUndeploy).toBeNull();
+    expect(calls.filter(call => call.startsWith('POST'))).toHaveLength(0);
+
+    act(() => result.current.requestUndeploy('settlement'));
+    await act(async () => { await result.current.confirmUndeploy(); });
+    expect(calls).toContain('POST /api/graph-set/undeploy/settlement');
+    expect(result.current.pendingUndeploy).toBeNull();
+    expect(addToast).toHaveBeenCalledWith('Undeployed settlement', 'success');
+    await waitFor(() => expect(result.current.deployed?.sets).toHaveLength(0));
+  });
+
+  it('packs the assembled set on the engine and deploys the bytes in one step', async () => {
+    const packed = new Uint8Array([9, 9, 9]);
+    const calls: string[] = [];
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push(`${init?.method ?? 'GET'} ${url}`);
+      if (url === '/api/graph-set/pack') return new Response(packed, { status: 200, headers: { 'Content-Type': 'application/octet-stream' } });
+      if (url === '/api/graph-set/deploy') return json({ ...DEPLOYED, set: 'demo', graphs: ['demo'], replaced: null, advisory: {} });
+      return json({ location: 'file:/tmp/deploy', sets: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { result } = setup();
+    await act(async () => { await result.current.addFiles([jsonFile('demo.json', modelNamed('demo'))]); });
+    act(() => result.current.setSetName('demo'));
+    act(() => { result.current.open(); result.current.openDeploy(); });
+    await waitFor(() => expect(result.current.deployed).not.toBeNull());
+    expect(result.current.canPackAndDeploy).toBe(true);
+
+    await act(async () => { await result.current.packAndDeploy(); });
+    expect(calls).toEqual(['GET /api/graph-set/deployed', 'POST /api/graph-set/pack', 'POST /api/graph-set/deploy', 'GET /api/graph-set/deployed']);
+    expect(result.current.lastDeployment?.set).toBe('demo');
+    expect(result.current.lastDeployment?.routes).toEqual([]);
+    expect(result.current.deployError).toBeNull();
+    // the digest is of the bytes the engine packed
+    const expected = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', packed)), b => b.toString(16).padStart(2, '0')).join('');
+    expect(result.current.lastDigest).toBe(expected);
+  });
+});
