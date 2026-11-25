@@ -27,7 +27,7 @@
     One departure from the proposal: the engines' `rest-automation.json` is not loaded as a fixture in the packs; the
     shared vector file is the drift guard.
   - **Documented 2026-11-25 (the maintainer: "please update RFC-0018 and the polyglot guide ... add REST automation
-    documentation for python and node"), branch `docs/rest-automation-language-packs`:** RFC-0018's resolution
+    documentation for python and node"), branch `docs/rest-automation-language-packs`, raised as PR #679:** RFC-0018's resolution
     records step 2, the adopters and the departure; the polyglot guide gains "REST automation in the packs"; the REST
     automation guide, the grammar and the REST AI agent guide say what a pack serves and refuses (a section, a note
     under the binding modes, a pack checklist); `llms.txt` and `system/AGENTS.md` point at them; each pack's
