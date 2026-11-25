@@ -104,7 +104,9 @@ interface, the mock functions and all of the REST functions under `com.accenture
 answers the manifest and the graphs). `GetIndexHtml` serves the Playground web app in dev mode only
 (`GetIndexHtml.java:46-51`). The example's `application.properties` sets `app.env=dev` and says to bind it to an
 environment variable in a deployed environment. A REST entry whose service route is not registered answers 503,
-`Service <route> not reachable` (`HttpRouter.java:641`).
+`Service <route> not reachable` (`HttpRouter.java:641`). **Corrected by the live drive (2026-11-25):** that 503 is for a
+route present when `rest.yaml` loaded and unreachable at request time; a service absent at load makes `RoutingEntry`
+skip the entry with a WARN, and the URL answers 404 (`Resource not found`).
 
 ### 2.4 The Rust twin
 
@@ -149,7 +151,8 @@ location.graph.deploy=file:/tmp/deploy
   deployed locations, so `list graphs`, `describe graph`, `import graph from`, the OpenAPI endpoint and
   `graph.extension` see hot-deployed graphs as they see bundled ones.
 - **Both off** is today's engine exactly: the folder is never read, the functions never register, and the REST entries
-  answer 503 as every entry for an unregistered route does. A field installation that has not adopted the AI SDLC
+  answer 404 as any unknown path does, since REST automation skips an entry whose function is absent at startup (the
+  live drive, 2026-11-25; the draft said 503). A field installation that has not adopted the AI SDLC
   changes nothing.
 
 The functions carry `@OptionalService` on their switch, the shape the project settled for an operational choice (the
@@ -247,7 +250,9 @@ never needs the files.
 Status codes, in one place: 200 done; 400 the package or a graph is refused, the set is not named after its main graph,
 or the digest does not match; 404 undeploy of a set the folder does not hold, and a subgraph asked for at
 `/api/graph/{graph-id}` or `/api/openapi/{graph-id}` (D15, the compiled-or-404 shape); 409 a graph id is owned by a
-manifest or another set; 503 the switch is off. The
+manifest or another set; 404 the switch is off (the function is unregistered and the entry not served - found in the
+live drive, 2026-11-25; the draft said 503); 503 the switch is on but the folder was refused at startup, so hot
+deployment is off for this run. The
 deploy and undeploy functions serialize their work on one `ReentrantLock` over the folder, the record and the registry
 (the project's lock rule while the toolchain is Java 21), so two administrators cannot interleave.
 
@@ -712,8 +717,8 @@ on-demand direction that became D13. The questions stay as asked, with the answe
 | WP2d | The two scripts in `templates/starter-graph/scripts` with their README section (3.11): `deploy-graph-set.mjs` and `undeploy-graph-set.mjs`, zero dependencies, the folder's Node floor. | run against the example engine with the switches on: a deploy, a refused upload, `--digest`, `--list`, an undeploy, and each exit code |
 | WP3 | Docs: the configuration reference (three keys), the AI agent guide's new section and the deploy-without-rebuild section's cross-reference, `build-your-first-graph.md` step 4, the Playground help `package.md`, `graph-task.md` and the new `deploy.md` (a help edit releases the bundle), the scripts README, the skills reference's `graph.task` section and the command reference for `server.url` and `server.header[]`, the reserved names page (the record file), the claims for the two rules, CHANGELOG Unreleased with an upgrade note (off by default, no action). | `python3 scripts/check-doc-canon.py`; the AI contract provider's tests; the pull request's `docs` run |
 | WP4 | The Rust twin: `graphs.rs` as one struct under one lock, `graph_set_loader.rs` shared pieces, the reconcile, the three handlers in `rest.rs`, `server.url` and `server.header[]` in `skills.rs` over the Event API client, the same keys and messages. | the twin tests of WP1 and WP2 |
-| WP5 | The live drive on the example engine (Q9): negative controls first (switch off is 503, a bundled id is 409, a tampered body is 400), then the positive path through the Playground's **Deploy** dialog in dev mode, the two scripts against an engine started with `app.env` unset, `curl`, REST calls, a replace, an undeploy and a restart. Record: `docs/test-reports/hot-deploy-live-drive.md`. | the record |
-| WP6 | The two-instance live drive of 3.8: two example engines on one folder, a deploy on one called on the other at once, a replace, an undeploy, a hand-copied package ignored. Part of WP5's record. | the record |
+| WP5 | The live drive on the example engine (Q9): negative controls first (switch off is 503, a bundled id is 409, a tampered body is 400), then the positive path through the Playground's **Deploy** dialog in dev mode, the two scripts against an engine started with `app.env` unset, `curl`, REST calls, a replace, an undeploy and a restart. Record: `docs/test-reports/hot-deploy-live-drive.md`. **Done 2026-11-25** on both engines: a switch that is off is 404 (finding 1), a tampered body is 400 when malformed or when the digest header is sent (finding 2), a provider's function must be public (finding 3). | the record |
+| WP6 | The two-instance live drive of 3.8: two example engines on one folder, a deploy on one called on the other at once, a replace, an undeploy, a hand-copied package ignored. Part of WP5's record. **Done 2026-11-25**, the Java and the Rust engine on one folder. | the record |
 | WP7 | Promotion: the ADR from this spec and the drive, ADR-0011 marked amended, ADR-0027 marked extended, the RFC entry marked promoted. | the maintainer's acceptance |
 
 ## 8. References

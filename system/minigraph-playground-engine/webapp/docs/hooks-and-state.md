@@ -182,8 +182,10 @@ can be put away while a graph is edited), `mode` (`assemble` | `inspect`) and `b
   `format` and `format_version`) into the editor under the set's name; `leaveInspect()` returns.
 
 - **Deploy** (RFC-0017). `openDeploy()` switches to `mode: 'deploy'` and calls `refreshDeployed()`, which
-  reads `GET /api/graph-set/deployed` into `deployed` (`parseDeployedList`); a 503 - the engine's switches are
-  off, its functions unregistered - or a 404 from an application older than the entries sets `hotDeployOff`.
+  reads `GET /api/graph-set/deployed` into `deployed` (`parseDeployedList`); a 404 - the engine's switches are
+  off, so the functions never registered and REST automation skipped the entries, or an application older than
+  the entries - or a 503 - a switch on but the folder refused for this run - sets `hotDeployOff`. `openInDeploy()`
+  opens the panel straight in this mode, for the Tools menu's **Graph set deployment**.
   `deployFile(file)` and `packAndDeploy()` (pack on the engine, then deploy the bytes) post the package as
   `application/octet-stream` to `POST /api/graph-set/deploy`, with `expectedDigest` as `X-Graph-Set-SHA256`
   when given; the package's SHA-256 is computed in the browser first (`sha256Hex`) into `lastDigest`; the

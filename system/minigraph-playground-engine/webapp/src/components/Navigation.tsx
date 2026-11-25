@@ -58,11 +58,13 @@ interface NavigationProps {
   sessionCollaboration?: SessionCollaborationController | null;
   /** When provided, the Tools menu ends with "Graph set packaging", which opens the graph-set panel. */
   onPackageGraphs?: () => void;
+  /** Opens the graph-set panel straight in its Deploy view - hot deploy and undeploy (RFC-0017). */
+  onDeployGraphs?: () => void;
   /** When provided, the Tools menu offers "Graph schema", which opens the schema panel (RFC-0007). */
   onEditSchema?: () => void;
 }
 
-export default function Navigation({ addToast, sessionCollaboration, onPackageGraphs, onEditSchema }: NavigationProps) {
+export default function Navigation({ addToast, sessionCollaboration, onPackageGraphs, onDeployGraphs, onEditSchema }: NavigationProps) {
   const ctx = useWebSocketContext();
 
   // Collect live phases for the aggregate dot on the Tools menu
@@ -161,8 +163,8 @@ export default function Navigation({ addToast, sessionCollaboration, onPackageGr
           })}
         </ul>
 
-        {/* ── Graph schema (the schema panel, RFC-0007) and graph set packaging (ADR-0027) ── */}
-        {(onEditSchema || onPackageGraphs) && (
+        {/* ── Graph schema (the schema panel, RFC-0007), graph set packaging (ADR-0027) and deployment (RFC-0017) ── */}
+        {(onEditSchema || onPackageGraphs || onDeployGraphs) && (
           <ul className={`${styles.menuList} ${styles.menuSection}`} role="none">
             {onEditSchema && (
               <li role="none">
@@ -187,6 +189,19 @@ export default function Navigation({ addToast, sessionCollaboration, onPackageGr
                 title="Pack graph models into a graph set (<set>.pack), or inspect one"
               >
                 📦 Graph set packaging
+              </button>
+            </li>
+            )}
+            {onDeployGraphs && (
+            <li role="none">
+              <button
+                type="button"
+                role="menuitem"
+                className={`${styles.menuItem} ${styles.menuButton}`}
+                onClick={() => { close(); onDeployGraphs(); }}
+                title="Deploy a certified graph set to this running engine, or undeploy one - hot deployment, no restart"
+              >
+                🚀 Graph set deployment
               </button>
             </li>
             )}

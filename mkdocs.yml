@@ -182,6 +182,7 @@ nav:
     - Test Report — The built-in agent tools, live through both packs: test-reports/agent-tools-live-drive.md
     - Test Report — Ask a person, live through the Playground and both packs: test-reports/ask-a-person-live-drive.md
     - Test Report — The agent-question React UI, live through both packs and Keycloak: test-reports/agent-question-ui-live-drive.md
+    - Test Report — Hot deployment of graph sets, live on both engines: test-reports/hot-deploy-live-drive.md
     - Test Report — MsgPack codec, minimalist-msgpack vs msgpack-core: test-reports/minimalist-msgpack-benchmark.md
     - Test Report — JSONPath, minimalist-jsonpath vs Jayway: test-reports/minimalist-jsonpath-differential.md
     - Reserved Names & Headers: guides/reserved-names-and-headers.md

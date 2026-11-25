@@ -103,6 +103,8 @@ export interface UseGraphSetPanelReturn {
   // ── deploy mode (RFC-0017) ──
   /** Opens the deploy view and reads the deployed sets; what the engine answers decides what the view offers. */
   openDeploy: () => void;
+  /** Open the panel directly in the deploy view - the Tools menu's "Graph set deployment" entry. */
+  openInDeploy: () => void;
   /** Back to the editor. */
   leaveDeploy: () => void;
   deployed: DeployedList | null;
@@ -249,6 +251,11 @@ export function useGraphSetPanel({
     setPendingUndeploy(null);
     setMode('assemble');
   }, []);
+
+  const openInDeploy = useCallback(() => {
+    setIsOpen(true);
+    openDeploy();
+  }, [openDeploy]);
 
   const deployBytes = useCallback(async (bytes: Uint8Array<ArrayBuffer>, label: string) => {
     abortInFlight();
@@ -578,7 +585,7 @@ export function useGraphSetPanel({
     setName, setSetName, setNameError, rows, rowIssues, updateRow, addRow, removeRow,
     canPack, pack, isPacking, packError,
     inspected, isReading, importInspectedGraph, editInspectedSet, leaveInspect,
-    openDeploy, leaveDeploy, deployed, isListing, listError, hotDeployOff, refreshDeployed,
+    openDeploy, openInDeploy, leaveDeploy, deployed, isListing, listError, hotDeployOff, refreshDeployed,
     expectedDigest, setExpectedDigest, deployFile, deployInspected, packAndDeploy, canPackAndDeploy,
     isDeploying, deployError, lastDeployment, lastDigest,
     pendingUndeploy, requestUndeploy, cancelUndeploy, confirmUndeploy, isUndeploying,

@@ -256,6 +256,13 @@ docs and the claims, then the live drive on the example engine with negative con
 bundled id is 409, a tampered body is 400) and a two-instance drive on one folder; promotion to an ADR after the
 drive, with ADR-0011 marked amended and ADR-0027 extended.
 
+**Built and driven (2026-11-24 to 2026-11-25):** the Java engine (#673, #675, #676, #677), the Rust twin (mercury #424)
+and the live drive of both engines over one hot folder, `docs/test-reports/hot-deploy-live-drive.md`: every scenario
+held, with three corrections to the wording - a switch that is off leaves the entry unserved (404; 503 is a switch on
+with the folder refused), bytes altered inside a well-formed package pass the strict read so the digest header is the
+check, and the provider named by `server.url` must publish the function (a private one answers 403) - and four
+operational follow-ups declared in the record. Promotion to an ADR is next.
+
 ---
 
 ## RFC-0016 — Attachments on a single `llm.chat` call: images and PDF pages named by reference inside one configured root, read by the pack's helper
