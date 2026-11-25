@@ -119,6 +119,7 @@ public class GraphModelValidator {
         validateJsonPaths(graph);
         validateSchemas(graph);
         validateDecimalPrecision(graph);
+        validateTaskServer(graph);
     }
 
     /**
@@ -471,6 +472,41 @@ public class GraphModelValidator {
      * is rejected rather than silently ignored. Grammar for the deadline form is the suspend
      * grammar (digits + s/m/h/d), validated here so a bad value fails the gate, not a live run.
      */
+    /**
+     * A task's provider named on the node (RFC-0017, D16): {@code server.url} and {@code server.header[]} are
+     * accepted wherever a {@code task} route is consumed and refused on any other skill, as 'ttl' placement is; the
+     * URL must be an absolute http or https URL after {@code ${...}} resolution - an unset variable leaves a path
+     * with no host, which would fail at the first run - and every header entry is {@code name: value}.
+     *
+     * @param graph an imported MiniGraph
+     * @throws IllegalArgumentException naming the node and the rule
+     */
+    private static void validateTaskServer(MiniGraph graph) {
+        for (SimpleNode node : graph.getNodes()) {
+            if (!TaskServer.declaredOn(node)) {
+                continue;
+            }
+            var url = TaskServer.urlOf(node);
+            var header = TaskServer.headerOf(node);
+            var skill = node.getProperty(SKILL);
+            if (skill == null || !TASK_CONSUMING_SKILLS.contains(String.valueOf(skill))) {
+                throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " - '" + TaskServer.URL + "' and '"
+                        + TaskServer.HEADER + "' are only applicable to a node with skill " + taskConsumingSkills());
+            }
+            if (url == null) {
+                throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " - '" + TaskServer.HEADER
+                        + "' needs '" + TaskServer.URL + "'");
+            }
+            var problem = TaskServer.checkUrl(url);
+            if (problem == null) {
+                problem = TaskServer.checkHeaders(header);
+            }
+            if (problem != null) {
+                throw new IllegalArgumentException(NODE_NAME + node.getAlias() + " - " + problem);
+            }
+        }
+    }
+
     private static void validateNodeTtl(MiniGraph graph) {
         for (SimpleNode node : graph.getNodes()) {
             var skill = node.getProperty(SKILL);

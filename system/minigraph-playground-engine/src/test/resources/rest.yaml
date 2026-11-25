@@ -122,6 +122,25 @@ rest:
     headers: header_1
     tracing: true
 
+  # Hot deployment of graph sets (RFC-0017) - HotDeployEndpointTest
+  - service: 'deploy.graph.set'
+    methods: ['POST']
+    url: '/api/graph-set/deploy'
+    timeout: 60s
+    tracing: true
+
+  - service: 'undeploy.graph.set'
+    methods: ['POST']
+    url: '/api/graph-set/undeploy/{graph_id}'
+    timeout: 30s
+    tracing: true
+
+  - service: 'list.deployed.sets'
+    methods: ['GET']
+    url: '/api/graph-set/deployed'
+    timeout: 30s
+    tracing: true
+
   - service: 'inspect.state.machine'
     methods: ['GET']
     url: '/api/inspect/{id}/{key}'

@@ -58,6 +58,11 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
     protected static final String FILE_PREFIX = "file:";
     protected static final String CLASSPATH_PREFIX = "classpath:";
     protected static final String TARGET = "target";
+    /**
+     * The id of the graph a graph.extension node runs a target for, in the target's flow input - a top-level
+     * dataset key, which the HTTP flow adapter never writes, so a REST caller cannot claim to be a parent.
+     */
+    public static final String PARENT_GRAPH = "parent_graph";
     protected static final String OPEN = "open";
     protected static final String CLOSE = "close";
     protected static final String SESSION = "session";

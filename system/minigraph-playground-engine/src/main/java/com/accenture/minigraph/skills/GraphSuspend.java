@@ -89,7 +89,7 @@ public class GraphSuspend extends GraphStateSkill {
         // issue the request on the worker thread so the outbound event carries this span
         // as the store call's parent (the trace context is thread-keyed and would be gone
         // inside the Mono callback)
-        var stored = ctx.po().eRequest(request, timeout, false);
+        var stored = callStore(ctx, request, timeout);
         return Mono.create(sink ->
             stored.thenAccept(response -> {
                 stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());

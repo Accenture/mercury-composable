@@ -75,8 +75,8 @@ import java.util.stream.Stream;
 public final class HotDeployment {
     private static final Logger log = LoggerFactory.getLogger(HotDeployment.class);
     private static final Utility util = Utility.getInstance();
-    static final String DEPLOY_KEY = "graph.hot.deploy";
-    static final String UNDEPLOY_KEY = "graph.hot.undeploy";
+    public static final String DEPLOY_KEY = "graph.hot.deploy";
+    public static final String UNDEPLOY_KEY = "graph.hot.undeploy";
     static final String LOCATION_KEY = "location.graph.deploy";
     static final String THROTTLE_KEY = "graph.hot.deploy.throttle";
     static final String DEFAULT_LOCATION = "file:/tmp/deploy";
@@ -262,10 +262,10 @@ public final class HotDeployment {
     }
 
     /**
-     * Forget the configuration and every set registered from the hot folder, for a test.
+     * Return to the application's own configuration, forgetting every set a test registered from another folder.
      */
     static void reset() {
-        configure(false, false, DEFAULT_LOCATION, 0);
+        configure();
     }
 
     private static String checkFolder(String location) {

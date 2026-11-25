@@ -43,6 +43,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.accenture.minigraph.start.HotDeployment;
+import java.util.Objects;
 
 @ZeroTracing
 @EventInterceptor
@@ -198,6 +200,11 @@ public class GraphExecutor extends GraphLambdaFunction {
             throw new IllegalArgumentException("Invalid flow instance " + flowInstanceId);
         }
         flowInstance.setEndFlowListeners(GraphHousekeeper.ROUTE);
+        // a hot-deployed set's subgraph is private: reached from the set's own graphs through graph.extension
+        // and from nowhere else, so a REST entry and another set's extension both meet the compiled-or-404 answer
+        if (HotDeployment.isPrivateSubgraph(graphId) && !sameSet(parentGraph(flowInstance), graphId)) {
+            throw new AppException(404, graphId + " not found");
+        }
         var map = getGraphModel(graphId);
         GraphInstance graphInstance = new GraphInstance(graphId);
         graphInstance.setFlowInstanceId(flowInstanceId);
@@ -562,6 +569,21 @@ public class GraphExecutor extends GraphLambdaFunction {
                         "' has no forward path to continue", parentSpanId);
             }
         }
+    }
+
+    private static String parentGraph(FlowInstance flowInstance) {
+        return flowInstance.dataset.get(INPUT) instanceof Map<?, ?> input
+                && input.get(GraphLambdaFunction.PARENT_GRAPH) instanceof String parent? parent : null;
+    }
+
+    private static boolean sameSet(String parent, String graphId) {
+        if (parent == null) {
+            return false;
+        }
+        var callerSet = CompiledGraphs.getGraphSet(parent);
+        var targetSet = CompiledGraphs.getGraphSet(graphId);
+        return callerSet != null && targetSet != null && callerSet.name().equals(targetSet.name())
+                && Objects.equals(CompiledGraphs.getGraphLocation(parent), CompiledGraphs.getGraphLocation(graphId));
     }
 
     private Map<String, Object> getGraphModel(String graphId) {

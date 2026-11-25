@@ -32,6 +32,7 @@ import org.platformlambda.core.util.AppConfigReader;
 
 import java.util.List;
 import java.util.Map;
+import com.accenture.minigraph.start.HotDeployment;
 
 /**
  * The OpenAPI 3.0 document of a graph on demand (RFC-0007, WP1), dev-mode like the other Playground
@@ -67,7 +68,7 @@ public class GetGraphOpenApi implements TypedLambdaFunction<AsyncHttpRequest, Ev
         String version;
         if (graphId != null) {
             model = CompiledGraphs.getGraph(graphId);
-            if (model == null) {
+            if (model == null || HotDeployment.isPrivateSubgraph(graphId)) {
                 throw new AppException(404, "Graph model '" + graphId + "' not found");
             }
             id = graphId;

@@ -74,7 +74,7 @@ public class UnpackGraphSet implements TypedLambdaFunction<AsyncHttpRequest, Eve
         return new EventEnvelope().setHeader("Content-Type", "application/json").setBody(result);
     }
 
-    private static byte[] packageBytes(AsyncHttpRequest input) throws InterruptedException {
+    static byte[] packageBytes(AsyncHttpRequest input) throws InterruptedException {
         if (input.getBody() instanceof byte[] bytes) {
             return bytes;
         }
