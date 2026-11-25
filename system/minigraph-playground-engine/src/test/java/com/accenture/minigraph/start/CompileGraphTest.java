@@ -314,4 +314,15 @@ class CompileGraphTest {
         }
         assertTrue(found, "expected converted mapping entry not found");
     }
+
+    @Test
+    void aTaskProviderIsValidatedAtTheGate() {
+        // server.url and server.header[] are accepted wherever a task route is consumed (RFC-0017, D16)
+        assertTrue(CompiledGraphs.graphExists("unit-test-task-10"));
+        assertTrue(CompiledGraphs.graphExists("unit-test-task-11"));
+        assertTrue(CompiledGraphs.graphExists("unit-test-task-12"));
+        // ... and refused on another skill, or when the URL does not resolve to an absolute http(s) URL
+        assertFalse(CompiledGraphs.graphExists("unit-test-task-server-err1"), "server.url on graph.data.mapper");
+        assertFalse(CompiledGraphs.graphExists("unit-test-task-server-err2"), "an unresolved ${...} leaves no host");
+    }
 }

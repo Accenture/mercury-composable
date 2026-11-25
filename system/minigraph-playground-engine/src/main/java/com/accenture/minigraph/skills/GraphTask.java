@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import com.accenture.minigraph.common.TaskServer;
+import java.util.concurrent.Future;
 
 /**
  * The 'graph.task' skill invokes a composable function (a TypedLambdaFunction registered with
@@ -77,7 +79,9 @@ public class GraphTask extends GraphLambdaFunction {
         // a task route is reachable when registered locally or in the cloud (po.exists),
         // or when declared as a declarative Event-over-HTTP target - the way python/
         // Node.js polyglot functions and remote engine instances join a graph
-        if (!po.exists(route) && po.getEventHttpTarget(route) == null) {
+        // a node that names its function's provider (server.url) calls it there, whatever this instance knows
+        var server = TaskServer.of(node);
+        if (server == null && !po.exists(route) && po.getEventHttpTarget(route) == null) {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " - task '" + route + "' does not exist");
         }
         // reset result to ensure execution is idempotent
@@ -190,7 +194,11 @@ public class GraphTask extends GraphLambdaFunction {
         // issue the request on the worker thread so the outbound event carries this span
         // as the task call's parent (the trace context is thread-keyed and would be gone
         // inside the Mono callback)
-        var invoked = po.eRequest(request, ttl, false);
+        var server = TaskServer.of(node);
+        if (server != null) {
+            po.annotateTrace(TaskServer.URL, server.endpoint());
+        }
+        var invoked = server == null? po.eRequest(request, ttl, false) : server.eRequest(po, request, ttl);
         // guardedCompletion: a throw inside this callback (e.g. an invalid output data mapping)
         // must surface as the node's error, never leave the Mono pending
         return guardedCompletion(invoked, response -> {
@@ -246,11 +254,29 @@ public class GraphTask extends GraphLambdaFunction {
         performOutputMapping(nodeName, stateMachine, outputMapping);
     }
 
+    /**
+     * The batch request has no form that takes an endpoint, so a provider named on the node is called once per
+     * element - the same semantics under the same concurrency window, different plumbing.
+     */
+    private static List<EventEnvelope> requestEach(TaskServer server, PostOffice po, List<EventEnvelope> batch,
+                                                   long timeout) throws ExecutionException, InterruptedException {
+        List<Future<EventEnvelope>> pending = new ArrayList<>();
+        for (var request : batch) {
+            pending.add(server.request(po, request, timeout));
+        }
+        List<EventEnvelope> responses = new ArrayList<>();
+        for (var future : pending) {
+            responses.add(future.get());
+        }
+        return responses;
+    }
+
     private void doForkJoin(PostOffice po, SimpleNode node, MultiLevelMap stateMachine,
                             List<EventEnvelope> batch, long timeout)
                             throws ExecutionException, InterruptedException {
         var nodeName = node.getAlias();
-        var responses = po.request(batch, timeout, false).get();
+        var server = TaskServer.of(node);
+        var responses = server == null? po.request(batch, timeout, false).get() : requestEach(server, po, batch, timeout);
         for (var response : responses) {
             stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
             if (!response.getHeaders().isEmpty()) {

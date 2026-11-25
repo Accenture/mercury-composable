@@ -433,6 +433,8 @@ public class GraphExtension extends GraphLambdaFunction {
             }
             dataset.put(HEADER, header);
             dataset.put(PATH_PARAMETER, Map.of(GRAPH_ID, extension));
+            // the target may be a private subgraph of the calling set, which the executor admits by this key
+            dataset.put(PARENT_GRAPH, graphInstance.graphId);
             forward.setHeader(FLOW_ID, GRAPH_EXECUTOR);
         }
         return forward.setBody(dataset);

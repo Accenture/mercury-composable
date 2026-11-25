@@ -93,7 +93,7 @@ public class GraphResume extends GraphStateSkill {
         // issue the request on the worker thread so the outbound event carries this span
         // as the store call's parent (the trace context is thread-keyed and would be gone
         // inside the Mono callback)
-        var retrieved = ctx.po().eRequest(request, timeout, false);
+        var retrieved = callStore(ctx, request, timeout);
         return Mono.create(sink ->
             retrieved.thenAccept(response -> {
                 stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());

@@ -27,6 +27,8 @@ import org.platformlambda.core.util.MultiLevelMap;
 
 import java.util.Map;
 import java.util.Set;
+import com.accenture.minigraph.common.TaskServer;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Common plumbing for the 'graph.suspend' and 'graph.resume' skills.
@@ -63,6 +65,26 @@ abstract class GraphStateSkill extends GraphLambdaFunction {
     }
 
     protected record SkillContext(PostOffice po, GraphInstance graphInstance, SimpleNode node, String route) {}
+
+    /**
+     * Call the store function the node's task names - at the provider the node names with server.url, or wherever
+     * this instance reaches the route - as a request-response on the worker thread, so the outbound event carries
+     * this span as the store call's parent.
+     *
+     * @param ctx the skill's context
+     * @param request the store request, addressed to the task route
+     * @param timeout the deadline in milliseconds
+     * @return the store's response
+     */
+    protected static CompletableFuture<EventEnvelope> callStore(SkillContext ctx, EventEnvelope request,
+                                                                long timeout) {
+        var server = TaskServer.of(ctx.node());
+        if (server != null) {
+            ctx.po().annotateTrace(TaskServer.URL, server.endpoint());
+            return server.eRequest(ctx.po(), request, timeout);
+        }
+        return ctx.po().eRequest(request, timeout, false);
+    }
 
     protected SkillContext getContext(Map<String, String> headers, int instance, String skillRoute) {
         if (!EXECUTE.equals(headers.get(TYPE))) {

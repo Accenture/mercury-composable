@@ -80,7 +80,9 @@ class GraphTaskTest {
             var reply = new EventEnvelope().setBody(Map.of(
                     "language", "stub",
                     "route", String.valueOf(request.getTo()),
-                    "echo", request.getBody() instanceof Map? request.getBody() : Map.of()));
+                    "echo", request.getBody() instanceof Map? request.getBody() : Map.of(),
+                    "authorization", String.valueOf(exchange.getRequestHeaders().getFirst("authorization")),
+                    "note", String.valueOf(exchange.getRequestHeaders().getFirst("x-hot-note"))));
             var payload = reply.toBytes(EventEnvelope.Format.STANDARD);
             exchange.getResponseHeaders().set("Content-Type", "application/octet-stream");
             exchange.sendResponseHeaders(200, payload.length);
@@ -686,6 +688,46 @@ class GraphTaskTest {
     }
 
     @SuppressWarnings("unchecked")
+    @Test
+    void theProviderNamedOnTheNodeWinsAndGetsTheDefaultPath() throws TimeoutException {
+        // 'v1.demo.task' exists locally, but the node names its provider: the call goes to the stub peer, and
+        // the URL without a path gets /api/event (RFC-0017, D16)
+        var response = runGraph("unit-test-task-10", Map.of("text", "remote"), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        var mm = bodyMap(response);
+        assertEquals("stub", mm.getElement("language"));
+        assertEquals("v1.demo.task", mm.getElement("route"));
+        assertEquals("remote", mm.getElement("echo.text"));
+        log.info("graph.task called the provider named on the node");
+    }
+
+    @Test
+    void theProvidersHeadersTravelOncePerForEachElement() throws TimeoutException {
+        var response = runGraph("unit-test-task-11", Map.of("items", List.of(1, 2, 3)), Map.of());
+        assertEquals(200, response.getStatus(), String.valueOf(response.getBody()));
+        assertInstanceOf(List.class, response.getBody(), String.valueOf(response.getBody()));
+        var results = (List<?>) response.getBody();
+        assertEquals(3, results.size());
+        for (var item : results) {
+            var mm = new MultiLevelMap((Map<String, Object>) item);
+            assertEquals("stub", mm.getElement("language"));
+            assertEquals("polyglot.header.function", mm.getElement("route"));
+            assertEquals("Bearer unit-token", mm.getElement("authorization"));
+            assertEquals("provider", mm.getElement("note"));
+        }
+        log.info("graph.task sent the node's transport headers once per element");
+    }
+
+    @Test
+    void aWrongRouteAtTheProviderIsTheNodesError() throws TimeoutException {
+        // the provider is this engine's own /api/event, which serves its local routes only
+        var response = runGraph("unit-test-task-12", Map.of("hello", "world"), Map.of());
+        assertNotEquals(200, response.getStatus());
+        assertTrue(String.valueOf(response.getBody()).contains("no.such.function.hot"),
+                "unexpected error response: " + response.getBody());
+        log.info("graph.task surfaced the provider's 404 as the node's error");
+    }
+
     private static MultiLevelMap bodyMap(EventEnvelope response) {
         return new MultiLevelMap((Map<String, Object>) response.getBody());
     }

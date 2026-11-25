@@ -132,6 +132,40 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    `integer`). The Java engine for now: the Rust port's twin follows on the same vectors. **Upgrade note:** none -
    four new plugins.
 
+8. **Hot deploy and undeploy of graph sets (RFC-0017, the engine side and the REST surface).** A certified graph set
+   is deployed to a running engine without a restart: `POST /api/graph-set/deploy` takes the `.pack` as
+   `application/octet-stream` (an optional `X-Graph-Set-SHA256` header is the digest the caller expects, checked against
+   the bytes), reads it strictly, requires the set to be named after its one main graph (`graph_id`, when present, must
+   agree), refuses a graph id a manifest or another set owns (409), stages the files in the hot folder and runs the
+   deployment gate on each graph, then registers the set all or none in one swap of the registry and writes the set's
+   record `<id>.deployed.yaml` last; the same bytes again change nothing. `POST /api/graph-set/undeploy/{graph-id}`
+   removes the set named by its main graph (404 for one the folder lacks; the record deleted first, then its files).
+   `GET /api/graph-set/deployed` lists the folder's records with a status per set. The deploy answer carries an advisory,
+   never a refusal: the `task` routes the set names (known here, unknown, or remote through `server.url`) and the
+   `graph.extension` targets outside the set (known, unknown, or another set's private subgraph). A hot-deployed set's
+   subgraphs are private: `/api/graph/{graph-id}` and `/api/openapi/{graph-id}` answer 404 for one, and a
+   `graph.extension` from another set is refused; the set's own graphs reach them. Every instance over the same
+   folder converges on demand: a registry lookup for a hot-deployed id reads the set's record and reconciles the set
+   when the record changed or is gone, a lookup for an unknown id checks whether a record of that name exists, and a
+   restart re-registers every recorded set from the bytes its digest vouches for - no poll, no broadcast; a package
+   copied into the folder by hand is ignored with a warning. Three keys: `graph.hot.deploy` and `graph.hot.undeploy`
+   (both default `false`; either on reads the folder and registers the list entry) and `location.graph.deploy`
+   (default `file:/tmp/deploy`, a `file:/` folder the application can write, outside the Playground's temp folder and
+   every manifest's `unpack` folder; mount it as a persistent volume to survive a restart); `graph.hot.deploy.throttle`
+   (ms, default `0`) is the least time between two record reads for one set. With it, a node that consumes `task` -
+   `graph.task`, `graph.suspend`, `graph.resume` - may name its function's provider: `server.url`, the provider's
+   Event-over-HTTP endpoint with `${...}` substitution and `/api/event` supplied when the URL has no path, and
+   `server.header[]`, `name: value` transport headers such as a gateway's token; the property wins over a local function
+   and the static map, the skill's reachability check is skipped and the provider's 404 is the node's error, `for_each`
+   calls one element at a time under its concurrency window, and the gate refuses the graph unless the URL is absolute
+   after resolution or the property sits on another skill. The three entries are in the engine's, the example's and the
+   starter-graph template's `rest.yaml`. Design: `draft-design-specs/hot-deploy-undeploy-graph-sets.md`; the Playground
+   dialog, the deployment scripts, the guides and the Rust twin follow. **Upgrade note:** none - both switches are off,
+   so an engine behaves exactly as before until an installation turns one on; a manifest whose `unpack` folder is the
+   hot folder, inside it or above it has its sets skipped with an ERROR once a switch is on; a graph with `server.url`
+   on a skill that consumes no `task`, or with a URL that does not resolve to an absolute `http`/`https` URL, is now
+   rejected by the gate - no graph in this repository carried the property before this release.
+
 ### Changed
 
 1. **A `DECIMAL` result carries at most a configured number of decimal places: `big.decimal.precision` (default 6) for

@@ -71,6 +71,27 @@
     their switches, `rest.yaml` in the engine, the example and the starter-graph template, the digest header, the
     main-graph check, subgraphs private at the REST edge, the OpenAPI endpoint and a cross-set extension, the route
     and extension advisory, `server.url` and `server.header[]` on the task-consuming skills, the CHANGELOG entry.
+  - **WP2 BUILT 2026-11-24 (the REST surface, `server.url`, the CHANGELOG entry; branch `feat/hot-deploy-wp2`, for a
+    pull request):** `DeployGraphSet` (`deploy.graph.set`, `POST /api/graph-set/deploy`, the body as the unpack
+    entry reads it, `X-Graph-Set-SHA256`, `Refused` mapped to the HTTP status, the answer with the advisory: task
+    routes known, unknown or remote through `server.url`; extension targets outside the set known, unknown or
+    private), `UndeployGraphSet` (`POST /api/graph-set/undeploy/{graph_id}`), `ListDeployedGraphSets`
+    (`GET /api/graph-set/deployed`, under either switch), each `@OptionalService` on its switch; the entries in the
+    engine's, the example's, the template's and the test application's `rest.yaml`. D15: `GraphExtension` puts
+    `parent_graph` in the target's dataset (a key the HTTP adapter never writes), `GraphExecutor` admits a private
+    subgraph only from a graph of the same set and answers 404 otherwise, `GetGraphOpenApi` answers 404 for one.
+    D16: `TaskServer` (`common`) reads `server.url` and `server.header[]` in the nested form the config reader
+    produces at the gate's readback (`server: {url, header}`) and the flat form a draft holds, normalizes a URL
+    without a path to `/api/event`, and calls `PostOffice.eRequest` or `request` with the headers and the endpoint;
+    `GraphTask` skips the reachability check when a provider is named and fans `for_each` out one element at a
+    time; `GraphStateSkill.callStore` gives `graph.suspend` and `graph.resume` the same; `GraphModelValidator`
+    refuses the property on another skill, a header without a URL, a URL not absolute after resolution, a header
+    entry not `name: value`. CHANGELOG Unreleased Added 8 with its upgrade note. Tests: `HotDeployEndpointTest` (4:
+    deploy and serve, the subgraph private at the graph and OpenAPI entries, an in-set extension served and a
+    cross-set one refused with the advisory saying `private`, the refusals' statuses, list and undeploy), three
+    `GraphTaskTest` methods on the stub peer (the provider wins over the local function and the URL gets its path,
+    the headers travel once per element, the engine's own 404 as the node's error), `CompileGraphTest` on two
+    rejected fixtures; the test application turns both switches on in `file:/tmp/hot-deploy-unit-test`.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
