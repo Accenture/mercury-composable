@@ -193,6 +193,8 @@
     the run-time unit, the loader's pieces shared); RFC-0017 `Promoted → ADR-0038`; the spec's header and WP7 row; the
     CHANGELOG's Documentation 6. The Rust repository keeps its own ledger of port decisions, so nothing twins there.
     Once the ADR merges this thread closes - the sprint's seven work packages are done.
+  - **WP7 raised as PR #681 (one commit, `9f0a64fcd`), OPENED 2026-11-25 on Eric's word. Eric tried the Playground's
+    deploy and undeploy himself the same day and confirmed they work as expected.**
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
