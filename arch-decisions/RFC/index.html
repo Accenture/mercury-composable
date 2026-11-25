@@ -3581,7 +3581,25 @@ utility functions run in the language packs - so the investigation's first quest
 answered, and the Blueprint gap is open in each pack (<code>bp-rest-automation-python</code>, <code>bp-rest-automation-nodejs</code>). No
 design spec and no code. Build order when the shape is ruled: the shared vector file written from the grammar and the
 Rust test list; the Python pack; the Node twin; the packs' READMEs and this repository's polyglot guide; the live
-drive; promotion to an ADR after the drive.</p>
+drive; promotion to an ADR after the drive. <strong>Agreed and built 2026-11-25</strong> (the maintainer: "agree with RFC-0018. Please proceed with implementation"):
+<strong>step 1 BUILT and MERGED</strong> as mercury-python #83 - <code>rest_routing.py</code> (the parser with the engines' messages and the
+pack's refusals, the matching, the transforms, the body dispatch, the negotiation, the response mapping),
+<code>async_http_request.py</code> (the engines' request model, exported), <code>rest_automation.py</code> (the edge as a middleware ahead of
+the host's routes: the trace and correlation ids, authentication, the RPC and the interceptor sink, SSE and chunked
+streaming, the default entries, the static-content filter and no-cache pages), the shared vector file
+<code>tests/vectors/rest-automation-vectors.json</code> written from the contract (126 cases), 45 tests over the Rust port's
+checklist, the demo's entry; the defaults set without a ruling are listed on the pack's thread
+<code>bp-rest-automation-python</code> (<code>keep</code> over <code>drop</code>, the engines' bare 404 for an unclaimed path, one file location, the
+service check at the end of the boot, no reply-lane pool, a filter failure serving the file). <strong>Upload BUILT and
+MERGED</strong> the same day as mercury-python #84, on the maintainer's word ("Please add upload feature after this PR"; the
+use case: documents uploaded to the LLM helper for a model to read them): the bounded form of the engines' streaming
+upload - the files' bytes in the request map under the engines' keys plus <code>contents</code>, together within
+<code>rest.upload.max.bytes</code>, <code>AsyncHttpRequest.files()</code> - and the helper's <code>llm.upload</code> behind <code>POST /api/llm/upload</code>
+saving the files into the attachments root and returning the references a later <code>llm.chat</code> call names; the vector
+file at version 2 (129 cases). Of the open questions: <code>/api/event</code> is a default entry with the engines' 60 s, as
+proposed; <code>upload</code> is in version 1 in the bounded form; the extensions' migration stays open. Next: the Node twin
+(step 2) from the same vector file, this repository's <code>polyglot-functions.md</code>, the live drive through an engine's
+<code>async.http.request</code> with the trace lineage checked, then promotion.</p>
 <hr />
 <h2 id="rfc-0017-hot-deploy-and-undeploy-of-knowledge-graphs-a-certified-graph-set-uploaded-to-a-running-engine-registered-through-the-gate-on-every-instance-on-demand-and-removed-by-name">RFC-0017 — Hot deploy and undeploy of knowledge graphs: a certified graph set uploaded to a running engine, registered through the gate on every instance on demand, and removed by name<a class="headerlink" href="#rfc-0017-hot-deploy-and-undeploy-of-knowledge-graphs-a-certified-graph-set-uploaded-to-a-running-engine-registered-through-the-gate-on-every-instance-on-demand-and-removed-by-name" title="Permanent link">&para;</a></h2>
 <p><strong>Status:</strong> Open · <strong>Raised:</strong> 2026-11-24 · <strong>Serves:</strong> vision-mercury-composable · <strong>Thread:</strong> <code>hot-deploy-graph-sets</code></p>
