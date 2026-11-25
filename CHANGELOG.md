@@ -159,8 +159,16 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    and the static map, the skill's reachability check is skipped and the provider's 404 is the node's error, `for_each`
    calls one element at a time under its concurrency window, and the gate refuses the graph unless the URL is absolute
    after resolution or the property sits on another skill. The three entries are in the engine's, the example's and the
-   starter-graph template's `rest.yaml`. Design: `draft-design-specs/hot-deploy-undeploy-graph-sets.md`; the Playground
-   dialog, the deployment scripts, the guides and the Rust twin follow. **Upgrade note:** none - both switches are off,
+   starter-graph template's `rest.yaml`. Two surfaces, both clients of the same entries: in dev mode the Playground's
+   packaging panel gains a **Deploy** view (`help deploy`) - pack and deploy the assembled set in one step or a dropped
+   `.pack`, the package's SHA-256 computed in the browser so it can go to the ledger, an expected digest sent as the
+   header, the deployed sets listed with an undeploy behind a confirmation, the two switches named when the engine has
+   them off - and for an engine without the Playground the starter template's `scripts/deploy-graph-set.mjs` and
+   `scripts/undeploy-graph-set.mjs` (zero dependencies; `--engine`, `--file`, `--sha256`, `--header`, `--digest`,
+   `--list`, `--graph`; the answer as the engine gives it; exit 0, 1 on a refusal, 2 on a usage error). Guides: the
+   configuration reference's four keys, the AI agent guide's *Hot deployment* section, `server.url` in the skills and
+   command references, the first-graph tutorial, the reserved headers, three claims. Design:
+   `draft-design-specs/hot-deploy-undeploy-graph-sets.md`; the Rust twin follows. **Upgrade note:** none - both switches are off,
    so an engine behaves exactly as before until an installation turns one on; a manifest whose `unpack` folder is the
    hot folder, inside it or above it has its sets skipped with an ERROR once a switch is on; a graph with `server.url`
    on a skill that consumes no `task`, or with a URL that does not resolve to an absolute `http`/`https` URL, is now
