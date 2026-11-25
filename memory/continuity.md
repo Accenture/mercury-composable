@@ -707,7 +707,9 @@
   registered on every instance on demand through the set's own record, named after its main graph, removed by that name;
   design settled in five rounds the same day (the fourth: a task node
   names its function's provider with `server.url`, since the Event-over-HTTP map is static; the fifth: a deployment
-  dialog in the Playground and two Node template scripts), the build next.**
+  dialog in the Playground and two Node template scripts); BUILT on both engines (#673 to #677, mercury #424) and DRIVEN
+  LIVE 2026-11-25 on one hot folder (`docs/test-reports/hot-deploy-live-drive.md`: every scenario held, three wording
+  corrections, four follow-ups); the ADR next.**
   **Research 2026-10-15/16 (Eric's direction), the rulings that hold:** a large payload travels OUT OF BAND (a reference to a
   blob in a shared store that the helper dereferences); a conversion's verdict is a LIST of per-block outcomes with their own
   confidence; not every block enters the graph and every later round reads the previous round's output; other formats need

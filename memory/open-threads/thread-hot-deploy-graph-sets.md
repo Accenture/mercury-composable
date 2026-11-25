@@ -155,6 +155,32 @@
   - **WP5 waits (Eric, 2026-11-25):** another session is moving the hand-mounted routes of `agent-question` and
     `ask-person` (the person-in-the-loop lane) into `rest.yaml` configuration; the live drive starts once that has
     landed, so it runs on an engine whose REST surface is all configuration.
+  - **WP5 and WP6 DONE 2026-11-25 (the live drive; the record `docs/test-reports/hot-deploy-live-drive.md`; the Java
+    branch `feat/hot-deploy-wp5` and the Rust branch `docs/hot-deploy-live-drive`, each for a pull request):** the Java
+    engine (4.12.30 at `4c249f88f`) and the Rust engine (`1b8590fd`) on one hot folder; the set `hot-demo` (a renamed
+    tutorial-10 whose extension reaches the private subgraph `hot-demo-sub`, tutorial-3), five versions; negative
+    controls first (409 with the owner named, 400 for the naming rule, a truncated body and a wrong digest, 404 for an
+    unknown set, the folder empty after each), the Deploy view (pack and deploy, the same bytes unchanged, undeploy
+    behind the confirmation), the scripts (deploy with `--sha256` → `replaced`; `--digest`, `--list`, exit 1 and 2), a
+    restart restoring the set from its record with a stray package WARNed, and each engine converging on the other's
+    deploy, replace and undeploy at its next lookup (180 ms after a deploy on the other engine); `server.url` routed a
+    task to the engine the node named (the trace annotation `server.url=…/api/event`) and, with the Python pack's agent
+    tools as the provider on a port the static map does not know, served `time.now` on both engines. **Findings:** (1) a
+    switch that is off answers 404, not 503 - the function is unregistered and REST automation skips the entry at
+    startup; 503 is a switch on with the folder refused (the temp-folder collision; an unpack-folder collision refuses
+    the manifest's sets instead, the hot folder being configured first) - the design kept, the configuration
+    reference, the AI agent guide, `help deploy`, the scripts' README and the scripts' hints corrected on both engines,
+    the spec and RFC-0017 annotated; (2) bytes altered inside a string value pass the strict read, so the digest header
+    is the check (a sentence in the guide and the help page); (3) the provider's function must be public - the engines
+    publish none, so `demo.order.lookup` and `async.http.request` answered 403 `is private` as the node's error, while a
+    pack's extension functions are public (a sentence in the skills reference and the guide). **Follow-ups declared,
+    not built:** an INFO line on the on-demand reconcile of another instance's deploy (the undeploy side logs); the list
+    entry under off-for-this-run answers 200 with the default folder; a stray `.json` draws no WARN where a `.pack`
+    does; the deploy INFO line has no caller address. **Eric's ask during the drive:** deploy and undeploy in the Tools
+    menu - `🚀 Graph set deployment` opens the packaging panel straight in its Deploy view (`openInDeploy` in the
+    hook, `Navigation`, `Playground`, one hook test; both bundles released, `index-Bm1JJ1Jt`, the help page mirrored).
+    The report is packaged in the contract provider (the pom, `files.list`, `SkillSnapshotTest`) and in the docs nav.
+    Next: WP7, the ADR (ADR-0011 amended, ADR-0027 extended), on Eric's word after the merge.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
