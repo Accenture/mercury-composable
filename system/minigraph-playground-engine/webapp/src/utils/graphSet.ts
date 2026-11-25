@@ -3,6 +3,16 @@ import { GRAPH_ID_RULE, isValidGraphId, validateGraphModel } from './graphFile';
 /** The dev-mode endpoints of ADR-0027 WP4: the engine packs and reads a graph set. */
 export const PACK_PATH = '/api/graph-set/pack';
 export const UNPACK_PATH = '/api/graph-set/unpack';
+/** Hot deployment (RFC-0017): production entries behind the engine's two switches, which the panel calls like any client. */
+export const DEPLOY_PATH = '/api/graph-set/deploy';
+export const DEPLOYED_PATH = '/api/graph-set/deployed';
+export function undeployPath(setName: string): string {
+  return `/api/graph-set/undeploy/${encodeURIComponent(setName)}`;
+}
+/** The digest the caller expects, from the field's ledger; the engine refuses a body whose digest differs. */
+export const DIGEST_HEADER = 'X-Graph-Set-SHA256';
+/** The engine's two switches, named in the hint when hot deployment is off. */
+export const HOT_DEPLOY_KEYS = ['graph.hot.deploy', 'graph.hot.undeploy'] as const;
 
 /** A graph set's file is `<set>.pack`. */
 export const PACK_EXTENSION = '.pack';
@@ -202,4 +212,133 @@ export function manifestRowsOf(manifest: Record<string, string>, nextKey: () => 
   return Object.entries(manifest)
     .filter(([name]) => name !== SET_FIELD && !PACKAGER_FIELDS.has(name))
     .map(([name, value]) => ({ key: nextKey(), name, value }));
+}
+
+
+// ── Hot deployment (RFC-0017) ───────────────────────────────────────────────────────────────────
+
+export interface AdvisoryRoute {
+  graph: string;
+  route: string;
+  /** `known` here (local or in the Event-over-HTTP map), `unknown`, or `remote` through the node's `server.url`. */
+  status: string;
+  server?: string;
+}
+
+export interface AdvisoryExtension {
+  graph: string;
+  target: string;
+  /** `known`, `unknown`, or `private` - another set's subgraph, which only its own set reaches. */
+  status: string;
+}
+
+/** What `POST /api/graph-set/deploy` answered. */
+export interface DeploymentAnswer {
+  set: string;
+  version: string;
+  sha256: string;
+  graphs: string[];
+  deployedAt: string;
+  /** False when the same bytes were already deployed and nothing moved. */
+  changed: boolean;
+  replaced: { version: string; sha256: string } | null;
+  routes: AdvisoryRoute[];
+  extensions: AdvisoryExtension[];
+}
+
+/** One row of `GET /api/graph-set/deployed`. */
+export interface DeployedSetRow {
+  set: string;
+  version: string;
+  sha256: string;
+  deployedAt: string;
+  graphs: string[];
+  /** `deployed`, or `not deployed - ` and the reason on this instance. */
+  status: string;
+}
+
+export interface DeployedList {
+  location: string;
+  sets: DeployedSetRow[];
+}
+
+function text(value: unknown): string {
+  return typeof value === 'string' ? value : value == null ? '' : String(value);
+}
+
+function strings(value: unknown): string[] {
+  return Array.isArray(value) ? value.map(text) : [];
+}
+
+function advisoryRows<T>(value: unknown, fields: ReadonlyArray<string>): T[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isRecord).map(row => {
+    const result: Record<string, string> = {};
+    for (const field of fields) {
+      if (row[field] != null) result[field] = text(row[field]);
+    }
+    return result as unknown as T;
+  });
+}
+
+/** Read the deploy endpoint's answer; a shape the panel does not understand is reported, not shown half-rendered. */
+export function parseDeployAnswer(value: unknown): DeploymentAnswer {
+  if (!isRecord(value) || typeof value.set !== 'string' || typeof value.sha256 !== 'string') {
+    throw new Error("The answer is not a deployment: expected 'set' and 'sha256'.");
+  }
+  const advisory = isRecord(value.advisory) ? value.advisory : {};
+  const replaced = isRecord(value.replaced)
+    ? { version: text(value.replaced.version), sha256: text(value.replaced.sha256) }
+    : null;
+  return {
+    set: value.set,
+    version: text(value.version),
+    sha256: value.sha256,
+    graphs: strings(value.graphs),
+    deployedAt: text(value.deployed_at),
+    changed: value.changed !== false,
+    replaced,
+    routes: advisoryRows<AdvisoryRoute>(advisory.routes, ['graph', 'route', 'status', 'server']),
+    extensions: advisoryRows<AdvisoryExtension>(advisory.extensions, ['graph', 'target', 'status']),
+  };
+}
+
+/** Read the list endpoint's answer, `{location, sets: [...]}`. */
+export function parseDeployedList(value: unknown): DeployedList {
+  if (!isRecord(value) || !Array.isArray(value.sets)) {
+    throw new Error("The answer is not a list of deployed sets: expected 'sets'.");
+  }
+  const sets: DeployedSetRow[] = value.sets.filter(isRecord).map(row => ({
+    set: text(row.set),
+    version: text(row.version),
+    sha256: text(row.sha256),
+    deployedAt: text(row.deployed_at),
+    graphs: strings(row.graphs),
+    status: text(row.status),
+  }));
+  return { location: text(value.location), sets };
+}
+
+/** Whether a row's set is registered on the instance that answered. */
+export function isDeployed(row: DeployedSetRow): boolean {
+  return row.status === 'deployed';
+}
+
+/**
+ * The engine's answer when hot deployment is off: its REST automation answers 503 for an entry whose
+ * function is not registered (the switch is off), and an application older than the entries answers 404.
+ */
+export function isHotDeployOff(status: number): boolean {
+  return status === 503 || status === 404;
+}
+
+/** The SHA-256 of a package as hex, computed in the browser so the digest can go to the ledger from the same screen. */
+export async function sha256Hex(bytes: Uint8Array<ArrayBuffer>): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/** A digest shortened for a table cell: its first 12 hex digits and an ellipsis. */
+export function shortDigest(sha256: string): string {
+  return sha256.length > 12 ? `${sha256.slice(0, 12)}…` : sha256;
 }

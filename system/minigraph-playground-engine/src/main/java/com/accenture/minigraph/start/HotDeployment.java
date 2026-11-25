@@ -572,7 +572,7 @@ public final class HotDeployment {
             install(setName, contents, agreed, settings);
             writeAtomically(recordPath(settings.folder(), setName), recordBytes, settings.folder());
             log.info("Deployed set {}{} - {} into {} (SHA-256 {})", setName,
-                    version.isEmpty()? "" : " (version " + version + ")", count(ids.size()), settings.location(),
+                    version.isEmpty()? "" : " (version " + version + ")", graphCount(ids.size()), settings.location(),
                     sha256);
             return new Deployment(setName, version, sha256, List.copyOf(ids), deployedAt, replaced, true);
         } catch (IOException e) {
@@ -612,7 +612,7 @@ public final class HotDeployment {
             for (var name : deployRecord.files()) {
                 deleteOwnFile(settings.folder(), name);
             }
-            log.info("Undeployed set {} - {} from {}", graphId, count(graphs.size()), settings.location());
+            log.info("Undeployed set {} - {} from {}", graphId, graphCount(graphs.size()), settings.location());
             var ids = graphs.isEmpty()? deployRecord.graphs() : graphs;
             return new Deployment(graphId, deployRecord.version(), deployRecord.sha256(), List.copyOf(ids),
                     deployRecord.deployedAt(), null, true);
@@ -899,5 +899,9 @@ public final class HotDeployment {
 
     private static String count(int n) {
         return n + (n == 1? " set" : " sets");
+    }
+
+    private static String graphCount(int n) {
+        return n + (n == 1? " graph" : " graphs");
     }
 }

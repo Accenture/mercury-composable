@@ -181,6 +181,19 @@ can be put away while a graph is edited), `mode` (`assemble` | `inspect`) and `b
   `editInspectedSet()` loads the graphs and the caller fields (`manifestRowsOf`, without `set`,
   `format` and `format_version`) into the editor under the set's name; `leaveInspect()` returns.
 
+- **Deploy** (RFC-0017). `openDeploy()` switches to `mode: 'deploy'` and calls `refreshDeployed()`, which
+  reads `GET /api/graph-set/deployed` into `deployed` (`parseDeployedList`); a 503 - the engine's switches are
+  off, its functions unregistered - or a 404 from an application older than the entries sets `hotDeployOff`.
+  `deployFile(file)` and `packAndDeploy()` (pack on the engine, then deploy the bytes) post the package as
+  `application/octet-stream` to `POST /api/graph-set/deploy`, with `expectedDigest` as `X-Graph-Set-SHA256`
+  when given; the package's SHA-256 is computed in the browser first (`sha256Hex`) into `lastDigest`; the
+  answer is `lastDeployment` (`parseDeployAnswer`: set, version, sha256, graphs, changed, replaced, the
+  advisory's routes and extensions), a refusal is `deployError`. In deploy mode `addFiles` deploys a dropped
+  `.pack` instead of reading it back. `requestUndeploy(set)` stages the confirmation in `pendingUndeploy`;
+  `confirmUndeploy()` posts `POST /api/graph-set/undeploy/{set}` and refreshes the list; `cancelUndeploy()`
+  withdraws it. `deployInspected()` opens the view and deploys the inspected file. `busy` includes a deploy
+  and an undeploy in flight; `close` and `leaveDeploy` clear the pending confirmation.
+
 ## The graph contract (`hooks/useSchemaPanel.ts`, `utils/graphSchema.ts`, `graphActions/schemaCommand.ts`)
 
 **`useSchemaPanel({ addToast, sessionId, connected, graphData, graphName, bus, sendRawText })`**

@@ -95,6 +95,24 @@
   - **WP2 raised as PR #675, MERGED 2026-11-24** (squash `2c2cd5255`). Next: WP2c the Playground's Deploy dialog,
     WP2d the two Node scripts in `templates/starter-graph/scripts`, WP3 the guides and the help pages, WP4 the Rust
     twin, WP5 the live drive, WP7 the ADR.
+  - **WP2c and WP2d BUILT 2026-11-24 (the Playground's Deploy view and the two scripts; branch `feat/hot-deploy-wp2c`,
+    for a pull request):** the packaging panel gains a third mode, `deploy` - opened by **Deploy…** in the assemble
+    footer or **Deploy to this engine** in the inspect view - with the drop zone deploying a `.pack`, **Pack and
+    deploy** (pack on the engine, then the bytes to the deploy entry), an optional expected SHA-256 sent as the header,
+    the package's digest computed in the browser (Web Crypto) and shown with the answer or the refusal, the last
+    deployment card (set, version, digest, graphs, outcome, the advisory's routes and extensions), the deployed-sets
+    table with Refresh and Undeploy behind an inline confirmation, and the hint naming `graph.hot.deploy` and
+    `graph.hot.undeploy` when the engine answers 503 (or 404, an application older than the entries); `graphSet.ts`
+    gains the paths, `parseDeployAnswer`, `parseDeployedList`, `sha256Hex`, `isHotDeployOff`; the hook `useGraphSetPanel`
+    the state and the transport; `help deploy.md` (auto-indexed by the help browser's glob, under Graph Model) and a
+    pointer from `help package.md`; the webapp docs' component and hook sections. Tests: 4 hook cases (list and deploy
+    with the header, 503 and a 409 in place, the undeploy confirmation, pack-and-deploy in one step) and 2 component
+    cases (the view with its table and undeploy, the switches-off hint). The scripts `deploy-graph-set.mjs` and
+    `undeploy-graph-set.mjs` in `templates/starter-graph/scripts` with their README section: `node:util` `parseArgs`,
+    `fetch`, `node:crypto`; `--engine` (the base kept, so a gateway prefix reaches the engine), `--file`, `--sha256`
+    (checked against the file before the upload, then sent as the header), `--header` repeatable, `--digest`, `--list`,
+    `--graph`; exit 0, 1 (refusal, reasons on stderr, a 503 naming the switches), 2 (usage). The Java bundle released
+    (`npm run release`); the Rust bundle waits for WP4.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->

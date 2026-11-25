@@ -2,7 +2,9 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import styles from './GraphSetPanel.module.css';
 import CloseIcon from '../../icons/CloseIcon.svg?react';
 import type { UseGraphSetPanelReturn } from '../../hooks/useGraphSetPanel';
-import { GRAPH_ID_FIELD, PACK_EXTENSION, packFileName } from '../../utils/graphSet';
+import {
+  GRAPH_ID_FIELD, HOT_DEPLOY_KEYS, PACK_EXTENSION, isDeployed, packFileName, shortDigest,
+} from '../../utils/graphSet';
 
 interface GraphSetPanelProps {
   controller: UseGraphSetPanelReturn;
@@ -11,6 +13,7 @@ interface GraphSetPanelProps {
 }
 
 const TITLE = '📦 Graph set packaging';
+const DEPLOY_TITLE = '🚀 Deploy to this engine';
 
 function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
@@ -30,6 +33,10 @@ export default function GraphSetPanel({ controller, supportsFolderPicker }: Grap
     setName, setSetName, setNameError, rows, rowIssues, updateRow, addRow, removeRow,
     canPack, pack, isPacking, packError,
     inspected, isReading, importInspectedGraph, editInspectedSet,
+    openDeploy, leaveDeploy, deployed, isListing, listError, hotDeployOff, refreshDeployed,
+    expectedDigest, setExpectedDigest, deployInspected, packAndDeploy, canPackAndDeploy,
+    isDeploying, deployError, lastDeployment, lastDigest,
+    pendingUndeploy, requestUndeploy, cancelUndeploy, confirmUndeploy, isUndeploying,
   } = controller;
   const [isDragOver, setIsDragOver] = useState(false);
   const [setNameTouched, setSetNameTouched] = useState(false);
@@ -37,6 +44,7 @@ export default function GraphSetPanel({ controller, supportsFolderPicker }: Grap
   const fileInputRef = useRef<HTMLInputElement>(null);
   const setNameId = useId();
   const setNameHintId = useId();
+  const expectedDigestId = useId();
 
   // Escape: back from inspect mode, else close - unless a request is in flight, exactly like the
   // disabled Cancel button. The latest handlers are read through refs so the listener is bound once.
@@ -44,6 +52,7 @@ export default function GraphSetPanel({ controller, supportsFolderPicker }: Grap
   escapeRef.current = () => {
     if (busy) return;
     if (mode === 'inspect') leaveInspect();
+    else if (mode === 'deploy') leaveDeploy();
     else close();
   };
   useEffect(() => {
@@ -102,7 +111,9 @@ export default function GraphSetPanel({ controller, supportsFolderPicker }: Grap
     >
       <span className={styles.dropZoneIcon}>📂</span>
       <span className={styles.dropZoneText}>
-        Drop <code>.json</code> graph files here, or a <code>{PACK_EXTENSION}</code> to inspect
+        {mode === 'deploy'
+          ? <>Drop a <code>{PACK_EXTENSION}</code> here to deploy it to this engine</>
+          : <>Drop <code>.json</code> graph files here, or a <code>{PACK_EXTENSION}</code> to inspect</>}
       </span>
       <span className={styles.dropZoneOr}>— or —</span>
       <input
@@ -198,12 +209,229 @@ export default function GraphSetPanel({ controller, supportsFolderPicker }: Grap
             <div className={styles.footerActions}>
               <button
                 type="button"
+                className={styles.secondaryButton}
+                onClick={() => { void deployInspected(); }}
+                disabled={busy}
+                title="Deploys this package to this engine (hot deployment, when the engine has it on)"
+              >
+                Deploy to this engine
+              </button>
+              <button
+                type="button"
                 className={styles.primaryButton}
                 onClick={editInspectedSet}
                 disabled={busy}
                 title="Loads this set's graphs and manifest into the editor, replacing its list"
               >
                 Edit as new set
+              </button>
+            </div>
+          </footer>
+        </section>
+      </div>
+    );
+  }
+
+  if (mode === 'deploy') {
+    const sets = deployed?.sets ?? [];
+    return (
+      <div className={styles.root}>
+        <section className={styles.card} aria-label={DEPLOY_TITLE}>
+          <header className={styles.ribbon}>
+            <div className={styles.titleGroup}>
+              <span className={styles.title}>{DEPLOY_TITLE}</span>
+              <span className={styles.subtitle}>{deployed?.location ?? 'hot deployment'}</span>
+            </div>
+            <button
+              type="button"
+              className={styles.ribbonClose}
+              onClick={close}
+              aria-label="Close graph-set panel"
+              title="Close"
+              disabled={busy}
+            >
+              <CloseIcon className={styles.ribbonCloseIcon} aria-hidden="true" focusable="false" />
+            </button>
+          </header>
+          <div className={styles.body}>
+            <p className={styles.description}>
+              A certified graph set goes live on this engine without a restart: the set is named after its main graph,
+              every graph passes the deployment gate, and the set registers all or none. Its subgraphs stay private.
+            </p>
+            {hotDeployOff ? (
+              <div className={styles.warning} role="status">
+                Hot deployment is off on this engine. Turn on <code>{HOT_DEPLOY_KEYS[0]}</code> to deploy and{' '}
+                <code>{HOT_DEPLOY_KEYS[1]}</code> to undeploy, then open this view again.
+              </div>
+            ) : (
+              <>
+                {dropZone}
+                <div className={styles.addRow}>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => { void packAndDeploy(); }}
+                    disabled={!canPackAndDeploy}
+                    aria-busy={isPacking || isDeploying}
+                    title={canPackAndDeploy
+                      ? `Packs the assembled set on the engine and deploys ${fileName} in one step`
+                      : 'Assemble and name a set in the editor first'}
+                  >
+                    {isPacking ? 'Packing…' : isDeploying ? 'Deploying…' : `Pack and deploy ${fileName}`}
+                  </button>
+                </div>
+                <label className={styles.fieldLabel} htmlFor={expectedDigestId}>Expected SHA-256 (optional)</label>
+                <input
+                  id={expectedDigestId}
+                  className={`${styles.input} ${styles.mono}`}
+                  type="text"
+                  value={expectedDigest}
+                  onChange={event => setExpectedDigest(event.target.value)}
+                  placeholder="the digest the ledger holds for this package"
+                  autoComplete="off"
+                  spellCheck={false}
+                  disabled={busy}
+                />
+                <p className={styles.hint}>
+                  Pasted from the field's ledger, it is sent as <code>X-Graph-Set-SHA256</code> and the engine refuses other
+                  bytes. The digest of the package sent is shown below either way, to record it.
+                </p>
+              </>
+            )}
+            {fileErrors.length > 0 && (
+              <ul className={styles.fileErrors} role="alert">
+                {fileErrors.map(error => <li key={error}>⚠️ {error}</li>)}
+              </ul>
+            )}
+            {deployError && (
+              <div className={styles.errorBanner} role="alert">
+                ❌ {deployError}
+                {lastDigest && <div className={styles.mono}>SHA-256 of the package sent: {lastDigest}</div>}
+              </div>
+            )}
+            {lastDeployment && (
+              <div className={styles.resultCard} role="status" aria-label="Last deployment">
+                <div className={styles.kv}>
+                  <span className={styles.kvKey}>set</span>
+                  <code>{lastDeployment.set}</code>
+                  <span className={styles.kvKey}>version</span>
+                  <span>{lastDeployment.version || '—'}</span>
+                  <span className={styles.kvKey}>SHA-256</span>
+                  <span className={styles.mono}>{lastDeployment.sha256}</span>
+                  <span className={styles.kvKey}>graphs</span>
+                  <span>{lastDeployment.graphs.join(', ')}</span>
+                  <span className={styles.kvKey}>outcome</span>
+                  <span>
+                    {!lastDeployment.changed
+                      ? 'already deployed with these bytes - nothing changed'
+                      : lastDeployment.replaced
+                        ? `replaced version ${lastDeployment.replaced.version || '(none)'} (${shortDigest(lastDeployment.replaced.sha256)})`
+                        : 'deployed'}
+                  </span>
+                </div>
+                {(lastDeployment.routes.length > 0 || lastDeployment.extensions.length > 0) && (
+                  <>
+                    <h3 className={styles.sectionTitle}>Advisory</h3>
+                    <ul className={styles.entryList} aria-label="Advisory">
+                      {lastDeployment.routes.map(row => (
+                        <li key={`route:${row.graph}:${row.route}`} className={styles.entry}>
+                          <div className={styles.entryMain}>
+                            <code className={styles.entryId}>{row.route}</code>
+                            <span className={styles.entryCounts}>
+                              task route in {row.graph} · {row.status}{row.server ? ` via ${row.server}` : ''}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                      {lastDeployment.extensions.map(row => (
+                        <li key={`ext:${row.graph}:${row.target}`} className={styles.entry}>
+                          <div className={styles.entryMain}>
+                            <code className={styles.entryId}>{row.target}</code>
+                            <span className={styles.entryCounts}>
+                              extension target outside the set, from {row.graph} · {row.status}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
+            {!hotDeployOff && (
+              <>
+                <div className={styles.sectionHeader}>
+                  <h3 className={styles.sectionTitle}>Deployed sets ({sets.length})</h3>
+                  <button
+                    type="button"
+                    className={styles.linkButton}
+                    onClick={() => { void refreshDeployed(); }}
+                    disabled={isListing || busy}
+                  >
+                    {isListing ? 'Reading…' : 'Refresh'}
+                  </button>
+                </div>
+                {listError && <div className={styles.errorBanner} role="alert">❌ {listError}</div>}
+                {sets.length === 0 ? (
+                  <p className={styles.empty}>No set is deployed in the hot folder of this engine.</p>
+                ) : (
+                  <table className={styles.table} aria-label="Deployed sets">
+                    <thead>
+                      <tr><th>Set</th><th>Version</th><th>SHA-256</th><th>Graphs</th><th>Status</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                      {sets.map(row => (
+                        <tr key={row.set}>
+                          <td><code>{row.set}</code></td>
+                          <td>{row.version || '—'}</td>
+                          <td className={styles.mono} title={row.sha256}>{shortDigest(row.sha256)}</td>
+                          <td title={row.graphs.join(', ')}>{row.graphs.length}</td>
+                          <td className={isDeployed(row) ? styles.statusDeployed : styles.statusRefused} title={row.deployedAt}>
+                            {row.status}
+                          </td>
+                          <td>
+                            {pendingUndeploy === row.set ? (
+                              <span className={styles.confirmRow} role="group" aria-label={`Undeploy ${row.set}?`}>
+                                <span>Undeploy {plural(row.graphs.length, 'graph')}?</span>
+                                <button
+                                  type="button"
+                                  className={styles.entryAction}
+                                  onClick={() => { void confirmUndeploy(); }}
+                                  disabled={isUndeploying}
+                                >
+                                  {isUndeploying ? 'Undeploying…' : 'Yes, undeploy'}
+                                </button>
+                                <button type="button" className={styles.linkButton} onClick={cancelUndeploy} disabled={isUndeploying}>
+                                  Keep
+                                </button>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className={styles.entryAction}
+                                onClick={() => requestUndeploy(row.set)}
+                                disabled={busy}
+                                title={`Removes ${row.set} and its ${plural(row.graphs.length, 'graph')} from this engine's hot folder`}
+                              >
+                                Undeploy
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </>
+            )}
+          </div>
+          <footer className={styles.footer}>
+            <button type="button" className={styles.secondaryButton} onClick={leaveDeploy} disabled={busy}>
+              Back
+            </button>
+            <div className={styles.footerActions}>
+              <button type="button" className={styles.secondaryButton} onClick={close} disabled={busy}>
+                Close
               </button>
             </div>
           </footer>
@@ -392,6 +620,15 @@ export default function GraphSetPanel({ controller, supportsFolderPicker }: Grap
           <div className={styles.footerActions}>
             <button type="button" className={styles.secondaryButton} onClick={close} disabled={busy}>
               Cancel
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={openDeploy}
+              disabled={busy}
+              title="Deploy a set to this engine without a restart, or see what is deployed"
+            >
+              Deploy…
             </button>
             <button
               type="button"

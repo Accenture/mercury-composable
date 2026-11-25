@@ -136,3 +136,61 @@ describe('GraphSetPanel', () => {
     expect(await screen.findByRole('region', { name: '📦 Graph set packaging' })).toBeTruthy();
   });
 });
+
+describe('GraphSetPanel - the deploy view (RFC-0017)', () => {
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+    status, headers: { 'Content-Type': 'application/json' },
+  });
+  const LIST = {
+    location: 'file:/tmp/deploy',
+    sets: [{ set: 'settlement', version: '1.0', sha256: 'ab'.repeat(32), deployed_at: '2026-11-24T18:00:00.000Z',
+             graphs: ['settlement', 'settlement-review'], status: 'deployed' }],
+  };
+
+  it('opens from the editor, lists the deployed sets, and undeploys one after a confirmation', async () => {
+    const calls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push(`${init?.method ?? 'GET'} ${url}`);
+      if (url === '/api/graph-set/deployed') {
+        return json(calls.some(call => call.startsWith('POST')) ? { location: 'file:/tmp/deploy', sets: [] } : LIST);
+      }
+      return json({ set: 'settlement', graphs: ['settlement', 'settlement-review'], undeployed: true });
+    }));
+    render(<Harness />);
+    await screen.findByRole('region', { name: '📦 Graph set packaging' });
+    fireEvent.click(screen.getByRole('button', { name: 'Deploy…' }));
+
+    await screen.findByRole('region', { name: '🚀 Deploy to this engine' });
+    const table = await screen.findByRole('table', { name: 'Deployed sets' });
+    expect(table.textContent).toContain('settlement');
+    expect(table.textContent).toContain('deployed');
+    expect((screen.getByRole('button', { name: /Pack and deploy/ }) as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undeploy' }));
+    expect(screen.getByRole('group', { name: 'Undeploy settlement?' }).textContent).toContain('Undeploy 2 graphs?');
+    fireEvent.click(screen.getByRole('button', { name: 'Keep' }));
+    expect(screen.queryByRole('group', { name: 'Undeploy settlement?' })).toBeNull();
+    expect(calls.some(call => call.startsWith('POST'))).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undeploy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, undeploy' }));
+    await waitFor(() => expect(calls).toContain('POST /api/graph-set/undeploy/settlement'));
+    await screen.findByText(/No set is deployed/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await screen.findByRole('region', { name: '📦 Graph set packaging' });
+  });
+
+  it('says that hot deployment is off, naming the two switches, when the engine answers 503', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ status: 503, message: 'Service list.deployed.sets not reachable' }, 503)));
+    render(<Harness />);
+    await screen.findByRole('region', { name: '📦 Graph set packaging' });
+    fireEvent.click(screen.getByRole('button', { name: 'Deploy…' }));
+    const status = await screen.findByRole('status');
+    expect(status.textContent).toContain('Hot deployment is off on this engine');
+    expect(status.textContent).toContain('graph.hot.deploy');
+    expect(status.textContent).toContain('graph.hot.undeploy');
+    expect(screen.queryByRole('table', { name: 'Deployed sets' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Pack and deploy/ })).toBeNull();
+  });
+});
