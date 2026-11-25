@@ -74,6 +74,11 @@ How an endpoint reaches its backend (set by `service`/`flow`):
 
 `{param}` tokens in `url` are extracted and passed to the backend (e.g. `/api/profile/{id}`).
 
+**In the language packs** (Python, Node.js) only the **Function** mode exists: a flow, relay or dual-service
+entry fails to load by name (RFC-0018). Their edge implements this grammar's subset — see the
+[AI agent guide](ai-agent-guide.md#language-packs) and
+[REST Automation](index.md#rest-automation-in-the-language-packs).
+
 ## `cors:` block {#cors}
 
 | Field | Required | Meaning |

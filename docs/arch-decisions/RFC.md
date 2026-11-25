@@ -133,9 +133,27 @@ upload - the files' bytes in the request map under the engines' keys plus `conte
 `rest.upload.max.bytes`, `AsyncHttpRequest.files()` - and the helper's `llm.upload` behind `POST /api/llm/upload`
 saving the files into the attachments root and returning the references a later `llm.chat` call names; the vector
 file at version 2 (129 cases). Of the open questions: `/api/event` is a default entry with the engines' 60 s, as
-proposed; `upload` is in version 1 in the bounded form; the extensions' migration stays open. Next: the Node twin
-(step 2) from the same vector file, this repository's `polyglot-functions.md`, the live drive through an engine's
-`async.http.request` with the trace lineage checked, then promotion.
+proposed; `upload` is in version 1 in the bounded form. **Step 2 BUILT and MERGED 2026-11-25** as mercury-nodejs #146
+by a session of its own: the three modules on `node:http`, the vector file byte-identical with the Python pack's, the
+demo's entry and the helper's intake - no new dependency in either pack. **The extensions' migration, the last open
+question, answered and BUILT the same day** on the maintainer's word ("for python, please refactor the hand-mounted
+routes with rest.yaml"): mercury-python #87 and its twin mercury-nodejs #148 - the ask-person reply page and endpoint
+and the agent-question app's feed, history, transcripts and click are `rest.yaml` entries behind private functions of
+their processes, who is asking resolved once by the entries' authentication functions into the `session` map, the
+device's Server-Sent Events stream a `stream: true` entry whose interceptor opens the stream at once (a day's idle
+allowance through the head's `x-ttl`) and follows the feed from a task of its own; nothing is mounted on either host
+and `Platform.add_routes` / `addRoutes` stays as the escape hatch for what an entry cannot express. The migration
+needed two host changes in each pack: a keep-alive comment that cannot be written ends a stream and closes its sink,
+and the stream writer's `connected` tells a long-lived producer that nobody listens. The defaults set without a
+ruling are on the packs' threads (the engines' standard error body, the apps' own JSON serialization so a null stays
+on the wire for the UI, no `id:` line in the stream, authentication before the ticket check, private functions). One
+departure from the proposal: the engines' `rest-automation.json` is not loaded as a fixture in the packs - the shared
+vector file, written from the grammar and the Rust port's test list, is the drift guard, and this repository's
+catalog drift test keeps the grammar page true to `RoutingEntry`. **Documented 2026-11-25:** this repository's
+polyglot guide gains the application-server half, the REST automation guide, grammar and AI agent guide say what a
+pack serves and refuses, and each pack's documentation site gains its REST Automation guide with its references and
+AI agent checklist. Remaining before promotion: the live drive through an engine's `async.http.request` with the
+trace lineage checked; then an ADR.
 
 ---
 

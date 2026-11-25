@@ -299,6 +299,19 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    **Upgrade note:** none - documentation and CI only; no script changes behaviour.
 
 ---
+4. **The guides document REST automation in the language packs (RFC-0018).** The polyglot guide gains the
+   application-server half - with `rest.automation: true` a Python or Node.js pack serves the engines' `rest.yaml` in
+   front of its functions: what a pack serves (the Rust engine's subset with Java parity, the bounded upload, streaming
+   entries, the authentication function and the `session` map, the default entries), what it refuses by name (a flow
+   binding, the HTTP relay, the A/B dual service) and what it defers, with the packs' own extensions as the worked
+   examples. The REST Automation guide, the grammar and the REST AI agent guide say the same from the engines' side -
+   a section on the language packs, a note under the binding modes and a pre-write checklist for a pack's `rest.yaml`;
+   `llms.txt` and `system/AGENTS.md` point at them. Each pack's documentation site gains its own REST Automation guide
+   in the same change set (mercury-python and mercury-nodejs). RFC-0018's resolution records step 2 (mercury-nodejs
+   #146), the first adopters (mercury-python #87, mercury-nodejs #148) and the one departure from the proposal (the
+   engines' catalog is not loaded as a fixture in the packs; the shared vector file is the drift guard).
+   **Upgrade note:** none.
+
 ## Version 4.12.30, 11/5/2026
 
 Lock-step with the Rust port, which catches up from 4.12.27 to this release with every common feature since: the agent
