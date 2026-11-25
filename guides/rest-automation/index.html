@@ -1120,6 +1120,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rest-automation-in-the-language-packs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REST automation in the language packs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3494,6 +3505,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rest-automation-in-the-language-packs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REST automation in the language packs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3533,6 +3555,9 @@
   Script flow in <code>rest.yaml</code>, with CORS, headers, auth, and timeouts.</li>
 <li><strong>For</strong> developers building HTTP-facing services. The <a href="rest-grammar/">REST grammar</a> is the
   exact schema; the <a href="ai-agent-guide/">AI agent guide</a> is for agents.</li>
+<li><strong>Also in the language packs</strong> — the same <code>rest.yaml</code> is the router of a Python or Node.js
+  application (RFC-0018); see
+  <a href="#rest-automation-in-the-language-packs">REST automation in the language packs</a>.</li>
 </ul>
 </blockquote>
 <p>The platform-core foundation library contains a built-in non-blocking HTTP server that you can use to create REST
@@ -3896,12 +3921,47 @@ will redirect the browser/client to the given URL in the location header. Please
 HTTP redirection loop.</p>
 <p>Similarly, you can throw exception and the HTTP request will be rejected with the given status
 code and error message accordingly.</p>
+<h2 id="rest-automation-in-the-language-packs">REST automation in the language packs<a class="headerlink" href="#rest-automation-in-the-language-packs" title="Permanent link">&para;</a></h2>
+<p>The same <code>rest.yaml</code> is the router of a Python or Node.js application: the language packs serve the engines'
+REST automation in front of their functions (RFC-0018, 2026-11-25), so a utility application in either language
+is designed, configured and deployed as an engine application is - functions, a <code>rest.yaml</code> and a web bundle, no
+web framework of its own. Turn it on the same way - <code>rest.automation: true</code> in the pack's <code>application.yml</code>, the
+file at <code>resources/rest.yaml</code> next to the application file (<code>yaml.rest.automation</code> names one location;
+<code>classpath:</code> is the resources folder, <code>file:</code> an absolute path) - and write the entries in this grammar; a
+misconfigured entry fails the start with the same messages. What differs, and why:</p>
+<ul>
+<li><strong>Bindings.</strong> A pack binds <strong>functions only</strong>. A flow binding (<code>flow:</code> or <code>service: http.flow.adapter</code>), the
+  HTTP relay (an <code>http(s)://</code> service) and the A/B dual service fail the load <strong>by name</strong> - flows run in the
+  engines, and the packs are ingress in front of functions, never orchestration. Nothing is silently ignored.</li>
+<li><strong>The request.</strong> The function receives the whole request as the <code>AsyncHttpRequest</code> map, as a Java function
+  behind REST automation does, and reads it with the pack's accessors (<code>request.path_parameter("id")</code> in Python,
+  <code>request.pathParameter('id')</code> in Node.js); a returned envelope sets the status and the headers, an exception is
+  the standard error body.</li>
+<li><strong>Upload</strong> is the packs' <strong>bounded form</strong> of the streaming upload: the files of a <code>multipart/form-data</code> body
+  arrive in the request map under the engines' keys with their bytes in <code>contents</code>, all together within
+  <code>rest.upload.max.bytes</code> (16 MiB by default, 413 beyond it); the form's text fields become query parameters.</li>
+<li><strong>Not ported</strong>, until a field request: <code>custom.content.types</code>, <code>mime.types</code>, XML bodies, request-body
+  streaming and several configuration files (the first location is read, with a warning). Everything else above
+  applies - CORS and the preflight, the header transforms, the authentication function and the <code>session</code> map,
+  the timeout and <code>x-ttl</code>, tracing with the per-endpoint header names, <code>stream: true</code>, the <code>static-content</code>
+  block's <code>no-cache-pages</code> and <code>filter</code>.</li>
+<li><strong>The default entries.</strong> <code>POST /api/event</code> (the packs' Event API, with the engines' 60 s) and the actuators
+  are merged when the file does not claim their URLs, so a user entry can attach <code>authentication</code>, CORS or
+  another timeout to the Event API itself.</li>
+</ul>
+<p>The two packs build the edge in lockstep from one vector file, byte-identical across them, so a <code>rest.yaml</code>
+loads and answers the same in either. The full guides, with the function contract, the streaming and upload
+forms and the shipped examples: <a href="https://accenture.github.io/mercury-python/guides/rest-automation/">REST Automation for Python</a>
+and <a href="https://accenture.github.io/mercury-nodejs/guides/rest-automation/">for Node.js</a>.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="rest-grammar/">REST automation grammar</a> — the exact <code>rest.yaml</code> schema (rule-based).</li>
 <li><a href="ai-agent-guide/">AI agent guide</a> — author <code>rest.yaml</code> deterministically with an agent.</li>
 <li><a href="../event-script/syntax/">Event Script Syntax</a> — the flows that endpoints route to.</li>
 <li><a href="../event-driven/function-execution/">Function Execution Strategies</a> — the functions endpoints invoke.</li>
+<li><a href="../polyglot-functions/#rest-automation-in-the-packs">Polyglot Functions</a> — the language packs as application
+  servers on the same <code>rest.yaml</code>; their guides for <a href="https://accenture.github.io/mercury-python/guides/rest-automation/">Python</a>
+  and <a href="https://accenture.github.io/mercury-nodejs/guides/rest-automation/">Node.js</a>.</li>
 </ul>
 
 

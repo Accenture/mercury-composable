@@ -1104,6 +1104,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#language-packs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authoring for a language pack
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3350,6 +3361,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#language-packs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authoring for a language pack
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#see-also" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3397,6 +3419,8 @@
 <li><strong>Function</strong> → <code>service: &lt;function.route&gt;</code>.</li>
 <li><strong>Flow</strong> → <code>service: http.flow.adapter</code> <strong>and</strong> <code>flow: &lt;flow-id&gt;</code>.</li>
 <li><strong>HTTP relay</strong> → <code>service: https://host</code> (single URL; <code>url_rewrite</code>/<code>trust_all_cert</code> allowed).</li>
+<li><strong>In a language pack</strong> (Python, Node.js) only the <strong>Function</strong> binding exists — see
+  <a href="#language-packs">Authoring for a language pack</a>.</li>
 </ul>
 <h2 id="deterministic">Generate deterministically<a class="headerlink" href="#deterministic" title="Permanent link">&para;</a></h2>
 <p>Look up exact fields/values in <a href="../rest-automation.json"><code>rest-automation.json</code></a>; follow the rules in
@@ -3483,10 +3507,43 @@ W3C/OTel <code>traceparent</code> needs no configuration and departing from it i
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">trace.id.header</span><span class="p">:</span><span class="w"> </span><span class="s">'X-Legacy-Trace'</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="nt">correlation.id.header</span><span class="p">:</span><span class="w"> </span><span class="s">'X-Legacy-Cid'</span>
 </code></pre></div>
+<h2 id="language-packs">Authoring for a language pack<a class="headerlink" href="#language-packs" title="Permanent link">&para;</a></h2>
+<p>A <code>rest.yaml</code> served by the Python or Node.js pack (RFC-0018) follows this grammar with one binding and a few
+boundaries; the file lives at <code>resources/rest.yaml</code> next to the application file and is read when the pack's
+<code>application.yml</code> sets <code>rest.automation: true</code>.</p>
+<blockquote>
+<p><strong>Pre-write checklist (pack)</strong>
+- [ ] <code>service</code> is a <strong>function route of the pack application</strong> — never <code>flow:</code> or
+      <code>service: http.flow.adapter</code>, never an <code>http(s)://</code> relay, never a list (each fails the load by name).
+- [ ] The function reads the <code>AsyncHttpRequest</code> map (<code>AsyncHttpRequest(body)</code> in Python,
+      <code>new AsyncHttpRequest(body)</code> in Node.js), never the bare HTTP body, and replies with a value, an
+      envelope (status, headers) or an exception (the standard error body).
+- [ ] <code>authentication:</code> names a function that returns <code>true</code> — its reply headers become the request's
+      <code>session</code> map — or raises a 401.
+- [ ] <code>stream: true</code> → an interceptor writing through the pack's <code>EventStreamWriter</code>; <code>upload: true</code> → a
+      <code>POST</code> entry whose files arrive in the request map within <code>rest.upload.max.bytes</code>.
+- [ ] No <code>custom.content.types</code>, <code>mime.types</code> or XML (deferred); <code>static-content</code>'s <code>no-cache-pages</code> and
+      <code>filter</code> apply; <code>POST /api/event</code> and the actuators are the default entries.</p>
+</blockquote>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">rest</span><span class="p">:</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">'profile.lookup'</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'GET'</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">'/api/profile/{id}'</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10s</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">authentication</span><span class="p">:</span><span class="w"> </span><span class="s">'api.key.check'</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+<p>The function code for each language is in the packs' AI agent guides:
+<a href="https://accenture.github.io/mercury-python/guides/ai-agent-guide/">Python</a> ·
+<a href="https://accenture.github.io/mercury-nodejs/guides/ai-agent-guide/">Node.js</a>.</p>
 <h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../rest-grammar/">REST automation grammar</a> + <a href="../rest-automation.json"><code>rest-automation.json</code></a> — the source of truth.</li>
-<li><a href="../">REST Automation</a> — worked examples and the full feature set.</li>
+<li><a href="../">REST Automation</a> — worked examples and the full feature set;
+  <a href="../#rest-automation-in-the-language-packs">in the language packs</a>.</li>
+<li>The packs' REST Automation guides:
+  <a href="https://accenture.github.io/mercury-python/guides/rest-automation/">Python</a> ·
+  <a href="https://accenture.github.io/mercury-nodejs/guides/rest-automation/">Node.js</a>.</li>
 </ul>
 
 

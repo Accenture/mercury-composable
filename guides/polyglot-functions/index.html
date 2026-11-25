@@ -1933,6 +1933,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rest-automation-in-the-packs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REST automation in the packs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#operating-a-polyglot-installation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3417,6 +3428,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rest-automation-in-the-packs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        REST automation in the packs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#operating-a-polyglot-installation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3470,6 +3492,10 @@ and knowledge graphs.</em></p>
   foreign language.</li>
 <li><strong>For</strong> teams whose unit of work lives in another ecosystem — Python ML inference and
   data tooling, Node.js services — while flows and graphs stay on the engine.</li>
+<li><strong>And an application server</strong> — with the engines' REST automation in the packs
+  (RFC-0018), <code>rest.yaml</code> is the router in front of the functions, so a Python or Node.js
+  utility application is built and deployed as an engine application is; see
+  <a href="#rest-automation-in-the-packs">REST automation in the packs</a>.</li>
 <li><strong>Versions</strong> — Event Script flows call polyglot functions on any engine that speaks
   the standard wire format; MiniGraph <code>graph.task</code> requires engine <strong>v4.11.11+</strong>.</li>
 </ul>
@@ -3513,7 +3539,10 @@ golden conformance vectors the Java and Rust engines share.</p>
 graphs, no persistence, no pub/sub. Orchestration — sequencing, branching, retries,
 compensation — stays in Event Script and MiniGraph on the engine, where it is
 declarative, inspectable, and governed. A polyglot function is a <strong>unit of work</strong>; the
-architecture keeps it that way.</p>
+architecture keeps it that way. The HTTP edge <em>is</em> in scope: since RFC-0018 a pack serves
+the engines' REST automation — ingress configuration in front of its functions, never a
+flow (a <code>flow</code> binding is refused by name); see
+<a href="#rest-automation-in-the-packs">REST automation in the packs</a>.</p>
 <blockquote>
 <p>Why not subprocesses? A child-process design was investigated and shelved: it binds the
 engine to foreign runtime lifecycles (kernel-thread pinning, process-tree cleanup,
@@ -3598,6 +3627,63 @@ to at least v4.11.11 before pointing graphs at polyglot functions.</p>
   engines' default for Event over HTTP); the classic compact format is rejected with a
   teaching error.</li>
 </ul>
+<h2 id="rest-automation-in-the-packs">REST automation in the packs<a class="headerlink" href="#rest-automation-in-the-packs" title="Permanent link">&para;</a></h2>
+<p>Since RFC-0018 (2026-11-25) a pack is also a <strong>full-service application server</strong> for the
+field's utility applications. With <code>rest.automation: true</code> the host serves the entries of
+<code>rest.yaml</code> — the engines' <a href="../rest-automation/">REST automation</a>, in the engines'
+<a href="../rest-automation/rest-grammar/">grammar</a> — in front of its functions, on the one server
+and port, so a Python or Node.js utility application is designed, configured and deployed as
+an engine application is: functions, a <code>rest.yaml</code> and a web bundle, no web framework of its
+own. The file is read from <code>yaml.rest.automation</code> (one location; the default
+<code>classpath:/rest.yaml</code> is <code>resources/rest.yaml</code> next to the application file, under the
+packs' resources convention) and a misconfigured entry fails the start with the engines'
+message.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">rest</span><span class="p">:</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="s">"hello.rest"</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">methods</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">'GET'</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s">"/api/hello/{name}"</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10s</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="nt">cors</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cors_1</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="nt">tracing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nd">@preload</span><span class="p">(</span><span class="n">route</span><span class="o">=</span><span class="s2">"hello.rest"</span><span class="p">,</span> <span class="n">instances</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">hello_rest</span><span class="p">(</span><span class="n">headers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">body</span><span class="p">:</span> <span class="n">Body</span><span class="p">):</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">request</span> <span class="o">=</span> <span class="n">AsyncHttpRequest</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>                      <span class="c1"># the engines' request map, never the bare body</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">"greeting"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Hello, </span><span class="si">{</span><span class="n">request</span><span class="o">.</span><span class="n">path_parameter</span><span class="p">(</span><span class="s1">'name'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">}</span>
+</code></pre></div>
+<p><strong>What a pack serves</strong> — version 1 is the Rust engine's subset, with Java parity where the
+Rust engine has it: the function binding; <code>{param}</code> and a trailing <code>*</code>, the most specific
+route winning; <code>timeout</code> (1 s to 5 min, an inbound <code>x-ttl</code> winning); <code>cors</code> with the
+preflight; <code>headers</code> keep, drop and add; <code>authentication</code> — a function whose <code>true</code> verdict
+lets the request through and whose reply headers ride as the <code>session</code> map; <code>tracing</code> with
+<code>traceparent</code> first, then the trace-id header, else a fresh id, the correlation id always
+ensured and echoed, and the three per-endpoint header-name overrides; <code>stream: true</code>
+rendered as Server-Sent Events or chunked text on the pack's reply sink; the content-type
+dispatch and the <code>Accept</code> negotiation; the standard error body; <code>static-content</code> with its
+<code>no-cache-pages</code> and <code>filter</code>; <code>POST /api/event</code> and the actuators as the default entries,
+so a user entry can attach <code>authentication</code>, CORS or a timeout to the Event API itself.
+<code>upload: true</code> is the packs' <strong>bounded form</strong> of the engines' streaming upload: the files of
+a <code>multipart/form-data</code> body arrive in the request map under the engines' keys with their
+bytes in <code>contents</code>, all together within <code>rest.upload.max.bytes</code> (16 MiB). The function
+receives the engines' <code>AsyncHttpRequest</code> map and replies with a value, an envelope or an
+exception, exactly as a function behind REST automation does on the engine; a traced call
+leaves the <code>http.request</code> record and the function's round trip, so the OpenTelemetry
+forwarder exports the request as a SERVER span.</p>
+<p><strong>What a pack refuses</strong>, by name at load, so the grammar itself shows the scope fence: a
+<code>flow</code> binding (flows run in the engines), the HTTP relay (an <code>http(s)://</code> service) and the
+A/B dual service. Deferred until a field request, as in the Rust engine: <code>custom.content.types</code>,
+<code>mime.types</code>, XML bodies, request-body streaming and several file locations. No framework and
+no new dependency: aiohttp in Python, <code>node:http</code> in Node.js.</p>
+<p>The packs' own applications are the worked examples: the LLM helper's document intake
+(<code>POST /api/llm/upload</code>), the ask-person reply page and endpoint, and the agent-question
+app's feed, history, transcripts and click — a device's Server-Sent Events stream as a
+<code>stream: true</code> entry and the sign-in as an authentication function among them. The two
+packs build it in lockstep from one vector file (<code>rest-automation-vectors.json</code>,
+byte-identical), so a <code>rest.yaml</code> loads and answers the same in either. The full guides:
+<a href="https://accenture.github.io/mercury-python/guides/rest-automation/">REST Automation for Python</a>
+and <a href="https://accenture.github.io/mercury-nodejs/guides/rest-automation/">for Node.js</a>; an
+agent authoring an entry starts at the
+<a href="../rest-automation/ai-agent-guide/#language-packs">REST AI agent guide</a>.</p>
 <h2 id="operating-a-polyglot-installation">Operating a polyglot installation<a class="headerlink" href="#operating-a-polyglot-installation" title="Permanent link">&para;</a></h2>
 <p>The wrappers serve the engines' actuator endpoints on the same port as <code>/api/event</code> —
 <code>/info</code>, <code>/info/routes</code>, <code>/env</code>, <code>/health</code>, <code>/livenessprobe</code> with the <code>type=info</code> /
@@ -3614,6 +3700,10 @@ extended to the wrapper family.</p>
 <li><a href="https://accenture.github.io/mercury-python/">Composable for Python</a> and
   <a href="https://accenture.github.io/mercury-nodejs/">Composable for Node.js</a> — write the
   functions: handler styles, local composition, testing, AI agent guides.</li>
+<li><a href="../rest-automation/">REST Automation</a> — the engines' <code>rest.yaml</code>, which the packs
+  serve too (RFC-0018); the packs' guides:
+  <a href="https://accenture.github.io/mercury-python/guides/rest-automation/">Python</a> ·
+  <a href="https://accenture.github.io/mercury-nodejs/guides/rest-automation/">Node.js</a>.</li>
 <li><a href="../../test-reports/event-over-http-interop/">Interop Test Report</a> — the conformance
   evidence, including the polyglot wrapper round.</li>
 <li><a href="../agent-tools/">Built-in Agent Tools</a> — the packs' agent-tools extension: the file, web and clock
