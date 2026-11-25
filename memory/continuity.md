@@ -118,10 +118,13 @@
   runtime for certain nodes**). The tracks echo each other — shared co-design, certification and promotion — and differ only
   in the nature of the work and where execution goes; AI gains a **run-time participant** role. **The north star MOVED: the
   next invariant re-verify must check the 2026-09-17 text, not the 2026-06-20 one.** [[bp-agent-orchestration]] is Track 2's
-  Blueprint gap; Track 1 and the collaboration foundation are delivered.
-- **last_invariant_check:** 2026-11-25 | 2026-11-25-053648.md (GATE RAISED — 49 sessions since the 2026-11-13 walk, cadence 40:
-  [[reverify-invariants-20261125]] lists the 20 `core` facts and the Vision for Eric to re-confirm or supersede; the walk is his,
-  and this line records COMPLETE once he has walked it.)
+  Blueprint gap; Track 1 and the collaboration foundation are delivered. **Track 2's foundation delivered too (Eric,
+  2026-11-25, at the invariant walk): what remains is growth, and the two tracks are converging.**
+- **last_invariant_check:** 2026-11-25 | 2026-11-25-054937.md (COMPLETE — Eric walked the 20 `core` facts and the Vision (the
+  2026-09-17 two-track text) against live-tree evidence at `4a64278fa`, the gate [[reverify-invariants-20261125]] raised by
+  the same day's review; ALL CONFIRMED as written - Java 21 stays the toolchain with the Java 25 lift still pending
+  ([[java25-baseline]]); the Vision's Track 2 state REFRAMED by Eric from design phase to foundation delivered, growth the
+  work ahead. Cadence 40; the next re-verify is due 40 sessions after this log.)
   Prior: 2026-11-13 | 2026-11-13-031614.md (COMPLETE — Eric walked the 20 `core` facts and the Vision (the
   2026-09-17 two-track text) against live-tree evidence at `aaac2370`, the gate [[reverify-invariants-20261104]]; ALL
   CONFIRMED. Java 21 stays the toolchain until most field installations run Java 25; `trace-thread-keyed-mono-gotcha`
@@ -402,7 +405,7 @@
   audit must know at the end of a run travels in the working record, never in a second key or a second write; a new fact is
   a field of the turn's facts and a column in both packs' schema and the published page; the engine adds identity headers,
   never content; what a model extracts belongs in the agent's knowledge graph (RFC-0013), not here. (ADR-0035)
-  <!-- id: transcript-audit-published-contract | created: 2026-11-17 | last_used: 2026-11-24 | uses: 3 | tier: active | origin: 2026-11-17-094416 -->
+  <!-- id: transcript-audit-published-contract | created: 2026-11-17 | last_used: 2026-11-24 | uses: 3 | tier: archive-candidate | origin: 2026-11-17-094416 -->
 
 ## Conventions
 
@@ -668,7 +671,11 @@
   functions ON the wrappers. Run-time complement to the design-time [[bp-ai-companion-llm-backend]]; builds on
   [[bp-polyglot-functions]]; compounds [[bp-graph-governance-lifecycle]]. Concept doc `draft-design-specs/ai-agent-orchestration.md`
   (Q1-Q8, E0-E4); direction ratified by Eric 2026-08-25. **Status framing (Eric, 2026-09-17): the graph-based AI SDLC is in its
-  DESIGN phase** - the sole remaining Blueprint gap, deliberately long-horizon: an epic, not a task.
+  DESIGN phase** - the sole remaining Blueprint gap, deliberately long-horizon: an epic, not a task. **Reframed by Eric at the
+  invariant walk of 2026-11-25: the Track 2 FOUNDATION IS DELIVERED - beyond the design phase (the agent loop ADR-0033, the
+  audit store ADR-0035, the tools ADR-0036, a person in the loop RFC-0014, hot deployment ADR-0038, all driven live on both
+  engines); the gap stays open for GROWTH - additional tools in future iterations - and the next sprint revisits the
+  documentation because Track 1 and Track 2 are converging ([[docs-tracks-converging]]).**
   **Delivered so far.** E0 (2026-09-01, [[ot-agent-orchestration-e0]]): the support-triage graph on `llm.chat`, the first live
   graph.task-to-wrapper drive; re-driven 2026-10-01 with real Claude through both engines and both packs
   ([[llm-helper-certification-java]]). Q8's transport (2026-09-12, [[ot-streaming-return-route]]). **Sprint 1, AWS Bedrock
@@ -725,7 +732,7 @@
   pattern is solved and inherited; the runtime posture is the open problem - and why the engine core stays vendor-free with
   adapters as functions ON the wrappers: the gateway/MCP edge is where vendor specifics live.
   → serves: vision-mercury-composable
-  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-25 | uses: 48 | tier: working | origin: 2026-08-25-213703 -->
+  <!-- id: bp-agent-orchestration | created: 2026-08-25 | last_used: 2026-11-25 | uses: 49 | tier: working | origin: 2026-08-25-213703 -->
 ## Open Threads
 
 > Open Threads live **one per file** in `memory/open-threads/` (`thread-<id>.md`;

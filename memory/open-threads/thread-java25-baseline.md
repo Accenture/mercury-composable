@@ -6,4 +6,4 @@
   code written under it (#661, #662) stays as it is. Until approval nothing changes: the rule holds and the build stays
   on 21. Status: planned, awaiting Eric's approval; the trigger used to be field adoption of Java 25.
   → serves: vision-mercury-composable
-  <!-- id: java25-baseline | created: 2026-11-20 | last_used: 2026-11-20 | uses: 1 | tier: working | origin: 2026-11-20-104438 -->
+  <!-- id: java25-baseline | created: 2026-11-20 | last_used: 2026-11-25 | uses: 2 | tier: working | origin: 2026-11-20-104438 -->
