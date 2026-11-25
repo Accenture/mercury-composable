@@ -10,6 +10,8 @@ hot-deployed graph reaches a function the static Event-over-HTTP map has never h
 developer's two surfaces - a deployment dialog in the Playground for dev mode, and two Node template scripts for an
 engine without the UI (3.11, D17), which reverses Q8. Raised as RFC-0017 in `docs/arch-decisions/RFC.md`; next: the
 build in both engines, the live drive, then promotion to an ADR. It amends ADR-0011 and extends ADR-0027 (section 4).
+**Built in both engines (#673, #675, #676, #677; mercury #424), driven live 2026-11-25 (`docs/test-reports/hot-deploy-live-drive.md`)
+and PROMOTED to ADR-0038 the same day; this spec stays as the design record.**
 **Concept:** the maintainer's future-state draft of 2026-11-24 - bundled graphs and the prototyping workspace unchanged;
 a third folder, `/tmp/deploy`, where a graph set uploaded to a deployment endpoint is registered without a restart and
 removed by an undeployment endpoint; two feature switches, off for field installations that have not adopted the AI
@@ -719,7 +721,7 @@ on-demand direction that became D13. The questions stay as asked, with the answe
 | WP4 | The Rust twin: `graphs.rs` as one struct under one lock, `graph_set_loader.rs` shared pieces, the reconcile, the three handlers in `rest.rs`, `server.url` and `server.header[]` in `skills.rs` over the Event API client, the same keys and messages. | the twin tests of WP1 and WP2 |
 | WP5 | The live drive on the example engine (Q9): negative controls first (switch off is 503, a bundled id is 409, a tampered body is 400), then the positive path through the Playground's **Deploy** dialog in dev mode, the two scripts against an engine started with `app.env` unset, `curl`, REST calls, a replace, an undeploy and a restart. Record: `docs/test-reports/hot-deploy-live-drive.md`. **Done 2026-11-25** on both engines: a switch that is off is 404 (finding 1), a tampered body is 400 when malformed or when the digest header is sent (finding 2), a provider's function must be public (finding 3). | the record |
 | WP6 | The two-instance live drive of 3.8: two example engines on one folder, a deploy on one called on the other at once, a replace, an undeploy, a hand-copied package ignored. Part of WP5's record. **Done 2026-11-25**, the Java and the Rust engine on one folder. | the record |
-| WP7 | Promotion: the ADR from this spec and the drive, ADR-0011 marked amended, ADR-0027 marked extended, the RFC entry marked promoted. | the maintainer's acceptance |
+| WP7 | Promotion: the ADR from this spec and the drive, ADR-0011 marked amended, ADR-0027 marked extended, the RFC entry marked promoted. **Done 2026-11-25: ADR-0038.** | the maintainer's acceptance |
 
 ## 8. References
 

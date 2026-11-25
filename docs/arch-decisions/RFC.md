@@ -158,8 +158,8 @@ trace lineage checked; then an ADR.
 ---
 
 ## RFC-0017 — Hot deploy and undeploy of knowledge graphs: a certified graph set uploaded to a running engine, registered through the gate on every instance on demand, and removed by name
-**Status:** Open · **Raised:** 2026-11-24 · **Serves:** vision-mercury-composable · **Thread:** `hot-deploy-graph-sets`
-<!-- id: rfc-0017 | status: open | thread: hot-deploy-graph-sets -->
+**Status:** Promoted → ADR-0038 · **Raised:** 2026-11-24 · **Serves:** vision-mercury-composable · **Thread:** `hot-deploy-graph-sets`
+<!-- id: rfc-0017 | status: promoted | thread: hot-deploy-graph-sets -->
 
 **Proposal.** A graph deploys today in one of two ways, both at startup: bundled in the artifact and listed in the
 manifest (`graph.model.automation`, ADR-0011), or packaged as a graph set the manifest names (ADR-0027); the
@@ -254,14 +254,16 @@ engine without the UI), all on 2026-11-24; the design spec carries the five roun
 engine's registry snapshot, shared loader pieces and reconcile, then the three endpoints, then the Rust twin, the
 docs and the claims, then the live drive on the example engine with negative controls first (switch off is 503, a
 bundled id is 409, a tampered body is 400) and a two-instance drive on one folder; promotion to an ADR after the
-drive, with ADR-0011 marked amended and ADR-0027 extended.
+drive, with ADR-0011 marked amended and ADR-0027 extended. **Promoted → ADR-0038 (2026-11-25)**, after the live drive
+of both engines on one hot folder (`docs/test-reports/hot-deploy-live-drive.md`); ADR-0011 marked amended, ADR-0027 marked
+extended; the register's status above says so.
 
 **Built and driven (2026-11-24 to 2026-11-25):** the Java engine (#673, #675, #676, #677), the Rust twin (mercury #424)
 and the live drive of both engines over one hot folder, `docs/test-reports/hot-deploy-live-drive.md`: every scenario
 held, with three corrections to the wording - a switch that is off leaves the entry unserved (404; 503 is a switch on
 with the folder refused), bytes altered inside a well-formed package pass the strict read so the digest header is the
 check, and the provider named by `server.url` must publish the function (a private one answers 403) - and four
-operational follow-ups declared in the record. Promotion to an ADR is next.
+operational follow-ups declared in the record. Promoted to ADR-0038 the same day.
 
 ---
 

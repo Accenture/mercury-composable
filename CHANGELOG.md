@@ -325,6 +325,15 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    deployment**, which opens the packaging panel straight in its Deploy view, so deploy and undeploy are one click from
    the menu like the other tools. **Upgrade note:** none - documentation, the scripts' messages and a menu entry.
 
+6. **RFC-0017 promoted to ADR-0038 - hot deploy and undeploy of graph sets.** The ledger's entry records the decision after
+   the live drive: the set as the unit, named after its one main graph with private subgraphs; manifests own their ids
+   and one hot set owns an id; one swap per deployment; the record as the allowlist and revision marker, converging
+   several instances on demand; the digest header as the integrity check; two switches off by default with the
+   functions optional, so a switch off leaves the entry unserved (404) and 503 means the folder was refused; `server.url`
+   on a task-consuming node, the provider's function public; the Deploy view and the scripts as clients of the same
+   entries. ADR-0011 is marked amended (deployment is explicit and gated, no longer restart-scoped) and ADR-0027 extended
+   (the set as the run-time unit). **Upgrade note:** none - a ledger entry.
+
 ## Version 4.12.30, 11/5/2026
 
 Lock-step with the Rust port, which catches up from 4.12.27 to this release with every common feature since: the agent

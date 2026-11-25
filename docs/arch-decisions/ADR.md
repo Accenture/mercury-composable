@@ -33,6 +33,137 @@ in that ADR's own *Rationale* section.
 
 ---
 
+## ADR-0038 — Hot deploy and undeploy of graph sets: a certified set uploaded to a running engine, registered through the gate on every instance on demand through its own record, and removed by name {#adr-0038}
+**Status:** Accepted · **Date:** 2026-11-25 · **Serves:** vision-mercury-composable · **Formalizes:** hot-deploy-set-record-on-demand · **Amends:** [ADR-0011](#adr-0011) · **Extends:** [ADR-0027](#adr-0027)
+<!-- id: adr-0038 | status: accepted -->
+
+**Abstract.** A graph set can be deployed to a **running** engine and removed by name, with no restart and no rebuild,
+under two switches that default to off. `POST /api/graph-set/deploy` takes the canonical `.pack` (ADR-0026, ADR-0027),
+checks an optional `X-Graph-Set-SHA256` header against the bytes, reads the set strictly, requires it to be named after
+its one main graph, refuses an id a manifest or another hot-deployed set owns, writes the files to the hot folder under
+temporary names, runs every graph through the deployment gate of ADR-0011, swaps the compiled registry once, and writes
+the set's record `<id>.deployed.yaml` last. `POST /api/graph-set/undeploy/{graph-id}` removes the set in one swap, the
+record first and then its files; `GET /api/graph-set/deployed` lists the records with a status per set. The record is
+both the allowlist and the revision marker: a lookup for a hot-deployed or unknown graph id reads it, reconciles the set
+as a unit when it changed or is gone, and a restart re-registers every recorded set from the bytes its digest vouches
+for - so several instances over one folder converge on demand, with no poll, no broadcast and no mesh. The maintainer's
+sprint of 2026-11-24 (RFC-0017, five design rounds the same day), built in both engines (#673, #675, #676, #677; the Rust
+twin mercury #424) and driven live on 2026-11-25 with the Java and the Rust engine on one folder
+(`docs/test-reports/hot-deploy-live-drive.md`); the Playground's **Graph set deployment** view in dev mode and two
+starter-template scripts are clients of the same three entries.
+
+**Context.** Since ADR-0011 a graph model reaches the engine through the manifest at startup, and since ADR-0027 a set
+reaches it packed, gated and deployed all or none - at a restart. The rapid-prototyping lane of 4.12.19 removed the
+rebuild and kept the restart; nothing undeployed. The Vision's governance lifecycle - dry-run, certify, stage, approve,
+production - had every step but the last as a mechanism. The maintainer's draft of 2026-11-24 asked for a third folder
+beside the bundled models and the dev-mode workspace, where a certified set uploaded to a deployment endpoint is
+registered without a restart and removed by an undeployment endpoint, behind feature switches off for a field
+installation that has not adopted the AI SDLC, and for user-defined functions to move into language-pack sidecars so the
+engine's own artifact stops changing when graphs do. The review's questions were how several replicas learn of an
+upload without a poll (his direction: on demand), what the unit and the handle are (his direction: a set named after its
+one main graph), how a graph reaches a function the static Event-over-HTTP map, loaded once at startup, has never heard
+of (`server.url`), and how a developer uses the endpoints (a Playground view in dev mode, two scripts without it).
+
+**Decision.**
+
+- **The unit is a graph set, named after its one main graph.** A hot-deployable set has exactly one main graph and zero
+  or more subgraphs, and the set name *is* the main graph's id - the pack file, the record, the undeploy path and the
+  REST path are one string; `graph_id` in the manifest, when present, must equal it (400 otherwise). The main graph is
+  served at `POST /api/graph/{graph-id}`; the **subgraphs are private**: reached from the set's own graphs through
+  `graph.extension`, 404 at the graph and OpenAPI entries, refused from another set's extension - enforced at both
+  edges, so a whole gate. A startup-lane set keeps ADR-0027's freedom of name and its public graphs.
+- **Ownership.** A graph id is unique across the engine: a configured manifest owns its ids and one hot-deployed set
+  owns an id. A set that carries a bundled graph's id, or an id another hot-deployed set holds, is refused with 409 and
+  the owner named - a bundled id is never shadowed. Reuse across sets is by reference to a set of its own, never by
+  containment; a composable function, by contrast, is reused by every graph that names its route.
+- **One swap per deployment.** The compiled registry is one immutable snapshot replaced whole; a set is registered,
+  replaced or removed as a unit, so a run never sees half of it. A re-upload of the same set name replaces the set all
+  or none; the same bytes again change nothing. Suspended runs and asynchronous extensions across a replace or an
+  undeploy are declared, not drained.
+- **The record is the allowlist and the revision marker.** The hot folder holds, per set, the package, one file per
+  graph and the engine-written `<id>.deployed.yaml` (set, version, SHA-256, time, graphs, files), written last by
+  rename, deleted first on undeploy. A lookup for a registered hot-deployed id reads its set's record: the same digest
+  means serve, a different one or none means reconcile that set under the lock and look up again; a lookup for an
+  unknown id checks whether a record of that name exists; a manifest's id reads nothing. A restart reconciles every
+  record in the folder. A `.pack` or `.json` no record names is ignored with a WARN: the endpoint is the only door at
+  run time, as the manifest is at startup; a record written by hand is write access to the volume, the installation's
+  perimeter. `graph.hot.deploy.throttle` (ms, default 0) is the one knob, the least time between two reads of a set's
+  record.
+- **Integrity.** The optional `X-Graph-Set-SHA256` header is the check that the bytes are the ledger's (400 on a
+  mismatch, with the body's digest); the record and the log carry the digest. The strict read refuses a malformed
+  package, not an altered one - bytes changed inside a string value still read as a well-formed set and pass the gate
+  (found in the live drive) - so a pipeline sends the header. A refused upload leaves no file. A verifier route for a
+  signature check inside the request path is a named seam, not built.
+- **Two switches, off by default; the functions optional.** `graph.hot.deploy` registers the deploy function,
+  `graph.hot.undeploy` the undeploy function, either the list; `location.graph.deploy` (default `file:/tmp/deploy`) is a
+  `file:/` folder the application can write, outside the Playground's temp folder and every manifest's `unpack` folder,
+  mounted as a persistent volume to survive a restart. The three functions carry `@OptionalService` on their switch, so
+  with a switch off the function never registers, REST automation skips its entry at startup and the URL answers **404**
+  as any unknown path does - the maintainer's ruling on 2026-11-25, after the drive found the design's draft had said
+  503: an engine that does not hot deploy serves no entry and discloses nothing. **503** naming the key is the answer when
+  a switch is on but the engine turned hot deployment off for the run because the folder is refused (the temp folder,
+  inside it or above it, or a folder it cannot write); a hot folder that meets a manifest's `unpack` folder refuses that
+  manifest's sets instead, since the hot folder is configured first. The 4.12.19 rapid-prototyping lane and the bundled
+  models are unchanged.
+- **The deploy answer carries an advisory, never a refusal:** the `task` routes the set names (known here, unknown, or
+  remote through `server.url`) and the `graph.extension` targets outside the set (known, unknown, or another set's
+  private subgraph), so a dependency on a function, another set or a bundled graph is visible at deploy time.
+- **A task's provider on the node.** A node that consumes a `task` route (`graph.task`, `graph.suspend`, `graph.resume`)
+  may name its function's provider: `server.url`, the provider's Event-over-HTTP endpoint with `${...}` substitution
+  resolved per instance at registration and `/api/event` supplied when the URL has no path, and `server.header[]`,
+  `name: value` transport headers such as a gateway's token. The provider named on the node wins over a local function
+  and over the static map; the reachability check is skipped and the provider's answer is the node's error - its 404
+  for a route it lacks, its 403 for a function it does not publish, since the Event API serves public functions only and
+  a provider's function must be public (found in the live drive: the engines publish none; a language pack's extension
+  publishes its functions); `for_each` calls one element at a time; the gate refuses the property on another skill, a
+  header without a URL, and a URL not absolute after resolution. The static map stays the installation-wide binding; the
+  node's URL is the graph's own binding, caller-side knowledge as the map is, so `event-api-local-routes-only` stands.
+  The posture this serves: user-defined functions live in sidecars, and the engine's artifact stops changing when graphs
+  do.
+- **Two developer surfaces, both clients of the same entries.** In dev mode the Playground's **Tools → Graph set
+  deployment** opens the packaging panel's Deploy view: pack and deploy the assembled set in one step or a dropped
+  `.pack`, the package's SHA-256 computed in the browser so it can go to the ledger from the same screen, an expected
+  digest sent as the header, the deployed sets listed with an undeploy behind a confirmation, the switches named when
+  the engine has them off. For an engine without the Playground, `templates/starter-graph/scripts/deploy-graph-set.mjs`
+  and `undeploy-graph-set.mjs` (zero dependencies; `--engine`, `--file`, `--sha256`, `--header`, `--digest`, `--list`,
+  `--graph`; exit 0, 1 on a refusal, 2 on a usage error), the folder's only copy, which the Rust repository carries byte
+  for byte. The engine changes nothing for either.
+- **Both engines, one record format.** The Rust twin (mercury #424) shares the record, the switches, the messages and
+  the webapp bundle, so the two engines converge on one folder; one difference in the port is declared - its state lock
+  is a plain mutex, so no registry read that runs the refresh hook may be called while it is held.
+
+**Alternatives.** (a) *A periodic check of the folder (round 1's option B, `graph.hot.deploy.sync`):* a thread, an
+interval and a window in which replicas disagree, for a question one small read per request answers; rejected by the
+maintainer for on-demand registration. (b) *A broadcast over the service mesh:* ADR-0006 keeps the mesh opt-in, so it
+cannot be the default path. (c) *A per-graph file check (`file.exists()` on `<graph-id>.json`):* a replacement keeps every
+file in place, so other instances keep the old version until a restart, and each graph of a set would refresh alone,
+losing ADR-0027's all-or-none; hence the record as the marker. (d) *One global revision file:* two administrators
+deploying different sets write the same file, a last-writer race the per-set record removes. (e) *Loose JSON upload:* the
+set is the certified unit (D1). (f) *Switches default on:* a write path turned on in every field installation at the next
+upgrade. (g) *A configured server alias instead of `server.url` on the node:* keeps the URL out of the graph but needs an
+engine configuration change per server, a reloadable map a second artifact to coordinate with each set. (h) *Registering
+the deploy functions always so that a switch off answers 503:* the maintainer kept the optional-service shape; an entry
+that is not served discloses nothing, and 503 keeps a meaning of its own.
+
+**Consequences.** ADR-0011 is amended: deployment stays explicit and gated - the only doors are the manifest at startup
+and the deploy entry at run time, both through the gate - but it is no longer restart-scoped for a set uploaded under the
+switch, and a set may register at first use on an instance that did not receive the upload, still only through the
+record and the gate; hot-dropping a file still does nothing, and compiled-or-404 stands. ADR-0027 is extended: the set is
+the unit of run-time deployment too, a hot-deployable set is named after its main graph and exposes it alone, and the
+loader's pieces (`load`, `gate`, `register`, the digest, the normalized path) are shared by the startup loader and the
+hot-deploy functions. Three claims pin the rules (`hot-deploy-set-owns-its-ids`, `hot-deploy-one-swap-per-set`,
+`task-provider-on-the-node`) on both engines. Declared, not engineered: a suspended run resumes on the set that is
+registered when it resumes; the collision rules above; the public-function rule for a provider. Follow-ups from the
+drive, operational polish for a later increment: an INFO line when the on-demand reconcile registers another instance's
+deploy (the undeploy side logs); the list entry under off-for-this-run answers 200 with the default folder; a stray
+`.json` draws no WARN where a `.pack` does; the deploy INFO line carries no caller address. Out of scope, with seams
+left: the certification means (the ledger or the signature is the field's; the verifier route the seam), authentication
+(the gateway's, or `rest.yaml`'s `authentication` option), the operational dashboard (the list entry its read). The
+design spec is `draft-design-specs/hot-deploy-undeploy-graph-sets.md`; the live drive is the evidence. Serves the
+Vision's governance lifecycle: graph models promote to production as standard endpoints, now without a restart.
+
+---
+
 ## ADR-0037 — The mini-scheduler picks one instance by the state resolver's conditional claim and one site by the environment store; `leader.election` over a service mesh is retired {#adr-0037}
 **Status:** Accepted · **Date:** 2026-11-20 · **Serves:** vision-mercury-composable · **Formalizes:** scheduler-resolver-conditional-claim · **Supersedes:** [ADR-0030](#adr-0030)
 <!-- id: adr-0037 | status: accepted | supersedes: adr-0030 -->
@@ -813,7 +944,7 @@ writer pool, and a Java 21 runtime benchmark (the report's numbers come from a J
 ---
 
 ## ADR-0027 — Graph sets: one or more graphs in a canonical `.pack`, gated when packed and deployed all or none {#adr-0027}
-**Status:** Accepted · **Date:** 2026-10-06 · **Serves:** vision-mercury-composable · **Formalizes:** graph-set-pack-and-deploy
+**Status:** Accepted (extended by [ADR-0038](#adr-0038), 2026-11-25: the set is the unit of run-time deployment too; a hot-deployable set is named after its main graph and exposes it alone, its subgraphs private - two rules a startup-lane set keeps its freedom from; the loader's pieces are shared with the hot-deploy functions) · **Date:** 2026-10-06 · **Serves:** vision-mercury-composable · **Formalizes:** graph-set-pack-and-deploy
 <!-- id: adr-0027 | status: accepted -->
 
 **Abstract.** A **graph set** is one or more graph models delivered as one canonical package (ADR-0026), the file `<set>.pack`,
@@ -1539,8 +1670,8 @@ at-most-once actor-step guarantee).
 ---
 
 ## ADR-0011 — CompileGraph is the mandatory deployment gate for graph models (CompileFlows parity) {#adr-0011}
-**Status:** Accepted · **Date:** 2026-07-29T19:03:28.000Z · **Serves:** vision-mercury-composable · **Formalizes:** compilegraph-mandatory-gate
-<!-- id: adr-0011 | status: accepted -->
+**Status:** Accepted (amended by [ADR-0038](#adr-0038), 2026-11-25: deployment stays explicit and gated but is no longer restart-scoped for a graph set uploaded under `graph.hot.deploy`, and a set may register at first use on an instance that did not receive the upload, still only through its record and the gate; hot-dropping a file still does nothing, and compiled-or-404 stands) · **Date:** 2026-07-29T19:03:28.000Z · **Serves:** vision-mercury-composable · **Formalizes:** compilegraph-mandatory-gate
+<!-- id: adr-0011 | status: accepted | amended-by: adr-0038 -->
 
 **Abstract.** A deployed graph model is executable at `POST /api/graph/{graph-id}` **only**
 when it is listed in the graph manifest (`graph.model.automation`) **and** passes the
