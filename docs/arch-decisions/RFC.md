@@ -39,6 +39,88 @@
 
 ---
 
+## RFC-0018 — REST automation in the language packs: `rest.yaml` as the router of a Python or Node application, so a field utility app is built and deployed as an engine application is
+**Status:** Open · **Raised:** 2026-11-24 · **Serves:** vision-mercury-composable · **Thread:** `rest-automation-packs`
+<!-- id: rfc-0018 | status: open | thread: rest-automation-packs -->
+
+**Proposal.** A language pack serves one HTTP path for its functions, `POST /api/event`, beside the actuators, a
+static folder and the routes an extension mounts in code (`Platform.add_routes`). The field runs many Python and Node
+scripts that are not standard anything, so a utility application there brings its own web framework, its own error
+body, its own headers and its own deployment, or stays a script. The engines answer the same need with REST automation:
+`rest.yaml` is the router - an entry maps a URL and its methods to a function, with CORS, header transforms, an
+authentication function, a timeout, tracing and static content; "config is the code". The maintainer's direction of
+2026-11-24: offer REST automation in both packs, so a pack becomes a full-service application server for the utility
+apps of the field, designed and deployed as an engine application is - inspired by the AI SDLC work, where the utility
+functions of agent loops already run in the packs (ADR-0033, ADR-0035, ADR-0036, RFC-0014). This entry is the
+investigation of 2026-11-24 (the Python pack's session log 2026-11-24-233943) as a proposal. What changes: under
+`rest.automation: true` (off by default, so every installation today is unchanged) a pack reads one
+`yaml.rest.automation` location, default `classpath:/rest.yaml` read as `resources/rest.yaml` next to the application
+file under the packs' resources rule, `file:` for an absolute path; the grammar, the keys, the messages and the error
+body are the engines', never a pack dialect - a `rest.yaml` written for the Rust engine's subset loads in a pack
+unchanged, except that it must not bind a flow. One server, one port: `POST /api/event` and the actuators become the
+default entries merged when the file does not claim their URLs, as in both engines, so a user entry can attach
+`authentication`, CORS or a timeout to `/api/event` as the lambda-example does; precedence is the file's entries (the
+defaults among them), then an extension's mounted routes, then static content, then the error shape. Version 1 is the
+Rust port's subset, Java parity where the Rust port has it: function binding; `{param}` and a trailing `*`; the most
+specific route wins; `timeout` clamped 1 s to 5 min with an inbound `x-ttl` winning; `cors` with the preflight 204;
+`headers` keep-drop-add; `authentication` in the simple form, the verdict's headers riding as the `session` map;
+`tracing` with `traceparent` first, then the trace-id header, then a fresh id, the correlation id always ensured and
+echoed, and the three per-endpoint header-name overrides; `stream: true` rendered as SSE or chunked text on the packs'
+existing reply sink; the content-type dispatch table and the `Accept` negotiation; 404, 405, 401, 408 and 503 in the
+engines' body; `static-content.no-cache-pages` and `filter` (a function on the filter route; both left out of the
+packs' static content of 2026-11-20 because they presuppose this parser); the request delivered as the
+`AsyncHttpRequest` map with the engines' keys, and a function's returned envelope setting the status and the headers.
+The edge records `http.request` with the path `GET /api/x` as the engines do, so the forwarder's kind rule makes it
+the SERVER span with nothing new. Refused at load, by name, so the grammar itself shows the scope fence: `flow` and
+`service: http.flow.adapter` (the message says that flows run in the engines), the HTTP relay (`http(s)://` service,
+`url_rewrite`, `trust_all_cert`) and the A/B dual service. Deferred as in the Rust port: `upload`,
+`custom.content.types`, `mime.types`, XML. Out of scope: the outbound `async.http.request` client (Python has aiohttp,
+Node has `fetch`) and WebSocket. No new dependency in either pack: aiohttp's routes, cookies and multipart in Python,
+`node:http` in Node - where the legacy pack's port (tags v4.2.40 to v4.3.28: `rest-automation.ts`, `routing.ts`,
+`async-http-request.ts`, on express, body-parser, cookie-parser and busboy) is a reading aid for the parser and the
+request model, never a dependency source. Proof the packs' way: a shared `rest-automation-vectors.json` for the pure
+half - parser validation with the engines' messages, route matching, header transforms, negotiation, the request-map
+shape - byte-identical across the two packs; the engines' `rest-automation.json` grammar, which a Java CI drift test
+keeps in step with `RoutingEntry`, loaded as a fixture so a pack's parser cannot drift from it; the Rust port's 33
+named tests as the behavioural checklist; a live drive through a browser and through an engine's `async.http.request`,
+with the trace lineage checked. The packs' own extensions are the first adopters in waiting: the agent-question app
+mounts six routes and the ask-person flow four by hand in each pack, each with its own method checks, bearer or OAuth
+check and error rendering - all but the SSE feed and the OAuth shell are a `rest.yaml` entry and a `@preload`
+function. What a decision would commit the project to: a pack is an HTTP application host for functions written in
+its language, and each pack's Vision says so (amended by the maintainer on 2026-11-24, from "a deliberately tiny
+Event-over-HTTP wrapper" to a full-service application development server for utility apps); the scope fence stands
+unchanged - no flows, no graphs, no persistence, no pub/sub in the package, `flow` refused by name; the grammar is the
+engines' and a pack never grows a dialect of it; no web framework enters a pack; the two packs build it in lockstep
+from one vector file; this repository's polyglot guide keeps "no flows, no graphs, no persistence, no pub/sub" and
+gains the host.
+
+**Options.** (A) The shape above - proposed. (B) A web framework in each pack (FastAPI, Express) wrapping functions -
+rejected: a second grammar, framework dependencies against the packs' two, and the drift the field has today under
+another name. (C) The status quo - routes mounted in code through `Platform.add_routes`, each application its own
+router, its own authentication and its own error body; what the packs' own extensions do, and what the field's scripts
+do by other means. (D) An engine in front: an engine's REST automation already reaches a pack function through the
+Event-over-HTTP map, so where an engine runs beside the scripts nothing is missing - but the field's utility apps run
+where no engine does, which is the point. (E) Re-adopt the legacy Node port - rejected for its Express base; its parser
+and request model are read, not depended on. (F) Full Java parity in version 1 (the relay, the dual service, `upload`,
+the authentication routing specs, several file locations) - not proposed; the Rust port's deferrals are adopted, each
+reopenable on a field request. (G) `flow` ignored as an unknown key rather than refused - rejected: a silent 404 where
+an engine would run a flow hides the fence. Open for the review: `/api/event` as a default entry carries the engines'
+default timeout (60 s) where today only `x-ttl` bounds the call; `upload` in version 1, since aiohttp carries
+multipart and Node would need a small parser; whether the packs' extensions migrate their hand-mounted routes
+afterwards; the pack's `rest.server.port` is already the host's port, so one server and one port is the only form.
+
+**Resolution.** Open - round 1 drafted 2026-11-24 from the investigation (the maintainer: "please investigate the
+viability of porting REST automation into both mercury-python and mercury-nodejs", then "Yes, draft RFC"). **Ruled the
+same day (the maintainer): the packs' Vision statements are amended** to reflect the addition of REST automation
+turning the language pack into a full-service application development server, inspired by the AI SDLC work where
+utility functions run in the language packs - so the investigation's first question, the altitude of the change, is
+answered, and the Blueprint gap is open in each pack (`bp-rest-automation-python`, `bp-rest-automation-nodejs`). No
+design spec and no code. Build order when the shape is ruled: the shared vector file written from the grammar and the
+Rust test list; the Python pack; the Node twin; the packs' READMEs and this repository's polyglot guide; the live
+drive; promotion to an ADR after the drive.
+
+---
+
 ## RFC-0017 — Hot deploy and undeploy of knowledge graphs: a certified graph set uploaded to a running engine, registered through the gate on every instance on demand, and removed by name
 **Status:** Open · **Raised:** 2026-11-24 · **Serves:** vision-mercury-composable · **Thread:** `hot-deploy-graph-sets`
 <!-- id: rfc-0017 | status: open | thread: hot-deploy-graph-sets -->
