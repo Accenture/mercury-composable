@@ -181,6 +181,10 @@
     hook, `Navigation`, `Playground`, one hook test; both bundles released, `index-Bm1JJ1Jt`, the help page mirrored).
     The report is packaged in the contract provider (the pom, `files.list`, `SkillSnapshotTest`) and in the docs nav.
     Next: WP7, the ADR (ADR-0011 amended, ADR-0027 extended), on Eric's word after the merge.
+  - **WP5 raised as PR #680 (one commit, `647994e70`) and the Rust twin as mercury PR #425 (`c3c7f308`), OPENED
+    2026-11-25 on Eric's word. Eric's ruling the same day: the `@OptionalService` shape stands - a switch that is off
+    leaves the function unregistered and the entry unserved, and the 404 is the right answer; 503 keeps its meaning (a
+    switch on with the folder refused).** Left: the merges, then WP7 the ADR.
   → proposal: RFC-0017
   → serves: vision-mercury-composable
   <!-- id: hot-deploy-graph-sets | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: working | origin: 2026-11-24-202705 -->
