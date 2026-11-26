@@ -4360,8 +4360,9 @@ and bounded fork-join concurrency.</p>
 result</strong> (<code>{fetcher}.result.{key}</code>); wire the current element into each call with
 <code>input[]=model.&lt;var&gt; -&gt; {dictionary-parameter}</code>. Each iteration's <code>result.{key}</code> values are
 <strong>appended into one array</strong> on this node's result set, and the order <strong>deterministically follows
-the source list</strong> (batches of <code>concurrency</code> run in order; responses join in request order). Full
-rules: <a href="../command-reference/#for-each">Iterative fetching</a>.</p>
+the source list</strong> (batches of <code>concurrency</code> run in order; responses join in request order). <strong>One
+failing element fails the node</strong>: it carries the first failing element's status and error, and no
+further batch starts. Full rules: <a href="../command-reference/#for-each">Iterative fetching</a>.</p>
 <p>Worked example (fetch a person's name and address):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>create node fetcher
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>with type Fetcher
@@ -4394,7 +4395,9 @@ node's alias), <code>error.code</code>, <code>error.message</code> and <code>err
 island-anchored handler can serve every node's <code>exception=</code> route</strong> without naming any failing
 node in its data mapping (<code>error</code> is a reserved alias; <code>inspect error</code> shows the context in a
 dry-run session). A shared handler is entered at most once per run unless RESET; deliberate
-re-entry loops use the bounded-retry idiom.</p>
+re-entry loops use the bounded-retry idiom. Several <code>dictionary[]</code> items are called one after the
+other and the first that fails is the node's failure: no later item is called, and <code>{node}.target</code>
+names the item that failed.</p>
 <p><strong>Deadline:</strong> each call is bounded by the propagated <code>model.ttl</code> (default 30 s); the optional node
 <code>ttl</code> (duration syntax <code>&lt;digits&gt;</code> + <code>s</code>/<code>m</code>/<code>h</code>/<code>d</code>, e.g. <code>8s</code>) overrides it for this node's calls
 only. A deadline shorter than the graph's own budget makes a slow provider time out <strong>first</strong>, so
@@ -4457,6 +4460,11 @@ capabilities and reuse logic. <strong>Discover the valid targets with <code>list
   <code>list flows</code> when authoring, and cover the node with a dry-run.</li>
 <li>On a handled failure, <strong><code>error.code</code> is the delegated call's response status</strong> (the child's
   4xx/5xx, or the RPC timeout status <code>408</code> when the child's deadline fires).</li>
+<li><strong>With <code>for_each</code>, one failing element fails the node.</strong> The node carries the status and error
+  of the first failing element in list order - a later success never replaces them - and no
+  further batch starts; an element that does not answer within the deadline is a <code>408</code>
+  (<a href="../command-reference/#failure-routing">failure routing</a>). An element whose failure should not
+  fail the whole list handles it in its own sub-graph and answers with its outcome.</li>
 </ul>
 <h3 id="extension-async">Asynchronous — start the target and continue<a class="headerlink" href="#extension-async" title="Permanent link">&para;</a></h3>
 <p><code>async=true</code> starts the target and continues to the next node at once. A graph whose work runs longer
@@ -4533,8 +4541,9 @@ graph</code> for a dry-run) while the authored and exported model keeps the plac
 <code>model.*</code> or this node's own <code>{node}.*</code> — <code>input.*</code> is valid only on the input side; to echo a request value, stage it at
 a mapper node (<code>input.body.id -&gt; model.id</code>) and map <code>model.id</code> out. Any other source fails the node
 with an error that names the entry. Optional <code>for_each[]</code> with <code>concurrency</code>
-(1–30, default 3) iterates with bounded fork-join; <code>exception=&lt;node&gt;</code> routes failures with the
-same generic <code>error.source</code>/<code>code</code>/<code>message</code>/<code>stack</code> context as
+(1–30, default 3) iterates with bounded fork-join, the results in list order; one failing element
+fails the node with its own status and error, and no further batch starts. <code>exception=&lt;node&gt;</code>
+routes failures with the same generic <code>error.source</code>/<code>code</code>/<code>message</code>/<code>stack</code> context as
 <a href="#api-fetcher"><code>graph.api.fetcher</code></a>, so one handler serves them all
 (<a href="../command-reference/#failure-routing">failure routing</a>).</p>
 <p><strong>A task's provider on the node — <code>server.url</code> and <code>server.header[]</code> (RFC-0017).</strong> When the function lives in a

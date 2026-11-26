@@ -4590,6 +4590,14 @@ name and address:</p>
   array of N. <strong>Order is deterministic</strong>: batches execute in input-list order and responses join
   in request order, so the aggregated array preserves the source array's order regardless of
   <code>concurrency</code>.</li>
+<li><strong>One failing element fails the node.</strong> When a call fails (HTTP status ≥ 400) or does not
+  answer within the node's deadline (a <code>408</code>), the batch it belongs to runs to its end and <strong>no
+  further batch starts</strong>. The node carries the status and error of the <strong>first failing element
+  in list order</strong>, whatever the other elements answered, and
+  <a href="#failure-routing">failure routing</a> applies. An element whose failure should not fail the
+  whole list is handled by design: run each element in a sub-graph (<code>graph.extension</code> with
+  <code>for_each</code>) whose own <code>exception=</code> handler answers with the element's outcome, and inspect
+  the results after the node.</li>
 <li>Identical requests are still deduplicated into one HTTP call.</li>
 </ul>
 <h2 id="failure-routing">Failure routing — <code>exception=</code><a class="headerlink" href="#failure-routing" title="Permanent link">&para;</a></h2>
@@ -4602,6 +4610,13 @@ name and address:</p>
 <li>traversal <strong>jumps to the named handler node</strong> instead of aborting. Without <code>exception=</code>, the
   run <strong>aborts</strong> on failure.</li>
 </ul>
+<p><strong>A fan-out fails as one node.</strong> With <code>for_each</code>, one failing element fails the node: its
+status and error are those of the <strong>first failing element in list order</strong> (an element that does
+not answer within the node's deadline is a <code>408</code>), the batch that holds it runs to its end, and
+<strong>no further batch starts</strong>. <code>{node}.result</code> then holds only the elements that succeeded, in
+list order, and the <code>output[]</code> mappings are skipped as for any failure. A fetcher with several
+<code>dictionary[]</code> items calls them one after the other and stops at the first that fails;
+<code>{node}.target</code> names that item.</p>
 <p>The jump also stages a <strong>generic exception context</strong> that no handler has to know the failing
 node to read:</p>
 <table>
