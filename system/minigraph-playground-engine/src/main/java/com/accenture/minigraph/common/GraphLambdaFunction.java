@@ -931,6 +931,79 @@ public abstract class GraphLambdaFunction implements TypedLambdaFunction<EventEn
         }));
     }
 
+    /**
+     * Send one batch of a fan-out and return one response per request, in the order of the requests.
+     * <p>
+     * The platform's fork-join returns the responses it collected in no particular order and leaves out a
+     * request that did not answer within the wait. A fan-out needs both facts for each element - its
+     * aggregated result follows the source list, and the first failing element in that order decides the
+     * node's outcome - so each response is matched to its request by correlation id, and a request that
+     * did not answer becomes a 408, the event a single call returns for a timeout.
+     *
+     * @param po the node's post office
+     * @param batch the requests of one batch
+     * @param timeout the node's deadline in milliseconds
+     * @return the responses, one per request and in request order
+     * @throws ExecutionException when the batch could not be sent
+     * @throws InterruptedException when the wait is interrupted
+     */
+    protected List<EventEnvelope> requestInOrder(PostOffice po, List<EventEnvelope> batch, long timeout)
+            throws ExecutionException, InterruptedException {
+        var positions = new HashMap<String, Integer>();
+        for (var request : batch) {
+            // the platform restores a request's own correlation id on its response, so a unique one names
+            // the request's position in the batch
+            var cid = util.getUuid();
+            request.setCorrelationId(cid);
+            positions.put(cid, positions.size());
+        }
+        var ordered = new EventEnvelope[batch.size()];
+        for (var response : po.request(batch, timeout, false).get()) {
+            var position = positions.get(response.getCorrelationId());
+            if (position != null) {
+                ordered[position] = response;
+            }
+        }
+        var responses = new ArrayList<EventEnvelope>();
+        for (var response : ordered) {
+            responses.add(response != null? response :
+                    new EventEnvelope().setStatus(408).setBody("Timeout for " + timeout + " ms"));
+        }
+        return responses;
+    }
+
+    /**
+     * Stage the responses of one batch of a fan-out on its node, in list order: every answer's headers,
+     * each successful element's body appended to the node's result, and the element's status.
+     * <p>
+     * One failing element fails the node, and the first of them in list order decides how: from that
+     * element on the status is no longer written, so a later success never replaces it. The skill stages
+     * that element as the node's error and starts no further batch.
+     *
+     * @param stateMachine the graph state machine
+     * @param nodeName the fan-out node's alias
+     * @param responses the batch's responses in request order
+     * @return the position in the batch of the first failing element, or -1 when every element succeeded
+     */
+    protected int stageFanOutResponses(MultiLevelMap stateMachine, String nodeName, List<EventEnvelope> responses) {
+        var failed = -1;
+        for (int i = 0; i < responses.size(); i++) {
+            var response = responses.get(i);
+            if (failed < 0) {
+                stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
+            }
+            if (!response.getHeaders().isEmpty()) {
+                stateMachine.setElement(nodeName + "." + HEADER + "[]", response.getHeaders());
+            }
+            if (!response.hasError()) {
+                stateMachine.setElement(nodeName + "." + RESULT + "[]", response.getBody());
+            } else if (failed < 0) {
+                failed = i;
+            }
+        }
+        return failed;
+    }
+
     protected void performOutputMapping(String nodeName, MultiLevelMap stateMachine, List<String> mapping) {
         for (var output : mapping) {
             var text = String.valueOf(output).trim();

@@ -113,35 +113,52 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var nodeName = fetcher.getAlias();
         var timeout = getEffectiveTtl(graphInstance, fetcher);
         var stateMachine = graphInstance.stateMachine;
-        var graph = graphInstance.graph;
-        var parameterMapping = getEntries(fetcher.getProperty(INPUT));
-        for (SimpleNode dd : dictionaryNodes) {
-            var parameters = getFetcherApiParameters(nodeName, graphInstance, parameterMapping);
-            var required = getEntries(dd.getProperty(INPUT));
-            if (!required.isEmpty()) {
-                fillDictionaryApiParameters(nodeName, stateMachine, dd, required, parameters);
-            }
-            var provider = dd.getProperty(PROVIDER);
-            if (provider instanceof String providerName) {
-                var p = graph.findNodeByAlias(providerName);
-                if (p != null) {
-                    stateMachine.setElement(nodeName + "." + TARGET, dd.getAlias());
-                    fetchFromEachProvider(po, stateMachine, fetcher, dd, p, timeout);
-                    var mapping = getEntries(dd.getProperty(OUTPUT));
-                    performDictionaryOutputMapping(nodeName, stateMachine, dd.getAlias(), mapping, false);
-                } else {
-                    throw new IllegalArgumentException("Data provider "+providerName+" does not exist");
-                }
-            } else {
-                throw new IllegalArgumentException("Missing provider in data dictionary "+dd.getAlias());
-            }
+        // the dictionary items are fetched one after the other: the first that fails is the node's failure,
+        // so no later item is called and nothing is mapped onward
+        var completed = true;
+        var items = dictionaryNodes.iterator();
+        while (completed && items.hasNext()) {
+            completed = fetchDictionaryItem(po, graphInstance, fetcher, items.next(), timeout);
         }
-        var outputMapping = getEntries(fetcher.getProperty(OUTPUT));
-        performOutputMapping(nodeName, stateMachine, outputMapping);
+        if (completed) {
+            var outputMapping = getEntries(fetcher.getProperty(OUTPUT));
+            performOutputMapping(nodeName, stateMachine, outputMapping);
+        }
         // clear temporary dataset
         stateMachine.removeElement(nodeName + DD);
         stateMachine.removeElement(nodeName + DOT_RESPONSE);
         return nextPath(stateMachine, fetcher);
+    }
+
+    /**
+     * Fetch one dictionary item from its provider and map its response into the node's result.
+     *
+     * @return false when the provider's call failed: the item maps nothing, and it stays the node's target
+     */
+    private boolean fetchDictionaryItem(PostOffice po, GraphInstance graphInstance, SimpleNode fetcher,
+                                        SimpleNode dd, long timeout)
+            throws URISyntaxException, ExecutionException, InterruptedException {
+        var nodeName = fetcher.getAlias();
+        var stateMachine = graphInstance.stateMachine;
+        var parameters = getFetcherApiParameters(nodeName, graphInstance, getEntries(fetcher.getProperty(INPUT)));
+        var required = getEntries(dd.getProperty(INPUT));
+        if (!required.isEmpty()) {
+            fillDictionaryApiParameters(nodeName, stateMachine, dd, required, parameters);
+        }
+        if (!(dd.getProperty(PROVIDER) instanceof String providerName)) {
+            throw new IllegalArgumentException("Missing provider in data dictionary "+dd.getAlias());
+        }
+        var p = graphInstance.graph.findNodeByAlias(providerName);
+        if (p == null) {
+            throw new IllegalArgumentException("Data provider "+providerName+" does not exist");
+        }
+        stateMachine.setElement(nodeName + "." + TARGET, dd.getAlias());
+        var fetched = fetchFromEachProvider(po, stateMachine, fetcher, dd, p, timeout);
+        if (fetched) {
+            var mapping = getEntries(dd.getProperty(OUTPUT));
+            performDictionaryOutputMapping(nodeName, stateMachine, dd.getAlias(), mapping, false);
+        }
+        return fetched;
     }
 
     @SuppressWarnings("unchecked")
@@ -160,49 +177,56 @@ public class GraphApiFetcher extends GraphLambdaFunction {
     private String executeProvidersWithForkJoin(PostOffice po, GraphInstance graphInstance, SimpleNode fetcher,
                                                 List<SimpleNode> dictionaryNodes, int size)
             throws URISyntaxException, ExecutionException, InterruptedException {
-        var graph = graphInstance.graph;
         var nodeName = fetcher.getAlias();
         var givenConcurrency = util.str2int(String.valueOf(fetcher.getProperty(CONCURRENCY)));
         var concurrency = Math.clamp(givenConcurrency < 0 ? 3 : givenConcurrency, 1, 30);
         var timeout = getEffectiveTtl(graphInstance, fetcher);
         var stateMachine = graphInstance.stateMachine;
         var apiParams = (Map<String, List<Object>>) stateMachine.getElement(nodeName + EACH, new HashMap<>());
-        for (SimpleNode dd : dictionaryNodes) {
+        // one failing element fails the node: no later dictionary item is fetched and nothing is mapped onward
+        var completed = true;
+        var items = dictionaryNodes.iterator();
+        while (completed && items.hasNext()) {
+            var md = forEachMetadata(po, graphInstance, fetcher, items.next(), timeout);
             Deque<HttpEventEnvelope> stack = new ArrayDeque<>();
-            if (dd.getProperty(PROVIDER) == null) {
-                throw new IllegalArgumentException("Data provider is not configured in dictionary "+dd.getAlias());
-            }
-            final SimpleNode p = graph.findNodeByAlias(String.valueOf(dd.getProperty(PROVIDER)));
-            var md = new ProviderMetadata(po, fetcher, dd, p, stateMachine, timeout);
-            if (p != null) {
-                var url = p.getProperty(URL);
-                var method = p.getProperty(METHOD);
-                if (url != null && method != null) {
-                    var target = new HostUri(String.valueOf(url));
-                    md.features.addAll(getEntries(p.getProperty(FEATURE)));
-                    md.target = target;
-                    md.method = String.valueOf(method);
-                    md.inputs = getEntries(p.getProperty(INPUT));
-                } else {
-                    throw new IllegalArgumentException("Missing url or method in data provider " + p.getAlias());
-                }
-            } else {
-                throw new IllegalArgumentException("Data provider " + dd.getProperty(PROVIDER) + " does not exist");
-            }
             // release one set of parameters from the array for each data dictionary item
             for (int i = 0; i < size; i++) {
                 pushHttpEventToStack(md, stack, apiParams, i);
             }
-            runConcurrentRequests(concurrency, stack, md);
+            completed = runConcurrentRequests(concurrency, stack, md);
         }
-        var outputMapping = getEntries(fetcher.getProperty(OUTPUT));
-        performOutputMapping(nodeName, stateMachine, outputMapping);
+        if (completed) {
+            var outputMapping = getEntries(fetcher.getProperty(OUTPUT));
+            performOutputMapping(nodeName, stateMachine, outputMapping);
+        }
         // clear temporary dataset
         stateMachine.removeElement(nodeName + FETCH);
         stateMachine.removeElement(nodeName + EACH);
         stateMachine.removeElement(nodeName + DD);
         stateMachine.removeElement(nodeName + DOT_RESPONSE);
         return nextPath(stateMachine, fetcher);
+    }
+
+    private ProviderMetadata forEachMetadata(PostOffice po, GraphInstance graphInstance, SimpleNode fetcher,
+                                             SimpleNode dd, long timeout) throws URISyntaxException {
+        if (dd.getProperty(PROVIDER) == null) {
+            throw new IllegalArgumentException("Data provider is not configured in dictionary "+dd.getAlias());
+        }
+        var p = graphInstance.graph.findNodeByAlias(String.valueOf(dd.getProperty(PROVIDER)));
+        if (p == null) {
+            throw new IllegalArgumentException("Data provider " + dd.getProperty(PROVIDER) + " does not exist");
+        }
+        var url = p.getProperty(URL);
+        var method = p.getProperty(METHOD);
+        if (url == null || method == null) {
+            throw new IllegalArgumentException("Missing url or method in data provider " + p.getAlias());
+        }
+        var md = new ProviderMetadata(po, fetcher, dd, p, graphInstance.stateMachine, timeout);
+        md.features.addAll(getEntries(p.getProperty(FEATURE)));
+        md.target = new HostUri(String.valueOf(url));
+        md.method = String.valueOf(method);
+        md.inputs = getEntries(p.getProperty(INPUT));
+        return md;
     }
 
     private String nextPath(MultiLevelMap stateMachine, SimpleNode fetcher) {
@@ -236,17 +260,20 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         stack.add(new HttpEventEnvelope(event, request, parameters.keySet()));
     }
 
-    private void runConcurrentRequests(int concurrency,
-                                       Deque<HttpEventEnvelope> stack, ProviderMetadata md)
-                                        throws ExecutionException, InterruptedException {
+    /**
+     * Run the elements in list order, {@code concurrency} of them at a time.
+     *
+     * @return false when an element failed: its batch ran to the end and no further batch started
+     */
+    private boolean runConcurrentRequests(int concurrency,
+                                          Deque<HttpEventEnvelope> stack, ProviderMetadata md)
+                                            throws ExecutionException, InterruptedException {
         var nodeName = md.fetcher.getAlias();
+        var total = stack.size();
         List<HttpEventEnvelope> batch = new ArrayList<>();
-        var n = concurrency;
         while (!stack.isEmpty()) {
-            n--;
             batch.add(stack.pop());
-            if (stack.isEmpty() || n == 0) {
-                n = concurrency;
+            if (stack.isEmpty() || batch.size() == concurrency) {
                 var events = batch.stream().map(each -> each.event).toList();
                 var parameterNames = batch.getFirst().parameterNames;
                 var firstReq = batch.getFirst().request;
@@ -257,36 +284,76 @@ public class GraphApiFetcher extends GraphLambdaFunction {
                 md.po.annotateTrace(FOR_EACH, String.valueOf(parameterNames))
                         .annotateTrace(URL, firstReq.getMethod()+" "+target);
                 md.stateMachine.setElement(nodeName + "." + TARGET, md.dd.getAlias());
-                var responses = md.po.request(events, md.timeout, false).get();
-                for (int i = 0; i < responses.size(); i++) {
-                    processApiResponses(md, responses, batch, i);
+                // the responses come back in request order, so each one meets its own request
+                var failed = processApiResponses(md, batch, requestInOrder(md.po, events, md.timeout));
+                if (failed >= 0) {
+                    // one failing element fails the node, so no further batch starts
+                    var notStarted = stack.size();
+                    var element = total - notStarted - batch.size() + failed;
+                    var dictionary = md.dd.getAlias();
+                    log.warn("Dictionary {} failed at for_each element {} - {} of {} elements not started",
+                            dictionary, element, notStarted, total);
+                    return false;
                 }
                 batch.clear();
             }
         }
+        return true;
     }
 
-    private void processApiResponses(ProviderMetadata md, List<EventEnvelope> responses,
-                                     List<HttpEventEnvelope> batch, int i) {
+    /**
+     * Stage the responses of one batch in list order.
+     *
+     * @return the position in the batch of the first failing element, or -1 when every element succeeded
+     */
+    private int processApiResponses(ProviderMetadata md, List<HttpEventEnvelope> batch,
+                                    List<EventEnvelope> responses) {
+        var failed = -1;
+        for (int i = 0; i < responses.size(); i++) {
+            var succeeded = processApiResponse(md, batch.get(i).request, responses.get(i), failed >= 0);
+            if (!succeeded && failed < 0) {
+                failed = i;
+            }
+        }
+        return failed;
+    }
+
+    /**
+     * Stage one element's response on the node: a success maps into the node's result, and a failure maps
+     * nothing. The first failing element in list order decides the node's status and error, so once an
+     * element has failed neither is written again.
+     *
+     * @param alreadyFailed whether an earlier element of the batch failed
+     * @return true when this element succeeded
+     */
+    private boolean processApiResponse(ProviderMetadata md, AsyncHttpRequest request, EventEnvelope response,
+                                       boolean alreadyFailed) {
         var nodeName = md.fetcher.getAlias();
-        var request = batch.get(i).request;
-        var response = responses.get(i);
         for (FeatureDef f : md.after) {
             f.feature().execute(request, response, md.stateMachine, nodeName);
         }
-        md.stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
-        if (response.hasError()) {
-            stageNodeError(md.stateMachine, nodeName, response);
-            if (md.breakOnException) {
-                md.stateMachine.setElement(OUTPUT_BODY, response.getBody());
-                md.stateMachine.setElement(OUTPUT_NAMESPACE+HEADER, response.getHeaders());
-                md.stateMachine.setElement(OUTPUT_NAMESPACE+STATUS, response.getStatus());
-            }
-        } else {
-            md.stateMachine.setElement(nodeName + RESPONSE_DOT, response.getBody());
+        if (!alreadyFailed) {
+            md.stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
         }
+        if (response.hasError()) {
+            if (!alreadyFailed) {
+                stageFailure(md, response);
+            }
+            return false;
+        }
+        md.stateMachine.setElement(nodeName + RESPONSE_DOT, response.getBody());
         var mapping = getEntries(md.dd.getProperty(OUTPUT));
         performDictionaryOutputMapping(nodeName, md.stateMachine, md.dd.getAlias(), mapping, true);
+        return true;
+    }
+
+    private void stageFailure(ProviderMetadata md, EventEnvelope response) {
+        stageNodeError(md.stateMachine, md.fetcher.getAlias(), response);
+        if (md.breakOnException) {
+            md.stateMachine.setElement(OUTPUT_BODY, response.getBody());
+            md.stateMachine.setElement(OUTPUT_NAMESPACE+HEADER, response.getHeaders());
+            md.stateMachine.setElement(OUTPUT_NAMESPACE+STATUS, response.getStatus());
+        }
     }
 
     private void fillDictionaryApiParameters(String nodeName, MultiLevelMap stateMachine,
@@ -361,9 +428,9 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         }
     }
 
-    private void fetchFromEachProvider(PostOffice po, MultiLevelMap stateMachine, SimpleNode fetcher,
-                                       SimpleNode dd, SimpleNode provider, long timeout)
-                                        throws URISyntaxException, ExecutionException, InterruptedException {
+    private boolean fetchFromEachProvider(PostOffice po, MultiLevelMap stateMachine, SimpleNode fetcher,
+                                          SimpleNode dd, SimpleNode provider, long timeout)
+                                            throws URISyntaxException, ExecutionException, InterruptedException {
         var url = provider.getProperty(URL);
         var method = provider.getProperty(METHOD);
         if (url != null && method != null) {
@@ -373,7 +440,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
             md.target = target;
             md.method = String.valueOf(method);
             md.inputs = getEntries(provider.getProperty(INPUT));
-            makeRegularHttpCall(md);
+            return makeRegularHttpCall(md);
         } else {
             throw new IllegalArgumentException("Missing url or method in data provider "+provider.getAlias());
         }
@@ -399,7 +466,12 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         return request;
     }
 
-    private void makeRegularHttpCall(ProviderMetadata md) throws ExecutionException, InterruptedException {
+    /**
+     * Call the provider of one dictionary item, or take its response from the run's cache.
+     *
+     * @return false when the call failed, staged as the node's status and error
+     */
+    private boolean makeRegularHttpCall(ProviderMetadata md) throws ExecutionException, InterruptedException {
         var nodeName = md.fetcher.getAlias();
         var request = buildHttpRequest(md);
         var params = md.stateMachine.getElement(nodeName + DD + md.dd.getAlias() +".", new HashMap<>());
@@ -409,7 +481,7 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         var cached = getCachedResult(provider, md.stateMachine, params);
         if (cached != null) {
             md.stateMachine.setElement(nodeName + RESPONSE_DOT, cached);
-            return;
+            return true;
         }
         var target = request.getTargetHost() + request.getFinalizedUrl();
         var parameterNames = params instanceof Map<?, ?> map? map.keySet(): Set.of();
@@ -423,18 +495,14 @@ public class GraphApiFetcher extends GraphLambdaFunction {
         }
         md.stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
         if (response.hasError()) {
-            stageNodeError(md.stateMachine, nodeName, response);
-            if (md.breakOnException) {
-                md.stateMachine.setElement(OUTPUT_BODY, response.getBody());
-                md.stateMachine.setElement(OUTPUT_NAMESPACE+HEADER, response.getHeaders());
-                md.stateMachine.setElement(OUTPUT_NAMESPACE+STATUS, response.getStatus());
-            }
-        } else {
-            md.stateMachine.setElement(nodeName + RESPONSE_DOT, response.getBody());
-            // save request and response in cache of the current graph instance
-            md.stateMachine.setElement(CACHE_NAMESPACE + provider + "[]",
-                    Map.of(INPUT, params, OUTPUT, response.getBody()));
+            stageFailure(md, response);
+            return false;
         }
+        md.stateMachine.setElement(nodeName + RESPONSE_DOT, response.getBody());
+        // save request and response in cache of the current graph instance
+        md.stateMachine.setElement(CACHE_NAMESPACE + provider + "[]",
+                Map.of(INPUT, params, OUTPUT, response.getBody()));
+        return true;
     }
 
     private void loadFeatures(ProviderMetadata md) {

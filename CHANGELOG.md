@@ -274,6 +274,29 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    as the AI contract provider's snapshot accessor does since #661. Test code keeps `synchronized` only where pinning
    is the subject of the test. **Upgrade note:** none.
 
+7. **A failing element of a `for_each` fan-out fails the node with its own status: a later success no longer masks
+   it (a field report, 2026-11-26).** `graph.extension`, `graph.task` and `graph.api.fetcher` wrote the node's status
+   from every response of a batch, and the platform's fork-join returns a batch's responses in no particular order, so
+   the node kept the status of whichever response came last while its error stayed. When that was a success, a run
+   without `exception=` stopped at the node but answered HTTP 200 with the error as its body, and a handler was
+   entered with `error.code` 200. The node now carries the status and error of the first failing element in list
+   order, whenever the elements ended. Beside it, in the same loops: an element that did not answer within the node's
+   deadline was left out without a status or an error, and is now a 408 as for a single call; the aggregated result
+   was in list order only between batches, and now follows the source list as the pages say; the `output[]` mappings
+   ran on a failed fan-out, and are skipped as the pages say; a failed element of a fetcher mapped the previous
+   element's response again, and now maps nothing; and a fetcher's after-features receive each response with its own
+   request. The batch that holds a failing element runs to its end and no further batch starts; a warning names the
+   element and how many did not start. A fetcher with several `dictionary[]` items, called one after the other, had
+   the same masking: it now stops at the first item that fails, and `{node}.target` names that item. Covered by
+   `ForEachFailureTest`, eight tests that each failed before the change, with four sentences of the command reference
+   pinned to them in the claims registry; the command reference, the skills reference and the three skills' help
+   pages state the rule, and the Playground bundle is regenerated for the help pages. **Upgrade note:** a graph
+   whose `for_each` node meets a failing element may answer differently, because the failure is now always reported:
+   without a handler the run aborts with the element's status where it sometimes answered 200, a handler reads the
+   element's status in `error.code`, and the elements of later batches are not called. A graph that needs the
+   remaining elements to run after a failure lets each element handle its own: run it in a sub-graph whose
+   `exception=` handler answers with the element's outcome, and inspect the results after the node.
+
 ### Documentation
 
 1. **The mini-scheduler's MongoDB worked example says where the job's `_id` comes from.** An upsert builds the
