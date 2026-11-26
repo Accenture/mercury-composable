@@ -133,61 +133,76 @@ public class GraphExtension extends GraphLambdaFunction {
             // delegation has no index and keeps its existing store key.
             stack.add(forwardEvent(graphInstance, extension, parameters, stack.size(), timeout, returnPath));
         }
-        runConcurrentRequests(po, graphInstance, node, extension, concurrency, stack, timeout);
-        var outputMapping = getEntries(node.getProperty(OUTPUT));
-        performOutputMapping(nodeName, stateMachine, outputMapping);
+        // a failed fan-out maps nothing onward: the node's status and error say why
+        if (runConcurrentRequests(po, graphInstance, node, extension, concurrency, stack, timeout)) {
+            var outputMapping = getEntries(node.getProperty(OUTPUT));
+            performOutputMapping(nodeName, stateMachine, outputMapping);
+        }
         // clear temporary dataset
         stateMachine.removeElement(nodeName + FETCH);
         stateMachine.removeElement(nodeName + EACH);
     }
 
-    private void runConcurrentRequests(PostOffice po, GraphInstance graphInstance, SimpleNode node,
-                                       String extension, int concurrency, Deque<EventEnvelope> stack, long timeout)
-                                        throws ExecutionException, InterruptedException {
+    /**
+     * Run the elements in list order, {@code concurrency} of them at a time.
+     *
+     * @return false when an element failed: its batch ran to the end and no further batch started
+     */
+    private boolean runConcurrentRequests(PostOffice po, GraphInstance graphInstance, SimpleNode node,
+                                          String extension, int concurrency, Deque<EventEnvelope> stack, long timeout)
+                                            throws ExecutionException, InterruptedException {
         po.annotateTrace(EXTENSION, extension);
-        var nameLoaded = false;
-        var parameterNames = new HashSet<String>();
-        var nodeName = node.getAlias();
-        var stateMachine = graphInstance.stateMachine;
+        if (stack.isEmpty()) {
+            return true;
+        }
+        var total = stack.size();
+        var parameterNames = parameterNamesOf(stack.peekFirst());
+        po.annotateTrace(FOR_EACH, String.valueOf(parameterNames));
+        graphInstance.stateMachine.setElement(node.getAlias() + "." + TARGET, extension);
         List<EventEnvelope> batch = new ArrayList<>();
-        var n = concurrency;
         while (!stack.isEmpty()) {
-            n--;
             batch.add(stack.pop());
-            if (stack.isEmpty() || n == 0) {
-                n = concurrency;
-                var body = batch.getFirst().getBody() instanceof Map<?, ?> map? map : Map.of();
-                if (!nameLoaded) {
-                    nameLoaded = true;
-                    var names = body.get(BODY) instanceof Map<?, ?> map? map.keySet() : Set.of();
-                    names.forEach(name -> parameterNames.add(String.valueOf(name)));
-                    po.annotateTrace(FOR_EACH, String.valueOf(parameterNames));
-                }
+            if (stack.isEmpty() || batch.size() == concurrency) {
+                var parallel = batch.size();
                 log.info("Call extension {}, for each {}, parallel={}, ttl={}", extension,
-                        parameterNames, batch.size(), timeout);
-                stateMachine.setElement(nodeName + "." + TARGET, extension);
-                doForkJoin(po, node, stateMachine, batch, timeout);
+                        parameterNames, parallel, timeout);
+                var failed = doForkJoin(po, node, graphInstance.stateMachine, batch, timeout);
+                if (failed >= 0) {
+                    // one failing element fails the node, so no further batch starts
+                    var notStarted = stack.size();
+                    var element = total - notStarted - parallel + failed;
+                    log.warn("Extension {} failed at for_each element {} - {} of {} elements not started",
+                            extension, element, notStarted, total);
+                    return false;
+                }
                 batch.clear();
             }
         }
+        return true;
     }
 
-    private void doForkJoin(PostOffice po, SimpleNode node, MultiLevelMap stateMachine,
-                            List<EventEnvelope> batch, long timeout)
-                            throws ExecutionException, InterruptedException {
-        var nodeName = node.getAlias();
-        var responses = po.request(batch, timeout, false).get();
-        for (var response : responses) {
-            stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
-            if (!response.getHeaders().isEmpty()) {
-                stateMachine.setElement(nodeName + "." + HEADER + "[]", response.getHeaders());
-            }
-            if (response.hasError()) {
-                setError(stateMachine, node, response);
-            } else {
-                stateMachine.setElement(nodeName + "." + RESULT + "[]", response.getBody());
-            }
+    private static Set<String> parameterNamesOf(EventEnvelope first) {
+        var parameterNames = new HashSet<String>();
+        if (first.getBody() instanceof Map<?, ?> dataset && dataset.get(BODY) instanceof Map<?, ?> parameters) {
+            parameters.keySet().forEach(name -> parameterNames.add(String.valueOf(name)));
         }
+        return parameterNames;
+    }
+
+    /**
+     * Run one batch and stage its responses in list order.
+     *
+     * @return the position in the batch of the first failing element, staged as the node's error, or -1
+     */
+    private int doForkJoin(PostOffice po, SimpleNode node, MultiLevelMap stateMachine,
+                           List<EventEnvelope> batch, long timeout)
+                            throws ExecutionException, InterruptedException {
+        var responses = requestInOrder(po, batch, timeout);
+        var failed = stageFanOutResponses(stateMachine, node.getAlias(), responses);
+        if (failed >= 0) {
+            setError(stateMachine, node, responses.get(failed));
+        }
+        return failed;
     }
 
     private Object callExtension(PostOffice po, SimpleNode node, GraphInstance graphInstance, String graphId) {

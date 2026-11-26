@@ -240,13 +240,18 @@ public class GraphTask extends GraphLambdaFunction {
         po.annotateTrace(FOR_EACH, String.valueOf(forEachMapping.keySet()));
         stateMachine.setElement(nodeName + "." + TARGET, route);
         List<EventEnvelope> batch = new ArrayList<>();
-        var n = concurrency;
         while (!stack.isEmpty()) {
-            n--;
             batch.add(stack.pop());
-            if (stack.isEmpty() || n == 0) {
-                n = concurrency;
-                doForkJoin(po, node, stateMachine, batch, timeout);
+            if (stack.isEmpty() || batch.size() == concurrency) {
+                var failed = doForkJoin(po, node, stateMachine, batch, timeout);
+                if (failed >= 0) {
+                    // one failing element fails the node: no further batch starts and nothing is mapped onward
+                    var notStarted = stack.size();
+                    var element = size - notStarted - batch.size() + failed;
+                    log.warn("Task {} failed at for_each element {} - {} of {} elements not started",
+                            route, element, notStarted, size);
+                    return;
+                }
                 batch.clear();
             }
         }
@@ -271,23 +276,21 @@ public class GraphTask extends GraphLambdaFunction {
         return responses;
     }
 
-    private void doForkJoin(PostOffice po, SimpleNode node, MultiLevelMap stateMachine,
-                            List<EventEnvelope> batch, long timeout)
+    /**
+     * Run one batch and stage its responses in list order.
+     *
+     * @return the position in the batch of the first failing element, staged as the node's error, or -1
+     */
+    private int doForkJoin(PostOffice po, SimpleNode node, MultiLevelMap stateMachine,
+                           List<EventEnvelope> batch, long timeout)
                             throws ExecutionException, InterruptedException {
-        var nodeName = node.getAlias();
         var server = TaskServer.of(node);
-        var responses = server == null? po.request(batch, timeout, false).get() : requestEach(server, po, batch, timeout);
-        for (var response : responses) {
-            stateMachine.setElement(nodeName + "." + STATUS, response.getStatus());
-            if (!response.getHeaders().isEmpty()) {
-                stateMachine.setElement(nodeName + "." + HEADER + "[]", response.getHeaders());
-            }
-            if (response.hasError()) {
-                setError(stateMachine, node, response);
-            } else {
-                stateMachine.setElement(nodeName + "." + RESULT + "[]", response.getBody());
-            }
+        var responses = server == null? requestInOrder(po, batch, timeout) : requestEach(server, po, batch, timeout);
+        var failed = stageFanOutResponses(stateMachine, node.getAlias(), responses);
+        if (failed >= 0) {
+            setError(stateMachine, node, responses.get(failed));
         }
+        return failed;
     }
 
     private String setError(MultiLevelMap stateMachine, SimpleNode node, EventEnvelope response) {
