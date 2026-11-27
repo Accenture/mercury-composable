@@ -297,6 +297,32 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    remaining elements to run after a failure lets each element handle its own: run it in a sub-graph whose
    `exception=` handler answers with the element's outcome, and inspect the results after the node.
 
+8. **A text value in a `graph.math` number expression is one number, never more expression (a field report).** A
+   `{selector}` is rendered into the statement before it is parsed, and in a number expression - a `DECIMAL`, or a
+   `COMPUTE` or `IF` without a comparison or boolean operator - a text value was inserted as written, so the
+   evaluator read it as part of the expression. A date written as ISO text computed as a subtraction (`2025-07-15`
+   gave `2003`), a later date compared as the earlier one inside a `DECIMAL` ternary test, `2*3` gave `6`,
+   `max(1,2)` gave `2`, `PI` gave 3.14159 in a `COMPUTE`, a value carrying `>` turned a `COMPUTE` into a boolean, and a
+   value with a comma changed the number of a function's arguments - each without an error; a value that did not
+   parse failed with HTTP 500. A boolean expression (`CONDITION`, or an `IF` or `COMPUTE` with a comparison) quoted
+   text and was correct. Now each value is checked where it lands, as a JSONPath source already does (ADR-0031): in a
+   number expression a text value is the one number it spells, in any form the dialect reads as a number literal
+   (`100.25`, `-5`, `.5`, `1e3`, `007`), and any other text fails the statement with HTTP 400 naming the selector
+   and not the value (`Not a number: input.body.date in '...'`); inside quotes the author wrote
+   (`'{input.body.date}' >= '{policy.start}'`) a value is the text of that literal, with its quotes and backslashes
+   escaped, in every statement; next to a `.` a text value must be a name or digits; and whether a `COMPUTE` yields a
+   number or a boolean is decided by the statement as written. `true`, `false` and `null` as text keep their meaning.
+   The rendering is `ExpressionSource`, used by `COMPUTE`, `DECIMAL`, `CONDITION` and `IF`; `RESET`, `DELAY`, jump
+   targets and `MAPPING` sources are unchanged. Covered by `ExpressionSourceTest` (11) and `TextValueStatementTest`
+   (8, five of which failed before the change), with three sentences of the skills reference pinned to them in the
+   claims registry; the skills reference, the command catalog and the `graph-math` help page state the rule, and the
+   Playground bundle is regenerated for the help page. The engine's 312 earlier tests pass unchanged. **Upgrade
+   note - READ:** a graph that computed with a text value that is not one number now fails at that statement instead
+   of answering a number: a date, a code or an identifier in arithmetic, an empty string (it read as nothing, so
+   `{a} - {b}` gave `-b`), or text holding an expression such as `1/3`. Send a number, or text that spells one; compare
+   text inside quotes or in a `CONDITION`; and assert a caller's types with `f:validate`. Text that spells a number
+   computes as before.
+
 ### Documentation
 
 1. **The mini-scheduler's MongoDB worked example says where the job's `_id` comes from.** An upsert builds the
