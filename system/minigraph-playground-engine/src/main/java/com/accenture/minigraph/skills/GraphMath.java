@@ -21,6 +21,7 @@ package com.accenture.minigraph.skills;
 import com.accenture.minigraph.common.GraphLambdaFunction;
 import com.accenture.minigraph.math.DecimalEvaluator;
 import com.accenture.minigraph.math.ExpressionEngine;
+import com.accenture.minigraph.math.ExpressionSource;
 import com.accenture.minigraph.models.GraphInstance;
 
 import org.platformlambda.core.annotations.PreLoad;
@@ -186,10 +187,13 @@ public class GraphMath extends GraphLambdaFunction {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
             assertVariablesResolved(rhs, graphInstance.stateMachine);
-            var text = substituteVarIfAny(rhs, graphInstance.stateMachine);
+            // the statement as written decides whether it computes a boolean, never a value rendered into it
+            var logical = hasBooleanOperator(rhs);
+            var text = render(rhs, logical? ExpressionSource.Kind.BOOLEAN : ExpressionSource.Kind.NUMBER,
+                    graphInstance.stateMachine);
             final Object result;
             try {
-                result = hasBooleanOperator(text)? engine.evalBoolean(text) : engine.evalNumber(text);
+                result = logical? engine.evalBoolean(text) : engine.evalNumber(text);
             } catch (RuntimeException e) {
                 throw nameOffendingSelectors(e, rhs, graphInstance.stateMachine);
             }
@@ -205,10 +209,11 @@ public class GraphMath extends GraphLambdaFunction {
      * which is what survives 'graph.suspend', 'graph.resume' and every event hop (a BigDecimal would come back
      * a String). COMPUTE keeps its meaning, so a graph that never says DECIMAL is unchanged.
      * <p>
-     * The statement computes a number, so its variables always render in the arithmetic (unquoted) form.
+     * The statement computes a number, so a text value renders as the one number it spells and any other text
+     * fails by name ({@link ExpressionSource}): a value from the data is never read as part of the expression.
      * A Double or Float value is accepted through the shortest decimal text it prints as, at its minimal scale:
-     * once a value is text its Java type is gone, so the conversion happens here, before the values are
-     * rendered (5.0E-4 renders 0.0005, not the 0.00050 its own text would parse as). That is exact over the
+     * once a value is text its Java type is gone, so the conversion happens as the value is rendered
+     * (5.0E-4 renders 0.0005, not the 0.00050 its own text would parse as). That is exact over the
      * text received and only as exact as the computation that produced the double - the guide declares it,
      * so sending a number instead of a string is a conscious decision.
      * <p>
@@ -232,7 +237,7 @@ public class GraphMath extends GraphLambdaFunction {
             var stateMachine = graphInstance.stateMachine;
             var precision = decimalPrecision(nodeName, graphInstance);
             assertVariablesResolved(rhs, stateMachine);
-            var text = substituteVarIfAny(renderInexactNumbers(rhs, stateMachine), stateMachine, false);
+            var text = render(rhs, ExpressionSource.Kind.DECIMAL, stateMachine);
             final String result;
             try {
                 result = DecimalEvaluator.evaluate(text, precision);
@@ -280,21 +285,8 @@ public class GraphMath extends GraphLambdaFunction {
         return precision;
     }
 
-    private String renderInexactNumbers(String expression, MultiLevelMap stateMachine) {
-        var result = expression;
-        for (var key : selectorsIn(expression)) {
-            var value = helper.getLhsOrConstant(key, stateMachine);
-            if (value instanceof Double || value instanceof Float) {
-                final String plain;
-                try {
-                    plain = DecimalEvaluator.plainText((Number) value);
-                } catch (IllegalArgumentException e) {
-                    throw new IllegalArgumentException(e.getMessage() + ": " + key + " in '" + expression + "'");
-                }
-                result = result.replace("{" + key + "}", plain);
-            }
-        }
-        return result;
+    private String render(String expression, ExpressionSource.Kind kind, MultiLevelMap stateMachine) {
+        return ExpressionSource.render(expression, kind, key -> helper.getLhsOrConstant(key, stateMachine));
     }
 
     /**
@@ -316,7 +308,7 @@ public class GraphMath extends GraphLambdaFunction {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
             assertVariablesResolved(rhs, graphInstance.stateMachine);
-            var text = substituteVarIfAny(rhs, graphInstance.stateMachine, true);
+            var text = render(rhs, ExpressionSource.Kind.BOOLEAN, graphInstance.stateMachine);
             final boolean result;
             try {
                 result = engine.evalBoolean(text);
@@ -340,7 +332,8 @@ public class GraphMath extends GraphLambdaFunction {
             throw new IllegalArgumentException(NODE_NAME + nodeName + " does not have if:, then: or else:");
         }
         assertVariablesResolved(ifStatement, stateMachine);
-        var text = substituteVarIfAny(ifStatement, stateMachine);
+        var text = render(ifStatement, hasBooleanOperator(ifStatement)? ExpressionSource.Kind.BOOLEAN
+                : ExpressionSource.Kind.NUMBER, stateMachine);
         final boolean decision;
         try {
             decision = engine.evalBoolean(text);
