@@ -4135,10 +4135,18 @@ by name, never silently accepted.</p>
 <li><strong>Literals</strong> — numbers <code>42</code>, <code>3.14</code>, <code>.5</code>, <code>1e-5</code>; strings <code>'text'</code> or <code>"text"</code> (escapes <code>\'</code>,
   <code>\"</code>, <code>\\</code>, <code>\n</code>, <code>\t</code>); booleans <code>true</code>, <code>false</code>.</li>
 <li><strong>Variables</strong> — <code>{namespace.key}</code> substitutions <strong>only</strong>: <code>{input.body.qty}</code>, <code>{model.total}</code>,
-  <code>{book.price}</code>, <code>{check.result.eligible}</code>. They are resolved into the text before it is parsed: a
-  number or boolean as itself; a text value as a quoted string literal in a boolean context (<code>IF</code>,
-  <code>CONDITION</code>, or a <code>COMPUTE</code> carrying a comparison or boolean operator), so
-  <code>{model.state} == 'CA'</code> compares text. An unresolved selector fails by name <strong>before</strong> evaluation
+  <code>{book.price}</code>, <code>{check.result.eligible}</code>. They are resolved into the text before it is parsed, and
+  <strong>a value is always one value, never more expression</strong>. A number or a boolean is itself. A text value
+  is a quoted string literal in a boolean expression (<code>IF</code>, <code>CONDITION</code>, or a <code>COMPUTE</code> carrying a
+  comparison or boolean operator), so <code>{model.state} == 'CA'</code> compares text. In a number expression (a
+  <code>DECIMAL</code>, or a <code>COMPUTE</code> or <code>IF</code> without such an operator) a text value is the one number it spells
+  (<code>100.25</code>, <code>-5</code>, <code>1e3</code>), and any other text fails the statement naming the selector
+  (<code>Not a number: input.body.date in '…'</code>): a date such as <code>2025-07-15</code>, a code or an identifier is never
+  computed as arithmetic, and the error names the selector without the value. To read a value as text
+  there, write the selector inside quotes: <code>'{input.body.date}' &gt;= '{model.cutoff}'</code> compares two dates as
+  text, and a quote inside the value stays inside the literal. Whether a <code>COMPUTE</code> yields a number or a
+  boolean is decided by the statement as written, never by a value. A text value next to a <code>.</code> must be a
+  name or digits. An unresolved selector fails by name <strong>before</strong> evaluation
   (<code>Unknown identifier: model.threshold (unresolved variable in …)</code>). There is no assignment and no
   user-defined variable.</li>
 <li><strong>Operators</strong>, tightest-binding first:<ul>
@@ -4242,7 +4250,9 @@ For anything richer than the dialect, use <code>graph.task</code> (a composable 
   <code>acos</code>, <code>atan</code>, <code>random()</code> and the constants <code>PI</code> and <code>E</code> fail in a <code>DECIMAL</code> statement. Keep that step in
   a <code>COMPUTE</code>, or use a <a href="#task"><code>graph.task</code></a> function.</li>
 <li><strong>A <code>DECIMAL</code> statement computes a number.</strong> A comparison is allowed only inside a ternary test
-  (<code>{model.total} &gt; 100 ? 100 : {model.total}</code>); a boolean result fails by name — use <code>CONDITION</code>.</li>
+  (<code>{model.total} &gt; 100 ? 100 : {model.total}</code>); a boolean result fails by name — use <code>CONDITION</code>. A text
+  value in it must spell one number (<a href="#math-dialect">the dialect</a>), so a ternary test over dates or codes
+  writes them inside quotes: <code>'{input.body.date}' &gt;= '{policy.start}' ? {input.body.amount} : 0</code>.</li>
 <li><strong>Comparing decimals in <code>IF</code> and <code>CONDITION</code></strong> needs nothing special: a string that is a canonical number
   compares as a number, so <code>IF: {price.result.rounded} &gt; 100</code> and <code>IF: {price.result.rounded} &gt; '99.5'</code>
   both compare numbers (see <a href="#math-dialect">the dialect</a>).</li>
