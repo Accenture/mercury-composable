@@ -131,6 +131,10 @@ class TextValueStatementTest {
         assertEquals("100", body(runGraph(QUOTED_GRAPH, LATER, LATER)).get(RESULT));
         // a quote in the value stays inside the literal
         assertEquals("100", body(runGraph(QUOTED_GRAPH, "z' >= 'a", EARLIER)).get(RESULT));
+        // quotes make a string, not a text comparison: two canonical numbers still compare as numbers
+        // (as text '100.5' sorts before '99.5'), and a zero-padded code compares as text
+        assertEquals("100", body(runGraph(QUOTED_GRAPH, "100.5", "99.5")).get(RESULT));
+        assertEquals("0", body(runGraph(QUOTED_GRAPH, "007", "7")).get(RESULT));
     }
 
     @Test
