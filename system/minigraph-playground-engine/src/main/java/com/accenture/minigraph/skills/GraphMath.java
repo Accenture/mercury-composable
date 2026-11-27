@@ -187,8 +187,9 @@ public class GraphMath extends GraphLambdaFunction {
                 throw new IllegalArgumentException(NODE_NAME + nodeName + " has invalid statement '"+command+"'");
             }
             assertVariablesResolved(rhs, graphInstance.stateMachine);
+            // a statement with a ternary computes a number, the branch's value, as a DECIMAL does; without one
             // the statement as written decides whether it computes a boolean, never a value rendered into it
-            var logical = hasBooleanOperator(rhs);
+            var logical = hasBooleanOperator(rhs) && !ExpressionSource.hasTernary(rhs);
             var text = render(rhs, logical? ExpressionSource.Kind.BOOLEAN : ExpressionSource.Kind.NUMBER,
                     graphInstance.stateMachine);
             final Object result;
