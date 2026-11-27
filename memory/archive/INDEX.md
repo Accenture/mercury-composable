@@ -303,7 +303,7 @@
 - playground-webapp-single-source — The Playground webapp has one source and two deploy targets, and the help pages are one co… — faded — 2026-Q4.md
 - pack-trace-records-engine-parity — The packs' trace records mirror the engines' callee and caller, so a span lineage is conti… — faded — 2026-Q4.md
 - decimal-result-precision-limit — A `DECIMAL` result carries at most a configured number of decimal places - the node's `pre… — faded — 2026-Q4.md
-- help-edit-needs-bundle-release — A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10… — faded — 2026-Q4.md
+- help-edit-needs-bundle-release — A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10… — faded — 2026-Q4.md — REACTIVATED 2026-11-26, back in continuity.md (a help-page edit in the fan-out failure fix)
 - conv-config-key-not-value-and-parent — A configuration key is never both a value and the parent of other keys (2026-10-23). `Conf… — faded — 2026-Q4.md
 - conv-one-copy-of-shared-tooling — A tool that runs from the checkout lives once, in the starter template, and the examples p… — faded — 2026-Q4.md
 - conv-ports-adopt-java-release-number — Every port adopts the JAVA release number on catch-up — no downstream repo runs its own ve… — faded — 2026-Q4.md

@@ -366,6 +366,29 @@
   the caller address in the deploy line. (ADR-0038)
   <!-- id: hot-deploy-set-record-on-demand | created: 2026-11-25 | last_used: 2026-11-25 | uses: 1 | tier: working | origin: 2026-11-25-052834 -->
 
+- **A synchronous fan-out fails as one node: the first failing element in list order decides (the maintainer's
+  ruling, 2026-11-26, on a field report).** The three `for_each` skills (`graph.extension`, `graph.task`,
+  `graph.api.fetcher`) wrote `{node}.status` from every response while `{node}.error` stayed, and the platform's
+  fork-join (`FutureMultiInbox`) returns a batch's replies in the order of a hash map keyed by random reply ids and
+  leaves out one that timed out. So a success masked a failure (HTTP 200 with the error as the body, or a handler
+  entered with `error.code` 200), an element without an answer vanished, and the result was in list order only between
+  batches. The rule: the elements run in list order, `concurrency` at a time; an element that fails, or does not answer
+  within the node's deadline (a 408), fails the node with its own status, error, stack and target; its batch runs to
+  the end (the calls are parallel, none is cancelled) and no further batch starts; the output mappings are skipped;
+  `{node}.result` holds the elements that succeeded, in list order. A fetcher's `dictionary[]` items, called one after
+  the other, stop at the first that fails. Best effort is design, not an engine option: an element whose failure should
+  not fail the list handles it in its own subgraph and answers with its outcome. **Accepted in full the same day, on the
+  pull request (#682, squash `1adb6fc5a`, MERGED 2026-11-26):** the dictionary items' rule with `{node}.target` naming the item that failed, a fetcher's output
+  mappings skipped on failure also for a single call (they ran before and cleared a `model.` target mapped from a
+  missing result), the result keeping the elements that succeeded, and a warning that names the failing element's
+  position and how many did not start. **How to apply:** a batch request in
+  the engine goes through `GraphLambdaFunction.requestInOrder` (each response matched to its request by correlation id,
+  a 408 for a missing one), never through `po.request(list)` read by position; a node's status is written until the
+  first failure and never after; a new fan-out skill reuses `stageFanOutResponses`. `ForEachFailureTest` holds the
+  contract (eight tests that failed before the fix) and four sentences of the command reference are pinned to it in the
+  claims registry. The Rust twin is mercury #426 (merge `f8ac53f7`, MERGED 2026-11-27, its Increments 216 and 217).
+  <!-- id: fan-out-first-failure-decides | created: 2026-11-26 | last_used: 2026-11-26 | uses: 1 | tier: working | origin: 2026-11-26-223447 -->
+
 - **Essential tools for agent loops: built into the packs with published rows and sandboxes in configuration, or
   bound from a product's own MCP server by recipe (ADR-0036, accepted 2026-11-18 after the live drives and the recipes).**
   Twelve built-in tools are composable functions of `extensions/agent-tools/` in both packs - `file.read`, `file.write`,
@@ -487,6 +510,9 @@
   title as handed off and ONE trailer, the commit's own; with one commit the dialog has nothing to trim.
   Fourteenth instance, clean (2026-11-25): PR #680's squash `0d6bbecc6`, a one-commit PR, carries the title as handed
   off and ONE trailer; the handoff gave the title on its own line and said nothing needed trimming.
+  Fifteenth instance, clean (2026-11-26): PR #682's squash `1adb6fc5a`, a one-commit PR, carries the title as handed
+  off and ONE trailer. Its description was edited after the raise, on the maintainer's word, and the title was left
+  as it was, so the dialog pre-filled the title the handoff gave.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-25 | uses: 141 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
@@ -661,6 +687,34 @@
   line reaches end of life or a new LTS begins, update the stated version and keep the minimum the script's built-ins
   need; `agent-memory.yml` is installed by the agent-memory tool, so check its `actions/checkout` line after an upgrade.
   <!-- id: node-version-statements-and-ci-runtime | created: 2026-11-24 | last_used: 2026-11-24 | uses: 1 | tier: archive-candidate | origin: 2026-11-24-011921 -->
+
+- **A help-page edit is not done until the Playground bundle is rebuilt and committed (2026-10-02; PR #491 squash `f9ddf3c7`; the Rust twin is mercury #346).** The Playground's help pages
+  (`system/minigraph-playground-engine/src/main/resources/help/*.md`) are compiled INTO the webapp bundle (`webapp/src/data/helpContent.ts`, `import.meta.glob`), so an edit shows in the Playground only after
+  `npm ci` (once) and `npm run release` in `system/minigraph-playground-engine/webapp` have written the bundle to `src/main/resources/public/` (under `assets/`) and the result is committed; only `index.html` goes
+  elsewhere, becoming `template/playground.html`. This repo tracks the source maps too, so the new `index-*.js.map` goes in the same commit (the Rust repo ignores its maps). **CI never builds the webapp**, so nothing
+  else catches drift: the bundle was last regenerated on 2026-09-23 (#456) while four `help graph-math.md` edits (#462 `CONDITION`, #467 the closed dialect, #471 `DECIMAL`, #480 the money loop) landed after it,
+  and the Playground listed five statement types until #491. **The build is reproducible** (Node 22.12 with one harmless `react-router` engines warning): a rebuild of the unchanged sources reproduced every other
+  committed file byte for byte, so a regenerated diff reads as the help text plus the `sourceMappingURL` comment (110 lines added, 8 removed in #491). The same PR added `DECIMAL` and `CONDITION` to the page's
+  property list (the Rust help lists them) and corrected the webapp's scoped instructions (that scoped memory bank was retired on 2026-10-02; the rule's home is this fact and `webapp/docs/build-test-deploy.md`). **Any webapp source edit needs the release, a comment included:** the map embeds every source file, so it changes while the
+  chunk and its hash stay put if only comments changed (#492: two comments in `helpContent.ts`, one map line). The regenerated bundle ships in the engine jar of the next release. NOT built: a CI step that
+  rebuilds the bundle and compares it with the committed one, feasible because the build is reproducible; Eric has not asked for it. **Since 2026-10-02 the release has two targets**
+  ([[playground-webapp-single-source]]): `npm run release:rust` or `release:all` also deploys the bundle and a mirror of the help pages into the sibling Rust repo, so a help edit is done when BOTH repos
+  carry the result. **A bundler bump changes the bundle too (2026-10-21, #572):** Vite 8.1.5 → 8.3.5 moved Rolldown 1.1 → 1.2
+  and changed every JavaScript chunk, its CommonJS interop helper included. A Dependabot PR cannot rebuild the bundle, so a
+  maintainer pushes the rebuilt bundle onto that PR, A/B-tests the two bundles in a browser (the unit tests run against the
+  source, never the bundle), and deploys the same files to Rust. **Run `npm ci` before a release when `node_modules` may be stale
+  (2026-10-22):** it held Vite 8.1.5 against the lockfile's 8.3.5 after #572 was rebuilt in a worktree, and a build from it would not
+  have reproduced the committed bundle; `npm ls vite` shows it. **A test-only dependency leaves the bundle alone, but its
+  tests are then run by hand (2026-10-24, #589):** happy-dom 20.11.1 → 21.0.4 is the tests' environment, and no source the
+  build reaches imports it, so no release was needed. No workflow runs the webapp tests, so a Dependabot merge of a test
+  dependency has run none of them; after `npm ci`, `npm test` passed 490 of 490 on 21.0.4. `npm run build` alone writes only
+  the ignored `dist/`, which compares with the committed bundle (`public/assets`, `template/playground.html`) and with the Rust
+  copy, maps excluded, without touching a tracked file; both were byte-identical. Relates [[minigraph-dev-mode-app-shape]] (the deploy layout:
+  only the entry page moved out of `public/`).
+  **Applied 2026-11-26 (the fan-out failure fix, [[fan-out-first-failure-decides]]):** three help pages edited; a
+  build of the sources reproduced every other committed file, and `npm run release` changed one chunk, its map and
+  the entry page. The Rust mirror (`npm run release:rust`) waits for the twin.
+  <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-26 | uses: 39 | tier: active | origin: 2026-10-02-015208 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
 
