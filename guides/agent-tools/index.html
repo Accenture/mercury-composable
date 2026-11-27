@@ -3771,7 +3771,7 @@ reads register when the URI is set; the writers only when <code>tools.graph.writ
 <td><code>graph.ingest</code></td>
 <td><code>graph_ingest</code>, <strong><code>write: true</code></strong></td>
 <td><code>nodes: [{key, label, properties}]</code>; <code>relationships: [{from, to, type, properties}]</code>; <code>source</code></td>
-<td><code>{nodes, relationships}</code>: one parameterized <code>MERGE</code> per node on <code>(:Label {key})</code> with <code>SET n += properties</code>, one per relationship between two keys that exist (in this call or already in the graph; a missing key is a 400 and nothing is written), <code>source</code> stamped on each; labels and types <code>^[A-Za-z][A-Za-z0-9_]{0,63}$</code>, values scalars or lists of scalars, at most <code>tools.graph.ingest.max.nodes</code> (500) nodes per call; running it twice changes nothing</td>
+<td><code>{nodes, relationships}</code>: one parameterized <code>MERGE</code> per node on <code>(:_Ingested:Label {key})</code> with <code>SET n += properties</code>, one per relationship between two keys that exist (in this call or already in the graph; a missing key is a 400 and nothing is written), each end found by the index on <code>(:_Ingested {key})</code>, <code>source</code> stamped on each; a key names one node, so the same key under another label is a 400; labels and types <code>^[A-Za-z][A-Za-z0-9_]{0,63}$</code>, values scalars or lists of scalars, at most <code>tools.graph.ingest.max.nodes</code> (500) nodes per call; running it twice changes nothing</td>
 </tr>
 </tbody>
 </table>
@@ -3782,6 +3782,23 @@ key unique across the graph, prefixed with the label in lower case (<code>clause
 every ingest so an answer can cite it; the labels of the domain the graph author names in the system prompt. Both
 writers carry the mark: under the node's default mode a person approves each, and an ingestion graph declares
 <code>mode: auto</code> on its ingest node - the product owner's decision at design time, visible in the graph's certification.</p>
+<p><strong>The ingest label and its index.</strong> Every node <code>graph.ingest</code> writes carries the label <code>_Ingested</code> beside its own,
+and one uniqueness constraint, <code>mercury_ingested_key</code> on <code>(:_Ingested {key})</code>, gives the index that finds a node by
+its key. A database index belongs to a label, so a match on <code>key</code> alone reads every node of the database: on a graph
+of 180,000 nodes, 150 relationships took 9.6 s that way and take about 30 ms through the label. A caller's label
+starts with a letter, so it can never be <code>_Ingested</code>; <code>graph.schema</code> leaves the label out, a query result shows it
+among a node's labels, and the <code>graph_query</code> row tells the model to find a node by key as
+<code>MATCH (n:_Ingested {key: $key})</code>. The constraint makes the key unique across the graph, as the row says: the same
+key under another label is refused, and two ingests of one key at the same moment merge into one node. The first
+ingest of a process prepares the graph, each step in its own transaction: when the constraint is missing, every node
+that has a <code>key</code> takes the label, so a graph written before the label existed is carried over, and then the
+constraint is created. Three things stop it before anything is merged, each naming its repair: a key on more than
+one node (409, with the query that lists them), a database user that may not create a constraint (503, with the
+statement an administrator runs once), and a labelling that does not finish within <code>tools.graph.timeout.ms</code> (408,
+with the statement to run in batches). A node written by <code>graph.write</code> is an end of an ingested relationship when it
+carries the label and a key. On a database that does not take Neo4j's constraint commands, such as Memgraph, the tool
+labels and matches by the label, logs one warning, and leaves the index to the installation; each pack's README has
+the statements.</p>
 <h3 id="the-clock">The clock<a class="headerlink" href="#the-clock" title="Permanent link">&para;</a></h3>
 <p><code>time.now</code> (<code>time_now</code>) takes an optional <code>timezone</code> (an IANA name, default <code>UTC</code>) and returns
 <code>{utc, local, timezone, offset, weekday, epoch_ms}</code>. A model has no clock, and "today", "within 30 days" and "last
