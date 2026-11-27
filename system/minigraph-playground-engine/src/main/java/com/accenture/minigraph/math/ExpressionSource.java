@@ -44,11 +44,11 @@ import java.util.regex.Pattern;
 public final class ExpressionSource {
     /** How the statement reads its expression, which decides how a text value is rendered. */
     public enum Kind {
-        /** A COMPUTE or an IF without a comparison or boolean operator. */
+        /** A COMPUTE with a ternary, or a COMPUTE or an IF without a comparison or boolean operator. */
         NUMBER,
         /** A DECIMAL statement: a number expression where a Double or Float renders as its plain decimal text. */
         DECIMAL,
-        /** A CONDITION, or a COMPUTE or an IF with a comparison or boolean operator. */
+        /** A CONDITION, or a COMPUTE (without a ternary) or an IF with a comparison or boolean operator. */
         BOOLEAN
     }
 
@@ -107,6 +107,39 @@ public final class ExpressionSource {
     public static boolean isOneNumber(String text) {
         var trimmed = text.strip();
         return trimmed.length() <= MAX_NUMBER_LENGTH && ONE_NUMBER.matcher(trimmed).matches();
+    }
+
+    /**
+     * A ternary makes a statement compute its branch's value, so a COMPUTE that carries one computes a
+     * number, as a DECIMAL does, whatever comparison its test holds.
+     *
+     * @param expression a statement's expression as the author wrote it
+     * @return true when it carries a ternary: a question mark outside a string literal
+     */
+    public static boolean hasTernary(String expression) {
+        var open = OUTSIDE;
+        var i = 0;
+        while (i < expression.length()) {
+            var c = expression.charAt(i);
+            if (open == OUTSIDE && c == '?') {
+                return true;
+            }
+            open = quoteAt(open, c);
+            if (open != OUTSIDE && c == '\\') {
+                // the escaped character belongs to the literal
+                i++;
+            }
+            i++;
+        }
+        return false;
+    }
+
+    /** The literal open after one character, by the lexer's rule; a backslash leaves it as it is. */
+    private static char quoteAt(char open, char c) {
+        if (open == OUTSIDE) {
+            return c == '\'' || c == '"'? c : OUTSIDE;
+        }
+        return c == open? OUTSIDE : open;
     }
 
     private static String rendered(Selector selector, Object value, char quote, boolean dot) {

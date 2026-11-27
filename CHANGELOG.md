@@ -323,6 +323,27 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    text inside quotes or in a `CONDITION`; and assert a caller's types with `f:validate`. Text that spells a number
    computes as before.
 
+9. **A `COMPUTE` with a ternary computes its branch's value, as a `DECIMAL` does (the maintainer's ruling,
+   2026-11-27).** A `COMPUTE` whose text carried a comparison or boolean operator was a boolean statement whatever
+   else it held, and a number it computed was read as its truth: `COMPUTE: fee -> {a} > {b} ? 100 : 50` stored `true`
+   for either branch, and `... ? 100 : 0` stored `true` or `false`, without an error, while the same expression in a
+   `DECIMAL` stored `100` or `50`. Now a statement that carries a ternary - a question mark outside a string literal
+   - is a number statement in a `COMPUTE` as it is in a `DECIMAL`: it stores the branch's value; the comparison
+   belongs in the ternary's test; a text value must spell one number or be written inside quotes (Fixed 8); and a
+   boolean result fails by name (`Boolean result where a number was expected`), a boolean being stored with
+   `CONDITION`. A `COMPUTE` with a comparison and no ternary stays a boolean statement, and a ternary whose test is a
+   bare boolean already computed its branch's value. The test is `ExpressionSource.hasTernary`. No graph, fixture,
+   tutorial or guide of this repository held a ternary in a `COMPUTE`. Covered by `ComputeTernaryTest` (5 tests over
+   three fixtures `unit-test-compute-ternary*`, four of which failed before the change) and a unit test of the
+   ternary test, with one sentence of the skills reference pinned in the claims registry; the skills reference, the
+   command reference, the command catalog, the AI agent guide's checklist and the `graph-math` help page state the
+   rule, and the Playground bundle is regenerated for the help page. **Upgrade note - READ:** a graph that read the
+   result of a `COMPUTE` with a comparison inside a ternary as a boolean now reads a number. An `IF` over that result
+   alone takes the same branch as before for a zero and a non-zero value; a response carries the number where it
+   carried `true` or `false`; a comparison of the result with `true` fails by name. A ternary whose branches are
+   booleans moves to a `CONDITION`. A text value in such a ternary's test that is not a number is written inside
+   quotes.
+
 ### Documentation
 
 1. **The mini-scheduler's MongoDB worked example says where the job's `_id` comes from.** An upsert builds the

@@ -146,6 +146,19 @@ class ExpressionSourceTest {
     }
 
     @Test
+    void aTernaryIsAQuestionMarkOutsideAStringLiteral() {
+        assertTrue(ExpressionSource.hasTernary("{model.a} > {model.b} ? 100 : 50"));
+        assertTrue(ExpressionSource.hasTernary("({model.flag} ? 1 : 2) * 3"));
+        assertTrue(ExpressionSource.hasTernary("'{model.a}' >= 'what?' ? 1 : 0"));
+        assertFalse(ExpressionSource.hasTernary("{model.a} > {model.b}"));
+        // a question mark the author wrote inside a literal is text, whichever quote and whatever it escapes
+        assertFalse(ExpressionSource.hasTernary("{model.text} == 'what?'"));
+        assertFalse(ExpressionSource.hasTernary("{model.text} == \"is it?\""));
+        assertFalse(ExpressionSource.hasTernary("{model.text} == 'it\\'s what?'"));
+        assertTrue(ExpressionSource.hasTernary("{model.text} == 'a\\\\' ? 1 : 0"));
+    }
+
+    @Test
     void anUnresolvedSelectorRendersNullAndOtherTextIsLeftAsWritten() {
         assertEquals("null * 2", render(TIMES_TWO, Kind.NUMBER, null));
         // a segment with a colon is not a selector
