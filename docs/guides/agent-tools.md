@@ -118,7 +118,7 @@ reads register when the URI is set; the writers only when `tools.graph.write=tru
 | `graph.schema` | `graph_schema` | none | `{labels: [{label, count, properties: [{name, types}]}], relationship_types: [{type, count, from, to, properties}]}` from the database's own schema procedures (Neo4j's `db.schema.*`, else Memgraph's `schema.*`) and two counting queries - what the model reads before it writes a query |
 | `graph.query` | `graph_query` | `query` (openCypher, read-only); `parameters` | `{columns, rows, truncated}`; refused before sending when it carries `CREATE`, `MERGE`, `SET`, `DELETE`, `REMOVE`, `DROP` or `LOAD CSV` outside a string or a comment; rows capped by `tools.graph.max.rows` (200, cap 2000); a node `{id, labels, properties}`, a relationship `{id, type, start, end, properties}`, a path the list of its nodes and relationships |
 | `graph.write` | `graph_write`, **`write: true`** | `query`; `parameters` | `{counters: {nodes_created, nodes_deleted, relationships_created, relationships_deleted, properties_set, labels_added, labels_removed, indexes_added, constraints_added}, columns, rows, truncated}` from a write transaction |
-| `graph.ingest` | `graph_ingest`, **`write: true`** | `nodes: [{key, label, properties}]`; `relationships: [{from, to, type, properties}]`; `source` | `{nodes, relationships}`: one parameterized `MERGE` per node on `(:Label {key})` with `SET n += properties`, one per relationship between two keys that exist (in this call or already in the graph; a missing key is a 400 and nothing is written), `source` stamped on each; labels and types `^[A-Za-z][A-Za-z0-9_]{0,63}$`, values scalars or lists of scalars, at most `tools.graph.ingest.max.nodes` (500) nodes per call; running it twice changes nothing |
+| `graph.ingest` | `graph_ingest`, **`write: true`** | `nodes: [{key, label, properties}]`; `relationships: [{from, to, type, properties}]`; `source` | `{nodes, relationships}`: one parameterized `MERGE` per node on `(:_Ingested:Label {key})` with `SET n += properties`, one per relationship between two keys that exist (in this call or already in the graph; a missing key is a 400 and nothing is written), each end found by the index on `(:_Ingested {key})`, `source` stamped on each; a key names one node, so the same key under another label is a 400; labels and types `^[A-Za-z][A-Za-z0-9_]{0,63}$`, values scalars or lists of scalars, at most `tools.graph.ingest.max.nodes` (500) nodes per call; running it twice changes nothing |
 
 Why `graph.ingest` beside `graph.write`: a list of nodes and relationships is what a model extracts well, and a long
 `MERGE` with dozens of parameters is where Cypher goes wrong. The tool makes the Cypher, no value is ever
@@ -127,6 +127,24 @@ key unique across the graph, prefixed with the label in lower case (`clause:12`,
 every ingest so an answer can cite it; the labels of the domain the graph author names in the system prompt. Both
 writers carry the mark: under the node's default mode a person approves each, and an ingestion graph declares
 `mode: auto` on its ingest node - the product owner's decision at design time, visible in the graph's certification.
+
+**The ingest label and its index.** Every node `graph.ingest` writes carries the label `_Ingested` beside its own,
+and one uniqueness constraint, `mercury_ingested_key` on `(:_Ingested {key})`, gives the index that finds a node by
+its key. A database index belongs to a label, so a match on `key` alone reads every node of the database: on a graph
+of 180,000 nodes, 150 relationships took 9.6 s that way and take about 30 ms through the label. A caller's label
+starts with a letter, so it can never be `_Ingested`; `graph.schema` leaves the label out, a query result shows it
+among a node's labels, and the `graph_query` row tells the model to find a node by key as
+`MATCH (n:_Ingested {key: $key})`. The constraint makes the key unique across the graph, as the row says: the same
+key under another label is refused, and two ingests of one key at the same moment merge into one node. The first
+ingest of a process prepares the graph, each step in its own transaction: when the constraint is missing, every node
+that has a `key` takes the label, so a graph written before the label existed is carried over, and then the
+constraint is created. Three things stop it before anything is merged, each naming its repair: a key on more than
+one node (409, with the query that lists them), a database user that may not create a constraint (503, with the
+statement an administrator runs once), and a labelling that does not finish within `tools.graph.timeout.ms` (408,
+with the statement to run in batches). A node written by `graph.write` is an end of an ingested relationship when it
+carries the label and a key. On a database that does not take Neo4j's constraint commands, such as Memgraph, the tool
+labels and matches by the label, logs one warning, and leaves the index to the installation; each pack's README has
+the statements.
 
 ### The clock
 

@@ -321,7 +321,6 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    an action can declare. `setup-gradle` stops at v5 because v6 places the action's caching under Gradle's Terms of Use.
    **Upgrade note:** none - documentation and CI only; no script changes behaviour.
 
----
 4. **The guides document REST automation in the language packs (RFC-0018).** The polyglot guide gains the
    application-server half - with `rest.automation: true` a Python or Node.js pack serves the engines' `rest.yaml` in
    front of its functions: what a pack serves (the Rust engine's subset with Java parity, the bounded upload, streaming
@@ -357,6 +356,16 @@ Each change merged to `main` after v4.12.30 is listed here; it moves under its r
    entries. ADR-0011 is marked amended (deployment is explicit and gated, no longer restart-scoped) and ADR-0027 extended
    (the set as the run-time unit). **Upgrade note:** none - a ledger entry.
 
+6. **The agent tools page documents the ingest label and its index (mercury-python #89, mercury-nodejs #150).**
+   `graph.ingest` in both packs finds a node by an index on its key: every node it writes carries the label
+   `_Ingested`, and one uniqueness constraint on `(:_Ingested {key})` gives the index, where a match on `key` without
+   a label read every node of the database (150 relationships on a graph of 180,000 nodes: 9.6 s before, about 30 ms
+   now). The page states the label, the constraint, how the first ingest prepares a graph written before the label,
+   the three refusals that name their repair (409, 503, 408) and what a database other than Neo4j is left to do. The
+   separator that closes this section had two entries below it and is back at its end. **Upgrade note:** none here -
+   the packs' CHANGELOG entries carry the READ note.
+
+---
 ## Version 4.12.30, 11/5/2026
 
 Lock-step with the Rust port, which catches up from 4.12.27 to this release with every common feature since: the agent
