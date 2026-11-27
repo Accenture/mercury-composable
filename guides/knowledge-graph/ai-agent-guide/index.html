@@ -3870,6 +3870,14 @@ engines):</p>
       and so on months to its start date, never one month to the previous date. Never compute any of these in
       <code>graph.math</code>, in a composable function or through epoch milliseconds (<code>f:parseDate</code> with <code>ms</code>), which brings
       time zones back in; the request carries its dates as <code>YYYY-MM-DD</code> text, with no time and no time zone.
+- [ ] <strong>Text in a number expression is a number, or it is in quotes.</strong> In a <code>DECIMAL</code>, or a <code>COMPUTE</code> or <code>IF</code>
+      without a comparison, a text value must spell one number: a date, a code or an identifier there fails the
+      statement naming the selector (<code>Not a number: …</code>), where it used to be computed as arithmetic. To compare
+      such a value inside a <code>DECIMAL</code>, write its selector inside quotes in the ternary test -
+      <code>'{input.body.date}' &gt;= '{model.cutoff}' ? {input.body.amount} : 0</code> - or compare it in a <code>CONDITION</code>, which
+      quotes text for you (<a href="../skills-reference/#math-dialect">the dialect</a>). Quotes make a string, not a text
+      comparison: two strings that are both canonical numbers still compare as numbers (<code>'100.5' &gt;= '99.5'</code> is
+      true), while a zero-padded code such as <code>'007'</code> compares as text.
 - [ ] A <code>$</code> source is an <strong>RFC 9535</strong> JSONPath query, used only as a data mapping's source: no Jayway forms
       (<code>in</code>, <code>=~</code>, <code>.length()</code>), and no JSONPath inside a <code>{reference}</code>
       (<a href="../../event-script/syntax/#json-path">JSON Path</a>).
