@@ -3860,6 +3860,10 @@ engines):</p>
       <code>{table-node}.{model.key}</code>. Never hard-code it as a ladder of
       IF-THEN-ELSE in <code>graph.math</code> or inside a composable function: the table is more readable, and
       the product owner certifies it on the graph (<a href="../skills-reference/#task">static decision table</a>).
+- [ ] <strong>A ternary computes its branch's value, in a <code>COMPUTE</code> as in a <code>DECIMAL</code>.</strong>
+      <code>COMPUTE: fee -&gt; {model.a} &gt; {model.b} ? 100 : 50</code> stores <code>100</code> or <code>50</code>. A statement with a ternary is a
+      number statement: its comparison belongs in the ternary's test, a text value there must spell one number or
+      be written inside quotes, and a boolean result fails by name - store a boolean with <code>CONDITION</code>.
 - [ ] <strong>Date arithmetic is a plugin, not code.</strong> A due date or a day count on dates written as <code>YYYY-MM-DD</code> is
       <code>f:addDays({date}, {days})</code> (a negative number of days goes back) or <code>f:daysBetween({from}, {to})</code> (whole days,
       the earlier date excluded and the later one included, in either order) in a <code>graph.data.mapper</code>

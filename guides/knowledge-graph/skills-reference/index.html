@@ -4068,7 +4068,7 @@ seven types:</p>
 <tbody>
 <tr>
 <td><code>COMPUTE</code></td>
-<td>evaluate a math expression → the node's <code>result</code> (a number; an expression with a comparison or boolean operator yields a boolean)</td>
+<td>evaluate a math expression → the node's <code>result</code> (a number; an expression with a comparison or boolean operator and no ternary yields a boolean)</td>
 </tr>
 <tr>
 <td><code>DECIMAL</code></td>
@@ -4138,8 +4138,9 @@ by name, never silently accepted.</p>
   <code>{book.price}</code>, <code>{check.result.eligible}</code>. They are resolved into the text before it is parsed, and
   <strong>a value is always one value, never more expression</strong>. A number or a boolean is itself. A text value
   is a quoted string literal in a boolean expression (<code>IF</code>, <code>CONDITION</code>, or a <code>COMPUTE</code> carrying a
-  comparison or boolean operator), so <code>{model.state} == 'CA'</code> compares text. In a number expression (a
-  <code>DECIMAL</code>, or a <code>COMPUTE</code> or <code>IF</code> without such an operator) a text value is the one number it spells
+  comparison or boolean operator and no ternary), so <code>{model.state} == 'CA'</code> compares text. In a number expression
+  (a <code>DECIMAL</code>, a <code>COMPUTE</code> with a ternary, or a <code>COMPUTE</code> or <code>IF</code> without such an operator) a text value is the one
+  number it spells
   (<code>100.25</code>, <code>-5</code>, <code>1e3</code>), and any other text fails the statement naming the selector
   (<code>Not a number: input.body.date in '…'</code>): a date such as <code>2025-07-15</code>, a code or an identifier is never
   computed as arithmetic, and the error names the selector without the value. To read a value as text
@@ -4166,7 +4167,10 @@ by name, never silently accepted.</p>
   <code>200 == 'abc'</code> fails (<code>Type mismatch for equality</code>).</li>
 <li><code>&amp;&amp;</code>, then <code>||</code> — short-circuit; a number or string operand is truthy the JavaScript way (<code>0</code>
   and <code>''</code> are false).</li>
-<li><code>test ? a : b</code> — the ternary, lowest precedence; <code>( … )</code> groups.</li>
+<li><code>test ? a : b</code> — the ternary, lowest precedence; <code>( … )</code> groups. A statement with a ternary computes its
+  branch's value: a <code>COMPUTE</code> that carries one computes a number, as a <a href="#math-decimal"><code>DECIMAL</code></a> does, whatever
+  comparison its test holds, so <code>COMPUTE: fee -&gt; {model.a} &gt; {model.b} ? 100 : 50</code> stores <code>100</code> or <code>50</code>. A
+  boolean result fails there by name; store a boolean with <code>CONDITION</code>.</li>
 </ul>
 </li>
 <li><strong>Functions</strong> — one argument: <code>sin</code>, <code>cos</code>, <code>tan</code>, <code>asin</code>, <code>acos</code>, <code>atan</code>, <code>sqrt</code>, <code>abs</code>,
@@ -4191,7 +4195,8 @@ value:</p>
   request is untrusted; store a decision with <code>CONDITION</code>.</li>
 <li><strong><code>COMPUTE</code> yields a boolean when the expression carries a comparison or boolean operator</strong>
   (<code>&lt;</code>, <code>&gt;</code>, <code>==</code>, <code>!</code>, <code>&amp;&amp;</code>, <code>||</code>) — it evaluates the question you wrote. Use <code>CONDITION</code> to say
-  so in the statement, and keep <code>COMPUTE</code> for amounts.</li>
+  so in the statement, and keep <code>COMPUTE</code> for amounts. The exception is a ternary: with one the statement
+  computes its branch's value, a number, whatever comparison its test holds.</li>
 <li><strong>A misspelled or unsupported function fails by name</strong> (<code>Unknown function: mn</code>).</li>
 <li><strong>Arithmetic is IEEE double.</strong> An overflow to infinity, a division by zero and a NaN each fail
   naming the operator (<code>Arithmetic overflow in '*' (result Infinity)</code>, <code>Division by zero or
