@@ -389,6 +389,42 @@
   claims registry. The Rust twin is mercury #426 (merge `f8ac53f7`, MERGED 2026-11-27, its Increments 216 and 217).
   <!-- id: fan-out-first-failure-decides | created: 2026-11-26 | last_used: 2026-11-26 | uses: 1 | tier: working | origin: 2026-11-26-223447 -->
 
+- **A value rendered into a `graph.math` expression is one value where it lands, never more expression (a field
+  report, 2026-11-27; #683, squash `c1bfc4fc2`, and the Rust twin mercury #429, merge `bbbc6feb`, both MERGED the
+  same day).** A
+  `{selector}` is rendered into a statement before it is parsed (ADR-0025's first finding), and in a number
+  expression - a `DECIMAL`, or a `COMPUTE` or `IF` without a comparison or boolean operator - a text value was
+  inserted as written, so the evaluator parsed it as expression: an ISO date computed as a subtraction (`2025-07-15`
+  gave `2003`), a later date compared as the earlier one inside a `DECIMAL` ternary test, `max(1,2)` gave `2`, a
+  value carrying `>` turned a `COMPUTE` into a boolean, each without an error, on both engines. The rule,
+  `ExpressionSource` (the JSONPath source's rule of ADR-0031 applied to the math dialect): in a number expression a
+  text value is the one number it spells, in any form the lexer reads as a number literal, and any other text fails
+  the statement with a 400 naming the selector and not the value; inside quotes the author wrote, a value is that
+  literal's text, escaped; next to a `.` a text value is a name or digits; `true`, `false` and `null` as text keep
+  their reading; a `COMPUTE`'s kind is decided by the statement as written. Other text is REFUSED, not quoted:
+  quoted, a `DECIMAL` ternary test such as `{code} == 'A4352'` would work for an alphanumeric code and fail for an
+  all-digit one, a failure that depends on the data; refused, it fails on the first run and the author writes the
+  quotes. The report's third ask needed no change: on the REST path a failed evaluation is already logged at ERROR
+  by the flow's exception handler; INFO only is a Playground session, where the failure goes to the person.
+  **How to apply:** a statement that evaluates an expression renders it through `ExpressionSource` with its kind,
+  never through `substituteVarIfAny`, which stays for `RESET`, `DELAY`, jump targets and mapping sources; a new
+  place where data meets a grammar gets the same question - what is this value allowed to be here - before it is
+  inserted; a number form is whatever the lexer reads, so nothing that computed changes; and a probe over the
+  values a caller can send (a date, a code, an empty string, an operator) is the test, since the engine's 312
+  earlier tests passed before and after.
+  **Extended the same day, on the maintainer's question and ruling ("for consistency, can we update the COMPUTE
+  module to handle ternary operator with the same behavior as DECIMAL?"; #686, squash `45711a07a`, and the Rust
+  twin mercury #431, merge `a400233f`, both MERGED 2026-11-27):** a `COMPUTE` whose text carried a comparison was a boolean statement whatever else it
+  held, so a number a ternary picked was read as its truth - `2 > 3 ? 100 : 50` stored `true`, where a `DECIMAL`
+  stored `50`. Now a statement that carries a ternary (a question mark outside a string literal,
+  `ExpressionSource.hasTernary`) is a number statement in a `COMPUTE` as in a `DECIMAL`: the branch's value, text
+  one number or inside quotes, a boolean result refused by name. Two things the pages now also say: quotes make a
+  string, not a text comparison (two strings that are both canonical numbers still compare as numbers), and the
+  AI agent guide's checklist carries both rules (#685, mercury #430). **How to apply:** before documenting what a
+  statement does with a construct, probe it - the ternary example written for the guide was right for `DECIMAL`
+  and silently wrong for `COMPUTE`, and the probe of both evaluators is what showed it.
+  <!-- id: math-text-value-one-value | created: 2026-11-27 | last_used: 2026-11-27 | uses: 1 | tier: working | origin: 2026-11-27-204450 -->
+
 - **Essential tools for agent loops: built into the packs with published rows and sandboxes in configuration, or
   bound from a product's own MCP server by recipe (ADR-0036, accepted 2026-11-18 after the live drives and the recipes).**
   Twelve built-in tools are composable functions of `extensions/agent-tools/` in both packs - `file.read`, `file.write`,
@@ -407,6 +443,13 @@
   **How to apply:** a new capability is first a question of the rule - a pack function with a row, or a recipe for an
   existing server - never engine code, never a generic request tool, never a call argument as a boundary; an
   ingestion node declares `mode: auto` on the graph; a system of record gets a wrapper route. (ADR-0036)
+  **Extended 2026-11-27 (a field report; mercury-python #89 and mercury-nodejs #150, both MERGED, the page #684,
+  squash `e9a5adc47`):** `graph.ingest` matched a relationship's ends by `key` without a label, and a database index
+  belongs to a label, so each end read every node - 150 relationships took 9.6 s on a graph of 180,000 nodes and
+  67 ms on 300 (Neo4j 5, measured). Every ingested node now carries the label `_Ingested`, and a uniqueness
+  constraint on `(:_Ingested {key})` gives the index (about 30 ms) and makes a key name one node; the first ingest of
+  a process labels the nodes of an earlier graph and creates the constraint, and a 409, a 503 and a 408 name their
+  repair. The packs' continuity holds the rule (`graph-ingest-label-and-constraint`).
   <!-- id: agent-tools-built-or-bound | created: 2026-11-18 | last_used: 2026-11-25 | uses: 4 | tier: active | origin: 2026-11-18-094338 -->
 
 - **The transcript audit store: every model turn of an agent loop recorded by the pack's helper, off the turn's path,
@@ -513,6 +556,15 @@
   Fifteenth instance, clean (2026-11-26): PR #682's squash `1adb6fc5a`, a one-commit PR, carries the title as handed
   off and ONE trailer. Its description was edited after the raise, on the maintainer's word, and the title was left
   as it was, so the dialog pre-filled the title the handoff gave.
+  Sixteenth and seventeenth instances, clean (2026-11-27): #683's squash `c1bfc4fc2` and #684's `e9a5adc47`,
+  one-commit PRs the agent opened with `gh` on the maintainer's authorization, each carry the title as raised and
+  ONE trailer. Both were merged before the agent's message announcing them, so no handoff was sent; with one commit
+  the dialog had nothing to trim. The guard stands for a PR of more than one commit.
+  Eighteenth instance, clean (2026-11-27): #685's squash `6cf5a4945`, a three-commit PR, carries the title as
+  handed off and ONE trailer. The handoff was in the message that announced the later commits: the title on its
+  own line and the rule to delete every trailer above the `---------` line.
+  Nineteenth instance, clean (2026-11-27): #686's squash `45711a07a`, a one-commit PR, carries the title as handed
+  off and ONE trailer.
   Relates [[thread-otlp-export-retry]].
   <!-- id: conv-squash-title-prefill-check | created: 2026-08-19 | last_used: 2026-11-25 | uses: 141 | tier: active | origin: 2026-08-19-195244 -->
 - **Derive a release's CHANGELOG from `git log <previous-tag>..HEAD`, never from what this session
@@ -539,7 +591,9 @@
   against `git show <its tag>:CHANGELOG.md`. **Fourth instance, a separator (2026-10-22, the Rust repo):** RFC-0010 WP3's
   Changed 5, appended at the end of the Unreleased section, landed below the `---` that closes it (merged in mercury #391; WP4
   moved it back). The released sections still diffed empty, so that check does not catch it. After an append at the end of
-  Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. Relates [[conv-template-version-sweep]] (the
+  Unreleased, also confirm that the `---` directly precedes the first `## Version`, as it does at the tag. **Fifth instance,
+  the same separator here (2026-11-27):** on `main` the `---` that closes Unreleased sat above two Documentation entries
+  (4 and 5), found when a sixth was added; #684 put it back at the section's end. Relates [[conv-template-version-sweep]] (the
   sibling rule for the version sweep: re-derive, never carry the prior count forward).
   <!-- id: conv-changelog-from-tag-range | created: 2026-09-17 | last_used: 2026-11-25 | uses: 78 | tier: active | origin: 2026-09-17-183008 -->
 - Add capability: function (`@PreLoad` + `TypedLambdaFunction`) → flow YAML →
@@ -714,6 +768,9 @@
   **Applied 2026-11-26 (the fan-out failure fix, [[fan-out-first-failure-decides]]):** three help pages edited; a
   build of the sources reproduced every other committed file, and `npm run release` changed one chunk, its map and
   the entry page. The Rust mirror (`npm run release:rust`) waits for the twin.
+  **Applied 2026-11-27 ([[math-text-value-one-value]]):** one help page edited; `npm run release` changed one chunk
+  (`index-CHGht2_6`), its map and the entry page; `npm run release:rust` after the merge deployed the same chunk and
+  the 45 help pages to the Rust repository for the twin.
   <!-- id: help-edit-needs-bundle-release | created: 2026-10-01 | last_used: 2026-11-26 | uses: 39 | tier: active | origin: 2026-10-02-015208 -->
 
 ## Blueprint  *(gap from Current State → Vision; `(blueprint)` threads serve `vision-mercury-composable`)*
